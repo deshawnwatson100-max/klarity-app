@@ -10,6 +10,12 @@ const API_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com.proxy.vib
 const CHAT_URL = `${API_URL}/chat/completions`;
 const MODEL = "gpt-5-mini";
 
+// Vibecode proxy authentication - uses project ID as bearer token
+const getAuthHeader = () => {
+  const projectId = process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID || process.env.VIBECODE_PROXY_USERNAME;
+  return projectId ? `Bearer ${projectId}` : "";
+};
+
 /**
  * Send a chat request to GPT-5 Mini
  */
@@ -33,6 +39,7 @@ async function callGPT5Mini(
   const response = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
+      "Authorization": getAuthHeader(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(requestBody),
