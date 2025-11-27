@@ -45,18 +45,15 @@ async function callGPT5Mini(
 export async function generateEmotionalAnalysis(
   userMessage: string
 ): Promise<EmotionalAnalysis> {
-  const systemPrompt = `You are an emotional intelligence assistant. Analyze the following message and provide:
-1. Emotional clarity percentage (0-100)
-2. Detected emotional state (1-3 words)
-3. Relationship risk level (low/medium/high)
-4. Brief summary (1-2 sentences, calm tone)
+  const systemPrompt = `You are an emotional intelligence assistant. Analyze the message and respond with ONLY valid JSON.
 
-Return ONLY a JSON object with this exact structure:
+IMPORTANT: Your entire response must be ONLY the JSON object below, with no other text before or after.
+
 {
-  "emotionalClarity": <number>,
-  "detectedState": "<string>",
-  "relationshipRisk": "<low|medium|high>",
-  "summary": "<string>"
+  "emotionalClarity": <number between 0-100>,
+  "detectedState": "<1-3 word emotion>",
+  "relationshipRisk": "<must be: low, medium, or high>",
+  "summary": "<1-2 calm sentences>"
 }`;
 
   const messages: GPT5Message[] = [
@@ -64,15 +61,46 @@ Return ONLY a JSON object with this exact structure:
     { role: "user", content: userMessage },
   ];
 
-  const response = await callGPT5Mini(messages, 300);
+  try {
+    const response = await callGPT5Mini(messages, 400);
 
-  // Parse JSON from response
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse emotional analysis");
+    // Try to find JSON in response
+    let jsonStr = response.trim();
+
+    // Remove markdown code blocks if present
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    // Extract JSON object
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Raw API response:", response);
+      throw new Error("No JSON found in response");
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Validate the structure
+    if (
+      typeof parsed.emotionalClarity !== "number" ||
+      typeof parsed.detectedState !== "string" ||
+      !["low", "medium", "high"].includes(parsed.relationshipRisk) ||
+      typeof parsed.summary !== "string"
+    ) {
+      throw new Error("Invalid analysis structure");
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Error parsing emotional analysis:", error);
+
+    // Return a fallback analysis
+    return {
+      emotionalClarity: 50,
+      detectedState: "Mixed emotions",
+      relationshipRisk: "medium",
+      summary: "Unable to fully analyze at this time. Please try rephrasing your message.",
+    };
   }
-
-  return JSON.parse(jsonMatch[0]);
 }
 
 /**
@@ -82,26 +110,24 @@ export async function generateSuggestedResponses(
   userMessage: string,
   conversationHistory: string[]
 ): Promise<SuggestedResponse[]> {
-  const systemPrompt = `You are an emotionally intelligent communication assistant. Based on the user's message, generate 3 suggested responses that are:
-- Compassionate and emotionally aware
-- Healthy and constructive
-- Varied in tone (one softer, one direct, one playful)
+  const systemPrompt = `You are an emotionally intelligent communication assistant. Generate 3 suggested responses that are compassionate, healthy, and varied in tone.
 
-Return ONLY a JSON array with this exact structure:
+IMPORTANT: Your entire response must be ONLY the JSON array below, with no other text before or after.
+
 [
   {
     "id": "1",
-    "text": "<response text>",
+    "text": "<softer, compassionate response>",
     "tone": "soften"
   },
   {
     "id": "2",
-    "text": "<response text>",
+    "text": "<direct, clear response>",
     "tone": "direct"
   },
   {
     "id": "3",
-    "text": "<response text>",
+    "text": "<playful, light response>",
     "tone": "playful"
   }
 ]`;
@@ -116,15 +142,65 @@ Return ONLY a JSON array with this exact structure:
     { role: "user", content: contextMessage },
   ];
 
-  const response = await callGPT5Mini(messages, 500);
+  try {
+    const response = await callGPT5Mini(messages, 600);
 
-  // Parse JSON array from response
-  const jsonMatch = response.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse suggested responses");
+    // Try to find JSON in response
+    let jsonStr = response.trim();
+
+    // Remove markdown code blocks if present
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    // Extract JSON array
+    const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("Raw API response:", response);
+      throw new Error("No JSON found in response");
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Validate array structure
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error("Invalid suggestions structure");
+    }
+
+    // Ensure all suggestions have required fields
+    const validated = parsed.map((item, index) => ({
+      id: item.id || (index + 1).toString(),
+      text: item.text || "I hear you. Let me think about that.",
+      tone: ["soften", "direct", "playful"].includes(item.tone)
+        ? item.tone
+        : index === 0
+        ? "soften"
+        : index === 1
+        ? "direct"
+        : "playful",
+    }));
+
+    return validated;
+  } catch (error) {
+    console.error("Error parsing suggested responses:", error);
+
+    // Return fallback suggestions
+    return [
+      {
+        id: "1",
+        text: "I understand how you feel. Would you like to talk more about this?",
+        tone: "soften",
+      },
+      {
+        id: "2",
+        text: "I hear you. Can we discuss what would help resolve this?",
+        tone: "direct",
+      },
+      {
+        id: "3",
+        text: "Thanks for sharing that with me. What do you think we should do next?",
+        tone: "playful",
+      },
+    ];
   }
-
-  return JSON.parse(jsonMatch[0]);
 }
 
 /**
