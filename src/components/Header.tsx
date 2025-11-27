@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useChatStore } from "../state/chatStore";
 
 interface HeaderProps {
   title?: string;
@@ -13,6 +14,12 @@ interface HeaderProps {
 export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const clearMessages = useChatStore((s) => s.clearMessages);
+
+  const handleNewChat = () => {
+    clearMessages();
+    navigation.navigate("InputScreen" as never);
+  };
 
   return (
     <View
@@ -20,14 +27,14 @@ export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProp
       style={{ paddingTop: insets.top }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu */}
+        {/* Left - Menu (placeholder for now) */}
         <View className="w-10">
           {showMenu && (
             <Pressable
-              onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+              onPress={handleNewChat}
               className="active:opacity-60"
             >
-              <Ionicons name="menu" size={24} color="#9CA3AF" />
+              <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
             </Pressable>
           )}
         </View>
@@ -39,17 +46,11 @@ export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProp
 
         {/* Right - Actions */}
         <View className="flex-row items-center gap-3">
-          <Pressable className="active:opacity-60">
-            <Ionicons name="chevron-up" size={20} color="#9CA3AF" />
-          </Pressable>
-          <Pressable className="active:opacity-60">
-            <Ionicons name="create-outline" size={20} color="#9CA3AF" />
-          </Pressable>
-          <Pressable className="active:opacity-60">
-            <Ionicons name="add" size={20} color="#9CA3AF" />
-          </Pressable>
-          <Pressable className="active:opacity-60">
-            <Ionicons name="ellipsis-horizontal" size={20} color="#9CA3AF" />
+          <Pressable
+            onPress={handleNewChat}
+            className="active:opacity-60"
+          >
+            <Ionicons name="add" size={22} color="#9CA3AF" />
           </Pressable>
         </View>
       </View>
