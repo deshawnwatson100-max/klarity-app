@@ -5,8 +5,9 @@ interface GPT5Message {
   content: string;
 }
 
-const API_KEY = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-const API_URL = "https://api.openai.com/v1/chat/completions";
+// Use Vibecode proxy URL which handles authentication
+const API_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com.proxy.vibecodeapp.com/v1";
+const CHAT_URL = `${API_URL}/chat/completions`;
 const MODEL = "gpt-5-mini";
 
 /**
@@ -14,29 +15,44 @@ const MODEL = "gpt-5-mini";
  */
 async function callGPT5Mini(
   messages: GPT5Message[],
-  maxTokens: number = 1000
+  maxTokens: number = 1000,
+  useJsonMode: boolean = false
 ): Promise<string> {
-  const response = await fetch(API_URL, {
+  const requestBody: any = {
+    model: MODEL,
+    messages,
+    max_completion_tokens: maxTokens,
+    temperature: 1,
+  };
+
+  // Use JSON mode for structured outputs
+  if (useJsonMode) {
+    requestBody.response_format = { type: "json_object" };
+  }
+
+  const response = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
-      "Authorization": "Bearer " + API_KEY,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      max_completion_tokens: maxTokens,
-      temperature: 1,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`GPT-5 Mini API failed: ${error}`);
+    console.error("API Error:", error);
+    throw new Error(`GPT-5 Mini API failed: ${response.status} ${error}`);
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  const content = data.choices?.[0]?.message?.content || "";
+
+  if (!content) {
+    console.error("Empty response from API. Full response:", JSON.stringify(data));
+    throw new Error("Empty response from API");
+  }
+
+  return content;
 }
 
 /**
@@ -45,16 +61,13 @@ async function callGPT5Mini(
 export async function generateEmotionalAnalysis(
   userMessage: string
 ): Promise<EmotionalAnalysis> {
-  const systemPrompt = `You are an emotional intelligence assistant. Analyze the message and respond with ONLY valid JSON.
+  const systemPrompt = `You are an emotional intelligence assistant. Analyze the message and respond with valid JSON only.
 
-IMPORTANT: Your entire response must be ONLY the JSON object below, with no other text before or after.
-
-{
-  "emotionalClarity": <number between 0-100>,
-  "detectedState": "<1-3 word emotion>",
-  "relationshipRisk": "<must be: low, medium, or high>",
-  "summary": "<1-2 calm sentences>"
-}`;
+Provide a JSON object with:
+- emotionalClarity: number between 0-100
+- detectedState: string (1-3 word emotion)
+- relationshipRisk: must be "low", "medium", or "high"
+- summary: string (1-2 calm sentences)`;
 
   const messages: GPT5Message[] = [
     { role: "system", content: systemPrompt },
@@ -62,22 +75,26 @@ IMPORTANT: Your entire response must be ONLY the JSON object below, with no othe
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 400);
+    const response = await callGPT5Mini(messages, 400, true);
 
-    // Try to find JSON in response
+    // Try to parse JSON
     let jsonStr = response.trim();
 
     // Remove markdown code blocks if present
     jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
 
-    // Extract JSON object
-    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("Raw API response:", response);
-      throw new Error("No JSON found in response");
+    // Try to parse the entire response first
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      // If that fails, try to extract JSON object
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
     }
-
-    const parsed = JSON.parse(jsonMatch[0]);
 
     // Validate the structure
     if (
@@ -112,25 +129,10 @@ export async function generateSuggestedResponses(
 ): Promise<SuggestedResponse[]> {
   const systemPrompt = `You are an emotionally intelligent communication assistant. Generate 3 suggested responses that are compassionate, healthy, and varied in tone.
 
-IMPORTANT: Your entire response must be ONLY the JSON array below, with no other text before or after.
-
-[
-  {
-    "id": "1",
-    "text": "<softer, compassionate response>",
-    "tone": "soften"
-  },
-  {
-    "id": "2",
-    "text": "<direct, clear response>",
-    "tone": "direct"
-  },
-  {
-    "id": "3",
-    "text": "<playful, light response>",
-    "tone": "playful"
-  }
-]`;
+Provide a JSON object with a "suggestions" array containing 3 items, each with:
+- id: string
+- text: string (the suggested response)
+- tone: must be "soften", "direct", or "playful"`;
 
   const contextMessage =
     conversationHistory.length > 0
@@ -143,30 +145,37 @@ IMPORTANT: Your entire response must be ONLY the JSON array below, with no other
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 600);
+    const response = await callGPT5Mini(messages, 600, true);
 
-    // Try to find JSON in response
+    // Try to parse JSON
     let jsonStr = response.trim();
 
     // Remove markdown code blocks if present
     jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
 
-    // Extract JSON array
-    const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error("Raw API response:", response);
-      throw new Error("No JSON found in response");
+    // Try to parse the entire response first
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      // If that fails, try to extract JSON
+      const jsonMatch = jsonStr.match(/[\{\[][\s\S]*[\}\]]/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    // Handle both array and object with suggestions array
+    let suggestions = Array.isArray(parsed) ? parsed : parsed.suggestions || [];
 
     // Validate array structure
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
       throw new Error("Invalid suggestions structure");
     }
 
     // Ensure all suggestions have required fields
-    const validated = parsed.map((item, index) => ({
+    const validated = suggestions.slice(0, 3).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
       text: item.text || "I hear you. Let me think about that.",
       tone: ["soften", "direct", "playful"].includes(item.tone)
