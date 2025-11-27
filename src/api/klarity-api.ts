@@ -43,18 +43,26 @@ async function callGPT5Mini(
   }
 
   try {
+    console.log("Calling OpenAI with model:", MODEL);
     const completion = await client.chat.completions.create(params);
+    console.log("API Response:", JSON.stringify(completion, null, 2));
+
     const content = completion.choices[0]?.message?.content || "";
 
     if (!content) {
-      console.error("Empty response from API");
+      console.error("Empty response from API. Full completion:", JSON.stringify(completion));
       throw new Error("Empty response from API");
     }
 
     return content;
   } catch (error: any) {
-    console.error("API Error:", error.message || error);
-    throw new Error(`GPT-5 Mini API failed: ${error.message || "Unknown error"}`);
+    console.error("API Error details:", {
+      message: error.message,
+      status: error.status,
+      type: error.type,
+      code: error.code,
+    });
+    throw new Error(`API failed: ${error.message || "Unknown error"}`);
   }
 }
 
