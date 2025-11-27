@@ -1,12 +1,12 @@
 import { StatusBar } from "expo-status-bar";
-import { Text, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { RootNavigator } from "./src/navigation/RootNavigator";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
-There are already environment keys in the project. 
+There are already environment keys in the project.
 Before telling the user to add them, check if you already have access to the required keys through bash.
 Directly access them with process.env.${key}
 
@@ -27,16 +27,11 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 
 export default function App() {
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
-          <View className="flex-1 items-center justify-center">
-            <Text className="text-center text-neutral-800 dark:text-neutral-50 text-2xl font-bold pb-2">Vibecode</Text>
-            <Text className="text-center text-gray-500 dark:text-gray-400 text-base font-normal">
-              This screen will be replaced when the AI agent is done.
-            </Text>
-            <StatusBar style="auto" />
-          </View>
+          <RootNavigator />
+          <StatusBar style="light" />
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>
