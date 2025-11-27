@@ -86,7 +86,8 @@ Provide a JSON object with:
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 400, true);
+    // o4-mini uses reasoning tokens + output tokens, so we need more total tokens
+    const response = await callGPT5Mini(messages, 1000, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -156,7 +157,8 @@ Provide a JSON object with a "suggestions" array containing 3 items, each with:
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 600, true);
+    // o4-mini uses reasoning tokens + output tokens, so we need more total tokens
+    const response = await callGPT5Mini(messages, 1200, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -244,5 +246,6 @@ Your responses should be:
     { role: "user", content: userMessage },
   ];
 
-  return callGPT5Mini(messages, 800);
+  // o4-mini uses reasoning tokens, so we need more total tokens
+  return callGPT5Mini(messages, 1200);
 }
