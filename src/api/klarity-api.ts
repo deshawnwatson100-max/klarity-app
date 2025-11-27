@@ -6,7 +6,8 @@ interface GPT5Message {
   content: string;
 }
 
-const MODEL = "gpt-5-mini";
+// Using o4-mini which is the latest mini model available
+const MODEL = "o4-mini-2025-04-16";
 
 // Get OpenAI client with Vibecode configuration
 const getOpenAIClient = () => {
