@@ -1,19 +1,22 @@
 import { EmotionalAnalysis, SuggestedResponse } from "../types/chat";
+import OpenAI from "openai";
 
 interface GPT5Message {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
-// Use Vibecode proxy URL which handles authentication
-const API_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com.proxy.vibecodeapp.com/v1";
-const CHAT_URL = `${API_URL}/chat/completions`;
 const MODEL = "gpt-5-mini";
 
-// Vibecode proxy authentication - uses project ID as bearer token
-const getAuthHeader = () => {
-  const projectId = process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID || process.env.VIBECODE_PROXY_USERNAME;
-  return projectId ? `Bearer ${projectId}` : "";
+// Get OpenAI client with Vibecode configuration
+const getOpenAIClient = () => {
+  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn("OpenAI API key not found in environment variables");
+  }
+  return new OpenAI({
+    apiKey: apiKey,
+  });
 };
 
 /**
@@ -24,42 +27,34 @@ async function callGPT5Mini(
   maxTokens: number = 1000,
   useJsonMode: boolean = false
 ): Promise<string> {
-  const requestBody: any = {
+  const client = getOpenAIClient();
+
+  const params: any = {
     model: MODEL,
-    messages,
+    messages: messages as any,
     max_completion_tokens: maxTokens,
     temperature: 1,
   };
 
   // Use JSON mode for structured outputs
   if (useJsonMode) {
-    requestBody.response_format = { type: "json_object" };
+    params.response_format = { type: "json_object" };
   }
 
-  const response = await fetch(CHAT_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": getAuthHeader(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  try {
+    const completion = await client.chat.completions.create(params);
+    const content = completion.choices[0]?.message?.content || "";
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("API Error:", error);
-    throw new Error(`GPT-5 Mini API failed: ${response.status} ${error}`);
+    if (!content) {
+      console.error("Empty response from API");
+      throw new Error("Empty response from API");
+    }
+
+    return content;
+  } catch (error: any) {
+    console.error("API Error:", error.message || error);
+    throw new Error(`GPT-5 Mini API failed: ${error.message || "Unknown error"}`);
   }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || "";
-
-  if (!content) {
-    console.error("Empty response from API. Full response:", JSON.stringify(data));
-    throw new Error("Empty response from API");
-  }
-
-  return content;
 }
 
 /**
