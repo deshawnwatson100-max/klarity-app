@@ -1,26 +1,46 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Pressable } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { useChatStore } from "../state/chatStore";
+import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
+import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 
 type Props = NativeStackScreenProps<RootStackParamList, "InputScreen">;
 
 export function InputScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const currentInput = useChatStore((s) => s.currentInput);
-  const setCurrentInput = useChatStore((s) => s.setCurrentInput);
-  const addMessage = useChatStore((s) => s.addMessage);
+  const [currentInput, setCurrentInput] = useState("");
+
+  const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
+  const createNewLoop = useLoopsStore((s) => s.createNewLoop);
+  const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
+  const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
+
+  // Ensure we always have an active loop
+  useEffect(() => {
+    const activeLoop = getActiveLoop();
+    if (!activeLoop) {
+      createNewLoop();
+    }
+  }, []);
 
   const handleSend = () => {
     if (!currentInput.trim()) return;
 
-    // Add user message
-    addMessage({
+    // Ensure we have an active loop
+    let activeLoop = getActiveLoop();
+    if (!activeLoop) {
+      createNewLoop();
+      activeLoop = getActiveLoop();
+    }
+
+    // Add user message to active loop
+    addMessageToActiveLoop({
       id: Date.now().toString(),
       role: "user",
       content: currentInput,
@@ -61,6 +81,12 @@ export function InputScreen({ navigation }: Props) {
         onVoicePress={handleVoicePress}
         onPlusPress={handlePlusPress}
         placeholder="Type a message..."
+      />
+
+      {/* History Panel */}
+      <LoopHistoryPanel
+        visible={isHistoryPanelOpen}
+        onClose={() => setHistoryPanelOpen(false)}
       />
     </View>
   );

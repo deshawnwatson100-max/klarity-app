@@ -14,7 +14,8 @@ import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { AnalysisCard } from "../components/AnalysisCard";
 import { SuggestionsCard } from "../components/SuggestionsCard";
-import { useChatStore } from "../state/chatStore";
+import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
+import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
   generateEmotionalAnalysis,
@@ -34,13 +35,17 @@ export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentInput, setCurrentInput] = useState("");
 
-  const messages = useChatStore((s) => s.messages);
-  const currentInput = useChatStore((s) => s.currentInput);
-  const setCurrentInput = useChatStore((s) => s.setCurrentInput);
-  const addMessage = useChatStore((s) => s.addMessage);
-  const isLoading = useChatStore((s) => s.isLoading);
-  const setIsLoading = useChatStore((s) => s.setIsLoading);
+  // Use loops store instead of chat store
+  const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
+  const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
+  const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
+
+  const activeLoop = getActiveLoop();
+  const messages = activeLoop?.messages || [];
 
   // Process the first message when screen loads
   useEffect(() => {
@@ -63,7 +68,7 @@ export function ChatScreen({ navigation }: Props) {
     try {
       // Generate AI response
       const aiResponse = await generateChatResponse(userMessage.content, []);
-      addMessage({
+      addMessageToActiveLoop({
         id: Date.now().toString(),
         role: "assistant",
         content: aiResponse,
@@ -79,7 +84,7 @@ export function ChatScreen({ navigation }: Props) {
         timestamp: Date.now(),
         analysis,
       };
-      addMessage(analysisMessage);
+      addMessageToActiveLoop(analysisMessage);
 
       // Generate suggested responses
       const suggestions = await generateSuggestedResponses(
@@ -93,10 +98,10 @@ export function ChatScreen({ navigation }: Props) {
         timestamp: Date.now(),
         suggestions,
       };
-      addMessage(suggestionsMessage);
+      addMessageToActiveLoop(suggestionsMessage);
     } catch (error) {
       console.error("Error processing message:", error);
-      addMessage({
+      addMessageToActiveLoop({
         id: Date.now().toString(),
         role: "assistant",
         content:
@@ -119,7 +124,7 @@ export function ChatScreen({ navigation }: Props) {
       timestamp: Date.now(),
     };
 
-    addMessage(userMessage);
+    addMessageToActiveLoop(userMessage);
     setCurrentInput("");
 
     // Process the message
@@ -175,7 +180,7 @@ export function ChatScreen({ navigation }: Props) {
       className="flex-1 bg-black"
       keyboardVerticalOffset={0}
     >
-      <Header />
+      <Header showBackButton />
 
       {/* Messages */}
       <ScrollView
@@ -208,6 +213,12 @@ export function ChatScreen({ navigation }: Props) {
         onPlusPress={handlePlusPress}
         placeholder="Type a message..."
         disabled={isLoading}
+      />
+
+      {/* History Panel */}
+      <LoopHistoryPanel
+        visible={isHistoryPanelOpen}
+        onClose={() => setHistoryPanelOpen(false)}
       />
     </KeyboardAvoidingView>
   );

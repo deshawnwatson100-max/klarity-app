@@ -3,22 +3,44 @@ import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useChatStore } from "../state/chatStore";
+import { useLoopsStore } from "../state/loopsStore";
 
 interface HeaderProps {
   title?: string;
-  showMenu?: boolean;
-  onMenuPress?: () => void;
+  showBackButton?: boolean;
+  onBackPress?: () => void;
 }
 
-export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProps) {
+/**
+ * Header Component
+ *
+ * Top navigation bar with:
+ * - Left: Back button (optional)
+ * - Center: App title
+ * - Right: Past Loops button + New Loop button
+ */
+export function Header({
+  title = "Klarity AI 1.0",
+  showBackButton = false,
+  onBackPress,
+}: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const clearMessages = useChatStore((s) => s.clearMessages);
 
-  const handleNewChat = () => {
-    clearMessages();
+  const createNewLoop = useLoopsStore((s) => s.createNewLoop);
+  const toggleHistoryPanel = useLoopsStore((s) => s.toggleHistoryPanel);
+
+  const handleNewLoop = () => {
+    createNewLoop();
     navigation.navigate("InputScreen" as never);
+  };
+
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      navigation.navigate("InputScreen" as never);
+    }
   };
 
   return (
@@ -27,13 +49,10 @@ export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProp
       style={{ paddingTop: insets.top }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu (placeholder for now) */}
+        {/* Left - Back Button */}
         <View className="w-10">
-          {showMenu && (
-            <Pressable
-              onPress={handleNewChat}
-              className="active:opacity-60"
-            >
+          {showBackButton && (
+            <Pressable onPress={handleBackPress} className="active:opacity-60">
               <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
             </Pressable>
           )}
@@ -46,11 +65,17 @@ export function Header({ title = "Klarity AI 1.0", showMenu = true }: HeaderProp
 
         {/* Right - Actions */}
         <View className="flex-row items-center gap-3">
+          {/* Past Loops Button */}
           <Pressable
-            onPress={handleNewChat}
+            onPress={toggleHistoryPanel}
             className="active:opacity-60"
           >
-            <Ionicons name="add" size={22} color="#9CA3AF" />
+            <Ionicons name="time-outline" size={22} color="#9CA3AF" />
+          </Pressable>
+
+          {/* New Loop Button */}
+          <Pressable onPress={handleNewLoop} className="active:opacity-60">
+            <Ionicons name="add-circle-outline" size={22} color="#9CA3AF" />
           </Pressable>
         </View>
       </View>
