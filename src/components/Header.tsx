@@ -15,9 +15,9 @@ interface HeaderProps {
  * Header Component
  *
  * Top navigation bar with:
- * - Left: Back button (optional)
+ * - Left: Past Loops button (clock icon)
  * - Center: App title
- * - Right: Past Loops button + New Loop button
+ * - Right: New Loop button
  */
 export function Header({
   title = "Klarity AI 1.0",
@@ -49,35 +49,23 @@ export function Header({
       style={{ paddingTop: insets.top }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Back Button */}
-        <View className="w-10">
-          {showBackButton && (
-            <Pressable onPress={handleBackPress} className="active:opacity-60">
-              <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
-            </Pressable>
-          )}
-        </View>
+        {/* Left - Past Loops Button */}
+        <Pressable
+          onPress={toggleHistoryPanel}
+          className="active:opacity-60"
+        >
+          <Ionicons name="time-outline" size={24} color="#9CA3AF" />
+        </Pressable>
 
         {/* Center - Title */}
         <Text className="text-white text-base font-semibold tracking-wide">
           {title}
         </Text>
 
-        {/* Right - Actions */}
-        <View className="flex-row items-center gap-3">
-          {/* Past Loops Button */}
-          <Pressable
-            onPress={toggleHistoryPanel}
-            className="active:opacity-60"
-          >
-            <Ionicons name="time-outline" size={22} color="#9CA3AF" />
-          </Pressable>
-
-          {/* New Loop Button */}
-          <Pressable onPress={handleNewLoop} className="active:opacity-60">
-            <Ionicons name="add-circle-outline" size={22} color="#9CA3AF" />
-          </Pressable>
-        </View>
+        {/* Right - New Loop Button */}
+        <Pressable onPress={handleNewLoop} className="active:opacity-60">
+          <Ionicons name="add-circle-outline" size={24} color="#9CA3AF" />
+        </Pressable>
       </View>
     </View>
   );
