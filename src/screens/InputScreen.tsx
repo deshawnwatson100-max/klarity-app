@@ -122,10 +122,10 @@ export function InputScreen({ navigation }: Props) {
           // Allow left swipes (negative translationX)
           if (event.translationX < 0) {
             translateX.value = event.translationX;
-            // Scale down as user swipes (from 1 to 0.9)
+            // Scale down as user swipes (from 1 to 0.9) - faster
             scale.value = interpolate(
               Math.abs(event.translationX),
-              [0, 300],
+              [0, 200], // Faster scale transition - start earlier
               [1, 0.9],
               Extrapolate.CLAMP
             );
@@ -136,13 +136,13 @@ export function InputScreen({ navigation }: Props) {
           if (event.velocityX < -800 && event.translationX < -120) {
             // If there are messages, navigate to chat
             if (canNavigate.value) {
-              // Animate off screen then navigate
-              translateX.value = withTiming(-400, { duration: 200 }, (finished) => {
+              // Animate off screen then navigate - faster duration
+              translateX.value = withTiming(-400, { duration: 150 }, (finished) => {
                 if (finished) {
                   runOnJS(handleNavigateToChat)();
                 }
               });
-              scale.value = withTiming(0.85, { duration: 200 });
+              scale.value = withTiming(0.85, { duration: 150 });
             } else {
               // If no messages, open past loops panel immediately
               translateX.value = withSpring(0, { damping: 20, stiffness: 300 });

@@ -268,7 +268,7 @@ export function ChatScreen({ navigation }: Props) {
             // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
               event.translationX,
-              [0, 300],
+              [0, 200], // Faster scale transition - start earlier
               [1, 0.9],
               Extrapolate.CLAMP
             );
@@ -277,13 +277,13 @@ export function ChatScreen({ navigation }: Props) {
         .onEnd((event) => {
           // If user swiped right with sufficient distance and velocity
           if (event.velocityX > 500 && event.translationX > 100) {
-            // Animate off screen then navigate
-            translateX.value = withTiming(400, { duration: 200 }, (finished) => {
+            // Animate off screen then navigate - faster duration
+            translateX.value = withTiming(400, { duration: 150 }, (finished) => {
               if (finished) {
                 runOnJS(handleNavigateBack)();
               }
             });
-            scale.value = withTiming(0.85, { duration: 200 });
+            scale.value = withTiming(0.85, { duration: 150 });
           } else {
             // Spring back to original position
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
