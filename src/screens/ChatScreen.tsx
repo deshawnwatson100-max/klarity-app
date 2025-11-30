@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Header } from "../components/Header";
 import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
@@ -230,54 +231,66 @@ export function ChatScreen({ navigation }: Props) {
     );
   };
 
+  // Swipe gesture to go back to home screen
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([50, Infinity]) // Only trigger when swiping right with at least 50px
+    .onEnd((event) => {
+      // If user swiped right (positive velocityX) with sufficient distance
+      if (event.velocityX > 500 && event.translationX > 100) {
+        navigation.navigate("InputScreen");
+      }
+    });
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-black"
-      keyboardVerticalOffset={0}
-    >
-      <Header showBackButton />
-
-      {/* Messages */}
-      <ScrollView
-        ref={scrollViewRef}
-        className="flex-1"
-        contentContainerClassName="px-4 pt-4"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <GestureDetector gesture={swipeGesture}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1 bg-black"
+        keyboardVerticalOffset={0}
       >
-        {messages.map(renderMessage)}
+        <Header showBackButton />
 
-        {isLoading && (
-          <View className="flex-row items-center gap-3 mb-4">
-            <ActivityIndicator size="small" color="#B4FF39" />
-            <Text className="text-neutral-400 text-sm">
-              Analyzing your message...
-            </Text>
-          </View>
-        )}
+        {/* Messages */}
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1"
+          contentContainerClassName="px-4 pt-4"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map(renderMessage)}
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+          {isLoading && (
+            <View className="flex-row items-center gap-3 mb-4">
+              <ActivityIndicator size="small" color="#B4FF39" />
+              <Text className="text-neutral-400 text-sm">
+                Analyzing your message...
+              </Text>
+            </View>
+          )}
 
-      {/* Input Bar */}
-      <InputBar
-        value={currentInput}
-        onChangeText={setCurrentInput}
-        onSend={handleSend}
-        onVoicePress={handleVoicePress}
-        onImageSelected={handleImageSelected}
-        onClearImage={handleClearImage}
-        selectedImageUri={selectedImageUri}
-        placeholder="Type a message..."
-        disabled={isLoading}
-      />
+          <View style={{ height: 20 }} />
+        </ScrollView>
 
-      {/* History Panel */}
-      <LoopHistoryPanel
-        visible={isHistoryPanelOpen}
-        onClose={() => setHistoryPanelOpen(false)}
-      />
-    </KeyboardAvoidingView>
+        {/* Input Bar */}
+        <InputBar
+          value={currentInput}
+          onChangeText={setCurrentInput}
+          onSend={handleSend}
+          onVoicePress={handleVoicePress}
+          onImageSelected={handleImageSelected}
+          onClearImage={handleClearImage}
+          selectedImageUri={selectedImageUri}
+          placeholder="Type a message..."
+          disabled={isLoading}
+        />
+
+        {/* History Panel */}
+        <LoopHistoryPanel
+          visible={isHistoryPanelOpen}
+          onClose={() => setHistoryPanelOpen(false)}
+        />
+      </KeyboardAvoidingView>
+    </GestureDetector>
   );
 }
