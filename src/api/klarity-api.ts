@@ -1,4 +1,4 @@
-import { EmotionalAnalysis, SuggestedResponse } from "../types/chat";
+import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis } from "../types/chat";
 import OpenAI from "openai";
 
 interface GPT5Message {
@@ -249,3 +249,115 @@ Your responses should be:
   // o4-mini uses reasoning tokens, so we need more total tokens
   return callGPT5Mini(messages, 1200);
 }
+
+/**
+ * Analyze an image for dysfunctional/toxic communication patterns
+ * Uses GPT-4o's vision capabilities to identify toxic communication in screenshots
+ */
+export async function analyzeImageToxicity(
+  imageBase64: string
+): Promise<ImageAnalysis> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are an expert in communication psychology and relationship dynamics. Analyze the image for signs of dysfunctional, toxic, or unhealthy communication patterns.
+
+Identify patterns such as:
+- Gaslighting (denying someone's reality)
+- Blame shifting (refusing responsibility)
+- Invalidation (dismissing feelings)
+- Passive aggression
+- Manipulation
+- Contempt or criticism
+- Defensiveness
+- Stonewalling
+
+Respond with valid JSON only containing:
+- summary: 2-3 sentence high-level explanation of communication issues
+- labels: array of { tag: string, description: string } for each dysfunction found (2-4 items)
+- emotionalImpact: 2-3 sentences on how this communication makes people feel
+- suggestedResponse: a healthy, regulated reply the recipient could send (2-3 sentences)`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high",
+              },
+            },
+            {
+              type: "text",
+              text: "Analyze this image for toxic or dysfunctional communication patterns. Return valid JSON only.",
+            },
+          ],
+        },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    // Validate structure
+    if (
+      typeof parsed.summary !== "string" ||
+      !Array.isArray(parsed.labels) ||
+      typeof parsed.emotionalImpact !== "string" ||
+      typeof parsed.suggestedResponse !== "string"
+    ) {
+      throw new Error("Invalid image analysis structure");
+    }
+
+    return parsed as ImageAnalysis;
+  } catch (error: any) {
+    console.error("Error analyzing image:", error);
+
+    // Return fallback analysis
+    return {
+      summary:
+        "This message appears to contain challenging communication patterns that may be affecting the relationship negatively.",
+      labels: [
+        {
+          tag: "Communication Issue",
+          description:
+            "Unable to fully analyze the specific patterns at this time.",
+        },
+      ],
+      emotionalImpact:
+        "Messages like this can create confusion, frustration, and emotional distance in relationships.",
+      suggestedResponse:
+        "I need some time to process this. Can we talk about this calmly when we are both ready?",
+    };
+  }
+}
+

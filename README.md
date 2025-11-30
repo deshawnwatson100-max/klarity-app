@@ -17,7 +17,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ### Screen 1: Input/Welcome Screen
 - Clean, minimalist welcome screen
 - "How can I help bring clarity?" prompt
-- Input bar with text, voice, and attachment options
+- Input bar with text, voice, and image upload options
 - Smooth navigation to conversation
 - Access to past loops via header button
 
@@ -25,6 +25,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - ChatGPT-style threaded conversation
 - User messages on the right (lime border)
 - AI responses on the left
+- Image upload and analysis support
 - Smooth fade-in animations for messages
 - Auto-scrolling to latest message
 - Header with navigation and history access
@@ -41,6 +42,35 @@ Three suggested responses with:
 - **Tone indicators** - Soften, Direct, or Playful
 - **Use this reply** buttons - One-tap to use suggestion
 - Smart context-aware responses
+
+### NEW: Image Analysis Feature 🎉
+Upload screenshots of text conversations to analyze for toxic communication patterns:
+
+#### How it Works
+1. Tap the **image icon** in the input bar
+2. Select a screenshot from your photo library
+3. Optionally add a text message alongside the image
+4. Send to analyze
+
+#### Analysis Results
+Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns including:
+- **Gaslighting** - Denying someone's reality
+- **Blame Shifting** - Refusing responsibility
+- **Invalidation** - Dismissing feelings
+- **Passive Aggression**
+- **Manipulation**
+- **Contempt or Criticism**
+- **Defensiveness**
+- **Stonewalling**
+
+#### Image Analysis Card Shows
+- **Quick Summary** - 2-3 sentence overview of issues detected
+- **Communication Patterns** - Labeled dysfunction tags with explanations
+- **Emotional Impact** - How this communication makes people feel
+- **Suggested Response** - A healthy, regulated reply you can send
+- **Copy Reply Button** - One-tap to copy suggested response
+
+The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
 ### NEW: Past Loops System 🎉
 The app now supports multiple conversation sessions:
@@ -123,14 +153,15 @@ Each loop stores:
 /home/user/workspace/
 ├── src/
 │   ├── api/
-│   │   └── klarity-api.ts          # GPT-5 Mini API integration
+│   │   └── klarity-api.ts          # GPT-5 Mini API integration + Image Analysis
 │   ├── components/
 │   │   ├── Header.tsx              # App header with loops nav
-│   │   ├── InputBar.tsx            # Message input with voice
-│   │   ├── MessageBubble.tsx       # Chat message bubbles
+│   │   ├── InputBar.tsx            # Message input with voice & image picker
+│   │   ├── MessageBubble.tsx       # Chat message bubbles with image support
 │   │   ├── AnalysisCard.tsx        # Emotional analysis display
 │   │   ├── SuggestionsCard.tsx     # Response suggestions
-│   │   └── LoopHistoryPanel.tsx    # NEW: Past loops drawer
+│   │   ├── ImageAnalysisCard.tsx   # NEW: Toxic communication analysis
+│   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Navigation setup
 │   ├── screens/
@@ -138,10 +169,10 @@ Each loop stores:
 │   │   └── ChatScreen.tsx          # Main chat interface
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
-│   │   └── loopsStore.ts           # NEW: Loops state with persistence
+│   │   └── loopsStore.ts           # Loops state with persistence
 │   └── types/
-│       ├── chat.ts                 # TypeScript interfaces
-│       └── loop.ts                 # NEW: Loop type definitions
+│       ├── chat.ts                 # TypeScript interfaces (updated for images)
+│       └── loop.ts                 # Loop type definitions
 ├── App.tsx                          # App entry point
 └── README.md
 ```
@@ -209,11 +240,19 @@ Display new fields in loop cards
 
 ## API Integration
 
-The app uses GPT-5 Mini via OpenAI API:
-- **Model**: `gpt-5-mini`
+The app uses multiple OpenAI models:
+- **Model**: `o4-mini-2025-04-16` (for text conversations and analysis)
+- **Model**: `gpt-4o-2024-11-20` (for image vision analysis)
 - **Endpoint**: `https://api.openai.com/v1/chat/completions`
 - **Temperature**: 1 (required)
-- **Max Tokens**: 300-1000 depending on use case
+- **Max Tokens**: 300-1500 depending on use case
+
+### Image Analysis API
+The image analysis feature uses GPT-4o's vision capabilities:
+- Base64 encoded images sent to API
+- High detail mode for better accuracy
+- JSON structured output for consistent parsing
+- Analyzes text in screenshots for communication patterns
 
 API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 
@@ -247,16 +286,20 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ Auto-scrolling chat
 ✅ GPT-5 Mini integration
 ✅ Type-safe state management
-✅ **NEW: Past loops system**
-✅ **NEW: Loop persistence (AsyncStorage)**
-✅ **NEW: Auto-generated loop titles**
-✅ **NEW: Loop switching and deletion**
-✅ **NEW: Side panel with smooth animations**
+✅ Past loops system
+✅ Loop persistence (AsyncStorage)
+✅ Auto-generated loop titles
+✅ Loop switching and deletion
+✅ Side panel with smooth animations
+✅ **NEW: Image upload support**
+✅ **NEW: Screenshot analysis for toxic communication**
+✅ **NEW: Image-based dysfunctional pattern detection**
+✅ **NEW: GPT-4o Vision integration**
+✅ **NEW: Copy suggested responses**
 
 ## Future Enhancements
 
 - Voice input implementation
-- Image upload and analysis
 - Export conversations
 - Dark/light theme toggle
 - Custom tone preferences
@@ -265,6 +308,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 - Loop search and filtering
 - Loop tags/categories
 - Loop sharing
+- Multi-image upload support
+- Image annotation/markup before analysis
 
 ## Development
 

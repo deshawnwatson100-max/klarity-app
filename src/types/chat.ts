@@ -1,10 +1,12 @@
-export type MessageRole = "user" | "assistant" | "analysis" | "suggestions";
+export type MessageRole = "user" | "assistant" | "analysis" | "suggestions" | "image-analysis";
 
 export interface Message {
   id: string;
   role: MessageRole;
   content: string;
   timestamp: number;
+  imageUrl?: string; // Optional image attachment
+  imageBase64?: string; // Base64 encoded image for API calls
 }
 
 export interface EmotionalAnalysis {
@@ -30,4 +32,21 @@ export interface SuggestionsMessage extends Message {
   suggestions: SuggestedResponse[];
 }
 
-export type ChatMessage = Message | AnalysisMessage | SuggestionsMessage;
+export interface DysfunctionLabel {
+  tag: string;
+  description: string;
+}
+
+export interface ImageAnalysis {
+  summary: string;
+  labels: DysfunctionLabel[];
+  emotionalImpact: string;
+  suggestedResponse: string;
+}
+
+export interface ImageAnalysisMessage extends Message {
+  role: "image-analysis";
+  analysis: ImageAnalysis;
+}
+
+export type ChatMessage = Message | AnalysisMessage | SuggestionsMessage | ImageAnalysisMessage;

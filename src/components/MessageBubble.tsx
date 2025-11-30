@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -11,9 +11,10 @@ interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  imageUrl?: string;
 }
 
-export function MessageBubble({ role, content, timestamp }: MessageBubbleProps) {
+export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
@@ -40,7 +41,19 @@ export function MessageBubble({ role, content, timestamp }: MessageBubbleProps) 
             : "bg-neutral-900 border border-neutral-800"
         }`}
       >
-        <Text className="text-white text-base leading-6">{content}</Text>
+        {/* Image Preview */}
+        {imageUrl && (
+          <Image
+            source={{ uri: imageUrl }}
+            className="w-full h-48 rounded-lg mb-2"
+            resizeMode="cover"
+          />
+        )}
+
+        {/* Text Content */}
+        {content && content !== "[Image]" && (
+          <Text className="text-white text-base leading-6">{content}</Text>
+        )}
       </View>
     </Animated.View>
   );

@@ -14,6 +14,7 @@ import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { AnalysisCard } from "../components/AnalysisCard";
 import { SuggestionsCard } from "../components/SuggestionsCard";
+import { ImageAnalysisCard } from "../components/ImageAnalysisCard";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -21,12 +22,14 @@ import {
   generateEmotionalAnalysis,
   generateSuggestedResponses,
   generateChatResponse,
+  analyzeImageToxicity,
 } from "../api/klarity-api";
 import {
   ChatMessage,
   AnalysisMessage,
   SuggestionsMessage,
   SuggestedResponse,
+  ImageAnalysisMessage,
 } from "../types/chat";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ChatScreen">;
@@ -37,6 +40,8 @@ export function ChatScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
+  const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
+  const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
 
   // Use loops store instead of chat store
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
@@ -66,39 +71,65 @@ export function ChatScreen({ navigation }: Props) {
     setIsLoading(true);
 
     try {
-      // Generate AI response
-      const aiResponse = await generateChatResponse(userMessage.content, []);
-      addMessageToActiveLoop({
-        id: Date.now().toString(),
-        role: "assistant",
-        content: aiResponse,
-        timestamp: Date.now(),
-      });
+      // Check if this is an image message
+      if (userMessage.imageBase64) {
+        // For image messages, analyze for toxic communication
+        const tempAnalyzing: ChatMessage = {
+          id: Date.now().toString() + "_analyzing",
+          role: "assistant",
+          content: "Analyzing screenshot for toxic or dysfunctional communication...",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(tempAnalyzing);
 
-      // Generate emotional analysis
-      const analysis = await generateEmotionalAnalysis(userMessage.content);
-      const analysisMessage: AnalysisMessage = {
-        id: Date.now().toString() + "_analysis",
-        role: "analysis",
-        content: "",
-        timestamp: Date.now(),
-        analysis,
-      };
-      addMessageToActiveLoop(analysisMessage);
+        // Analyze the image
+        const imageAnalysis = await analyzeImageToxicity(userMessage.imageBase64);
 
-      // Generate suggested responses
-      const suggestions = await generateSuggestedResponses(
-        userMessage.content,
-        []
-      );
-      const suggestionsMessage: SuggestionsMessage = {
-        id: Date.now().toString() + "_suggestions",
-        role: "suggestions",
-        content: "",
-        timestamp: Date.now(),
-        suggestions,
-      };
-      addMessageToActiveLoop(suggestionsMessage);
+        // Remove the temp analyzing message and add the real analysis
+        const analysisMessage: ImageAnalysisMessage = {
+          id: Date.now().toString() + "_image_analysis",
+          role: "image-analysis",
+          content: "",
+          timestamp: Date.now(),
+          analysis: imageAnalysis,
+        };
+        addMessageToActiveLoop(analysisMessage);
+      } else {
+        // For text messages, do normal emotional analysis
+        // Generate AI response
+        const aiResponse = await generateChatResponse(userMessage.content, []);
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "assistant",
+          content: aiResponse,
+          timestamp: Date.now(),
+        });
+
+        // Generate emotional analysis
+        const analysis = await generateEmotionalAnalysis(userMessage.content);
+        const analysisMessage: AnalysisMessage = {
+          id: Date.now().toString() + "_analysis",
+          role: "analysis",
+          content: "",
+          timestamp: Date.now(),
+          analysis,
+        };
+        addMessageToActiveLoop(analysisMessage);
+
+        // Generate suggested responses
+        const suggestions = await generateSuggestedResponses(
+          userMessage.content,
+          []
+        );
+        const suggestionsMessage: SuggestionsMessage = {
+          id: Date.now().toString() + "_suggestions",
+          role: "suggestions",
+          content: "",
+          timestamp: Date.now(),
+          suggestions,
+        };
+        addMessageToActiveLoop(suggestionsMessage);
+      }
     } catch (error) {
       console.error("Error processing message:", error);
       addMessageToActiveLoop({
@@ -115,20 +146,34 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleSend = async () => {
-    if (!currentInput.trim() || isLoading) return;
+    if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: currentInput,
+      content: currentInput || "[Image]",
       timestamp: Date.now(),
+      imageUrl: selectedImageUri,
+      imageBase64: selectedImageBase64,
     };
 
     addMessageToActiveLoop(userMessage);
     setCurrentInput("");
+    setSelectedImageUri(undefined);
+    setSelectedImageBase64(undefined);
 
     // Process the message
     await processUserMessage(userMessage);
+  };
+
+  const handleImageSelected = (uri: string, base64: string) => {
+    setSelectedImageUri(uri);
+    setSelectedImageBase64(base64);
+  };
+
+  const handleClearImage = () => {
+    setSelectedImageUri(undefined);
+    setSelectedImageBase64(undefined);
   };
 
   const handleSelectResponse = (response: SuggestedResponse) => {
@@ -164,12 +209,23 @@ export function ChatScreen({ navigation }: Props) {
       );
     }
 
+    if (message.role === "image-analysis") {
+      const imageAnalysisMsg = message as ImageAnalysisMessage;
+      return (
+        <ImageAnalysisCard
+          key={message.id}
+          analysis={imageAnalysisMsg.analysis}
+        />
+      );
+    }
+
     return (
       <MessageBubble
         key={message.id}
         role={message.role as "user" | "assistant"}
         content={message.content}
         timestamp={message.timestamp}
+        imageUrl={message.imageUrl}
       />
     );
   };
@@ -210,7 +266,9 @@ export function ChatScreen({ navigation }: Props) {
         onChangeText={setCurrentInput}
         onSend={handleSend}
         onVoicePress={handleVoicePress}
-        onPlusPress={handlePlusPress}
+        onImageSelected={handleImageSelected}
+        onClearImage={handleClearImage}
+        selectedImageUri={selectedImageUri}
         placeholder="Type a message..."
         disabled={isLoading}
       />
