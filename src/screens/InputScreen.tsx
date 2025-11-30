@@ -106,6 +106,11 @@ export function InputScreen({ navigation }: Props) {
     navigation.navigate("ChatScreen");
   };
 
+  // Handler for opening past loops panel (must be wrapped with runOnJS)
+  const handleOpenPastLoops = () => {
+    setHistoryPanelOpen(true);
+  };
+
   // Swipe gesture to go to previous chat loop with animation
   const swipeGesture = useMemo(
     () =>
@@ -113,8 +118,8 @@ export function InputScreen({ navigation }: Props) {
         .activeOffsetX(-50) // Only trigger when swiping left with at least 50px
         .failOffsetX(50) // Fail if swiping right
         .onUpdate((event) => {
-          // Only allow left swipes (negative translationX) if there are messages
-          if (event.translationX < 0 && canNavigate.value) {
+          // Allow left swipes (negative translationX)
+          if (event.translationX < 0) {
             translateX.value = event.translationX;
             // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
@@ -126,17 +131,23 @@ export function InputScreen({ navigation }: Props) {
           }
         })
         .onEnd((event) => {
-          // Only allow navigation if there are messages
-          if (
-            canNavigate.value &&
-            event.velocityX < -500 &&
-            event.translationX < -100
-          ) {
-            // Animate off screen
-            translateX.value = withTiming(-400, { duration: 200 });
-            scale.value = withTiming(0.85, { duration: 200 });
-            // Navigate after animation
-            setTimeout(() => runOnJS(handleNavigateToChat)(), 200);
+          // Check if swipe was sufficient
+          if (event.velocityX < -500 && event.translationX < -100) {
+            // If there are messages, navigate to chat
+            if (canNavigate.value) {
+              // Animate off screen
+              translateX.value = withTiming(-400, { duration: 200 });
+              scale.value = withTiming(0.85, { duration: 200 });
+              // Navigate after animation
+              setTimeout(() => runOnJS(handleNavigateToChat)(), 200);
+            } else {
+              // If no messages, open past loops panel
+              // Spring back to original position first
+              translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
+              scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+              // Open panel after spring back
+              setTimeout(() => runOnJS(handleOpenPastLoops)(), 100);
+            }
           } else {
             // Spring back to original position
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
