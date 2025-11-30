@@ -14,6 +14,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "InputScreen">;
 export function InputScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [currentInput, setCurrentInput] = useState("");
+  const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
+  const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
 
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
@@ -30,7 +32,7 @@ export function InputScreen({ navigation }: Props) {
   }, []);
 
   const handleSend = () => {
-    if (!currentInput.trim()) return;
+    if (!currentInput.trim() && !selectedImageUri) return;
 
     // Ensure we have an active loop
     let activeLoop = getActiveLoop();
@@ -43,23 +45,32 @@ export function InputScreen({ navigation }: Props) {
     addMessageToActiveLoop({
       id: Date.now().toString(),
       role: "user",
-      content: currentInput,
+      content: currentInput || "[Image]",
       timestamp: Date.now(),
+      imageUrl: selectedImageUri,
+      imageBase64: selectedImageBase64,
     });
 
     // Navigate to chat screen
     navigation.navigate("ChatScreen");
     setCurrentInput("");
+    setSelectedImageUri(undefined);
+    setSelectedImageBase64(undefined);
+  };
+
+  const handleImageSelected = (uri: string, base64: string) => {
+    setSelectedImageUri(uri);
+    setSelectedImageBase64(base64);
+  };
+
+  const handleClearImage = () => {
+    setSelectedImageUri(undefined);
+    setSelectedImageBase64(undefined);
   };
 
   const handleVoicePress = () => {
     // TODO: Implement voice input
     console.log("Voice input pressed");
-  };
-
-  const handlePlusPress = () => {
-    // TODO: Implement image upload or other options
-    console.log("Plus button pressed");
   };
 
   return (
@@ -79,7 +90,9 @@ export function InputScreen({ navigation }: Props) {
         onChangeText={setCurrentInput}
         onSend={handleSend}
         onVoicePress={handleVoicePress}
-        onPlusPress={handlePlusPress}
+        onImageSelected={handleImageSelected}
+        onClearImage={handleClearImage}
+        selectedImageUri={selectedImageUri}
         placeholder="Type a message..."
       />
 
