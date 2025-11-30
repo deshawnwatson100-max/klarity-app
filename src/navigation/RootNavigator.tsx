@@ -22,10 +22,10 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: "default", // Use default iOS animation
-        contentStyle: { backgroundColor: "#000000" },
-        gestureEnabled: false, // Disable native gestures
-        presentation: "card", // Card presentation shows screen below
+        animation: "none", // No default animation - using custom
+        contentStyle: { backgroundColor: "transparent" }, // Transparent to show screen behind
+        gestureEnabled: false,
+        freezeOnBlur: false, // Keep screens mounted
       }}
     >
       <Stack.Screen
@@ -40,8 +40,7 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false,
-          presentation: "card", // Card presentation for layered effect
-          animation: "default",
+          contentStyle: { backgroundColor: "transparent" }, // Transparent during transition
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
