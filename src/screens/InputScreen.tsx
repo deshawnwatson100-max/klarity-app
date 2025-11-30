@@ -113,39 +113,53 @@ export function InputScreen({ navigation }: Props) {
     setHistoryPanelOpen(true);
   };
 
-  // Swipe gesture to go to previous chat loop with animation
+  // Handler for navigating to calendar screen (must be wrapped with runOnJS)
+  const handleNavigateToCalendar = () => {
+    navigation.navigate("CalendarScreen");
+  };
+
+  // Swipe gesture handler - handles both left and right swipes
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX(-80) // Require more distance to activate (80px instead of 50px)
-        .failOffsetX(50) // Fail if swiping right
-        .failOffsetY([-20, 20]) // More tolerance for vertical movement
         .onUpdate((event) => {
-          // Allow left swipes (negative translationX)
-          if (event.translationX < 0) {
+          // Handle left swipe (to ChatScreen/Past Loops)
+          if (event.translationX < -80) {
             translateX.value = event.translationX;
-            // Scale down as user swipes (from 1 to 0.9) - even faster
             scale.value = interpolate(
               Math.abs(event.translationX),
-              [0, 150], // Even faster - start scaling at 150px
+              [0, 150],
               [1, 0.92],
               Extrapolate.CLAMP
             );
-            // Fade out MORE to reveal screen coming in clearly
             opacity.value = interpolate(
               Math.abs(event.translationX),
-              [0, 100], // Start fading much earlier
-              [1, 0.7], // Fade to 70% to make ChatScreen very visible
+              [0, 100],
+              [1, 0.7],
+              Extrapolate.CLAMP
+            );
+          }
+          // Handle right swipe (to Calendar)
+          else if (event.translationX > 80) {
+            translateX.value = event.translationX;
+            scale.value = interpolate(
+              event.translationX,
+              [0, 150],
+              [1, 0.92],
+              Extrapolate.CLAMP
+            );
+            opacity.value = interpolate(
+              event.translationX,
+              [0, 100],
+              [1, 0.7],
               Extrapolate.CLAMP
             );
           }
         })
         .onEnd((event) => {
-          // Check if swipe was sufficient
+          // Left swipe - navigate to ChatScreen or open Past Loops
           if (event.velocityX < -800 && event.translationX < -120) {
-            // If there are messages, navigate to chat
             if (canNavigate.value) {
-              // Animate off screen then navigate - even faster
               translateX.value = withTiming(-400, { duration: 120 }, (finished) => {
                 if (finished) {
                   runOnJS(handleNavigateToChat)();
@@ -154,14 +168,24 @@ export function InputScreen({ navigation }: Props) {
               scale.value = withTiming(0.85, { duration: 120 });
               opacity.value = withTiming(0, { duration: 120 });
             } else {
-              // If no messages, open past loops panel immediately
               translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
               scale.value = withSpring(1, { damping: 20, stiffness: 300 });
               opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
               runOnJS(handleOpenPastLoops)();
             }
-          } else {
-            // Spring back to original position
+          }
+          // Right swipe - navigate to Calendar
+          else if (event.velocityX > 800 && event.translationX > 120) {
+            translateX.value = withTiming(400, { duration: 120 }, (finished) => {
+              if (finished) {
+                runOnJS(handleNavigateToCalendar)();
+              }
+            });
+            scale.value = withTiming(0.85, { duration: 120 });
+            opacity.value = withTiming(0, { duration: 120 });
+          }
+          // Spring back if gesture didn't meet threshold
+          else {
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
             opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
