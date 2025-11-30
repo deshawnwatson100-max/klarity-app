@@ -278,8 +278,10 @@ export function ChatScreen({ navigation }: Props) {
           // If user swiped right with sufficient distance and velocity
           if (event.velocityX > 500 && event.translationX > 100) {
             // Animate off screen then navigate
-            translateX.value = withTiming(400, { duration: 200 }, () => {
-              runOnJS(handleNavigateBack)();
+            translateX.value = withTiming(400, { duration: 200 }, (finished) => {
+              if (finished) {
+                runOnJS(handleNavigateBack)();
+              }
             });
             scale.value = withTiming(0.85, { duration: 200 });
           } else {

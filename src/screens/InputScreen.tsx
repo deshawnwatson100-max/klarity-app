@@ -137,16 +137,17 @@ export function InputScreen({ navigation }: Props) {
             // If there are messages, navigate to chat
             if (canNavigate.value) {
               // Animate off screen then navigate
-              translateX.value = withTiming(-400, { duration: 200 }, () => {
-                runOnJS(handleNavigateToChat)();
+              translateX.value = withTiming(-400, { duration: 200 }, (finished) => {
+                if (finished) {
+                  runOnJS(handleNavigateToChat)();
+                }
               });
               scale.value = withTiming(0.85, { duration: 200 });
             } else {
-              // If no messages, spring back and open past loops panel
-              translateX.value = withSpring(0, { damping: 20, stiffness: 300 }, () => {
-                runOnJS(handleOpenPastLoops)();
-              });
+              // If no messages, open past loops panel immediately
+              translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
               scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+              runOnJS(handleOpenPastLoops)();
             }
           } else {
             // Spring back to original position
