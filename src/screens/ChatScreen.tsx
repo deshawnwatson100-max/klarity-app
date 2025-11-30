@@ -233,7 +233,9 @@ export function ChatScreen({ navigation }: Props) {
 
   // Swipe gesture to go back to home screen
   const swipeGesture = Gesture.Pan()
-    .activeOffsetX([50, Infinity]) // Only trigger when swiping right with at least 50px
+    .activeOffsetX(50) // Only trigger when swiping right with at least 50px
+    .failOffsetX(-50) // Fail if swiping left
+    .failOffsetY([-10, 10]) // Allow vertical scrolling
     .onEnd((event) => {
       // If user swiped right (positive velocityX) with sufficient distance
       if (event.velocityX > 500 && event.translationX > 100) {
