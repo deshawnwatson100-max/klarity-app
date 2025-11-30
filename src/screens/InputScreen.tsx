@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,11 +13,14 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from "react-native-reanimated";
+import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { transcribeAudio } from "../api/transcribe-audio";
+import { getOpenAITextResponse } from "../api/chat-service";
 
 type Props = StackScreenProps<RootStackParamList, "InputScreen">;
 
@@ -26,6 +29,10 @@ export function InputScreen({ navigation }: Props) {
   const [currentInput, setCurrentInput] = useState("");
   const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState("");
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -98,9 +105,105 @@ export function InputScreen({ navigation }: Props) {
     setSelectedImageBase64(undefined);
   };
 
-  const handleVoicePress = () => {
-    // TODO: Implement voice input
-    console.log("Voice input pressed");
+  const handleVoicePress = async () => {
+    if (isRecording) {
+      // Stop recording
+      await stopRecording();
+    } else {
+      // Start recording
+      await startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      // Request permissions
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== "granted") {
+        setProcessingMessage("Microphone permission denied");
+        return;
+      }
+
+      // Configure audio mode
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      // Start recording
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Failed to start recording", error);
+      setProcessingMessage("Failed to start recording");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      setIsProcessing(true);
+      setProcessingMessage("Stopping recording...");
+
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (!uri) {
+        setProcessingMessage("Failed to get recording");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Transcribe the audio
+      setProcessingMessage("Transcribing your voice...");
+      const transcription = await transcribeAudio(uri);
+
+      if (!transcription) {
+        setProcessingMessage("Failed to transcribe audio");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Analyze the transcription with AI
+      setProcessingMessage("Analyzing your message...");
+
+      // Ensure we have an active loop
+      let activeLoop = getActiveLoop();
+      if (!activeLoop) {
+        createNewLoop();
+        activeLoop = getActiveLoop();
+      }
+
+      // Add user message to active loop
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "user",
+        content: transcription,
+        timestamp: Date.now(),
+      });
+
+      // Navigate to chat screen for AI response
+      setIsProcessing(false);
+      setProcessingMessage("");
+      navigation.navigate("ChatScreen");
+
+    } catch (error) {
+      console.error("Error processing recording:", error);
+      setProcessingMessage("Failed to process recording");
+      setIsProcessing(false);
+      setRecording(null);
+    }
   };
 
   // Handler for navigating to chat screen (must be wrapped with runOnJS)
@@ -236,7 +339,22 @@ export function InputScreen({ navigation }: Props) {
             onClearImage={handleClearImage}
             selectedImageUri={selectedImageUri}
             placeholder="Type a message..."
+            isRecording={isRecording}
           />
+
+          {/* Processing Overlay */}
+          {isProcessing && (
+            <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
+              <View className="bg-neutral-900 rounded-2xl p-6 items-center">
+                <ActivityIndicator size="large" color="#B4FF39" />
+                {processingMessage && (
+                  <Text className="text-white text-base mt-4 text-center">
+                    {processingMessage}
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* History Panel */}
           <LoopHistoryPanel

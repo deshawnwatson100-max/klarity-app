@@ -20,6 +20,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - "How can I help bring clarity?" prompt
 - **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
 - **Image upload support** - Add screenshots for analysis
+- **Voice recording** - Tap mic icon to record voice messages
 - Input bar with text, voice, and image upload options
 - Smooth navigation to conversation with text or images
 
@@ -44,6 +45,31 @@ Three suggested responses with:
 - **Tone indicators** - Soften, Direct, or Playful
 - **Use this reply** buttons - One-tap to use suggestion
 - Smart context-aware responses
+
+### NEW: Voice Recording Feature 🎤
+Record voice messages and have them automatically transcribed and analyzed.
+
+#### How it Works
+1. Tap the **microphone icon** in the input bar (when no text is entered)
+2. Icon turns into a red stop button while recording
+3. Tap the stop button when done speaking
+4. App automatically:
+   - Transcribes your audio using GPT-4o Transcribe
+   - Adds the transcribed text to the conversation
+   - Navigates to chat screen for AI analysis
+
+#### Processing Flow
+- **Recording** - Red pulsing stop button shows active recording
+- **Transcribing** - Loading overlay with "Transcribing your voice..." message
+- **Analyzing** - "Analyzing your message..." appears while processing
+- **Complete** - Automatically enters chat screen with your transcribed message
+
+#### Technical Details
+- Uses **expo-av** for high-quality audio recording
+- **GPT-4o Transcribe** model for accurate speech-to-text
+- Supports microphone permissions request
+- Graceful error handling with user-friendly messages
+- Audio automatically deleted after transcription
 
 ### NEW: Image Analysis Feature 🎉
 Upload screenshots of text conversations to analyze for toxic communication patterns:
@@ -240,8 +266,10 @@ Each loop stores:
 - **React Navigation** - Native stack navigation
 - **NativeWind** - Tailwind CSS for React Native
 - **React Native Reanimated v3** - Smooth animations
+- **expo-av** - High-quality audio recording
 - **GPT-5 Mini (o4-mini)** - AI conversation engine
 - **GPT-4o Vision** - Image analysis for toxic communication
+- **GPT-4o Transcribe** - Voice-to-text transcription
 - **Zeego** - Native dropdown menus (iOS/Android)
 
 ## Project Structure
@@ -353,7 +381,9 @@ Display new fields in loop cards
 The app uses multiple OpenAI models:
 - **Model**: `o4-mini-2025-04-16` (for text conversations and analysis)
 - **Model**: `gpt-4o-2024-11-20` (for image vision analysis)
+- **Model**: `gpt-4o-transcribe` (for voice transcription)
 - **Endpoint**: `https://api.openai.com/v1/chat/completions`
+- **Transcription Endpoint**: `https://api.openai.com/v1/audio/transcriptions`
 - **Temperature**: 1 (required)
 - **Max Tokens**: 300-1500 depending on use case
 
@@ -429,10 +459,14 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Reflection notes system**
 ✅ **Calendar persistence with AsyncStorage**
 ✅ **Menu-based navigation (Calendar + Past Loops)**
+✅ **Voice recording with microphone icon**
+✅ **Audio transcription with GPT-4o Transcribe**
+✅ **Automatic voice-to-text processing**
+✅ **Visual recording feedback (red stop button)**
+✅ **Processing overlay with status messages**
 
 ## Future Enhancements
 
-- Voice input implementation
 - Export conversations
 - Dark/light theme toggle
 - Custom tone preferences

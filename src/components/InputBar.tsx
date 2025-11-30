@@ -15,6 +15,7 @@ interface InputBarProps {
   disabled?: boolean;
   selectedImageUri?: string;
   onClearImage?: () => void;
+  isRecording?: boolean;
 }
 
 export function InputBar({
@@ -28,6 +29,7 @@ export function InputBar({
   disabled = false,
   selectedImageUri,
   onClearImage,
+  isRecording = false,
 }: InputBarProps) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
@@ -135,7 +137,13 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="mic-outline" size={28} color="#9CA3AF" />
+            {isRecording ? (
+              <View className="bg-red-500 rounded-full p-2">
+                <Ionicons name="stop" size={24} color="white" />
+              </View>
+            ) : (
+              <Ionicons name="mic-outline" size={28} color="#9CA3AF" />
+            )}
           </Pressable>
         )}
       </View>
