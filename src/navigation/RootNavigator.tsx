@@ -22,7 +22,7 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: "none", // Disable default animation to use custom gesture
+        animation: "slide_from_right", // Use slide animation to show both screens
         contentStyle: { backgroundColor: "#000000" },
         gestureEnabled: false, // Disable native gestures by default
       }}
@@ -32,6 +32,7 @@ export function RootNavigator() {
         component={InputScreen}
         options={{
           gestureEnabled: false, // Prevent system back gesture on home screen
+          animation: "fade", // Fade when navigating to home
         }}
       />
       <Stack.Screen
@@ -39,6 +40,7 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false, // Use custom gesture instead
+          animation: "slide_from_right", // Slide from right when opening chat
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
