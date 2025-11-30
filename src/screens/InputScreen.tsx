@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, Pressable } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+  Extrapolate,
+} from "react-native-reanimated";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
@@ -17,6 +27,10 @@ export function InputScreen({ navigation }: Props) {
   const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
 
+  // Shared values for swipe transition
+  const translateX = useSharedValue(0);
+  const scale = useSharedValue(1);
+
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
@@ -29,6 +43,12 @@ export function InputScreen({ navigation }: Props) {
     if (!activeLoop) {
       createNewLoop();
     }
+  }, []);
+
+  // Reset animation values when screen is focused
+  useEffect(() => {
+    translateX.value = 0;
+    scale.value = 1;
   }, []);
 
   const handleSend = () => {
@@ -73,34 +93,94 @@ export function InputScreen({ navigation }: Props) {
     console.log("Voice input pressed");
   };
 
+  // Handler for navigating to chat screen (must be wrapped with runOnJS)
+  const handleNavigateToChat = () => {
+    const activeLoop = getActiveLoop();
+    // Only navigate if there's an active loop with messages
+    if (activeLoop && activeLoop.messages.length > 0) {
+      navigation.navigate("ChatScreen");
+    }
+  };
+
+  // Swipe gesture to go to previous chat loop with animation
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX(-50) // Only trigger when swiping left with at least 50px
+        .failOffsetX(50) // Fail if swiping right
+        .onUpdate((event) => {
+          // Only allow left swipes (negative translationX)
+          if (event.translationX < 0) {
+            translateX.value = event.translationX;
+            // Scale down as user swipes (from 1 to 0.9)
+            scale.value = interpolate(
+              Math.abs(event.translationX),
+              [0, 300],
+              [1, 0.9],
+              Extrapolate.CLAMP
+            );
+          }
+        })
+        .onEnd((event) => {
+          const activeLoop = getActiveLoop();
+          // Only allow navigation if there's an active loop with messages
+          if (
+            activeLoop &&
+            activeLoop.messages.length > 0 &&
+            event.velocityX < -500 &&
+            event.translationX < -100
+          ) {
+            // Animate off screen
+            translateX.value = withTiming(-400, { duration: 200 });
+            scale.value = withTiming(0.85, { duration: 200 });
+            // Navigate after animation
+            setTimeout(() => runOnJS(handleNavigateToChat)(), 200);
+          } else {
+            // Spring back to original position
+            translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
+            scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+          }
+        }),
+    [navigation]
+  );
+
+  // Animated style for the swipe transition
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  }));
+
   return (
-    <View className="flex-1 bg-black">
-      <Header />
+    <GestureDetector gesture={swipeGesture}>
+      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+        <View className="flex-1 bg-black">
+          <Header />
 
-      {/* Center Content */}
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
-          How can I help bring clarity?
-        </Text>
-      </View>
+          {/* Center Content */}
+          <View className="flex-1 items-center justify-center px-6">
+            <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
+              How can I help bring clarity?
+            </Text>
+          </View>
 
-      {/* Input Bar */}
-      <InputBar
-        value={currentInput}
-        onChangeText={setCurrentInput}
-        onSend={handleSend}
-        onVoicePress={handleVoicePress}
-        onImageSelected={handleImageSelected}
-        onClearImage={handleClearImage}
-        selectedImageUri={selectedImageUri}
-        placeholder="Type a message..."
-      />
+          {/* Input Bar */}
+          <InputBar
+            value={currentInput}
+            onChangeText={setCurrentInput}
+            onSend={handleSend}
+            onVoicePress={handleVoicePress}
+            onImageSelected={handleImageSelected}
+            onClearImage={handleClearImage}
+            selectedImageUri={selectedImageUri}
+            placeholder="Type a message..."
+          />
 
-      {/* History Panel */}
-      <LoopHistoryPanel
-        visible={isHistoryPanelOpen}
-        onClose={() => setHistoryPanelOpen(false)}
-      />
-    </View>
+          {/* History Panel */}
+          <LoopHistoryPanel
+            visible={isHistoryPanelOpen}
+            onClose={() => setHistoryPanelOpen(false)}
+          />
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
