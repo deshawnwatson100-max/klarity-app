@@ -110,7 +110,46 @@ export function RootNavigator() {
           },
         }}
       />
-      <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
+      <Stack.Screen name="CalendarScreen" component={CalendarScreen}
+        options={{
+          gestureEnabled: false,
+          cardStyle: { backgroundColor: "transparent" },
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-layouts.screen.width, 0], // Slide from left
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5], // Dark overlay on InputScreen
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
       <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />
     </Stack.Navigator>
   );
