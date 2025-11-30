@@ -22,12 +22,19 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: "fade",
+        animation: "none", // Disable default animation to use custom gesture
         contentStyle: { backgroundColor: "#000000" },
       }}
     >
       <Stack.Screen name="InputScreen" component={InputScreen} />
-      <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen
+        name="ChatScreen"
+        component={ChatScreen}
+        options={{
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
+        }}
+      />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
       <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />
     </Stack.Navigator>

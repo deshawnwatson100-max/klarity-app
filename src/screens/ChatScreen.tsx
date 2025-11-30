@@ -66,6 +66,12 @@ export function ChatScreen({ navigation }: Props) {
   const activeLoop = getActiveLoop();
   const messages = activeLoop?.messages || [];
 
+  // Reset animation values when screen is focused
+  useEffect(() => {
+    translateX.value = 0;
+    scale.value = 1;
+  }, []);
+
   // Process the first message when screen loads
   useEffect(() => {
     if (messages.length === 1 && !isProcessing) {
