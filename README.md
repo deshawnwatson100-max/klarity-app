@@ -60,13 +60,18 @@ Record voice messages and have them automatically transcribed and analyzed.
 
 #### Processing Flow
 - **Recording** - Red pulsing stop button shows active recording
+- **Animated waveform** - 35 lime green bars animate to visualize voice input
+- **Visual feedback** - "Recording..." text with helper text below visualizer
 - **Transcribing** - Loading overlay with "Transcribing your voice..." message
 - **Analyzing** - "Analyzing your message..." appears while processing
 - **Complete** - Automatically enters chat screen with your transcribed message
 
 #### Technical Details
 - Uses **expo-av** for high-quality audio recording
+- **react-native-reanimated v3** for smooth waveform animations
 - **GPT-4o Transcribe** model for accurate speech-to-text
+- 35 animated bars with randomized timing for organic feel
+- Each bar animates independently with different durations and delays
 - Supports microphone permissions request
 - Graceful error handling with user-friendly messages
 - Audio automatically deleted after transcription
@@ -286,6 +291,7 @@ Each loop stores:
 │   │   ├── AnalysisCard.tsx        # Emotional analysis display
 │   │   ├── SuggestionsCard.tsx     # Response suggestions
 │   │   ├── ImageAnalysisCard.tsx   # Toxic communication analysis
+│   │   ├── VoiceRecordingVisualizer.tsx  # Animated waveform for voice recording
 │   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
@@ -463,6 +469,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Audio transcription with GPT-4o Transcribe**
 ✅ **Automatic voice-to-text processing**
 ✅ **Visual recording feedback (red stop button)**
+✅ **Animated waveform visualizer with 35 bars**
+✅ **Organic animation with randomized timing**
 ✅ **Processing overlay with status messages**
 
 ## Future Enhancements

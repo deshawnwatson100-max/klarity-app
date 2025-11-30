@@ -17,6 +17,7 @@ import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
+import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -324,9 +325,21 @@ export function InputScreen({ navigation }: Props) {
 
           {/* Center Content */}
           <View className="flex-1 items-center justify-center px-6">
-            <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
-              How can I help bring clarity?
-            </Text>
+            {isRecording ? (
+              <View className="items-center justify-center w-full">
+                <Text className="text-lime-400 text-xl font-medium mb-6">
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text className="text-neutral-500 text-sm mt-6">
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
+                How can I help bring clarity?
+              </Text>
+            )}
           </View>
 
           {/* Input Bar */}
