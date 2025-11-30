@@ -24,15 +24,21 @@ export function RootNavigator() {
         headerShown: false,
         animation: "none", // Disable default animation to use custom gesture
         contentStyle: { backgroundColor: "#000000" },
+        gestureEnabled: false, // Disable native gestures by default
       }}
     >
-      <Stack.Screen name="InputScreen" component={InputScreen} />
+      <Stack.Screen
+        name="InputScreen"
+        component={InputScreen}
+        options={{
+          gestureEnabled: false, // Prevent system back gesture on home screen
+        }}
+      />
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
         options={{
-          gestureEnabled: true,
-          fullScreenGestureEnabled: true,
+          gestureEnabled: false, // Use custom gesture instead
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
