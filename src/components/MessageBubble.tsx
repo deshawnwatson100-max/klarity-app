@@ -57,11 +57,11 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
             source={imageUrl}
             style={{
               width: SCREEN_WIDTH * 0.7,
-              height: 200,
+              aspectRatio: 1320 / 2868, // iPhone 16 Pro Max aspect ratio
               borderRadius: 12,
               marginBottom: content && content !== "[Image]" ? 8 : 0,
             }}
-            contentFit="cover"
+            contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
             transition={200}
           />
