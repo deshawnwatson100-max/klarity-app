@@ -47,8 +47,8 @@ export function InputScreen({ navigation }: Props) {
       timestamp: Date.now(),
     });
 
-    // Navigate to main tabs (chat screen)
-    navigation.navigate("MainTabs");
+    // Navigate to chat screen
+    navigation.navigate("ChatScreen");
     setCurrentInput("");
   };
 

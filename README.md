@@ -235,11 +235,12 @@ Each loop stores:
 - **React Native 0.76.7** with Expo SDK 53
 - **TypeScript** - Type-safe development
 - **Zustand** - State management with AsyncStorage persistence
-- **React Navigation** - Native stack + bottom tabs navigation
+- **React Navigation** - Native stack navigation
 - **NativeWind** - Tailwind CSS for React Native
 - **React Native Reanimated v3** - Smooth animations
 - **GPT-5 Mini (o4-mini)** - AI conversation engine
 - **GPT-4o Vision** - Image analysis for toxic communication
+- **Zeego** - Native dropdown menus (iOS/Android)
 
 ## Project Structure
 
@@ -249,29 +250,29 @@ Each loop stores:
 │   ├── api/
 │   │   └── klarity-api.ts          # GPT API integration + Image Analysis
 │   ├── components/
-│   │   ├── Header.tsx              # App header with loops nav
+│   │   ├── Header.tsx              # App header with menu dropdown
 │   │   ├── InputBar.tsx            # Message input with voice & image picker
 │   │   ├── MessageBubble.tsx       # Chat message bubbles with image support
 │   │   ├── AnalysisCard.tsx        # Emotional analysis display
 │   │   ├── SuggestionsCard.tsx     # Response suggestions
 │   │   ├── ImageAnalysisCard.tsx   # Toxic communication analysis
-│   │   ├── IntentionSelectionModal.tsx  # NEW: Intention picker for calendar
+│   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
-│   │   └── RootNavigator.tsx       # Stack + bottom tab navigation
+│   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
 │   ├── screens/
-│   │   ├── InputScreen.tsx         # Welcome screen with calendar access
+│   │   ├── InputScreen.tsx         # Welcome screen with menu access
 │   │   ├── ChatScreen.tsx          # Main chat interface
-│   │   ├── CalendarScreen.tsx      # NEW: Monthly calendar view
-│   │   └── LogDetailScreen.tsx     # NEW: Calendar entry details
+│   │   ├── CalendarScreen.tsx      # Monthly calendar view
+│   │   └── LogDetailScreen.tsx     # Calendar entry details
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
 │   │   ├── loopsStore.ts           # Loops state with persistence
-│   │   └── calendarStore.ts        # NEW: Calendar entries with persistence
+│   │   └── calendarStore.ts        # Calendar entries with persistence
 │   └── types/
 │       ├── chat.ts                 # Chat & message interfaces
 │       ├── loop.ts                 # Loop type definitions
-│       └── calendar.ts             # NEW: Calendar & intention types
+│       └── calendar.ts             # Calendar & intention types
 ├── App.tsx                          # App entry point
 └── README.md
 ```
@@ -385,14 +386,15 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 8. All conversations auto-saved
 
 ### Calendar Flow
-1. User taps calendar button on InputScreen or Home tab
-2. Sees monthly view with color-coded intention dots
-3. Can navigate between months
-4. Taps a date with entries
-5. Views detailed log with full analysis and guidance
-6. Can copy suggested responses
-7. Can add reflection notes
-8. Navigate back to calendar or start new conversation
+1. User taps **3-bar menu** (top-left) on any screen
+2. Selects **Calendar** from dropdown
+3. Sees monthly view with color-coded intention dots
+4. Can navigate between months
+5. Taps a date with entries
+6. Views detailed log with full analysis and guidance
+7. Can copy suggested responses
+8. Can add reflection notes
+9. Navigate back to calendar or start new conversation
 
 ## Features Implemented
 
@@ -401,7 +403,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ Real-time message animations
 ✅ Emotional analysis with visual metrics
 ✅ Smart response suggestions (3 tones)
-✅ Bottom tab navigation (Home + Calendar)
+✅ Native stack navigation (no bottom tabs)
+✅ **3-bar menu dropdown with native iOS/Android styling**
 ✅ Keyboard-aware input
 ✅ Auto-scrolling chat
 ✅ GPT-5 Mini (o4-mini) integration
@@ -416,14 +419,14 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ Image-based dysfunctional pattern detection
 ✅ GPT-4o Vision integration
 ✅ Copy suggested responses
-✅ **NEW: Emotional Log Calendar**
-✅ **NEW: Monthly calendar view with intention tracking**
-✅ **NEW: Color-coded intention dots (Blue/Orange/Yellow/Purple)**
-✅ **NEW: Detailed log entry viewer**
-✅ **NEW: Intention selection modal**
-✅ **NEW: Reflection notes system**
-✅ **NEW: Calendar persistence with AsyncStorage**
-✅ **NEW: Calendar quick access from welcome screen**
+✅ **Emotional Log Calendar**
+✅ **Monthly calendar view with intention tracking**
+✅ **Color-coded intention dots (Blue/Orange/Yellow/Purple)**
+✅ **Detailed log entry viewer**
+✅ **Intention selection modal**
+✅ **Reflection notes system**
+✅ **Calendar persistence with AsyncStorage**
+✅ **Menu-based navigation (Calendar + Past Loops)**
 
 ## Future Enhancements
 

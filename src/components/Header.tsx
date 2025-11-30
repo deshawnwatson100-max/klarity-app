@@ -45,7 +45,7 @@ export function Header({
   };
 
   const handleCalendar = () => {
-    navigation.navigate("MainTabs" as never);
+    navigation.navigate("CalendarScreen" as never);
   };
 
   const handlePastLoops = () => {
