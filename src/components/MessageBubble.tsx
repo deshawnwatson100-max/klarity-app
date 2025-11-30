@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text } from "react-native";
+import { Image } from "expo-image";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -23,6 +24,13 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
     opacity.value = withTiming(1, { duration: 300 });
     translateY.value = withSpring(0, { damping: 15 });
   }, []);
+
+  // Debug: Log image URL when component renders
+  useEffect(() => {
+    if (imageUrl) {
+      console.log("MessageBubble imageUrl:", imageUrl);
+    }
+  }, [imageUrl]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -51,7 +59,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
               borderRadius: 12,
               marginBottom: content && content !== "[Image]" ? 8 : 0,
             }}
-            resizeMode="cover"
+            contentFit="cover"
           />
         )}
 
