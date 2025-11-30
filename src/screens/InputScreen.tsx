@@ -37,6 +37,9 @@ export function InputScreen({ navigation }: Props) {
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
+  const activeLoop = getActiveLoop();
+  const hasMessages = activeLoop && activeLoop.messages.length > 0;
+
   // Ensure we always have an active loop
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -95,11 +98,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Handler for navigating to chat screen (must be wrapped with runOnJS)
   const handleNavigateToChat = () => {
-    const activeLoop = getActiveLoop();
-    // Only navigate if there's an active loop with messages
-    if (activeLoop && activeLoop.messages.length > 0) {
-      navigation.navigate("ChatScreen");
-    }
+    navigation.navigate("ChatScreen");
   };
 
   // Swipe gesture to go to previous chat loop with animation
@@ -109,8 +108,8 @@ export function InputScreen({ navigation }: Props) {
         .activeOffsetX(-50) // Only trigger when swiping left with at least 50px
         .failOffsetX(50) // Fail if swiping right
         .onUpdate((event) => {
-          // Only allow left swipes (negative translationX)
-          if (event.translationX < 0) {
+          // Only allow left swipes (negative translationX) if there are messages
+          if (event.translationX < 0 && hasMessages) {
             translateX.value = event.translationX;
             // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
@@ -122,11 +121,9 @@ export function InputScreen({ navigation }: Props) {
           }
         })
         .onEnd((event) => {
-          const activeLoop = getActiveLoop();
-          // Only allow navigation if there's an active loop with messages
+          // Only allow navigation if there are messages
           if (
-            activeLoop &&
-            activeLoop.messages.length > 0 &&
+            hasMessages &&
             event.velocityX < -500 &&
             event.translationX < -100
           ) {
@@ -141,7 +138,7 @@ export function InputScreen({ navigation }: Props) {
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
           }
         }),
-    [navigation]
+    [navigation, hasMessages]
   );
 
   // Animated style for the swipe transition
