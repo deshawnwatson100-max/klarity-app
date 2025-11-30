@@ -45,7 +45,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       className={`mb-4 ${isUser ? "items-end" : "items-start"}`}
     >
       <View
-        className={`max-w-[80%] rounded-2xl ${
+        className={`${imageUrl ? "max-w-[85%]" : "max-w-[80%]"} rounded-2xl ${
           isUser
             ? "bg-neutral-900 border border-[#B4FF39]"
             : "bg-neutral-900 border border-neutral-800"
@@ -56,7 +56,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           <Image
             source={imageUrl}
             style={{
-              width: SCREEN_WIDTH * 0.85,
+              width: "100%",
               aspectRatio: 1320 / 2868, // iPhone 16 Pro Max aspect ratio
               borderRadius: 12,
               marginBottom: content && content !== "[Image]" ? 8 : 0,
