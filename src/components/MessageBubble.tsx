@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import Animated, {
   useAnimatedStyle,
@@ -7,6 +7,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -52,14 +54,16 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         {/* Image Preview */}
         {imageUrl && (
           <Image
-            source={{ uri: imageUrl }}
+            source={imageUrl}
             style={{
-              width: "100%",
+              width: SCREEN_WIDTH * 0.7,
               height: 200,
               borderRadius: 12,
               marginBottom: content && content !== "[Image]" ? 8 : 0,
             }}
             contentFit="cover"
+            placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
+            transition={200}
           />
         )}
 
