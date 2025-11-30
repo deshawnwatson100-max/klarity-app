@@ -187,8 +187,8 @@ export function InputScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        <View className="flex-1 bg-black">
+      <Animated.View style={[{ flex: 1, backgroundColor: 'black' }, animatedContainerStyle]}>
+        <View className="flex-1">
           <Header />
 
           {/* Center Content */}
