@@ -35,24 +35,31 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       className={`mb-4 ${isUser ? "items-end" : "items-start"}`}
     >
       <View
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+        className={`max-w-[80%] rounded-2xl ${
           isUser
             ? "bg-neutral-900 border border-[#B4FF39]"
             : "bg-neutral-900 border border-neutral-800"
-        }`}
+        } ${imageUrl ? "p-2" : "px-4 py-3"}`}
       >
         {/* Image Preview */}
         {imageUrl && (
           <Image
             source={{ uri: imageUrl }}
-            className="w-full h-48 rounded-lg mb-2"
+            style={{
+              width: "100%",
+              height: 200,
+              borderRadius: 12,
+              marginBottom: content && content !== "[Image]" ? 8 : 0,
+            }}
             resizeMode="cover"
           />
         )}
 
         {/* Text Content */}
         {content && content !== "[Image]" && (
-          <Text className="text-white text-base leading-6">{content}</Text>
+          <View className={imageUrl ? "px-2 pb-1" : ""}>
+            <Text className="text-white text-base leading-6">{content}</Text>
+          </View>
         )}
       </View>
     </Animated.View>
