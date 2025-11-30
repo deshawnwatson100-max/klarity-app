@@ -168,36 +168,46 @@ export function InputScreen({ navigation }: Props) {
 
       // Transcribe the audio
       setProcessingMessage("Transcribing your voice...");
-      const transcription = await transcribeAudio(uri);
 
-      if (!transcription) {
-        setProcessingMessage("Failed to transcribe audio");
+      try {
+        const transcription = await transcribeAudio(uri);
+
+        if (!transcription) {
+          setProcessingMessage("Failed to transcribe audio");
+          setIsProcessing(false);
+          return;
+        }
+
+        // Analyze the transcription with AI
+        setProcessingMessage("Analyzing your message...");
+
+        // Ensure we have an active loop
+        let activeLoop = getActiveLoop();
+        if (!activeLoop) {
+          createNewLoop();
+          activeLoop = getActiveLoop();
+        }
+
+        // Add user message to active loop
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "user",
+          content: transcription,
+          timestamp: Date.now(),
+        });
+
+        // Navigate to chat screen for AI response
         setIsProcessing(false);
-        return;
+        setProcessingMessage("");
+        navigation.navigate("ChatScreen");
+      } catch (transcriptionError) {
+        console.error("Transcription error:", transcriptionError);
+        setProcessingMessage("Unable to transcribe audio. Please check your connection and try again.");
+        setTimeout(() => {
+          setIsProcessing(false);
+          setProcessingMessage("");
+        }, 3000);
       }
-
-      // Analyze the transcription with AI
-      setProcessingMessage("Analyzing your message...");
-
-      // Ensure we have an active loop
-      let activeLoop = getActiveLoop();
-      if (!activeLoop) {
-        createNewLoop();
-        activeLoop = getActiveLoop();
-      }
-
-      // Add user message to active loop
-      addMessageToActiveLoop({
-        id: Date.now().toString(),
-        role: "user",
-        content: transcription,
-        timestamp: Date.now(),
-      });
-
-      // Navigate to chat screen for AI response
-      setIsProcessing(false);
-      setProcessingMessage("");
-      navigation.navigate("ChatScreen");
 
     } catch (error) {
       console.error("Error processing recording:", error);
