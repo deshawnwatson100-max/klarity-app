@@ -68,9 +68,46 @@ export function InputScreen({ navigation }: Props) {
 
       {/* Center Content */}
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
+        <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed mb-12">
           How can I help bring clarity?
         </Text>
+
+        {/* Calendar Quick Access */}
+        <Pressable
+          onPress={() => navigation.navigate("MainTabs")}
+          className="active:opacity-80"
+        >
+          <View
+            style={{
+              shadowColor: "#B4FF39",
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 8,
+            }}
+            className="bg-neutral-950 border border-[#B4FF39] rounded-2xl px-8 py-5 flex-row items-center"
+          >
+            <View
+              style={{
+                backgroundColor: "#B4FF39",
+                shadowColor: "#B4FF39",
+                shadowOpacity: 0.6,
+                shadowRadius: 10,
+              }}
+              className="w-12 h-12 rounded-full items-center justify-center mr-4"
+            >
+              <Ionicons name="calendar" size={24} color="#000" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white text-lg font-bold mb-1">
+                View Your Timeline
+              </Text>
+              <Text className="text-neutral-400 text-sm">
+                Track your emotional journey
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#B4FF39" />
+          </View>
+        </Pressable>
       </View>
 
       {/* Input Bar */}
