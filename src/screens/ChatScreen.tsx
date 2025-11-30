@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 import { Header } from "../components/Header";
 import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
@@ -231,6 +232,11 @@ export function ChatScreen({ navigation }: Props) {
     );
   };
 
+  // Handler for navigating back (must be wrapped with runOnJS)
+  const handleNavigateBack = () => {
+    navigation.navigate("InputScreen");
+  };
+
   // Swipe gesture to go back to home screen
   const swipeGesture = useMemo(
     () =>
@@ -241,7 +247,7 @@ export function ChatScreen({ navigation }: Props) {
         .onEnd((event) => {
           // If user swiped right (positive velocityX) with sufficient distance
           if (event.velocityX > 500 && event.translationX > 100) {
-            navigation.navigate("InputScreen");
+            runOnJS(handleNavigateBack)();
           }
         }),
     [navigation]
