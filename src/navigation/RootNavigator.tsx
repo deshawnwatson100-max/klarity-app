@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
+import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
 import { CalendarScreen } from "../screens/CalendarScreen";
@@ -23,10 +23,10 @@ export function RootNavigator() {
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
-        cardStyle: { backgroundColor: "black" },
+        cardStyle: { backgroundColor: "transparent" }, // Transparent to show screen below
         cardOverlayEnabled: true,
-        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         detachPreviousScreen: false, // Keep previous screen mounted
+        presentation: "card",
       }}
     >
       <Stack.Screen
@@ -34,6 +34,7 @@ export function RootNavigator() {
         component={InputScreen}
         options={{
           gestureEnabled: false,
+          cardStyle: { backgroundColor: "black" }, // InputScreen has solid background
         }}
       />
       <Stack.Screen
@@ -41,7 +42,8 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false,
-          cardStyleInterpolator: ({ current, next, layouts }) => {
+          cardStyle: { backgroundColor: "transparent" }, // Transparent to show InputScreen below
+          cardStyleInterpolator: ({ current, layouts }) => {
             return {
               cardStyle: {
                 transform: [
@@ -56,10 +58,14 @@ export function RootNavigator() {
               overlayStyle: {
                 opacity: current.progress.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, 0.5],
+                  outputRange: [0, 0.3], // Darken the screen behind
                 }),
               },
             };
+          },
+          transitionSpec: {
+            open: TransitionSpecs.TransitionIOSSpec,
+            close: TransitionSpecs.TransitionIOSSpec,
           },
         }}
       />
