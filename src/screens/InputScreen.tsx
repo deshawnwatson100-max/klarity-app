@@ -136,18 +136,17 @@ export function InputScreen({ navigation }: Props) {
           if (event.velocityX < -800 && event.translationX < -120) {
             // If there are messages, navigate to chat
             if (canNavigate.value) {
-              // Animate off screen
-              translateX.value = withTiming(-400, { duration: 200 });
+              // Animate off screen then navigate
+              translateX.value = withTiming(-400, { duration: 200 }, () => {
+                runOnJS(handleNavigateToChat)();
+              });
               scale.value = withTiming(0.85, { duration: 200 });
-              // Navigate after animation
-              setTimeout(() => runOnJS(handleNavigateToChat)(), 200);
             } else {
-              // If no messages, open past loops panel
-              // Spring back to original position first
-              translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
+              // If no messages, spring back and open past loops panel
+              translateX.value = withSpring(0, { damping: 20, stiffness: 300 }, () => {
+                runOnJS(handleOpenPastLoops)();
+              });
               scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-              // Open panel after spring back
-              setTimeout(() => runOnJS(handleOpenPastLoops)(), 100);
             }
           } else {
             // Spring back to original position
