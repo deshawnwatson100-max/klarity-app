@@ -131,11 +131,11 @@ export function InputScreen({ navigation }: Props) {
               [1, 0.92],
               Extrapolate.CLAMP
             );
-            // Fade out slightly to reveal screen coming in
+            // Fade out MORE to reveal screen coming in clearly
             opacity.value = interpolate(
               Math.abs(event.translationX),
-              [0, 200],
-              [1, 0.95],
+              [0, 100], // Start fading much earlier
+              [1, 0.7], // Fade to 70% to make ChatScreen very visible
               Extrapolate.CLAMP
             );
           }
