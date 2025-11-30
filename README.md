@@ -78,6 +78,7 @@ Track your emotional journey over time with a beautiful calendar interface.
 
 #### Calendar Home Screen (Monthly View)
 A full-screen monthly calendar showing your emotional timeline:
+- **Home button** (top-right) - Quick return to welcome screen
 - **Dark luxury design** with deep black background (#0A0A0A)
 - **Color-coded intention dots** on dates with entries
   - 🔵 **Blue** - Improve (working to improve the relationship)

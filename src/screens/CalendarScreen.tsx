@@ -162,13 +162,23 @@ export function CalendarScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-[#0A0A0A]" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-bold mb-1">
-          Your Emotional Timeline
-        </Text>
-        <Text className="text-neutral-400 text-sm">
-          Track your clarity journey
-        </Text>
+      <View className="px-4 py-6 flex-row items-start justify-between">
+        <View className="flex-1">
+          <Text className="text-white text-2xl font-bold mb-1">
+            Your Emotional Timeline
+          </Text>
+          <Text className="text-neutral-400 text-sm">
+            Track your clarity journey
+          </Text>
+        </View>
+
+        {/* Home Button */}
+        <Pressable
+          onPress={() => navigation.navigate("InputScreen")}
+          className="active:opacity-60 mt-1"
+        >
+          <Ionicons name="home" size={28} color="#B4FF39" />
+        </Pressable>
       </View>
 
       {/* Month Navigation */}
