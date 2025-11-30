@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
+import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
 import { CalendarScreen } from "../screens/CalendarScreen";
@@ -23,8 +23,10 @@ export function RootNavigator() {
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
-        cardStyle: { backgroundColor: "transparent" },
-        ...TransitionPresets.SlideFromRightIOS, // iOS-like slide transition
+        cardStyle: { backgroundColor: "black" },
+        cardOverlayEnabled: true,
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        detachPreviousScreen: false, // Keep previous screen mounted
       }}
     >
       <Stack.Screen
@@ -39,7 +41,7 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false,
-          cardStyleInterpolator: ({ current, layouts }) => {
+          cardStyleInterpolator: ({ current, next, layouts }) => {
             return {
               cardStyle: {
                 transform: [
@@ -50,6 +52,12 @@ export function RootNavigator() {
                     }),
                   },
                 ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5],
+                }),
               },
             };
           },
