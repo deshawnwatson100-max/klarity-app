@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -188,7 +188,11 @@ export function InputScreen({ navigation }: Props) {
   return (
     <GestureDetector gesture={swipeGesture}>
       <Animated.View style={[{ flex: 1, backgroundColor: 'black' }, animatedContainerStyle]}>
-        <View className="flex-1">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={0}
+        >
           <Header />
 
           {/* Center Content */}
@@ -215,7 +219,7 @@ export function InputScreen({ navigation }: Props) {
             visible={isHistoryPanelOpen}
             onClose={() => setHistoryPanelOpen(false)}
           />
-        </View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </GestureDetector>
   );
