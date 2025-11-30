@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -232,16 +232,20 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   // Swipe gesture to go back to home screen
-  const swipeGesture = Gesture.Pan()
-    .activeOffsetX(50) // Only trigger when swiping right with at least 50px
-    .failOffsetX(-50) // Fail if swiping left
-    .failOffsetY([-10, 10]) // Allow vertical scrolling
-    .onEnd((event) => {
-      // If user swiped right (positive velocityX) with sufficient distance
-      if (event.velocityX > 500 && event.translationX > 100) {
-        navigation.navigate("InputScreen");
-      }
-    });
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX(50) // Only trigger when swiping right with at least 50px
+        .failOffsetX(-50) // Fail if swiping left
+        .failOffsetY([-10, 10]) // Allow vertical scrolling
+        .onEnd((event) => {
+          // If user swiped right (positive velocityX) with sufficient distance
+          if (event.velocityX > 500 && event.translationX > 100) {
+            navigation.navigate("InputScreen");
+          }
+        }),
+    [navigation]
+  );
 
   return (
     <GestureDetector gesture={swipeGesture}>
