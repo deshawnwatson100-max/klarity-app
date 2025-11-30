@@ -18,10 +18,9 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ### Screen 1: Input/Welcome Screen
 - Clean, minimalist welcome screen
 - "How can I help bring clarity?" prompt
-- **Calendar Quick Access Button** - Direct access to your emotional timeline
+- **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
 - Input bar with text, voice, and image upload options
 - Smooth navigation to conversation
-- Access to past loops via header button
 
 ### Screen 2: Chat Screen
 - ChatGPT-style threaded conversation

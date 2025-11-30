@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
+import * as DropdownMenu from "zeego/dropdown-menu";
 
 interface HeaderProps {
   title?: string;
@@ -15,7 +16,7 @@ interface HeaderProps {
  * Header Component
  *
  * Top navigation bar with:
- * - Left: Past Loops button (clock icon)
+ * - Left: Menu dropdown (Calendar, Past Loops)
  * - Center: App title
  * - Right: New Loop button
  */
@@ -43,19 +44,50 @@ export function Header({
     }
   };
 
+  const handleCalendar = () => {
+    navigation.navigate("MainTabs" as never);
+  };
+
+  const handlePastLoops = () => {
+    toggleHistoryPanel();
+  };
+
   return (
     <View
       className="bg-black border-b border-neutral-900"
       style={{ paddingTop: insets.top }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Past Loops Button */}
-        <Pressable
-          onPress={toggleHistoryPanel}
-          className="active:opacity-60"
-        >
-          <Ionicons name="time-outline" size={24} color="#9CA3AF" />
-        </Pressable>
+        {/* Left - Menu Dropdown */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Pressable className="active:opacity-60">
+              <Ionicons name="menu" size={28} color="#9CA3AF" />
+            </Pressable>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Content>
+            <DropdownMenu.Item key="calendar" onSelect={handleCalendar}>
+              <DropdownMenu.ItemIcon
+                ios={{
+                  name: "calendar",
+                  pointSize: 18,
+                }}
+              />
+              <DropdownMenu.ItemTitle>Calendar</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
+              <DropdownMenu.ItemIcon
+                ios={{
+                  name: "clock",
+                  pointSize: 18,
+                }}
+              />
+              <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
 
         {/* Center - Title */}
         <Text className="text-white text-base font-semibold tracking-wide">
