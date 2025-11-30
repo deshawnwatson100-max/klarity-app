@@ -115,8 +115,9 @@ export function InputScreen({ navigation }: Props) {
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX(-50) // Only trigger when swiping left with at least 50px
+        .activeOffsetX(-80) // Require more distance to activate (80px instead of 50px)
         .failOffsetX(50) // Fail if swiping right
+        .failOffsetY([-20, 20]) // More tolerance for vertical movement
         .onUpdate((event) => {
           // Allow left swipes (negative translationX)
           if (event.translationX < 0) {
@@ -132,7 +133,7 @@ export function InputScreen({ navigation }: Props) {
         })
         .onEnd((event) => {
           // Check if swipe was sufficient
-          if (event.velocityX < -500 && event.translationX < -100) {
+          if (event.velocityX < -800 && event.translationX < -120) {
             // If there are messages, navigate to chat
             if (canNavigate.value) {
               // Animate off screen
