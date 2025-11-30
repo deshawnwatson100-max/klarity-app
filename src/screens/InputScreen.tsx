@@ -30,6 +30,7 @@ export function InputScreen({ navigation }: Props) {
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
+  const canNavigate = useSharedValue(false);
 
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
@@ -38,7 +39,11 @@ export function InputScreen({ navigation }: Props) {
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
   const activeLoop = getActiveLoop();
-  const hasMessages = activeLoop && activeLoop.messages.length > 0;
+
+  // Update shared value when messages change
+  useEffect(() => {
+    canNavigate.value = !!(activeLoop && activeLoop.messages.length > 0);
+  }, [activeLoop?.messages.length]);
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -109,7 +114,7 @@ export function InputScreen({ navigation }: Props) {
         .failOffsetX(50) // Fail if swiping right
         .onUpdate((event) => {
           // Only allow left swipes (negative translationX) if there are messages
-          if (event.translationX < 0 && hasMessages) {
+          if (event.translationX < 0 && canNavigate.value) {
             translateX.value = event.translationX;
             // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
@@ -123,7 +128,7 @@ export function InputScreen({ navigation }: Props) {
         .onEnd((event) => {
           // Only allow navigation if there are messages
           if (
-            hasMessages &&
+            canNavigate.value &&
             event.velocityX < -500 &&
             event.translationX < -100
           ) {
@@ -138,7 +143,7 @@ export function InputScreen({ navigation }: Props) {
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
           }
         }),
-    [navigation, hasMessages]
+    [navigation]
   );
 
   // Animated style for the swipe transition
