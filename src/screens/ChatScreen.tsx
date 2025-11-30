@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Text,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -42,7 +42,7 @@ import {
   ImageAnalysisMessage,
 } from "../types/chat";
 
-type Props = NativeStackScreenProps<RootStackParamList, "ChatScreen">;
+type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
 
 export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();

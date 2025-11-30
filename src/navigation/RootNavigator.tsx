@@ -1,5 +1,5 @@
 import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
 import { CalendarScreen } from "../screens/CalendarScreen";
@@ -15,17 +15,16 @@ export type RootStackParamList = {
   };
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: "none", // No default animation - using custom
-        contentStyle: { backgroundColor: "transparent" }, // Transparent to show screen behind
         gestureEnabled: false,
-        freezeOnBlur: false, // Keep screens mounted
+        cardStyle: { backgroundColor: "transparent" },
+        ...TransitionPresets.SlideFromRightIOS, // iOS-like slide transition
       }}
     >
       <Stack.Screen
@@ -40,7 +39,20 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false,
-          contentStyle: { backgroundColor: "transparent" }, // Transparent during transition
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.width, 0],
+                    }),
+                  },
+                ],
+              },
+            };
+          },
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />

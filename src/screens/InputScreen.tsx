@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, Pressable } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -19,7 +19,7 @@ import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 
-type Props = NativeStackScreenProps<RootStackParamList, "InputScreen">;
+type Props = StackScreenProps<RootStackParamList, "InputScreen">;
 
 export function InputScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
