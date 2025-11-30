@@ -299,6 +299,15 @@ export function ChatScreen({ navigation }: Props) {
       { translateX: translateX.value },
       { scale: scale.value },
     ],
+    // Add shadow during transition for depth effect
+    shadowOpacity: interpolate(
+      translateX.value,
+      [0, 400],
+      [0, 0.3],
+      Extrapolate.CLAMP
+    ),
+    shadowRadius: 20,
+    shadowColor: "#000000",
   }));
 
   return (

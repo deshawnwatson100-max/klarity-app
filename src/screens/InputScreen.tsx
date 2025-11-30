@@ -161,6 +161,15 @@ export function InputScreen({ navigation }: Props) {
   // Animated style for the swipe transition
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }, { scale: scale.value }],
+    // Add shadow during transition for depth effect
+    shadowOpacity: interpolate(
+      Math.abs(translateX.value),
+      [0, 400],
+      [0, 0.3],
+      Extrapolate.CLAMP
+    ),
+    shadowRadius: 20,
+    shadowColor: "#000000",
   }));
 
   return (

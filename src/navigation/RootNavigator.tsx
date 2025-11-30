@@ -22,25 +22,26 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: "slide_from_right", // Use slide animation to show both screens
+        animation: "default", // Use default iOS animation
         contentStyle: { backgroundColor: "#000000" },
-        gestureEnabled: false, // Disable native gestures by default
+        gestureEnabled: false, // Disable native gestures
+        presentation: "card", // Card presentation shows screen below
       }}
     >
       <Stack.Screen
         name="InputScreen"
         component={InputScreen}
         options={{
-          gestureEnabled: false, // Prevent system back gesture on home screen
-          animation: "fade", // Fade when navigating to home
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
         options={{
-          gestureEnabled: false, // Use custom gesture instead
-          animation: "slide_from_right", // Slide from right when opening chat
+          gestureEnabled: false,
+          presentation: "card", // Card presentation for layered effect
+          animation: "default",
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
