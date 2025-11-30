@@ -56,6 +56,7 @@ export function ChatScreen({ navigation }: Props) {
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
   // Use loops store instead of chat store
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
@@ -70,6 +71,7 @@ export function ChatScreen({ navigation }: Props) {
   useEffect(() => {
     translateX.value = 0;
     scale.value = 1;
+    opacity.value = 1;
   }, []);
 
   // Process the first message when screen loads
@@ -268,8 +270,15 @@ export function ChatScreen({ navigation }: Props) {
             // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
               event.translationX,
-              [0, 200], // Faster scale transition - start earlier
-              [1, 0.9],
+              [0, 150], // Even faster - start scaling at 150px
+              [1, 0.92],
+              Extrapolate.CLAMP
+            );
+            // Fade out slightly to reveal screen behind
+            opacity.value = interpolate(
+              event.translationX,
+              [0, 200],
+              [1, 0.95],
               Extrapolate.CLAMP
             );
           }
@@ -277,17 +286,19 @@ export function ChatScreen({ navigation }: Props) {
         .onEnd((event) => {
           // If user swiped right with sufficient distance and velocity
           if (event.velocityX > 500 && event.translationX > 100) {
-            // Animate off screen then navigate - faster duration
-            translateX.value = withTiming(400, { duration: 150 }, (finished) => {
+            // Animate off screen then navigate - even faster
+            translateX.value = withTiming(400, { duration: 120 }, (finished) => {
               if (finished) {
                 runOnJS(handleNavigateBack)();
               }
             });
-            scale.value = withTiming(0.85, { duration: 150 });
+            scale.value = withTiming(0.85, { duration: 120 });
+            opacity.value = withTiming(0, { duration: 120 });
           } else {
             // Spring back to original position
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+            opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
           }
         }),
     [navigation]
@@ -300,6 +311,7 @@ export function ChatScreen({ navigation }: Props) {
         { translateX: translateX.value },
         { scale: scale.value },
       ],
+      opacity: opacity.value,
       // Add shadow during transition for depth effect
       shadowOpacity: interpolate(
         translateX.value,

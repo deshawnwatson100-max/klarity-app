@@ -31,6 +31,7 @@ export function InputScreen({ navigation }: Props) {
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
   const canNavigate = useSharedValue(false);
+  const opacity = useSharedValue(1);
 
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
@@ -57,6 +58,7 @@ export function InputScreen({ navigation }: Props) {
   useEffect(() => {
     translateX.value = 0;
     scale.value = 1;
+    opacity.value = 1;
   }, []);
 
   const handleSend = () => {
@@ -122,11 +124,18 @@ export function InputScreen({ navigation }: Props) {
           // Allow left swipes (negative translationX)
           if (event.translationX < 0) {
             translateX.value = event.translationX;
-            // Scale down as user swipes (from 1 to 0.9) - faster
+            // Scale down as user swipes (from 1 to 0.9) - even faster
             scale.value = interpolate(
               Math.abs(event.translationX),
-              [0, 200], // Faster scale transition - start earlier
-              [1, 0.9],
+              [0, 150], // Even faster - start scaling at 150px
+              [1, 0.92],
+              Extrapolate.CLAMP
+            );
+            // Fade out slightly to reveal screen coming in
+            opacity.value = interpolate(
+              Math.abs(event.translationX),
+              [0, 200],
+              [1, 0.95],
               Extrapolate.CLAMP
             );
           }
@@ -136,23 +145,26 @@ export function InputScreen({ navigation }: Props) {
           if (event.velocityX < -800 && event.translationX < -120) {
             // If there are messages, navigate to chat
             if (canNavigate.value) {
-              // Animate off screen then navigate - faster duration
-              translateX.value = withTiming(-400, { duration: 150 }, (finished) => {
+              // Animate off screen then navigate - even faster
+              translateX.value = withTiming(-400, { duration: 120 }, (finished) => {
                 if (finished) {
                   runOnJS(handleNavigateToChat)();
                 }
               });
-              scale.value = withTiming(0.85, { duration: 150 });
+              scale.value = withTiming(0.85, { duration: 120 });
+              opacity.value = withTiming(0, { duration: 120 });
             } else {
               // If no messages, open past loops panel immediately
               translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
               scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+              opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
               runOnJS(handleOpenPastLoops)();
             }
           } else {
             // Spring back to original position
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+            opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
           }
         }),
     [navigation]
@@ -161,6 +173,7 @@ export function InputScreen({ navigation }: Props) {
   // Animated style for the swipe transition
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }, { scale: scale.value }],
+    opacity: opacity.value,
     // Add shadow during transition for depth effect
     shadowOpacity: interpolate(
       Math.abs(translateX.value),
