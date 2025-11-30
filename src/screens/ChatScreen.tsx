@@ -326,10 +326,10 @@ export function ChatScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1, backgroundColor: 'black' }, animatedContainerStyle]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 bg-black"
+          className="flex-1"
           keyboardVerticalOffset={0}
         >
           <Header showBackButton />
