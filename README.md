@@ -25,62 +25,101 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Input bar with text, voice, and image upload options
 - Smooth navigation to conversation with text or images
 
-### Screen 2: Chat Screen
-- ChatGPT-style threaded conversation
-- User messages on the right (lime border)
-- AI responses on the left
-- Image upload and analysis support
-- Smooth fade-in animations for messages
-- Auto-scrolling to latest message
-- Header with navigation and history access
+### Screen 2: Chat Screen with Inline Clarity Analysis 💬✨
+**NEW CHATLOOP DESIGN** - Full emotional analysis flows naturally within the conversation, using chat bubbles and inline cards.
 
-### Screen 3: Analysis Screen 📊
-**NEW ORDERED FLOW - STEP 1** - Full situation analysis appears BEFORE any direction selection.
+#### Experience Flow
+When you send a message about a relationship situation, Klarity responds with a beautiful step-by-step inline analysis:
 
-#### Screen Components (In Order)
-1. **Screen Header**
-   - Title: "Your Clarity Analysis"
-   - Subtitle: "Here is what is really happening."
+1. **Typing Indicator**
+   - Three pulsing dots with soft purple glow
+   - Appears in Klarity bubble with neon accent
+   - 1.5 second natural pause
 
-2. **Quick Summary Bullets**
-   - **Tone** (Blue) - Communication tone detected
-   - **Pattern** (Purple) - Behavior pattern identified
-   - **Emotional Impact** (Orange) - How it affects you
-   - **Core Issue** (Yellow) - Root problem
-   - Color-coded left borders with bold labels
+2. **Emotional Validation Bubble**
+   - Warm, empathetic message acknowledging your feelings
+   - Example: "I can tell this situation weighed on you emotionally — it makes sense you are feeling this way."
+   - Left-aligned with soft lavender neon edge
+   - Smooth fade-in animation
 
-3. **Emotional Clarity Bar**
-   - Visual percentage (0-100%)
-   - Gradient progress bar (Blue to Purple)
-   - Large number display
+3. **Typing Again**
+   - Brief pause while Klarity analyzes
+   - Creates natural conversational rhythm
 
-4. **Full Analysis Section**
-   - 2-3 calm sentences with deeper insights
-   - Dark card with gentle spacing
-   - Readable typography
+4. **Quick Clarity Summary Card**
+   - Special styled bubble with bold color-coded highlights
+   - Sparkle icon header
+   - Four key insights:
+     - **Tone** (Blue accent) - Communication style detected
+     - **Pattern** (Purple accent) - Behavior pattern identified
+     - **Emotional Impact** (Orange accent) - How it affects you
+     - **Core Issue** (Yellow accent) - Root problem
+   - Glowing neon frame with depth effect
 
-5. **Relationship Risk**
-   - Badge display: Low (Green) / Medium (Amber) / High (Red)
-   - Clear visual indicator
+5. **Deep Analysis Bubble**
+   - 2-3 calm sentences with deeper psychological insights
+   - Normal Klarity bubble styling
+   - Soft neon signature glow
 
-6. **Transition Prompt**
-   - "Before I help you respond..."
-   - "What direction do you want to take this relationship?"
-   - Primes user for next step
+6. **Relationship Direction Selector**
+   - Klarity asks: "Before I help you respond, which direction do you want to go with this relationship?"
+   - Four interactive pill buttons appear inline:
+     - **Improve** (Blue) - Better communication and healing
+     - **Distance** (Orange) - Healthy space and protection
+     - **Maintain** (Yellow) - Neutral observation
+     - **Gain Clarity** (Purple) - Understanding first
+   - Tap to select, button glows with intention color
+   - Smooth press animation with spring physics
 
-7. **Continue Button**
-   - Gradient (Blue to Purple)
-   - Navigates to Direction Selector
+7. **Typing Indicator Returns**
+   - After you select your direction
+   - Shows Klarity is preparing tailored guidance
+
+8. **Tailored Guidance Bubble**
+   - Personalized mindset message based on your chosen path
+   - Example (Distance): "Okay — to create healthy distance, we will keep things calm, neutral, and emotionally protective."
+   - Bubble glows in your selected intention color
+   - Sets the tone for suggested responses
+
+9. **Suggested Reply Cards**
+   - 2-3 contextual response options appear as card-style bubbles
+   - Each includes:
+     - Message text in bubble format
+     - "Use this reply" button beneath (glows in intention color)
+     - Smooth lift animation on tap
+   - Replies are tailored to your chosen direction
+   - One tap inserts reply into input bar
+
+10. **Your Response Bubble**
+    - When you tap "Use this reply", it appears as right-aligned user bubble
+    - Smooth insert animation
+    - Chat auto-scrolls to show your message
 
 #### Design Features
-- **Dark background** (#050505)
-- **Soft neon accents** matching analysis type
-- **iOS horizontal slide** from right
-- **Smooth fade-in animations**
-- **Glassy borders** with blur
+- **Dark luxury background** (#000000 pure black)
+- **Soft neon purples, blues, oranges, yellows** matching intention types
+- **Blurred glow effects** on all bubbles
+- **SF Pro Display font** throughout
+- **Rounded corners everywhere** - no sharp edges
+- **Natural conversational timing** between each element
+- **iOS-style message threading** with bubbles
+- **Safe emotional space aesthetic** - calm and supportive
 
-### Screen 4: Relationship Direction Selector 🎯
-**NEW ORDERED FLOW - STEP 2** - Choose your path AFTER seeing the analysis.
+#### Motion & Interaction
+- All bubbles fade in with gentle spring animations
+- Typing indicator pulses at 1.5s rhythm
+- Button taps shrink → glow → return
+- Cards slightly lift on hover and tap
+- Auto-scroll follows conversation naturally
+- Swipe right to return to input screen
+
+### Screen 3: Analysis Screen 📊 (Legacy - Replaced by Inline Flow)
+**Note:** This screen is now replaced by the inline chatloop experience. The analysis now appears naturally within the chat conversation instead of as a separate screen.
+
+The old flow showed analysis on a dedicated screen, but the new design integrates everything inline for a more conversational, iOS Messages-like experience.
+
+### Screen 4: Relationship Direction Selector 🎯 (Legacy - Now Inline)
+**Note:** The direction selector now appears inline within the chat conversation as interactive pill buttons, rather than as a modal screen.
 
 #### Four Intention Options
 1. **Improve the Relationship** (Blue 🔵)
@@ -531,24 +570,33 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 
 ## User Flow
 
-### Main Chat Flow
+### Main Inline Chatloop Flow (NEW)
 1. User opens app → sees InputScreen with welcome message
-2. Can tap "View Your Timeline" to access calendar
-3. User types or speaks message → message is sent
-4. App navigates to ChatScreen (Home tab)
-5. AI processes message and shows:
-   - AI response
-   - Emotional analysis card
-   - 3 suggested responses
-6. User can:
-   - Continue conversation
-   - Use suggested response
-   - Modify suggested response
+2. User types or speaks message → message is sent
+3. App navigates to ChatScreen with smooth transition
+4. **Inline Analysis Flow Begins:**
+   - Typing indicator appears (3 pulsing dots, 1.5s)
+   - Emotional validation bubble: "I can tell this weighed on you..."
+   - Typing indicator returns (1.2s)
+   - Quick summary card with 4 color-coded insights
+   - Deep analysis bubble with psychological insights
+   - Direction selector with 4 pill buttons appears
+5. **User Selects Intention:**
+   - Taps one of: Improve / Distance / Maintain / Gain Clarity
+   - Button glows with intention color
+   - Typing indicator shows (1.2s)
+6. **Tailored Guidance Appears:**
+   - Personalized mindset message bubble
+   - 2-3 suggested reply cards with "Use this reply" buttons
+7. User can:
+   - Tap "Use this reply" to insert text into input bar
+   - Modify the suggested response
+   - Send their own message
+   - Continue the conversation
    - Start new loop
    - View past loops
-   - Log to calendar (future)
-7. Loop continues with context-aware responses
-8. All conversations auto-saved
+8. Loop continues with full context awareness
+9. All conversations auto-saved to device
 
 ### Calendar Flow
 1. User taps **3-bar menu** (top-left) on any screen
@@ -564,25 +612,25 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ## Features Implemented
 
 ✅ Dark theme UI with neon intention colors
-✅ ChatGPT-style conversation interface
-✅ Real-time message animations
-✅ **NEW: Ordered Response Flow** - Analysis → Direction → Suggestions
-✅ **NEW: Analysis Screen (Step 1)** - Full analysis before any choices
-✅ **NEW: Quick Summary Bullets** - Tone, Pattern, Impact, Core Issue
-✅ **NEW: Relationship Direction Selector (Step 2)** - Choose path after analysis
-✅ **NEW: Suggestions Screen (Step 3)** - Tailored advice after direction
-✅ **NEW: 4 Intention Types** - Improve, Distance, Maintain, Gain Clarity
-✅ **NEW: Dynamic color theming** - Blue, Orange, Yellow, Purple
-✅ **NEW: iOS-style transitions** - Smooth horizontal and modal animations
-✅ **NEW: Copy to clipboard** - One-tap copy for suggested replies
-✅ Emotional analysis with visual metrics (inline - legacy)
-✅ Smart response suggestions (3 tones) - Legacy inline
+✅ **NEW: Inline Chatloop with Clarity Analysis** - Full analysis flows naturally within chat
+✅ **NEW: Typing Indicators** - 3-dot pulsing animation with soft purple glow
+✅ **NEW: Emotional Validation Bubbles** - Empathetic messages that acknowledge feelings
+✅ **NEW: Quick Summary Cards** - Color-coded insights (Tone, Pattern, Impact, Core Issue)
+✅ **NEW: Deep Analysis Bubbles** - Psychological insights in conversational format
+✅ **NEW: Inline Direction Selector** - 4 pill buttons for choosing relationship path
+✅ **NEW: Tailored Guidance Bubbles** - Personalized mindset messages per intention
+✅ **NEW: Suggested Reply Cards** - Contextual responses with "Use this reply" buttons
+✅ **NEW: Intention-Based Color Theming** - Blue/Orange/Yellow/Purple glow effects
+✅ **NEW: Natural Conversational Timing** - Realistic pauses between responses
+✅ **NEW: Smooth Bubble Animations** - Spring physics and fade-in effects
+✅ **NEW: iOS Messages-Style Interface** - Native mobile chat aesthetic
+✅ Real-time message animations with reanimated v3
 ✅ Native stack navigation (no bottom tabs)
-✅ **3-bar menu dropdown with native iOS/Android styling**
+✅ 3-bar menu dropdown with native iOS/Android styling
 ✅ Keyboard-aware input
 ✅ Auto-scrolling chat
 ✅ GPT-5 Mini (o4-mini) integration
-✅ Type-safe state management
+✅ Type-safe state management with Zustand
 ✅ Past loops system
 ✅ Loop persistence (AsyncStorage)
 ✅ Auto-generated loop titles

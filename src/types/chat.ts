@@ -1,4 +1,16 @@
-export type MessageRole = "user" | "assistant" | "analysis" | "suggestions" | "image-analysis";
+export type MessageRole =
+  | "user"
+  | "assistant"
+  | "analysis"
+  | "suggestions"
+  | "image-analysis"
+  | "typing"
+  | "emotional-validation"
+  | "quick-summary"
+  | "deep-analysis"
+  | "direction-selector"
+  | "tailored-guidance"
+  | "suggested-reply-card";
 
 export interface Message {
   id: string;
@@ -55,4 +67,58 @@ export interface ImageAnalysisMessage extends Message {
   analysis: ImageAnalysis;
 }
 
-export type ChatMessage = Message | AnalysisMessage | SuggestionsMessage | ImageAnalysisMessage;
+// New inline analysis message types
+export interface TypingMessage extends Message {
+  role: "typing";
+}
+
+export interface EmotionalValidationMessage extends Message {
+  role: "emotional-validation";
+  content: string; // The empathetic message
+}
+
+export interface QuickSummaryMessage extends Message {
+  role: "quick-summary";
+  tone: string;
+  pattern: string;
+  emotionalImpact: string;
+  coreIssue: string;
+}
+
+export interface DeepAnalysisMessage extends Message {
+  role: "deep-analysis";
+  content: string; // 2-3 sentence paragraph
+}
+
+export interface DirectionSelectorMessage extends Message {
+  role: "direction-selector";
+  selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
+}
+
+export interface TailoredGuidanceMessage extends Message {
+  role: "tailored-guidance";
+  content: string; // The guidance text
+  intention: "improve" | "distance" | "maintain" | "clarity";
+}
+
+export interface SuggestedReplyCardMessage extends Message {
+  role: "suggested-reply-card";
+  replies: Array<{
+    id: string;
+    text: string;
+  }>;
+  intention: "improve" | "distance" | "maintain" | "clarity";
+}
+
+export type ChatMessage =
+  | Message
+  | AnalysisMessage
+  | SuggestionsMessage
+  | ImageAnalysisMessage
+  | TypingMessage
+  | EmotionalValidationMessage
+  | QuickSummaryMessage
+  | DeepAnalysisMessage
+  | DirectionSelectorMessage
+  | TailoredGuidanceMessage
+  | SuggestedReplyCardMessage;

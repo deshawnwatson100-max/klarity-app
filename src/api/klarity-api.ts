@@ -366,3 +366,182 @@ Respond with valid JSON only containing:
   }
 }
 
+/**
+ * Generate emotional validation message
+ */
+export async function generateEmotionalValidation(
+  userMessage: string
+): Promise<string> {
+  const systemPrompt = `You are Klarity AI, an empathetic assistant. Provide a short, warm, validating message (1-2 sentences) that acknowledges the emotional weight of the user's situation. Make them feel heard and understood.`;
+
+  const messages: GPT5Message[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userMessage },
+  ];
+
+  try {
+    return await callGPT5Mini(messages, 300);
+  } catch (error) {
+    return "I can tell this situation weighed on you emotionally — it makes sense you are feeling this way.";
+  }
+}
+
+/**
+ * Generate tailored guidance based on selected intention
+ */
+export async function generateTailoredGuidance(
+  userMessage: string,
+  intention: "improve" | "distance" | "maintain" | "clarity",
+  analysis: EmotionalAnalysis
+): Promise<string> {
+  const intentionGuidance: Record<typeof intention, string> = {
+    improve: "to create better communication, healing, and understanding",
+    distance: "to create healthy distance and emotional protection",
+    maintain: "to stay neutral and observe patterns before deciding next steps",
+    clarity: "to help you reflect and understand before taking action",
+  };
+
+  const systemPrompt = `You are Klarity AI. The user wants ${intentionGuidance[intention]}.
+
+Given their situation and the analysis, provide a short, supportive message (1-2 sentences) that sets the mindset for this direction. Be calm, clear, and encouraging.`;
+
+  const messages: GPT5Message[] = [
+    { role: "system", content: systemPrompt },
+    {
+      role: "user",
+      content: `Situation: ${userMessage}\n\nAnalysis: ${JSON.stringify(analysis)}`,
+    },
+  ];
+
+  try {
+    return await callGPT5Mini(messages, 400);
+  } catch (error) {
+    const fallbacks: Record<typeof intention, string> = {
+      improve:
+        "Okay — to improve this relationship, we will focus on calm, open communication and emotional understanding.",
+      distance:
+        "Okay — to create healthy distance, we will keep things calm, neutral, and emotionally protective.",
+      maintain:
+        "Okay — to maintain and observe, we will stay neutral and watch for patterns before deciding next steps.",
+      clarity:
+        "Okay — to gain clarity first, we will focus on understanding your feelings and the situation better.",
+    };
+    return fallbacks[intention];
+  }
+}
+
+/**
+ * Generate suggested replies based on intention
+ */
+export async function generateIntentionBasedReplies(
+  userMessage: string,
+  intention: "improve" | "distance" | "maintain" | "clarity",
+  analysis: EmotionalAnalysis
+): Promise<Array<{ id: string; text: string }>> {
+  const intentionContext: Record<typeof intention, string> = {
+    improve:
+      "Generate responses that are warm, open to dialogue, and show willingness to work on the relationship",
+    distance:
+      "Generate responses that are polite but create emotional space, set boundaries, and protect their peace",
+    maintain:
+      "Generate responses that are neutral, observational, and do not escalate or de-escalate the situation",
+    clarity:
+      "Generate responses that ask for clarification, express feelings openly, and seek to understand better",
+  };
+
+  const systemPrompt = `You are Klarity AI. ${intentionContext[intention]}.
+
+Generate 2-3 suggested replies that fit this intention. Each reply should be 1-2 sentences, healthy, and emotionally regulated.
+
+Respond with valid JSON only containing:
+- replies: array of { id: string, text: string }`;
+
+  const messages: GPT5Message[] = [
+    { role: "system", content: systemPrompt },
+    {
+      role: "user",
+      content: `Situation: ${userMessage}\n\nAnalysis: ${JSON.stringify(analysis)}`,
+    },
+  ];
+
+  try {
+    const response = await callGPT5Mini(messages, 1000, true);
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    const replies = parsed.replies || [];
+    if (!Array.isArray(replies) || replies.length === 0) {
+      throw new Error("Invalid replies structure");
+    }
+
+    return replies.slice(0, 3).map((item: any, index: number) => ({
+      id: item.id || (index + 1).toString(),
+      text: item.text || "I hear you. Let me think about that.",
+    }));
+  } catch (error) {
+    console.error("Error generating intention-based replies:", error);
+
+    // Return fallback replies based on intention
+    const fallbacks: Record<
+      typeof intention,
+      Array<{ id: string; text: string }>
+    > = {
+      improve: [
+        {
+          id: "1",
+          text: "I hear what you are saying. Can we talk about this calmly and work through it together?",
+        },
+        {
+          id: "2",
+          text: "I want to understand your perspective better. Can you help me see where you are coming from?",
+        },
+      ],
+      distance: [
+        {
+          id: "1",
+          text: "I hear you. I think I need a little space right now to process this.",
+        },
+        {
+          id: "2",
+          text: "I understand. Let me take some time to think about this, and we can talk later.",
+        },
+      ],
+      maintain: [
+        {
+          id: "1",
+          text: "I see what you are saying. Let me think about that for a bit.",
+        },
+        {
+          id: "2",
+          text: "Got it. I will keep that in mind as we move forward.",
+        },
+      ],
+      clarity: [
+        {
+          id: "1",
+          text: "I am not sure I fully understand. Can you explain what you mean by that?",
+        },
+        {
+          id: "2",
+          text: "I feel confused about this. Can we talk through it so I can understand better?",
+        },
+      ],
+    };
+
+    return fallbacks[intention];
+  }
+}
+
+

@@ -22,27 +22,39 @@ import Animated, {
 import { Header } from "../components/Header";
 import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
-import { AnalysisCard } from "../components/AnalysisCard";
-import { SuggestionsCard } from "../components/SuggestionsCard";
 import { ImageAnalysisCard } from "../components/ImageAnalysisCard";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
+import { TypingIndicator } from "../components/TypingIndicator";
+import { EmotionalValidationBubble } from "../components/EmotionalValidationBubble";
+import { QuickSummaryBubble } from "../components/QuickSummaryBubble";
+import { DeepAnalysisBubble } from "../components/DeepAnalysisBubble";
+import { DirectionSelectorBubble } from "../components/DirectionSelectorBubble";
+import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
+import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
   generateEmotionalAnalysis,
-  generateSuggestedResponses,
-  generateChatResponse,
+  generateEmotionalValidation,
+  generateTailoredGuidance,
+  generateIntentionBasedReplies,
   analyzeImageToxicity,
 } from "../api/klarity-api";
 import {
   ChatMessage,
-  AnalysisMessage,
-  SuggestionsMessage,
-  SuggestedResponse,
+  TypingMessage,
+  EmotionalValidationMessage,
+  QuickSummaryMessage,
+  DeepAnalysisMessage,
+  DirectionSelectorMessage,
+  TailoredGuidanceMessage,
+  SuggestedReplyCardMessage,
   ImageAnalysisMessage,
+  EmotionalAnalysis,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
+type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
 export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -52,20 +64,23 @@ export function ChatScreen({ navigation }: Props) {
   const [currentInput, setCurrentInput] = useState("");
   const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
+  const [currentAnalysis, setCurrentAnalysis] = useState<EmotionalAnalysis | null>(null);
+  const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
-  // Use loops store instead of chat store
+  // Use loops store
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
-  // Get active loop - this will re-render when activeLoopId changes
+  // Get active loop
   const activeLoop = getActiveLoop();
   const messages = activeLoop?.messages || [];
 
@@ -93,6 +108,7 @@ export function ChatScreen({ navigation }: Props) {
   const processUserMessage = async (userMessage: ChatMessage) => {
     setIsProcessing(true);
     setIsLoading(true);
+    setCurrentUserMessage(userMessage.content);
 
     try {
       // Check if this is an image message
@@ -119,32 +135,8 @@ export function ChatScreen({ navigation }: Props) {
         };
         addMessageToActiveLoop(analysisMessage);
       } else {
-        // For text messages, do normal emotional analysis
-        // Generate AI response
-        const aiResponse = await generateChatResponse(userMessage.content, []);
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content: aiResponse,
-          timestamp: Date.now(),
-        });
-
-        // Generate emotional analysis
-        const analysis = await generateEmotionalAnalysis(userMessage.content);
-        const analysisMessage: AnalysisMessage = {
-          id: Date.now().toString() + "_analysis",
-          role: "analysis",
-          content: "",
-          timestamp: Date.now(),
-          analysis,
-        };
-        addMessageToActiveLoop(analysisMessage);
-
-        // Navigate to Analysis Screen with the full analysis
-        navigation.navigate("AnalysisScreen", {
-          analysis,
-          userMessage: userMessage.content,
-        });
+        // For text messages, do inline emotional analysis flow
+        await startInlineAnalysisFlow(userMessage.content);
       }
     } catch (error) {
       console.error("Error processing message:", error);
@@ -159,6 +151,146 @@ export function ChatScreen({ navigation }: Props) {
       setIsLoading(false);
       setIsProcessing(false);
     }
+  };
+
+  const startInlineAnalysisFlow = async (userMessageContent: string) => {
+    // Step 1: Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    // Wait briefly for animation
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Step 2: Generate and show emotional validation
+    const validation = await generateEmotionalValidation(userMessageContent);
+    const validationMsg: EmotionalValidationMessage = {
+      id: Date.now().toString() + "_validation",
+      role: "emotional-validation",
+      content: validation,
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(validationMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // Step 3: Show typing again
+    const typingMsg2: TypingMessage = {
+      id: Date.now().toString() + "_typing2",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg2);
+
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Step 4: Generate and show analysis
+    const analysis = await generateEmotionalAnalysis(userMessageContent);
+    setCurrentAnalysis(analysis);
+
+    // Show quick summary
+    const summaryMsg: QuickSummaryMessage = {
+      id: Date.now().toString() + "_summary",
+      role: "quick-summary",
+      content: "",
+      timestamp: Date.now(),
+      tone: analysis.tone || "Mixed",
+      pattern: analysis.pattern || "Complex interaction",
+      emotionalImpact: analysis.emotionalImpact || "Moderate confusion",
+      coreIssue: analysis.coreIssue || "Communication mismatch",
+    };
+    addMessageToActiveLoop(summaryMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Step 5: Show deep analysis
+    const deepAnalysisMsg: DeepAnalysisMessage = {
+      id: Date.now().toString() + "_deep",
+      role: "deep-analysis",
+      content: analysis.fullAnalysis || analysis.summary,
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(deepAnalysisMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Step 6: Show direction selector
+    const directionMsg: DirectionSelectorMessage = {
+      id: Date.now().toString() + "_direction",
+      role: "direction-selector",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(directionMsg);
+  };
+
+  const handleSelectIntention = async (intention: IntentionType) => {
+    if (!currentAnalysis) return;
+
+    // Update the direction selector message to show selection
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === "direction-selector") {
+      const updated: DirectionSelectorMessage = {
+        ...lastMsg,
+        selectedIntention: intention,
+      } as DirectionSelectorMessage;
+      updateMessageInActiveLoop(lastMsg.id, updated);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // Show typing
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing3",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Generate and show tailored guidance
+    const guidance = await generateTailoredGuidance(
+      currentUserMessage,
+      intention,
+      currentAnalysis
+    );
+    const guidanceMsg: TailoredGuidanceMessage = {
+      id: Date.now().toString() + "_guidance",
+      role: "tailored-guidance",
+      content: guidance,
+      timestamp: Date.now(),
+      intention,
+    };
+    addMessageToActiveLoop(guidanceMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Generate and show suggested replies
+    const replies = await generateIntentionBasedReplies(
+      currentUserMessage,
+      intention,
+      currentAnalysis
+    );
+    const repliesMsg: SuggestedReplyCardMessage = {
+      id: Date.now().toString() + "_replies",
+      role: "suggested-reply-card",
+      content: "",
+      timestamp: Date.now(),
+      replies,
+      intention,
+    };
+    addMessageToActiveLoop(repliesMsg);
+  };
+
+  const handleSelectReply = (replyText: string) => {
+    setCurrentInput(replyText);
   };
 
   const handleSend = async () => {
@@ -192,35 +324,68 @@ export function ChatScreen({ navigation }: Props) {
     setSelectedImageBase64(undefined);
   };
 
-  const handleSelectResponse = (response: SuggestedResponse) => {
-    setCurrentInput(response.text);
-  };
-
   const handleVoicePress = () => {
-    // TODO: Implement voice input
     console.log("Voice input pressed");
   };
 
-  const handlePlusPress = () => {
-    // TODO: Implement image upload or other options
-    console.log("Plus button pressed");
-  };
-
   const renderMessage = (message: ChatMessage) => {
-    if (message.role === "analysis") {
-      const analysisMsg = message as AnalysisMessage;
+    if (message.role === "typing") {
+      return <TypingIndicator key={message.id} />;
+    }
+
+    if (message.role === "emotional-validation") {
+      const msg = message as EmotionalValidationMessage;
+      return <EmotionalValidationBubble key={message.id} content={msg.content} />;
+    }
+
+    if (message.role === "quick-summary") {
+      const msg = message as QuickSummaryMessage;
       return (
-        <AnalysisCard key={message.id} analysis={analysisMsg.analysis} />
+        <QuickSummaryBubble
+          key={message.id}
+          tone={msg.tone}
+          pattern={msg.pattern}
+          emotionalImpact={msg.emotionalImpact}
+          coreIssue={msg.coreIssue}
+        />
       );
     }
 
-    if (message.role === "suggestions") {
-      const suggestionsMsg = message as SuggestionsMessage;
+    if (message.role === "deep-analysis") {
+      const msg = message as DeepAnalysisMessage;
+      return <DeepAnalysisBubble key={message.id} content={msg.content} />;
+    }
+
+    if (message.role === "direction-selector") {
+      const msg = message as DirectionSelectorMessage;
       return (
-        <SuggestionsCard
+        <DirectionSelectorBubble
           key={message.id}
-          suggestions={suggestionsMsg.suggestions}
-          onSelectResponse={handleSelectResponse}
+          onSelectIntention={handleSelectIntention}
+          selectedIntention={msg.selectedIntention}
+        />
+      );
+    }
+
+    if (message.role === "tailored-guidance") {
+      const msg = message as TailoredGuidanceMessage;
+      return (
+        <TailoredGuidanceBubble
+          key={message.id}
+          content={msg.content}
+          intention={msg.intention}
+        />
+      );
+    }
+
+    if (message.role === "suggested-reply-card") {
+      const msg = message as SuggestedReplyCardMessage;
+      return (
+        <SuggestedReplyCard
+          key={message.id}
+          replies={msg.replies}
+          intention={msg.intention}
+          onSelectReply={handleSelectReply}
         />
       );
     }
@@ -246,41 +411,36 @@ export function ChatScreen({ navigation }: Props) {
     );
   };
 
-  // Handler for navigating back (must be wrapped with runOnJS)
+  // Handler for navigating back
   const handleNavigateBack = () => {
     navigation.navigate("InputScreen");
   };
 
-  // Swipe gesture to go back to home screen with animation
+  // Swipe gesture to go back
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX(50) // Only trigger when swiping right with at least 50px
-        .failOffsetX(-50) // Fail if swiping left
+        .activeOffsetX(50)
+        .failOffsetX(-50)
         .onUpdate((event) => {
-          // Only allow right swipes (positive translationX)
           if (event.translationX > 0) {
             translateX.value = event.translationX;
-            // Scale down as user swipes (from 1 to 0.9)
             scale.value = interpolate(
               event.translationX,
-              [0, 150], // Even faster - start scaling at 150px
+              [0, 150],
               [1, 0.92],
               Extrapolate.CLAMP
             );
-            // Fade out MORE to reveal screen behind clearly
             opacity.value = interpolate(
               event.translationX,
-              [0, 100], // Start fading much earlier
-              [1, 0.7], // Fade to 70% to make InputScreen very visible
+              [0, 100],
+              [1, 0.7],
               Extrapolate.CLAMP
             );
           }
         })
         .onEnd((event) => {
-          // If user swiped right with sufficient distance and velocity
           if (event.velocityX > 500 && event.translationX > 100) {
-            // Animate off screen then navigate - even faster
             translateX.value = withTiming(400, { duration: 120 }, (finished) => {
               if (finished) {
                 runOnJS(handleNavigateBack)();
@@ -289,7 +449,6 @@ export function ChatScreen({ navigation }: Props) {
             scale.value = withTiming(0.85, { duration: 120 });
             opacity.value = withTiming(0, { duration: 120 });
           } else {
-            // Spring back to original position
             translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
             scale.value = withSpring(1, { damping: 20, stiffness: 300 });
             opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
@@ -298,7 +457,7 @@ export function ChatScreen({ navigation }: Props) {
     [navigation]
   );
 
-  // Animated style for the swipe transition
+  // Animated style for swipe transition
   const animatedContainerStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -306,7 +465,6 @@ export function ChatScreen({ navigation }: Props) {
         { scale: scale.value },
       ],
       opacity: opacity.value,
-      // Add shadow during transition for depth effect
       shadowOpacity: interpolate(
         translateX.value,
         [0, 400],
@@ -320,7 +478,7 @@ export function ChatScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1, backgroundColor: 'black' }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1, backgroundColor: "black" }, animatedContainerStyle]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
@@ -340,9 +498,9 @@ export function ChatScreen({ navigation }: Props) {
 
             {isLoading && (
               <View className="flex-row items-center gap-3 mb-4">
-                <ActivityIndicator size="small" color="#B4FF39" />
+                <ActivityIndicator size="small" color="#B47CFF" />
                 <Text className="text-neutral-400 text-sm">
-                  Analyzing your message...
+                  Processing...
                 </Text>
               </View>
             )}
