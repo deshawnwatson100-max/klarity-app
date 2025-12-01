@@ -5,7 +5,8 @@ import { ChatScreen } from "../screens/ChatScreen";
 import { CalendarScreen } from "../screens/CalendarScreen";
 import { LogDetailScreen } from "../screens/LogDetailScreen";
 import { RelationshipDirectionScreen } from "../screens/RelationshipDirectionScreen";
-import { GuidanceScreen } from "../screens/GuidanceScreen";
+import { SuggestionsScreen } from "../screens/SuggestionsScreen";
+import { AnalysisScreen } from "../screens/AnalysisScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -15,8 +16,12 @@ export type RootStackParamList = {
     date: string;
     entryIds: string[];
   };
+  AnalysisScreen: {
+    analysis: import("../types/chat").EmotionalAnalysis;
+    userMessage: string;
+  };
   RelationshipDirectionScreen: undefined;
-  GuidanceScreen: {
+  SuggestionsScreen: {
     intention: import("../types/calendar").IntentionType;
   };
 };
@@ -158,6 +163,51 @@ export function RootNavigator() {
       />
       <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />
 
+      {/* Analysis Screen - iOS horizontal slide from right */}
+      <Stack.Screen
+        name="AnalysisScreen"
+        component={AnalysisScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#050505" },
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.width, 0], // Slide from right
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5], // Dark overlay
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
+
       {/* Relationship Direction Selector - Modal presentation */}
       <Stack.Screen
         name="RelationshipDirectionScreen"
@@ -205,10 +255,10 @@ export function RootNavigator() {
         }}
       />
 
-      {/* Guidance Screen - Horizontal slide from right */}
+      {/* Suggestions Screen - Horizontal slide from right */}
       <Stack.Screen
-        name="GuidanceScreen"
-        component={GuidanceScreen}
+        name="SuggestionsScreen"
+        component={SuggestionsScreen}
         options={{
           gestureEnabled: true,
           gestureDirection: "horizontal",

@@ -78,7 +78,12 @@ Provide a JSON object with:
 - emotionalClarity: number between 0-100
 - detectedState: string (1-3 word emotion)
 - relationshipRisk: must be "low", "medium", or "high"
-- summary: string (1-2 calm sentences)`;
+- summary: string (1-2 calm sentences)
+- tone: string (communication tone detected, 1-2 words)
+- pattern: string (behavior pattern identified, 2-4 words)
+- emotionalImpact: string (how it affects you, 2-4 words)
+- coreIssue: string (root problem, 2-4 words)
+- fullAnalysis: string (2-3 calm sentences with deeper insights)`;
 
   const messages: GPT5Message[] = [
     { role: "system", content: systemPrompt },
@@ -87,7 +92,7 @@ Provide a JSON object with:
 
   try {
     // o4-mini uses reasoning tokens + output tokens, so we need more total tokens
-    const response = await callGPT5Mini(messages, 1000, true);
+    const response = await callGPT5Mini(messages, 1500, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();

@@ -13,7 +13,7 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 import { IntentionType, INTENTIONS } from "../types/calendar";
 import Clipboard from "@react-native-clipboard/clipboard";
 
-type Props = StackScreenProps<RootStackParamList, "GuidanceScreen">;
+type Props = StackScreenProps<RootStackParamList, "SuggestionsScreen">;
 
 interface GuidanceContent {
   mindsetGuidance: string[];
@@ -111,7 +111,7 @@ function getGuidanceForIntention(intention: IntentionType): GuidanceContent {
   }
 }
 
-export function GuidanceScreen({ route, navigation }: Props) {
+export function SuggestionsScreen({ route, navigation }: Props) {
   const { intention } = route.params;
   const insets = useSafeAreaInsets();
   const intentionConfig = INTENTIONS[intention];

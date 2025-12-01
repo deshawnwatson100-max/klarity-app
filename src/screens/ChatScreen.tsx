@@ -138,9 +138,11 @@ export function ChatScreen({ navigation }: Props) {
         };
         addMessageToActiveLoop(analysisMessage);
 
-        // Navigate to Relationship Direction Selector instead of showing suggestions immediately
-        // The user will choose their intention, then see tailored guidance
-        navigation.navigate("RelationshipDirectionScreen");
+        // Navigate to Analysis Screen with the full analysis
+        navigation.navigate("AnalysisScreen", {
+          analysis,
+          userMessage: userMessage.content,
+        });
       }
     } catch (error) {
       console.error("Error processing message:", error);

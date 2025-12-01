@@ -14,6 +14,12 @@ export interface EmotionalAnalysis {
   detectedState: string;
   relationshipRisk: "low" | "medium" | "high";
   summary: string;
+  // Quick summary bullets for Analysis Screen
+  tone?: string;
+  pattern?: string;
+  emotionalImpact?: string;
+  coreIssue?: string;
+  fullAnalysis?: string;
 }
 
 export interface SuggestedResponse {

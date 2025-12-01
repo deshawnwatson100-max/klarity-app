@@ -34,15 +34,53 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Auto-scrolling to latest message
 - Header with navigation and history access
 
-### Screen 3: Emotional Analysis (Inline)
-Analysis cards appear in the conversation thread showing:
-- **Emotional Clarity %** - Visual progress bar
-- **Detected Emotional State** - AI-identified emotion
-- **Relationship Risk Level** - Low/Medium/High indicator
-- **Summary** - Clear, calm analysis
+### Screen 3: Analysis Screen 📊
+**NEW ORDERED FLOW - STEP 1** - Full situation analysis appears BEFORE any direction selection.
+
+#### Screen Components (In Order)
+1. **Screen Header**
+   - Title: "Your Clarity Analysis"
+   - Subtitle: "Here is what is really happening."
+
+2. **Quick Summary Bullets**
+   - **Tone** (Blue) - Communication tone detected
+   - **Pattern** (Purple) - Behavior pattern identified
+   - **Emotional Impact** (Orange) - How it affects you
+   - **Core Issue** (Yellow) - Root problem
+   - Color-coded left borders with bold labels
+
+3. **Emotional Clarity Bar**
+   - Visual percentage (0-100%)
+   - Gradient progress bar (Blue to Purple)
+   - Large number display
+
+4. **Full Analysis Section**
+   - 2-3 calm sentences with deeper insights
+   - Dark card with gentle spacing
+   - Readable typography
+
+5. **Relationship Risk**
+   - Badge display: Low (Green) / Medium (Amber) / High (Red)
+   - Clear visual indicator
+
+6. **Transition Prompt**
+   - "Before I help you respond..."
+   - "What direction do you want to take this relationship?"
+   - Primes user for next step
+
+7. **Continue Button**
+   - Gradient (Blue to Purple)
+   - Navigates to Direction Selector
+
+#### Design Features
+- **Dark background** (#050505)
+- **Soft neon accents** matching analysis type
+- **iOS horizontal slide** from right
+- **Smooth fade-in animations**
+- **Glassy borders** with blur
 
 ### Screen 4: Relationship Direction Selector 🎯
-**NEW FEATURE** - After emotional analysis, choose the direction you want to take with the relationship.
+**NEW ORDERED FLOW - STEP 2** - Choose your path AFTER seeing the analysis.
 
 #### Four Intention Options
 1. **Improve the Relationship** (Blue 🔵)
@@ -72,8 +110,10 @@ Analysis cards appear in the conversation thread showing:
 - **Modal presentation** sliding from bottom
 - **Continue button** activates after selection
 
-### Screen 5: Guidance Screen 💡
-**NEW FEATURE** - Personalized guidance based on your chosen relationship direction.
+### Screen 5: Suggestions Screen 💡
+**NEW ORDERED FLOW - STEP 3** - Tailored guidance ONLY appears after choosing your direction.
+
+This screen shows personalized advice based on the path you selected.
 
 #### What You Get
 1. **Mindset Guidance**
@@ -104,15 +144,19 @@ Analysis cards appear in the conversation thread showing:
 - **Neon accent lines** matching your path
 - **Glassy cards** with soft blur effects
 
-#### Flow Experience
-1. **Analysis appears** in chat after AI response
-2. **Direction Selector modal** slides up from bottom
-3. **Select your intention** - Card glows and shows checkmark
-4. **Continue button** activates with intention color
-5. **Guidance Screen slides** in from right
-6. **Swipe back** to re-select if needed
+#### Flow Experience (ORDERED SEQUENCE)
+1. **User sends message** in chat
+2. **AI responds** with initial analysis
+3. **Analysis Screen** (Step 1) - Full analysis with quick bullets
+4. **Continue button** takes you to Direction Selector
+5. **Direction Selector modal** (Step 2) - Choose your intention
+6. **Card glows** and checkmark appears on selection
+7. **Continue button** activates with intention color
+8. **Suggestions Screen** (Step 3) - Slides in from right with tailored advice
+9. **Copy replies** with one tap
+10. **Swipe back** to re-select direction if needed
 
-### Screen 6: Response Suggestions (Legacy)
+### Screen 6: Chat Screen (Inline - Legacy)
 This screen is now replaced by the Guidance Screen flow, but the old inline suggestions are kept for reference:
 - **Tone indicators** - Soften, Direct, or Playful
 - **Use this reply** buttons - One-tap to use suggestion
@@ -372,10 +416,11 @@ Each loop stores:
 │   ├── screens/
 │   │   ├── InputScreen.tsx         # Welcome screen with menu access
 │   │   ├── ChatScreen.tsx          # Main chat interface
+│   │   ├── AnalysisScreen.tsx      # NEW: Step 1 - Full analysis display
+│   │   ├── RelationshipDirectionScreen.tsx  # NEW: Step 2 - Direction selector
+│   │   ├── SuggestionsScreen.tsx   # NEW: Step 3 - Tailored guidance
 │   │   ├── CalendarScreen.tsx      # Monthly calendar view
-│   │   ├── LogDetailScreen.tsx     # Calendar entry details
-│   │   ├── RelationshipDirectionScreen.tsx  # NEW: Direction selector screen
-│   │   └── GuidanceScreen.tsx      # NEW: Tailored guidance screen
+│   │   └── LogDetailScreen.tsx     # Calendar entry details
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
 │   │   ├── loopsStore.ts           # Loops state with persistence
@@ -521,14 +566,17 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ Dark theme UI with neon intention colors
 ✅ ChatGPT-style conversation interface
 ✅ Real-time message animations
-✅ Emotional analysis with visual metrics
-✅ **NEW: Relationship Direction Selector** - Choose your path after analysis
-✅ **NEW: Guidance Screen** - Tailored advice based on chosen intention
+✅ **NEW: Ordered Response Flow** - Analysis → Direction → Suggestions
+✅ **NEW: Analysis Screen (Step 1)** - Full analysis before any choices
+✅ **NEW: Quick Summary Bullets** - Tone, Pattern, Impact, Core Issue
+✅ **NEW: Relationship Direction Selector (Step 2)** - Choose path after analysis
+✅ **NEW: Suggestions Screen (Step 3)** - Tailored advice after direction
 ✅ **NEW: 4 Intention Types** - Improve, Distance, Maintain, Gain Clarity
 ✅ **NEW: Dynamic color theming** - Blue, Orange, Yellow, Purple
-✅ **NEW: Modal transitions** - Smooth iOS-style animations
+✅ **NEW: iOS-style transitions** - Smooth horizontal and modal animations
 ✅ **NEW: Copy to clipboard** - One-tap copy for suggested replies
-✅ Smart response suggestions (3 tones) - Legacy
+✅ Emotional analysis with visual metrics (inline - legacy)
+✅ Smart response suggestions (3 tones) - Legacy inline
 ✅ Native stack navigation (no bottom tabs)
 ✅ **3-bar menu dropdown with native iOS/Android styling**
 ✅ Keyboard-aware input

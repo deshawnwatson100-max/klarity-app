@@ -8,7 +8,7 @@ type Props = StackScreenProps<RootStackParamList, "RelationshipDirectionScreen">
 
 export function RelationshipDirectionScreen({ navigation }: Props) {
   const handleContinue = (intention: IntentionType) => {
-    navigation.navigate("GuidanceScreen", { intention });
+    navigation.navigate("SuggestionsScreen", { intention });
   };
 
   return <RelationshipDirectionSelector onContinue={handleContinue} />;
