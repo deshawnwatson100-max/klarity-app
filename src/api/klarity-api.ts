@@ -91,8 +91,8 @@ Provide a JSON object with:
   ];
 
   try {
-    // o4-mini uses reasoning tokens + output tokens, so we need more total tokens
-    const response = await callGPT5Mini(messages, 1500, true);
+    // o4-mini uses reasoning tokens + output tokens, need much more for reasoning models
+    const response = await callGPT5Mini(messages, 3000, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -162,8 +162,8 @@ Provide a JSON object with a "suggestions" array containing 3 items, each with:
   ];
 
   try {
-    // o4-mini uses reasoning tokens + output tokens, so we need more total tokens
-    const response = await callGPT5Mini(messages, 1200, true);
+    // o4-mini uses reasoning tokens + output tokens, need much more for reasoning models
+    const response = await callGPT5Mini(messages, 2500, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -251,8 +251,8 @@ Your responses should be:
     { role: "user", content: userMessage },
   ];
 
-  // o4-mini uses reasoning tokens, so we need more total tokens
-  return callGPT5Mini(messages, 1200);
+  // o4-mini uses reasoning tokens, need much more for reasoning models
+  return callGPT5Mini(messages, 2500);
 }
 
 /**
@@ -380,7 +380,7 @@ export async function generateEmotionalValidation(
   ];
 
   try {
-    return await callGPT5Mini(messages, 300);
+    return await callGPT5Mini(messages, 1000);
   } catch (error) {
     return "I can tell this situation weighed on you emotionally — it makes sense you are feeling this way.";
   }
@@ -414,7 +414,7 @@ Given their situation and the analysis, provide a short, supportive message (1-2
   ];
 
   try {
-    return await callGPT5Mini(messages, 400);
+    return await callGPT5Mini(messages, 1500);
   } catch (error) {
     const fallbacks: Record<typeof intention, string> = {
       improve:
@@ -465,7 +465,7 @@ Respond with valid JSON only containing:
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 1000, true);
+    const response = await callGPT5Mini(messages, 2500, true);
 
     let jsonStr = response.trim();
     jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
