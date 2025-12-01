@@ -41,12 +41,14 @@ export function InputScreen({ navigation }: Props) {
   const canNavigate = useSharedValue(false);
   const opacity = useSharedValue(1);
 
+  const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
+  // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
 
   // Update shared value when messages change

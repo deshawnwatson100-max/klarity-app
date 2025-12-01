@@ -59,11 +59,13 @@ export function ChatScreen({ navigation }: Props) {
   const opacity = useSharedValue(1);
 
   // Use loops store instead of chat store
+  const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
+  // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
   const messages = activeLoop?.messages || [];
 
