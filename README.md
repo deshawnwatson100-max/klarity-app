@@ -8,10 +8,11 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 
 - **Real-time AI conversations** with emotional intelligence
 - **Emotional analysis** of messages (clarity %, detected state, relationship risk)
-- **Smart response suggestions** with different tones (soften, direct, playful)
+- **Relationship Direction Selector** - Choose your intention and get tailored guidance
+- **Smart response suggestions** with different tones based on your chosen path
 - **Past loops system** - Save and switch between conversation sessions
 - **Emotional Log Calendar** - Track and visualize your emotional journey over time
-- **Beautiful dark UI** with lime green accents (#B4FF39)
+- **Beautiful dark UI** with neon accents (blue, orange, yellow, purple)
 
 ## Features
 
@@ -40,8 +41,79 @@ Analysis cards appear in the conversation thread showing:
 - **Relationship Risk Level** - Low/Medium/High indicator
 - **Summary** - Clear, calm analysis
 
-### Screen 4: Response Suggestions (Inline)
-Three suggested responses with:
+### Screen 4: Relationship Direction Selector 🎯
+**NEW FEATURE** - After emotional analysis, choose the direction you want to take with the relationship.
+
+#### Four Intention Options
+1. **Improve the Relationship** (Blue 🔵)
+   - For better communication, healing, and understanding
+   - Icon: Heart
+   - Tailored for connection and growth
+
+2. **Create Healthy Distance** (Orange 🟠)
+   - For emotional protection, space, and calmer interactions
+   - Icon: Shield
+   - Tailored for boundary-setting
+
+3. **Maintain & Observe** (Yellow 🟡)
+   - Stay neutral and watch patterns before deciding next steps
+   - Icon: Eye
+   - Tailored for patience and observation
+
+4. **Gain Clarity First** (Purple 🟣)
+   - If you are unsure, get help reflecting and understanding
+   - Icon: Lightbulb
+   - Tailored for self-discovery
+
+#### Design Features
+- **Dark luxury aesthetic** with soft neon glows
+- **Interactive cards** that expand and glow when selected
+- **Smooth animations** with spring physics
+- **Modal presentation** sliding from bottom
+- **Continue button** activates after selection
+
+### Screen 5: Guidance Screen 💡
+**NEW FEATURE** - Personalized guidance based on your chosen relationship direction.
+
+#### What You Get
+1. **Mindset Guidance**
+   - 3 bold statements to frame your approach
+   - Color-coded to match your intention
+   - Example (Distance): "Keep responses short and neutral"
+
+2. **Suggested Replies**
+   - 3 contextual response options
+   - Tailored to your chosen path
+   - One-tap copy to clipboard
+   - Message bubble style with copy button
+
+3. **Why This Works**
+   - Psychological explanation
+   - Helps you understand the reasoning
+   - Builds emotional intelligence
+
+4. **Optional Tools**
+   - Boundary language tips
+   - Emotional grounding techniques
+   - Pattern recognition strategies
+
+#### Design Features
+- **Dynamic color theming** based on intention
+- **Horizontal slide transition** from right (iOS-style)
+- **Back gesture support** - Swipe right to return
+- **Neon accent lines** matching your path
+- **Glassy cards** with soft blur effects
+
+#### Flow Experience
+1. **Analysis appears** in chat after AI response
+2. **Direction Selector modal** slides up from bottom
+3. **Select your intention** - Card glows and shows checkmark
+4. **Continue button** activates with intention color
+5. **Guidance Screen slides** in from right
+6. **Swipe back** to re-select if needed
+
+### Screen 6: Response Suggestions (Legacy)
+This screen is now replaced by the Guidance Screen flow, but the old inline suggestions are kept for reference:
 - **Tone indicators** - Soften, Direct, or Playful
 - **Use this reply** buttons - One-tap to use suggestion
 - Smart context-aware responses
@@ -289,10 +361,11 @@ Each loop stores:
 │   │   ├── InputBar.tsx            # Message input with voice & image picker
 │   │   ├── MessageBubble.tsx       # Chat message bubbles with image support
 │   │   ├── AnalysisCard.tsx        # Emotional analysis display
-│   │   ├── SuggestionsCard.tsx     # Response suggestions
+│   │   ├── SuggestionsCard.tsx     # Response suggestions (legacy)
 │   │   ├── ImageAnalysisCard.tsx   # Toxic communication analysis
 │   │   ├── VoiceRecordingVisualizer.tsx  # Animated waveform for voice recording
 │   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
+│   │   ├── RelationshipDirectionSelector.tsx  # NEW: Choose relationship path
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -300,7 +373,9 @@ Each loop stores:
 │   │   ├── InputScreen.tsx         # Welcome screen with menu access
 │   │   ├── ChatScreen.tsx          # Main chat interface
 │   │   ├── CalendarScreen.tsx      # Monthly calendar view
-│   │   └── LogDetailScreen.tsx     # Calendar entry details
+│   │   ├── LogDetailScreen.tsx     # Calendar entry details
+│   │   ├── RelationshipDirectionScreen.tsx  # NEW: Direction selector screen
+│   │   └── GuidanceScreen.tsx      # NEW: Tailored guidance screen
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
 │   │   ├── loopsStore.ts           # Loops state with persistence
@@ -316,16 +391,23 @@ Each loop stores:
 ## Color Palette
 
 ### Primary Colors
-- **Background**: `#000000` (Pure black)
+- **Background**: `#050505` (Deep black - direction selector)
+- **Chat Background**: `#000000` (Pure black)
 - **Deep Background**: `#0A0A0A` (Calendar/cards)
-- **Accent**: `#B4FF39` (Calm lime green)
+- **Accent**: `#B4FF39` (Calm lime green - legacy)
 - **Text Primary**: `#FFFFFF` (White)
 - **Text Secondary**: `#9CA3AF` (Gray 400)
 - **Text Tertiary**: `#6B7280` (Gray 500)
 - **Borders**: `#262626` (Neutral 800)
 - **Cards**: `#0A0A0A` (Neutral 950)
 
-### Intention Colors (Calendar)
+### Relationship Intention Colors (NEW)
+- **Improve**: `#4C9CFF` (Soft Blue) - Better communication and healing
+- **Distance**: `#FF884D` (Orange) - Emotional protection and space
+- **Maintain**: `#FFD755` (Yellow) - Neutral observation
+- **Gain Clarity**: `#B47CFF` (Purple) - Understanding and reflection
+
+### Calendar Intention Colors (Legacy)
 - **Improve**: `#3B82F6` (Blue) - Working to improve relationship
 - **Distance**: `#F97316` (Orange) - Creating healthy distance
 - **Maintain**: `#EAB308` (Yellow) - Maintaining boundaries
@@ -436,11 +518,17 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 
 ## Features Implemented
 
-✅ Dark theme UI with lime accents
+✅ Dark theme UI with neon intention colors
 ✅ ChatGPT-style conversation interface
 ✅ Real-time message animations
 ✅ Emotional analysis with visual metrics
-✅ Smart response suggestions (3 tones)
+✅ **NEW: Relationship Direction Selector** - Choose your path after analysis
+✅ **NEW: Guidance Screen** - Tailored advice based on chosen intention
+✅ **NEW: 4 Intention Types** - Improve, Distance, Maintain, Gain Clarity
+✅ **NEW: Dynamic color theming** - Blue, Orange, Yellow, Purple
+✅ **NEW: Modal transitions** - Smooth iOS-style animations
+✅ **NEW: Copy to clipboard** - One-tap copy for suggested replies
+✅ Smart response suggestions (3 tones) - Legacy
 ✅ Native stack navigation (no bottom tabs)
 ✅ **3-bar menu dropdown with native iOS/Android styling**
 ✅ Keyboard-aware input
@@ -456,7 +544,6 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ Screenshot analysis for toxic communication
 ✅ Image-based dysfunctional pattern detection
 ✅ GPT-4o Vision integration
-✅ Copy suggested responses
 ✅ **Emotional Log Calendar**
 ✅ **Monthly calendar view with intention tracking**
 ✅ **Color-coded intention dots (Blue/Orange/Yellow/Purple)**

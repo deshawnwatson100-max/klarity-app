@@ -138,19 +138,9 @@ export function ChatScreen({ navigation }: Props) {
         };
         addMessageToActiveLoop(analysisMessage);
 
-        // Generate suggested responses
-        const suggestions = await generateSuggestedResponses(
-          userMessage.content,
-          []
-        );
-        const suggestionsMessage: SuggestionsMessage = {
-          id: Date.now().toString() + "_suggestions",
-          role: "suggestions",
-          content: "",
-          timestamp: Date.now(),
-          suggestions,
-        };
-        addMessageToActiveLoop(suggestionsMessage);
+        // Navigate to Relationship Direction Selector instead of showing suggestions immediately
+        // The user will choose their intention, then see tailored guidance
+        navigation.navigate("RelationshipDirectionScreen");
       }
     } catch (error) {
       console.error("Error processing message:", error);

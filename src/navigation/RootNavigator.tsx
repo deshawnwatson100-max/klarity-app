@@ -4,6 +4,8 @@ import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
 import { CalendarScreen } from "../screens/CalendarScreen";
 import { LogDetailScreen } from "../screens/LogDetailScreen";
+import { RelationshipDirectionScreen } from "../screens/RelationshipDirectionScreen";
+import { GuidanceScreen } from "../screens/GuidanceScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -12,6 +14,10 @@ export type RootStackParamList = {
   LogDetailScreen: {
     date: string;
     entryIds: string[];
+  };
+  RelationshipDirectionScreen: undefined;
+  GuidanceScreen: {
+    intention: import("../types/calendar").IntentionType;
   };
 };
 
@@ -151,6 +157,98 @@ export function RootNavigator() {
         }}
       />
       <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />
+
+      {/* Relationship Direction Selector - Modal presentation */}
+      <Stack.Screen
+        name="RelationshipDirectionScreen"
+        component={RelationshipDirectionScreen}
+        options={{
+          presentation: "modal",
+          gestureEnabled: true,
+          gestureDirection: "vertical",
+          cardStyle: { backgroundColor: "transparent" },
+          cardOverlayEnabled: true,
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateY: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.height, 0], // Slide from bottom
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.7], // Dark overlay
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
+
+      {/* Guidance Screen - Horizontal slide from right */}
+      <Stack.Screen
+        name="GuidanceScreen"
+        component={GuidanceScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#050505" },
+          cardStyleInterpolator: ({ current, next, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.width, 0], // Slide from right
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.3], // Subtle overlay
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
     </Stack.Navigator>
   );
 }
