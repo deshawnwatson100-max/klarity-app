@@ -21,6 +21,7 @@ import { cn } from "../utils/cn";
 interface LoopHistoryPanelProps {
   visible: boolean;
   onClose: () => void;
+  onLoopSelected?: () => void; // Optional callback when a loop is selected
 }
 
 /**
@@ -35,7 +36,7 @@ interface LoopHistoryPanelProps {
  * - Minimalist, clean cards with rounded corners
  * - Subtle hover/active states
  */
-export function LoopHistoryPanel({ visible, onClose }: LoopHistoryPanelProps) {
+export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHistoryPanelProps) {
   const insets = useSafeAreaInsets();
 
   const loops = useLoopsStore((s) => s.loops);
@@ -48,6 +49,8 @@ export function LoopHistoryPanel({ visible, onClose }: LoopHistoryPanelProps) {
     // switchToLoop will set isHistoryPanelOpen to false automatically
     // This makes the chat update immediately without waiting for modal close animation
     switchToLoop(loopId);
+    // Notify parent component that a loop was selected (for navigation)
+    onLoopSelected?.();
   };
 
   const handleDeleteLoop = (loopId: string, event: any) => {

@@ -385,6 +385,10 @@ export function InputScreen({ navigation }: Props) {
           <LoopHistoryPanel
             visible={isHistoryPanelOpen}
             onClose={() => setHistoryPanelOpen(false)}
+            onLoopSelected={() => {
+              // Navigate to ChatScreen when a loop is selected from InputScreen
+              navigation.navigate("ChatScreen");
+            }}
           />
         </KeyboardAvoidingView>
       </Animated.View>
