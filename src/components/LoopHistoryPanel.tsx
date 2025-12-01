@@ -45,8 +45,9 @@ export function LoopHistoryPanel({ visible, onClose }: LoopHistoryPanelProps) {
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
 
   const handleSelectLoop = (loopId: string) => {
+    // switchToLoop will set isHistoryPanelOpen to false automatically
+    // This makes the chat update immediately without waiting for modal close animation
     switchToLoop(loopId);
-    onClose();
   };
 
   const handleDeleteLoop = (loopId: string, event: any) => {
@@ -55,7 +56,9 @@ export function LoopHistoryPanel({ visible, onClose }: LoopHistoryPanelProps) {
   };
 
   const handleNewLoop = () => {
+    // createNewLoop already updates activeLoopId, no need to call onClose
     createNewLoop();
+    // Close panel after creating new loop
     onClose();
   };
 
