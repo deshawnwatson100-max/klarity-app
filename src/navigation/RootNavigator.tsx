@@ -7,6 +7,8 @@ import { LogDetailScreen } from "../screens/LogDetailScreen";
 import { RelationshipDirectionScreen } from "../screens/RelationshipDirectionScreen";
 import { SuggestionsScreen } from "../screens/SuggestionsScreen";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
+import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen";
+import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -23,6 +25,10 @@ export type RootStackParamList = {
   RelationshipDirectionScreen: undefined;
   SuggestionsScreen: {
     intention: import("../types/calendar").IntentionType;
+  };
+  CommunicationStylesScreen: undefined;
+  StyleDetailScreen: {
+    profileId: string;
   };
 };
 
@@ -279,6 +285,96 @@ export function RootNavigator() {
                 opacity: current.progress.interpolate({
                   inputRange: [0, 1],
                   outputRange: [0, 0.3], // Subtle overlay
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
+
+      {/* Communication Styles Screen - iOS horizontal slide from right */}
+      <Stack.Screen
+        name="CommunicationStylesScreen"
+        component={CommunicationStylesScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#050505" },
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.width, 0], // Slide from right
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5], // Dark overlay
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
+        }}
+      />
+
+      {/* Style Detail Screen - iOS horizontal slide from right */}
+      <Stack.Screen
+        name="StyleDetailScreen"
+        component={StyleDetailScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#050505" },
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateX: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.width, 0], // Slide from right
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5], // Dark overlay
                 }),
               },
             };
