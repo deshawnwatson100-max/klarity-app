@@ -19,6 +19,7 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
 import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
@@ -31,6 +32,8 @@ import { DeepAnalysisBubble } from "../components/DeepAnalysisBubble";
 import { DirectionSelectorBubble } from "../components/DirectionSelectorBubble";
 import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
+import { FloatingParticles } from "../components/FloatingParticles";
+import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
@@ -478,7 +481,18 @@ export function ChatScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1, backgroundColor: "black" }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+        {/* Single-tone gradient background */}
+        <LinearGradient
+          colors={["#050505", "#0A0A0A", "#050505"]}
+          locations={[0, 0.5, 1]}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+
+        {/* Ambient background effects */}
+        <SoftFlares />
+        <FloatingParticles count={20} />
+
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
