@@ -54,15 +54,17 @@ export function Header({
 
   return (
     <View
-      className="bg-black border-b border-neutral-900"
-      style={{ paddingTop: insets.top }}
+      style={{
+        paddingTop: insets.top,
+        backgroundColor: "rgba(0, 0, 0, 0.15)",
+      }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
         {/* Left - Menu Dropdown */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <Pressable className="active:opacity-60">
-              <Ionicons name="menu" size={28} color="#9CA3AF" />
+              <Ionicons name="menu" size={28} color="#CFCFCF" />
             </Pressable>
           </DropdownMenu.Trigger>
 
@@ -90,15 +92,26 @@ export function Header({
         </DropdownMenu.Root>
 
         {/* Center - Title */}
-        <Text className="text-white text-base font-semibold tracking-wide">
+        <Text
+          className="text-base font-semibold tracking-wide"
+          style={{ color: "#CFCFCF" }}
+        >
           {title}
         </Text>
 
         {/* Right - New Loop Button */}
         <Pressable onPress={handleNewLoop} className="active:opacity-60">
-          <Ionicons name="add-circle-outline" size={24} color="#9CA3AF" />
+          <Ionicons name="add-circle-outline" size={24} color="#CFCFCF" />
         </Pressable>
       </View>
+
+      {/* Bottom border with subtle glow */}
+      <View
+        style={{
+          height: 1,
+          backgroundColor: "rgba(76, 158, 255, 0.15)",
+        }}
+      />
     </View>
   );
 }

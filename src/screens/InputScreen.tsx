@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -327,7 +328,42 @@ export function InputScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1, backgroundColor: 'black' }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+        {/* Deep black to charcoal gradient background */}
+        <LinearGradient
+          colors={["#000000", "#0D0D0D", "#000000"]}
+          locations={[0, 0.5, 1]}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        />
+
+        {/* Soft radial ambient glow behind text */}
+        <View
+          style={{
+            position: "absolute",
+            top: "30%",
+            left: "10%",
+            right: "10%",
+            height: 300,
+            backgroundColor: "transparent",
+          }}
+        >
+          <LinearGradient
+            colors={["rgba(76, 158, 255, 0.08)", "rgba(166, 107, 255, 0.08)", "transparent"]}
+            style={{
+              flex: 1,
+              borderRadius: 300,
+            }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
@@ -348,9 +384,36 @@ export function InputScreen({ navigation }: Props) {
                 </Text>
               </View>
             ) : (
-              <Text className="text-neutral-400 text-2xl font-light text-center leading-relaxed">
-                How can I help bring clarity?
-              </Text>
+              <View className="items-center">
+                {/* Ambient glow behind text */}
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -20,
+                    left: -40,
+                    right: -40,
+                    height: 100,
+                  }}
+                >
+                  <LinearGradient
+                    colors={["transparent", "rgba(79, 255, 215, 0.03)", "transparent"]}
+                    style={{
+                      flex: 1,
+                      borderRadius: 100,
+                    }}
+                  />
+                </View>
+
+                <Text
+                  className="text-2xl font-medium text-center leading-relaxed"
+                  style={{
+                    color: "#CFCFCF",
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  How can I help bring clarity?
+                </Text>
+              </View>
             )}
           </View>
 

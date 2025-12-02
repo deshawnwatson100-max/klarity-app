@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -68,9 +69,24 @@ export function InputBar({
 
   return (
     <View
-      className="bg-black border-t border-neutral-900 px-4 py-3"
-      style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+      className="px-4 py-3"
+      style={{
+        paddingBottom: Math.max(insets.bottom, 12),
+        backgroundColor: "transparent",
+      }}
     >
+      {/* Subtle top shadow for depth */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+        }}
+      />
+
       {/* Image Preview */}
       {selectedImageUri && (
         <View className="mb-3">
@@ -91,35 +107,72 @@ export function InputBar({
       )}
 
       <View className="flex-row items-center gap-3">
-        {/* Plus Button - now triggers image picker */}
+        {/* Image Picker Button */}
         <Pressable
           onPress={handlePickImage}
           disabled={disabled}
           className="active:opacity-60"
         >
-          <Ionicons name="image-outline" size={28} color="#9CA3AF" />
+          <Ionicons name="image-outline" size={28} color="white" />
         </Pressable>
 
-        {/* Input Field */}
-        <View className="flex-1">
-          <TextInput
-            value={value}
-            onChangeText={onChangeText}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder={placeholder}
-            placeholderTextColor="#6B7280"
-            editable={!disabled}
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-            multiline
-            maxLength={1000}
-            className="bg-neutral-950 text-white px-4 py-3 rounded-full min-h-[44px] max-h-[100px]"
+        {/* Input Field with Gradient Border */}
+        <View className="flex-1 relative">
+          {/* Gradient border container */}
+          <View
             style={{
-              borderWidth: 1,
-              borderColor: isFocused ? "#B4FF39" : "#262626",
+              borderRadius: 28,
+              padding: 1,
+              overflow: "hidden",
             }}
-          />
+          >
+            <LinearGradient
+              colors={["#4C9EFF", "#A66BFF", "#4FFFD7"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                borderRadius: 28,
+                padding: 1,
+              }}
+            >
+              {/* Inner input with matte charcoal background */}
+              <View
+                style={{
+                  backgroundColor: "#101010",
+                  borderRadius: 27,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  minHeight: 44,
+                  maxHeight: 100,
+                  justifyContent: "center",
+                  // Very subtle inner shadow for depth
+                  shadowColor: "#000000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                }}
+              >
+                <TextInput
+                  value={value}
+                  onChangeText={onChangeText}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder={placeholder}
+                  placeholderTextColor="#9A9A9A"
+                  editable={!disabled}
+                  onSubmitEditing={handleSend}
+                  returnKeyType="send"
+                  multiline
+                  maxLength={1000}
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    lineHeight: 20,
+                  }}
+                />
+              </View>
+            </LinearGradient>
+          </View>
         </View>
 
         {/* Voice or Send Button */}
@@ -129,7 +182,7 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#B4FF39" />
+            <Ionicons name="send" size={24} color="#4C9EFF" />
           </Pressable>
         ) : (
           <Pressable
@@ -142,7 +195,7 @@ export function InputBar({
                 <Ionicons name="stop" size={24} color="white" />
               </View>
             ) : (
-              <Ionicons name="mic-outline" size={28} color="#9CA3AF" />
+              <Ionicons name="mic-outline" size={28} color="white" />
             )}
           </Pressable>
         )}

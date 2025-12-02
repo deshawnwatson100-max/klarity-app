@@ -11,11 +11,17 @@ module.exports = {
   theme: {
     // NOTE to AI: You can extend the theme with custom colors or styles here.
     extend: {
-      // For example, you can add a primary or secondary color here.
-      // colors: {
-      //   primary: "#INSERT_VALID_HEX_CODE",
-      //   secondary: "#INSERT_VALID_HEX_CODE",
-      // },
+      colors: {
+        // Dark Luxury Palette
+        "electric-blue": "#4C9EFF",
+        "grape-purple": "#A66BFF",
+        "aqua-teal": "#4FFFD7",
+        "midnight-black": "#000000",
+        "gunmetal-gray": "#0D0D0D",
+        "cloud-gray": "#CFCFCF",
+        "soft-gray": "#9A9A9A",
+        "rose-gold": "#FFB6C1",
+      },
       fontSize: {
         xs: "10px",
         sm: "12px",

@@ -17,12 +17,17 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ## Features
 
 ### Screen 1: Input/Welcome Screen
-- Clean, minimalist welcome screen
-- "How can I help bring clarity?" prompt
+- **Dark Luxury Aesthetic** - Clean, premium dark mode design
+- **Deep Gradient Background** - Black to charcoal vertical gradient with subtle depth
+- **Soft Ambient Glow** - Radial blue-purple gradient behind main text (8% opacity)
+- **Elegant Typography** - "How can I help bring clarity?" in warm cloud gray (#CFCFCF)
+- **Neon Gradient Input Bar** - Pill-shaped input with electric blue → grape purple → aqua teal gradient border
+- **Matte Charcoal Input** - Dark #101010 background with subtle inner shadow
+- **Translucent Glass Header** - 15% opacity black with soft blue-tinted bottom border
+- **Minimal Icons** - Thin, elegant white/gray icons
 - **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
 - **Image upload support** - Add screenshots for analysis
 - **Voice recording** - Tap mic icon to record voice messages
-- Input bar with text, voice, and image upload options
 - Smooth navigation to conversation with text or images
 
 ### Screen 2: Chat Screen with Inline Clarity Analysis 💬✨
@@ -473,6 +478,16 @@ Each loop stores:
 ```
 
 ## Color Palette
+
+### Dark Luxury Palette (NEW)
+- **Electric Blue**: `#4C9EFF` - Primary gradient accent
+- **Grape Purple**: `#A66BFF` - Secondary gradient accent
+- **Aqua Teal**: `#4FFFD7` - Tertiary gradient accent
+- **Midnight Black**: `#000000` - Pure black background
+- **Gunmetal Gray**: `#0D0D0D` - Charcoal gradient midpoint
+- **Cloud Gray**: `#CFCFCF` - Warm text color
+- **Soft Gray**: `#9A9A9A` - Placeholder text
+- **Rose Gold**: `#FFB6C1` - Optional accent
 
 ### Primary Colors
 - **Background**: `#050505` (Deep black - direction selector)
