@@ -331,9 +331,9 @@ export function InputScreen({ navigation }: Props) {
   return (
     <GestureDetector gesture={swipeGesture}>
       <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        {/* Deep black to charcoal gradient background */}
+        {/* Deep midnight charcoal single-tone gradient background */}
         <LinearGradient
-          colors={["#000000", "#0D0D0D", "#000000"]}
+          colors={["#050505", "#0A0A0A", "#050505"]}
           locations={[0, 0.5, 1]}
           style={{
             position: "absolute",
@@ -344,33 +344,11 @@ export function InputScreen({ navigation }: Props) {
           }}
         />
 
-        {/* Soft flares and lens glows - Layer 1 */}
+        {/* Soft flares - monochromatic minimal glow - Layer 1 */}
         <SoftFlares />
 
-        {/* Floating particles - Layer 2 */}
-        <FloatingParticles count={25} />
-
-        {/* Soft radial ambient glow behind text - Layer 3 */}
-        <View
-          style={{
-            position: "absolute",
-            top: "30%",
-            left: "10%",
-            right: "10%",
-            height: 300,
-            backgroundColor: "transparent",
-          }}
-        >
-          <LinearGradient
-            colors={["rgba(76, 158, 255, 0.08)", "rgba(166, 107, 255, 0.08)", "transparent"]}
-            style={{
-              flex: 1,
-              borderRadius: 300,
-            }}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-        </View>
+        {/* Floating particles - cool-toned minimal - Layer 2 */}
+        <FloatingParticles count={20} />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -393,22 +371,21 @@ export function InputScreen({ navigation }: Props) {
               </View>
             ) : (
               <View className="items-center">
-                {/* Ambient light halo behind center text */}
+                {/* Super soft halo behind text (5-8% opacity) */}
                 <View
                   style={{
                     position: "absolute",
-                    top: -60,
-                    left: -150,
-                    right: -150,
-                    height: 250,
+                    top: -50,
+                    left: -120,
+                    right: -120,
+                    height: 220,
                   }}
                 >
                   <LinearGradient
                     colors={[
                       "transparent",
-                      "rgba(166, 107, 255, 0.06)",
-                      "rgba(76, 158, 255, 0.05)",
-                      "rgba(79, 255, 215, 0.04)",
+                      "rgba(80, 100, 120, 0.06)",
+                      "rgba(70, 90, 110, 0.05)",
                       "transparent",
                     ]}
                     style={{
@@ -423,11 +400,11 @@ export function InputScreen({ navigation }: Props) {
                 <Text
                   className="text-2xl font-medium text-center leading-relaxed"
                   style={{
-                    color: "#CFCFCF",
+                    color: "#D0D0D0",
                     letterSpacing: 0.3,
                   }}
                 >
-                  How can I help bring clarity?
+                  Hey. Ready to gain Klarity?
                 </Text>
               </View>
             )}

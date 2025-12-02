@@ -116,40 +116,38 @@ export function InputBar({
           <Ionicons name="image-outline" size={28} color="white" />
         </Pressable>
 
-        {/* Input Field with Gradient Border */}
+        {/* Input Field with Minimal Gradient Border */}
         <View className="flex-1 relative">
-          {/* Gradient border container */}
+          {/* Very thin gradient border at 10% opacity */}
           <View
             style={{
               borderRadius: 28,
-              padding: 1,
+              padding: 0.5,
               overflow: "hidden",
             }}
           >
             <LinearGradient
-              colors={["#4C9EFF", "#A66BFF", "#4FFFD7"]}
+              colors={[
+                "rgba(79, 255, 215, 0.1)",
+                "rgba(166, 107, 255, 0.1)",
+              ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
                 borderRadius: 28,
-                padding: 1,
+                padding: 0.5,
               }}
             >
               {/* Inner input with matte charcoal background */}
               <View
                 style={{
-                  backgroundColor: "#101010",
-                  borderRadius: 27,
+                  backgroundColor: "#111111",
+                  borderRadius: 27.5,
                   paddingHorizontal: 16,
                   paddingVertical: 12,
                   minHeight: 44,
                   maxHeight: 100,
                   justifyContent: "center",
-                  // Very subtle inner shadow for depth
-                  shadowColor: "#000000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
                 }}
               >
                 <TextInput
@@ -158,7 +156,7 @@ export function InputBar({
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   placeholder={placeholder}
-                  placeholderTextColor="#9A9A9A"
+                  placeholderTextColor="#A0A0A0"
                   editable={!disabled}
                   onSubmitEditing={handleSend}
                   returnKeyType="send"
@@ -182,7 +180,7 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#4C9EFF" />
+            <Ionicons name="send" size={24} color="#70A0C0" />
           </Pressable>
         ) : (
           <Pressable

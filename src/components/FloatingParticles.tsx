@@ -42,7 +42,8 @@ interface FloatingParticlesProps {
 export function FloatingParticles({ count = 25 }: FloatingParticlesProps) {
   // Generate particles with randomized properties
   const particles = useMemo<Particle[]>(() => {
-    const colors = ["#4C9EFF", "#A66BFF", "#4FFFD7"];
+    // Minimal cool-toned colors: cool gray and faint teal/blue tint
+    const colors = ["#606060", "#4A5A6A", "#4A6A6A"];
 
     return Array.from({ length: count }, (_, i) => {
       const x = Math.random() * SCREEN_WIDTH;
@@ -57,17 +58,17 @@ export function FloatingParticles({ count = 25 }: FloatingParticlesProps) {
         Math.pow((y - centerY) / SCREEN_HEIGHT, 2)
       );
 
-      // Particles near center are slightly brighter (12%), edges fade to 5%
-      const opacity = 0.12 - (distanceFromCenter * 0.07);
+      // Ultra-minimal opacity: 4-10%
+      const opacity = 0.10 - (distanceFromCenter * 0.06);
 
       return {
         id: i,
         x,
         y,
         size,
-        opacity: Math.max(0.05, opacity),
+        opacity: Math.max(0.04, opacity),
         color: colors[Math.floor(Math.random() * colors.length)],
-        duration: 8000 + Math.random() * 6000, // 8-14 seconds
+        duration: 10000 + Math.random() * 8000, // 10-18 seconds (slower)
         delay: Math.random() * 5000, // 0-5 second delay
       };
     });
@@ -156,11 +157,11 @@ function AnimatedParticle({ particle }: { particle: Particle }) {
           height: particle.size,
           borderRadius: particle.size / 2,
           backgroundColor: particle.color,
-          // Soft blur effect
+          // Very soft blur effect (1-3px)
           shadowColor: particle.color,
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.8,
-          shadowRadius: 3,
+          shadowOpacity: 0.6,
+          shadowRadius: 2,
         },
         animatedStyle,
       ]}

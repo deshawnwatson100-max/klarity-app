@@ -17,36 +17,41 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ## Features
 
 ### Screen 1: Input/Welcome Screen
-- **Dark Luxury Aesthetic** - Clean, premium dark mode design
-- **Deep Gradient Background** - Black to charcoal vertical gradient with subtle depth
-- **Floating Particles** - 25 tiny animated orbs (1-3px) drifting slowly upward with gentle opacity pulse
-  - Gradient-tinted (electric blue, grape purple, aqua teal)
-  - Particles near center are slightly brighter (12%), edges fade to 5%
-  - Soft blur effect (2-4px) for depth
-  - 8-14 second drift cycles with randomized timing
-- **Soft Lens Flares** - Wide, diffused glows positioned in corners and behind text
-  - Top corners: Subtle purple and teal vertical streaks (5-6% opacity)
-  - Center: Soft vertical gradient streak behind text (4% opacity)
-  - Bottom: Ambient purple-blue glow (5% opacity)
-  - Heavy blur equivalent (30-60px) for smooth diffusion
-- **Ambient Light Halo** - Faint circular glow expanding 200-300px behind center text
-  - Purple → blue → teal gradient at 4-6% opacity
-  - Creates emotional warmth and depth
-- **Soft Ambient Glow** - Radial blue-purple gradient behind main text (8% opacity)
-- **Elegant Typography** - "How can I help bring clarity?" in warm cloud gray (#CFCFCF)
-- **Neon Gradient Input Bar** - Pill-shaped input with electric blue → grape purple → aqua teal gradient border
-- **Matte Charcoal Input** - Dark #101010 background with subtle inner shadow
-- **Translucent Glass Header** - 15% opacity black with soft blue-tinted bottom border
-- **Minimal Icons** - Thin, elegant white/gray icons
+- **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
+- **Single-Color Background** - Deep midnight charcoal gradient (#050505 → #0A0A0A)
+  - Matte, rich, soft finish
+  - Slight 1-2% noise texture for depth
+  - No multicolor blobs or overlapping gradients
+- **Ultra-Minimal Floating Particles** - 20 tiny ambient dots (1-3px) drifting slowly
+  - Cool gray and faint teal/blue tints (#606060, #4A5A6A, #4A6A6A)
+  - Opacity 4-10% - barely visible, like calm ambient dust
+  - Very soft blur (1-3px) blending seamlessly with background
+  - 10-18 second drift cycles for slow, organic motion
+  - Should feel like calm ambient dust, not sci-fi
+- **Extremely Soft Monochromatic Flares** - 1-2 faint light glows
+  - Whisper-soft cool gray-blue tones
+  - Horizontal glow near bottom (3% opacity)
+  - Soft glow behind main text area (4% opacity)
+  - Heavy blur (40-70px equivalent) for elegance
+  - Adds depth, mood, and luxury without distraction
+- **Personalized Greeting** - "Hey. Ready to gain Klarity?"
+  - Typography: Medium weight, 24px
+  - Color: Warm soft gray (#D0D0D0)
+  - Super soft halo behind text (5-6% opacity cool gray-blue)
+- **Minimal Gradient Input Bar** - Pill-shaped with ultra-thin teal → purple border at 10% opacity
+- **Matte Charcoal Input** - Dark #111111 background
+- **Placeholder Text** - "Type a message..." in #A0A0A0
+- **Translucent Glass Header** - 15% opacity black with subtle border
+- **Minimal Icons** - Thin, elegant white/gray
 - **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
 - **Image upload support** - Add screenshots for analysis
 - **Voice recording** - Tap mic icon to record voice messages
 - Smooth navigation to conversation with text or images
 
-**Motion & Atmosphere:**
-- Particles drift like dust floating in light with very subtle parallax
-- Slow, organic animations create a living AI aura
-- Maintains professional ChatGPT vibe while feeling more alive, warm, and magical
+**Final Vibe:**
+- Single-tone, elegant dark interface with ambient floating particles and faint flare glow
+- Calm, premium, minimal, and emotionally soothing
+- Maintains professional aesthetic while feeling warm and welcoming
 - All effects are whisper-soft - no loud colors or distracting movement
 
 ### Screen 2: Chat Screen with Inline Clarity Analysis 💬✨
