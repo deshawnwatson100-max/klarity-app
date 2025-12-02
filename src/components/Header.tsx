@@ -104,14 +104,6 @@ export function Header({
           <Ionicons name="add-circle-outline" size={24} color="#CFCFCF" />
         </Pressable>
       </View>
-
-      {/* Bottom border with subtle glow */}
-      <View
-        style={{
-          height: 1,
-          backgroundColor: "rgba(76, 158, 255, 0.15)",
-        }}
-      />
     </View>
   );
 }
