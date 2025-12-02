@@ -51,33 +51,6 @@ export function SoftFlares() {
           end={{ x: 1, y: 0.5 }}
         />
       </View>
-
-      {/* Soft glow behind main text area */}
-      <View
-        style={{
-          position: "absolute",
-          top: "30%",
-          left: "15%",
-          right: "15%",
-          height: 350,
-          opacity: 0.04,
-        }}
-      >
-        <LinearGradient
-          colors={[
-            "transparent",
-            "rgba(70, 90, 110, 0.15)",
-            "rgba(80, 100, 120, 0.1)",
-            "transparent",
-          ]}
-          style={{
-            flex: 1,
-            borderRadius: 200,
-          }}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-      </View>
     </View>
   );
 }
