@@ -13,6 +13,32 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Past loops system** - Save and switch between conversation sessions
 - **Emotional Log Calendar** - Track and visualize your emotional journey over time
 - **Beautiful dark UI** with neon accents (blue, orange, yellow, purple)
+- **Premium splash screen** with glowing Klarity AI logo
+- **Secure PIN authentication** - 4-digit PIN to protect your conversations
+
+## Security Features
+
+### Splash Screen
+- **Premium launch experience** with glowing Klarity AI logo
+- **Pitch black background** (#000000) for elegance
+- **Soft lavender glow** pulsing behind logo (3% → 6% opacity)
+- **"Find Your Clarity" tagline** with minimal loading dots
+- **1.5 second auto-dismiss** for smooth app entry
+
+### PIN Authentication
+- **First-time PIN setup** - Create 4-digit PIN on first launch
+- **Secure unlock screen** - Enter PIN to access your conversations
+- **Pitch black aesthetic** matching splash screen
+- **Lavender accent colors** (#A78BFA) for consistency
+- **Visual feedback** - PIN dots fill as you type
+- **Shake animation** for wrong PIN attempts
+- **AsyncStorage encryption** - Secure PIN storage
+
+### App Flow
+1. **Splash Screen** (1.5 seconds) →
+2. **PIN Setup** (first time only) →
+3. **Unlock Screen** (returning users) →
+4. **Main App**
 
 ## Features
 
