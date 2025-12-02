@@ -19,6 +19,19 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ### Screen 1: Input/Welcome Screen
 - **Dark Luxury Aesthetic** - Clean, premium dark mode design
 - **Deep Gradient Background** - Black to charcoal vertical gradient with subtle depth
+- **Floating Particles** - 25 tiny animated orbs (1-3px) drifting slowly upward with gentle opacity pulse
+  - Gradient-tinted (electric blue, grape purple, aqua teal)
+  - Particles near center are slightly brighter (12%), edges fade to 5%
+  - Soft blur effect (2-4px) for depth
+  - 8-14 second drift cycles with randomized timing
+- **Soft Lens Flares** - Wide, diffused glows positioned in corners and behind text
+  - Top corners: Subtle purple and teal vertical streaks (5-6% opacity)
+  - Center: Soft vertical gradient streak behind text (4% opacity)
+  - Bottom: Ambient purple-blue glow (5% opacity)
+  - Heavy blur equivalent (30-60px) for smooth diffusion
+- **Ambient Light Halo** - Faint circular glow expanding 200-300px behind center text
+  - Purple → blue → teal gradient at 4-6% opacity
+  - Creates emotional warmth and depth
 - **Soft Ambient Glow** - Radial blue-purple gradient behind main text (8% opacity)
 - **Elegant Typography** - "How can I help bring clarity?" in warm cloud gray (#CFCFCF)
 - **Neon Gradient Input Bar** - Pill-shaped input with electric blue → grape purple → aqua teal gradient border
@@ -29,6 +42,12 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Image upload support** - Add screenshots for analysis
 - **Voice recording** - Tap mic icon to record voice messages
 - Smooth navigation to conversation with text or images
+
+**Motion & Atmosphere:**
+- Particles drift like dust floating in light with very subtle parallax
+- Slow, organic animations create a living AI aura
+- Maintains professional ChatGPT vibe while feeling more alive, warm, and magical
+- All effects are whisper-soft - no loud colors or distracting movement
 
 ### Screen 2: Chat Screen with Inline Clarity Analysis 💬✨
 **NEW CHATLOOP DESIGN** - Full emotional analysis flows naturally within the conversation, using chat bubbles and inline cards.
@@ -447,6 +466,8 @@ Each loop stores:
 │   ├── components/
 │   │   ├── Header.tsx              # App header with menu dropdown
 │   │   ├── InputBar.tsx            # Message input with voice & image picker
+│   │   ├── FloatingParticles.tsx   # Animated ambient particles
+│   │   ├── SoftFlares.tsx          # Lens flares and glow effects
 │   │   ├── MessageBubble.tsx       # Chat message bubbles with image support
 │   │   ├── AnalysisCard.tsx        # Emotional analysis display
 │   │   ├── SuggestionsCard.tsx     # Response suggestions (legacy)

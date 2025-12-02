@@ -19,6 +19,8 @@ import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
+import { FloatingParticles } from "../components/FloatingParticles";
+import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -342,7 +344,13 @@ export function InputScreen({ navigation }: Props) {
           }}
         />
 
-        {/* Soft radial ambient glow behind text */}
+        {/* Soft flares and lens glows - Layer 1 */}
+        <SoftFlares />
+
+        {/* Floating particles - Layer 2 */}
+        <FloatingParticles count={25} />
+
+        {/* Soft radial ambient glow behind text - Layer 3 */}
         <View
           style={{
             position: "absolute",
@@ -385,22 +393,30 @@ export function InputScreen({ navigation }: Props) {
               </View>
             ) : (
               <View className="items-center">
-                {/* Ambient glow behind text */}
+                {/* Ambient light halo behind center text */}
                 <View
                   style={{
                     position: "absolute",
-                    top: -20,
-                    left: -40,
-                    right: -40,
-                    height: 100,
+                    top: -60,
+                    left: -150,
+                    right: -150,
+                    height: 250,
                   }}
                 >
                   <LinearGradient
-                    colors={["transparent", "rgba(79, 255, 215, 0.03)", "transparent"]}
+                    colors={[
+                      "transparent",
+                      "rgba(166, 107, 255, 0.06)",
+                      "rgba(76, 158, 255, 0.05)",
+                      "rgba(79, 255, 215, 0.04)",
+                      "transparent",
+                    ]}
                     style={{
                       flex: 1,
-                      borderRadius: 100,
+                      borderRadius: 200,
                     }}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
                   />
                 </View>
 
