@@ -18,6 +18,19 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 
 ### Screen 1: Input/Welcome Screen
 - **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
+- **Animated Klarity AI Logo** - Premium header logo with breathing glow
+  - Slow pulsing glow (5-second cycle)
+  - Glow opacity: 3% → 10% → 3%
+  - Subtle scale expansion (8-12%)
+  - Gradient colors: Purple (#A66BFF), Blue (#4C9EFF), Aqua (#4FFFD7)
+  - Gradient drift: Slow left-to-right movement (12-second cycle)
+  - Heavy blur (40px) for elegant, calming effect
+  - Feels alive, intelligent, and premium without distraction
+- **Premium Header** - Semi-transparent black glass (18% opacity)
+  - Left: Hamburger menu (Calendar, Past Loops)
+  - Center: Animated Klarity AI logo with ✨
+  - Right: New Loop (+) button
+  - Thin icons in warm gray (#CFCFCF)
 - **Single-Color Background** - Deep midnight charcoal gradient (#050505 → #0A0A0A)
   - Matte, rich, soft finish
   - Slight 1-2% noise texture for depth
@@ -41,7 +54,6 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Minimal Gradient Input Bar** - Pill-shaped with ultra-thin teal → purple border at 10% opacity
 - **Matte Charcoal Input** - Dark #111111 background
 - **Placeholder Text** - "Type a message..." in #A0A0A0
-- **Translucent Glass Header** - 15% opacity black with subtle border
 - **Minimal Icons** - Thin, elegant white/gray
 - **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
 - **Image upload support** - Add screenshots for analysis
@@ -469,7 +481,8 @@ Each loop stores:
 │   ├── api/
 │   │   └── klarity-api.ts          # GPT API integration + Image Analysis
 │   ├── components/
-│   │   ├── Header.tsx              # App header with menu dropdown
+│   │   ├── Header.tsx              # App header with animated logo
+│   │   ├── AnimatedKlarityLogo.tsx # Animated logo with breathing glow
 │   │   ├── InputBar.tsx            # Message input with voice & image picker
 │   │   ├── FloatingParticles.tsx   # Animated ambient particles
 │   │   ├── SoftFlares.tsx          # Lens flares and glow effects

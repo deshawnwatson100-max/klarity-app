@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
+import { AnimatedKlarityLogo } from "./AnimatedKlarityLogo";
 import * as DropdownMenu from "zeego/dropdown-menu";
 
 interface HeaderProps {
@@ -15,10 +16,13 @@ interface HeaderProps {
 /**
  * Header Component
  *
- * Top navigation bar with:
+ * Premium iOS-style top bar with animated Klarity AI logo.
+ *
+ * Features:
  * - Left: Menu dropdown (Calendar, Past Loops)
- * - Center: App title
+ * - Center: Animated Klarity AI logo with breathing glow
  * - Right: New Loop button
+ * - Semi-transparent black glass background (15-20% opacity)
  */
 export function Header({
   title = "Klarity AI 1.0",
@@ -56,7 +60,7 @@ export function Header({
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: "rgba(0, 0, 0, 0.15)",
+        backgroundColor: "rgba(0, 0, 0, 0.18)",
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
@@ -91,13 +95,10 @@ export function Header({
           </DropdownMenu.Content>
         </DropdownMenu.Root>
 
-        {/* Center - Title */}
-        <Text
-          className="text-base font-semibold tracking-wide"
-          style={{ color: "#CFCFCF" }}
-        >
-          {title}
-        </Text>
+        {/* Center - Animated Klarity AI Logo */}
+        <View className="flex-1 items-center">
+          <AnimatedKlarityLogo size="medium" />
+        </View>
 
         {/* Right - New Loop Button */}
         <Pressable onPress={handleNewLoop} className="active:opacity-60">
