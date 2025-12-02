@@ -49,7 +49,7 @@ export function AnimatedKlarityLogo({ size = "medium" }: AnimatedKlarityLogoProp
   const gradientAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateX: gradientPosition.value * 200 - 100, // Wider drift range
+        translateX: gradientPosition.value * 150 - 75, // Reduced drift range
       },
     ],
   }));
@@ -87,16 +87,17 @@ export function AnimatedKlarityLogo({ size = "medium" }: AnimatedKlarityLogoProp
             </View>
           }
         >
-          <Animated.View style={[{ width: 500, height }, gradientAnimatedStyle]}>
+          <Animated.View style={[{ width: 400, height }, gradientAnimatedStyle]}>
             <LinearGradient
               colors={[
+                "#4C9EFF",
+                "#A66BFF",
+                "#4FFFD7",
                 "#A66BFF",
                 "#4C9EFF",
                 "#4FFFD7",
-                "#4C9EFF",
                 "#A66BFF",
                 "#4C9EFF",
-                "#4FFFD7",
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
