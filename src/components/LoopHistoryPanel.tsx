@@ -32,7 +32,7 @@ interface LoopHistoryPanelProps {
  * Allows users to switch between loops or delete old ones.
  *
  * Styling follows Klarity AI design:
- * - Dark background with lime green (#B4FF39) accents
+ * - Dark background with luxury grey (#9CA3AF) accents
  * - Minimalist, clean cards with rounded corners
  * - Subtle hover/active states
  */
@@ -141,8 +141,14 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
           {/* New Loop Button */}
           <Pressable
             onPress={handleNewLoop}
-            className="flex-row items-center justify-center bg-lime-500 rounded-xl py-3 active:opacity-80"
-            style={{ backgroundColor: "#B4FF39" }}
+            className="flex-row items-center justify-center rounded-xl py-3 active:opacity-80"
+            style={{
+              backgroundColor: "#9CA3AF",
+              shadowColor: "#9CA3AF",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+            }}
           >
             <Ionicons name="add-circle-outline" size={20} color="#000" />
             <Text className="text-black font-semibold ml-2">
@@ -179,17 +185,28 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
                   className={cn(
                     "mb-3 p-4 rounded-xl border active:opacity-80",
                     isActive
-                      ? "bg-lime-500/10 border-lime-500/30"
+                      ? "bg-neutral-800/50 border-neutral-700"
                       : "bg-neutral-900/50 border-neutral-800"
                   )}
+                  style={
+                    isActive
+                      ? {
+                          shadowColor: "#9CA3AF",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 8,
+                        }
+                      : undefined
+                  }
                 >
                   {/* Title Row */}
                   <View className="flex-row items-start justify-between mb-2">
                     <Text
                       className={cn(
                         "text-base font-medium flex-1",
-                        isActive ? "text-lime-400" : "text-white"
+                        isActive ? "text-neutral-300" : "text-white"
                       )}
+                      style={isActive ? { color: "#9CA3AF" } : undefined}
                       numberOfLines={2}
                     >
                       {loop.title}
@@ -230,14 +247,17 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
                     {loop.emotionalClarity !== undefined && (
                       <View
                         className="flex-row items-center px-2 py-1 rounded-full"
-                        style={{ backgroundColor: "rgba(180, 255, 57, 0.1)" }}
+                        style={{ backgroundColor: "rgba(156, 163, 175, 0.15)" }}
                       >
                         <Ionicons
                           name="analytics-outline"
                           size={12}
-                          color="#B4FF39"
+                          color="#9CA3AF"
                         />
-                        <Text className="text-lime-400 text-xs font-medium ml-1">
+                        <Text
+                          className="text-xs font-medium ml-1"
+                          style={{ color: "#9CA3AF" }}
+                        >
                           {Math.round(loop.emotionalClarity)}% clarity
                         </Text>
                       </View>
@@ -249,7 +269,7 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
                     <View className="absolute top-4 right-4">
                       <View
                         className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: "#B4FF39" }}
+                        style={{ backgroundColor: "#9CA3AF" }}
                       />
                     </View>
                   )}
