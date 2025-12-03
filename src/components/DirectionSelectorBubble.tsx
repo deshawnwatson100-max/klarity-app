@@ -18,31 +18,31 @@ interface DirectionSelectorBubbleProps {
 const intentions = [
   {
     id: "improve" as IntentionType,
-    label: "Improve",
+    label: "Get Closer",
     icon: "heart" as const,
-    color: "#9CA3AF",
-    description: "Better communication",
+    color: "#B8A3E8", // Muted purple
+    description: "Build deeper connection",
   },
   {
     id: "distance" as IntentionType,
-    label: "Distance",
+    label: "Set Boundaries",
     icon: "shield" as const,
-    color: "#FF8B8B",
-    description: "Healthy space",
+    color: "#B5FF4B", // Calm lime
+    description: "Protect your energy",
   },
   {
     id: "maintain" as IntentionType,
-    label: "Maintain",
-    icon: "eye" as const,
-    color: "#FFCE9E",
-    description: "Observe patterns",
+    label: "Detach Emotionally",
+    icon: "remove-circle" as const,
+    color: "#7DD3C0", // Soft teal
+    description: "Create emotional space",
   },
   {
     id: "clarity" as IntentionType,
-    label: "Gain Clarity",
-    icon: "bulb" as const,
-    color: "#9CA3AF",
-    description: "Understanding first",
+    label: "Cut Ties",
+    icon: "cut" as const,
+    color: "#FFB3C6", // Warm pink
+    description: "End the relationship",
   },
 ];
 
@@ -75,67 +75,119 @@ export function DirectionSelectorBubble({
         animatedStyle,
       ]}
     >
-      {/* Prompt bubble */}
+      {/* Luxury grey card container */}
       <View
-        className="rounded-3xl px-5 py-4 mb-4"
+        className="rounded-3xl px-6 py-6 mb-3"
         style={{
-          backgroundColor: "#050608",
-          borderWidth: 1,
-          borderColor: "#9CA3AF20",
-          maxWidth: "85%",
+          backgroundColor: "#1A1A1C",
+          borderWidth: 1.5,
+          borderColor: "#9CA3AF30",
+          shadowColor: "#9CA3AF",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.25,
+          shadowRadius: 20,
+          maxWidth: "95%",
         }}
       >
+        {/* Question text */}
         <Text
-          className="text-base leading-6"
-          style={{ fontFamily: "SF Pro Display", color: "#F9FAFB" }}
+          className="text-base leading-7 mb-5"
+          style={{
+            fontFamily: "SF Pro Display",
+            color: "#E5E7EB",
+            fontWeight: "500",
+          }}
         >
           Before I help you respond, which direction do you want to go with this relationship?
         </Text>
-      </View>
 
-      {/* Direction buttons */}
-      <View className="flex-row flex-wrap gap-2">
-        {intentions.map((intention) => {
-          const isSelected = selectedIntention === intention.id;
+        {/* Direction option cards */}
+        <View className="gap-3">
+          {intentions.map((intention) => {
+            const isSelected = selectedIntention === intention.id;
 
-          return (
-            <Pressable
-              key={intention.id}
-              onPress={() => onSelectIntention(intention.id)}
-              className="active:opacity-70"
-              style={{
-                backgroundColor: isSelected ? intention.color : "#050608",
-                borderWidth: 1.5,
-                borderColor: isSelected ? intention.color : `${intention.color}40`,
-                borderRadius: 24,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                shadowColor: intention.color,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: isSelected ? 0.4 : 0.2,
-                shadowRadius: isSelected ? 12 : 6,
-              }}
-            >
-              <Ionicons
-                name={intention.icon}
-                size={18}
-                color={isSelected ? "#000000" : intention.color}
-              />
-              <Text
-                className="font-semibold text-base"
+            return (
+              <Pressable
+                key={intention.id}
+                onPress={() => onSelectIntention(intention.id)}
+                className="active:opacity-80"
                 style={{
-                  fontFamily: "SF Pro Display",
-                  color: isSelected ? "#000000" : "#F9FAFB",
+                  backgroundColor: isSelected ? `${intention.color}15` : "#0F0F11",
+                  borderWidth: 1.5,
+                  borderColor: isSelected ? intention.color : `${intention.color}35`,
+                  borderRadius: 20,
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 14,
+                  shadowColor: intention.color,
+                  shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
+                  shadowOpacity: isSelected ? 0.4 : 0.2,
+                  shadowRadius: isSelected ? 16 : 8,
                 }}
               >
-                {intention.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+                {/* Icon with color glow */}
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: isSelected ? `${intention.color}25` : `${intention.color}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: `${intention.color}40`,
+                  }}
+                >
+                  <Ionicons
+                    name={intention.icon}
+                    size={20}
+                    color={intention.color}
+                  />
+                </View>
+
+                {/* Label and description */}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    className="font-semibold text-base mb-0.5"
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      color: isSelected ? intention.color : "#F9FAFB",
+                    }}
+                  >
+                    {intention.label}
+                  </Text>
+                  <Text
+                    className="text-sm"
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      color: "#9CA3AF",
+                    }}
+                  >
+                    {intention.description}
+                  </Text>
+                </View>
+
+                {/* Selection indicator */}
+                {isSelected && (
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: intention.color,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name="checkmark" size={16} color="#000000" />
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </Animated.View>
   );
