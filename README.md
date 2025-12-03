@@ -131,34 +131,47 @@ When you send a message about a relationship situation, Klarity responds with a 
 
 6. **Relationship Direction Selector**
    - Klarity asks: "Before I help you respond, which direction do you want to go with this relationship?"
-   - Four interactive pill buttons appear inline:
-     - **Improve** (Blue) - Better communication and healing
-     - **Distance** (Orange) - Healthy space and protection
-     - **Maintain** (Yellow) - Neutral observation
-     - **Gain Clarity** (Purple) - Understanding first
-   - Tap to select, button glows with intention color
+   - Four interactive option cards in luxury grey container:
+     - **Improve** (Cool Sky Blue #6BB6FF) - Better communication and connection
+     - **Distance** (Warm Orange #FF9B6B) - Healthy space and protection
+     - **Maintain** (Soft Amber/Gold #FFB84D) - Observe patterns before deciding
+     - **Gain Clarity** (Lavender/Purple #B8A3E8) - Understand feelings better
+   - Each card has soft premium glow and minimal icons
+   - Tap to select, card glows with intention color
    - Smooth press animation with spring physics
 
-7. **Typing Indicator Returns**
-   - After you select your direction
+7. **Tone Selection Card** ✨ NEW
+   - Appears after direction selection
+   - Asks: "Choose Your Tone"
+   - Four tone options in minimal luxury grey pills:
+     - **Calm** - Peaceful, measured response
+     - **Direct** - Clear, straightforward communication
+     - **Empathetic** - Understanding, compassionate tone
+     - **Assertive** - Confident, firm boundaries
+   - Sleek dark grey gradient base (#1A1A1A → #2A2A2A)
+   - Soft grey glow and metallic outline on each pill
+   - Selected pill shows checkmark and enhanced glow
+
+8. **Typing Indicator Returns**
+   - After you select tone
    - Shows Klarity is preparing tailored guidance
 
-8. **Tailored Guidance Bubble**
+9. **Tailored Guidance Bubble**
    - Personalized mindset message based on your chosen path
    - Example (Distance): "Okay — to create healthy distance, we will keep things calm, neutral, and emotionally protective."
    - Bubble glows in your selected intention color
    - Sets the tone for suggested responses
 
-9. **Suggested Reply Cards**
+10. **Suggested Reply Cards**
    - 2-3 contextual response options appear as card-style bubbles
    - Each includes:
-     - Message text in bubble format
+     - Message text in bubble format with color-matched glow
      - "Use this reply" button beneath (glows in intention color)
      - Smooth lift animation on tap
-   - Replies are tailored to your chosen direction
+   - Replies are tailored to your chosen direction AND tone
    - One tap inserts reply into input bar
 
-10. **Your Response Bubble**
+11. **Your Response Bubble**
     - When you tap "Use this reply", it appears as right-aligned user bubble
     - Smooth insert animation
     - Chat auto-scrolls to show your message

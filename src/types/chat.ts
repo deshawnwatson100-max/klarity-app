@@ -9,6 +9,7 @@ export type MessageRole =
   | "quick-summary"
   | "deep-analysis"
   | "direction-selector"
+  | "tone-selector"
   | "tailored-guidance"
   | "suggested-reply-card";
 
@@ -95,6 +96,11 @@ export interface DirectionSelectorMessage extends Message {
   selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
 }
 
+export interface ToneSelectorMessage extends Message {
+  role: "tone-selector";
+  selectedTone?: "calm" | "direct" | "empathetic" | "assertive";
+}
+
 export interface TailoredGuidanceMessage extends Message {
   role: "tailored-guidance";
   content: string; // The guidance text
@@ -108,6 +114,7 @@ export interface SuggestedReplyCardMessage extends Message {
     text: string;
   }>;
   intention: "improve" | "distance" | "maintain" | "clarity";
+  tone?: "calm" | "direct" | "empathetic" | "assertive";
 }
 
 export type ChatMessage =
@@ -120,5 +127,6 @@ export type ChatMessage =
   | QuickSummaryMessage
   | DeepAnalysisMessage
   | DirectionSelectorMessage
+  | ToneSelectorMessage
   | TailoredGuidanceMessage
   | SuggestedReplyCardMessage;

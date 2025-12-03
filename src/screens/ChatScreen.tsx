@@ -30,6 +30,7 @@ import { EmotionalValidationBubble } from "../components/EmotionalValidationBubb
 import { QuickSummaryBubble } from "../components/QuickSummaryBubble";
 import { DeepAnalysisBubble } from "../components/DeepAnalysisBubble";
 import { DirectionSelectorBubble } from "../components/DirectionSelectorBubble";
+import { ToneSelectionBubble } from "../components/ToneSelectionBubble";
 import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { FloatingParticles } from "../components/FloatingParticles";
@@ -50,6 +51,7 @@ import {
   QuickSummaryMessage,
   DeepAnalysisMessage,
   DirectionSelectorMessage,
+  ToneSelectorMessage,
   TailoredGuidanceMessage,
   SuggestedReplyCardMessage,
   ImageAnalysisMessage,
@@ -58,6 +60,7 @@ import {
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
+type ToneType = "calm" | "direct" | "empathetic" | "assertive";
 
 export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -69,6 +72,7 @@ export function ChatScreen({ navigation }: Props) {
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
   const [currentAnalysis, setCurrentAnalysis] = useState<EmotionalAnalysis | null>(null);
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
+  const [currentIntention, setCurrentIntention] = useState<IntentionType | null>(null);
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -240,6 +244,9 @@ export function ChatScreen({ navigation }: Props) {
   const handleSelectIntention = async (intention: IntentionType) => {
     if (!currentAnalysis) return;
 
+    // Store the selected intention
+    setCurrentIntention(intention);
+
     // Update the direction selector message to show selection
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === "direction-selector") {
@@ -247,6 +254,31 @@ export function ChatScreen({ navigation }: Props) {
         ...lastMsg,
         selectedIntention: intention,
       } as DirectionSelectorMessage;
+      updateMessageInActiveLoop(lastMsg.id, updated);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // Show tone selector
+    const toneSelectorMsg: ToneSelectorMessage = {
+      id: Date.now().toString() + "_tone",
+      role: "tone-selector",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(toneSelectorMsg);
+  };
+
+  const handleSelectTone = async (tone: ToneType) => {
+    if (!currentAnalysis || !currentIntention) return;
+
+    // Update the tone selector message to show selection
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === "tone-selector") {
+      const updated: ToneSelectorMessage = {
+        ...lastMsg,
+        selectedTone: tone,
+      } as ToneSelectorMessage;
       updateMessageInActiveLoop(lastMsg.id, updated);
     }
 
@@ -269,7 +301,7 @@ export function ChatScreen({ navigation }: Props) {
     // Generate and show tailored guidance
     const guidance = await generateTailoredGuidance(
       currentUserMessage,
-      intention,
+      currentIntention,
       currentAnalysis
     );
     const guidanceMsg: TailoredGuidanceMessage = {
@@ -277,16 +309,16 @@ export function ChatScreen({ navigation }: Props) {
       role: "tailored-guidance",
       content: guidance,
       timestamp: Date.now(),
-      intention,
+      intention: currentIntention,
     };
     addMessageToActiveLoop(guidanceMsg);
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    // Generate and show suggested replies
+    // Generate and show suggested replies with tone
     const replies = await generateIntentionBasedReplies(
       currentUserMessage,
-      intention,
+      currentIntention,
       currentAnalysis
     );
     const repliesMsg: SuggestedReplyCardMessage = {
@@ -295,7 +327,8 @@ export function ChatScreen({ navigation }: Props) {
       content: "",
       timestamp: Date.now(),
       replies,
-      intention,
+      intention: currentIntention,
+      tone,
     };
     addMessageToActiveLoop(repliesMsg);
   };
@@ -374,6 +407,17 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           onSelectIntention={handleSelectIntention}
           selectedIntention={msg.selectedIntention}
+        />
+      );
+    }
+
+    if (message.role === "tone-selector") {
+      const msg = message as ToneSelectorMessage;
+      return (
+        <ToneSelectionBubble
+          key={message.id}
+          onSelectTone={handleSelectTone}
+          selectedTone={msg.selectedTone}
         />
       );
     }
