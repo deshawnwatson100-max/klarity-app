@@ -18,31 +18,31 @@ interface DirectionSelectorBubbleProps {
 const intentions = [
   {
     id: "improve" as IntentionType,
-    label: "Get Closer",
-    icon: "heart" as const,
-    color: "#B8A3E8", // Muted purple
-    description: "Build deeper connection",
+    label: "Improve",
+    icon: "heart-outline" as const,
+    color: "#B5FF4B", // Calm lime
+    description: "Work toward better communication and connection",
   },
   {
     id: "distance" as IntentionType,
-    label: "Set Boundaries",
-    icon: "shield" as const,
-    color: "#B5FF4B", // Calm lime
-    description: "Protect your energy",
+    label: "Distance",
+    icon: "shield-outline" as const,
+    color: "#9CA3AF", // Luxury grey
+    description: "Create healthy space and protect your energy",
   },
   {
     id: "maintain" as IntentionType,
-    label: "Detach Emotionally",
-    icon: "remove-circle" as const,
-    color: "#7DD3C0", // Soft teal
-    description: "Create emotional space",
+    label: "Maintain",
+    icon: "eye-outline" as const,
+    color: "#9CA3AF", // Luxury grey
+    description: "Observe patterns before making decisions",
   },
   {
     id: "clarity" as IntentionType,
-    label: "Cut Ties",
-    icon: "cut" as const,
-    color: "#FFB3C6", // Warm pink
-    description: "End the relationship",
+    label: "Gain Clarity",
+    icon: "bulb-outline" as const,
+    color: "#B5FF4B", // Calm lime
+    description: "Understand your feelings and the situation better",
   },
 ];
 
@@ -112,45 +112,33 @@ export function DirectionSelectorBubble({
                 onPress={() => onSelectIntention(intention.id)}
                 className="active:opacity-80"
                 style={{
-                  backgroundColor: isSelected ? `${intention.color}15` : "#0F0F11",
+                  backgroundColor: isSelected ? `${intention.color}12` : "#0F0F11",
                   borderWidth: 1.5,
-                  borderColor: isSelected ? intention.color : `${intention.color}35`,
-                  borderRadius: 20,
-                  paddingHorizontal: 18,
+                  borderColor: isSelected ? intention.color : "#9CA3AF25",
+                  borderRadius: 16,
+                  paddingHorizontal: 16,
                   paddingVertical: 14,
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 14,
-                  shadowColor: intention.color,
-                  shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
-                  shadowOpacity: isSelected ? 0.4 : 0.2,
-                  shadowRadius: isSelected ? 16 : 8,
+                  gap: 12,
+                  shadowColor: isSelected ? intention.color : "#000000",
+                  shadowOffset: { width: 0, height: isSelected ? 3 : 1 },
+                  shadowOpacity: isSelected ? 0.35 : 0.1,
+                  shadowRadius: isSelected ? 12 : 4,
                 }}
               >
-                {/* Icon with color glow */}
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: isSelected ? `${intention.color}25` : `${intention.color}15`,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: `${intention.color}40`,
-                  }}
-                >
-                  <Ionicons
-                    name={intention.icon}
-                    size={20}
-                    color={intention.color}
-                  />
-                </View>
+                {/* Minimal line icon */}
+                <Ionicons
+                  name={intention.icon}
+                  size={22}
+                  color={isSelected ? intention.color : "#9CA3AF"}
+                  style={{ width: 28 }}
+                />
 
                 {/* Label and description */}
                 <View style={{ flex: 1 }}>
                   <Text
-                    className="font-semibold text-base mb-0.5"
+                    className="font-semibold text-base mb-1"
                     style={{
                       fontFamily: "SF Pro Display",
                       color: isSelected ? intention.color : "#F9FAFB",
@@ -159,7 +147,7 @@ export function DirectionSelectorBubble({
                     {intention.label}
                   </Text>
                   <Text
-                    className="text-sm"
+                    className="text-xs leading-4"
                     style={{
                       fontFamily: "SF Pro Display",
                       color: "#9CA3AF",
@@ -169,20 +157,13 @@ export function DirectionSelectorBubble({
                   </Text>
                 </View>
 
-                {/* Selection indicator */}
+                {/* Selection indicator - minimal checkmark */}
                 {isSelected && (
-                  <View
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: intention.color,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="checkmark" size={16} color="#000000" />
-                  </View>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color={intention.color}
+                  />
                 )}
               </Pressable>
             );
