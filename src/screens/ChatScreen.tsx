@@ -142,6 +142,17 @@ export function ChatScreen({ navigation }: Props) {
           analysis: imageAnalysis,
         };
         addMessageToActiveLoop(analysisMessage);
+
+        // After image analysis, show direction selector
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        const directionMsg: DirectionSelectorMessage = {
+          id: Date.now().toString() + "_direction",
+          role: "direction-selector",
+          content: "",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(directionMsg);
       } else {
         // For text messages, do inline emotional analysis flow
         await startInlineAnalysisFlow(userMessage.content);

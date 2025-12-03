@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,48 +9,13 @@ import Animated, {
 import { ImageAnalysis } from "../types/chat";
 import { Ionicons } from "@expo/vector-icons";
 
-type IntentionType = "improve" | "distance" | "maintain" | "clarity";
-
 interface ImageAnalysisCardProps {
   analysis: ImageAnalysis;
-  onSelectIntention?: (intention: IntentionType) => void;
 }
 
-const intentions = [
-  {
-    id: "improve" as IntentionType,
-    label: "Improve",
-    icon: "heart-outline" as const,
-    color: "#6BB6FF", // Cool Sky Blue
-    description: "Work toward better communication",
-  },
-  {
-    id: "distance" as IntentionType,
-    label: "Distance",
-    icon: "shield-outline" as const,
-    color: "#FF9B6B", // Warm Orange
-    description: "Create healthy space",
-  },
-  {
-    id: "maintain" as IntentionType,
-    label: "Maintain",
-    icon: "eye-outline" as const,
-    color: "#FFB84D", // Soft Amber/Gold
-    description: "Observe patterns",
-  },
-  {
-    id: "clarity" as IntentionType,
-    label: "Gain Clarity",
-    icon: "bulb-outline" as const,
-    color: "#B8A3E8", // Lavender/Soft Purple
-    description: "Understand the situation",
-  },
-];
-
-export function ImageAnalysisCard({ analysis, onSelectIntention }: ImageAnalysisCardProps) {
+export function ImageAnalysisCard({ analysis }: ImageAnalysisCardProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
-  const [selectedIntention, setSelectedIntention] = useState<IntentionType | null>(null);
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 400 });
@@ -61,11 +26,6 @@ export function ImageAnalysisCard({ analysis, onSelectIntention }: ImageAnalysis
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
-
-  const handleSelectIntention = (intention: IntentionType) => {
-    setSelectedIntention(intention);
-    onSelectIntention?.(intention);
-  };
 
   return (
     <Animated.View style={animatedStyle} className="mb-4">
@@ -205,86 +165,6 @@ export function ImageAnalysisCard({ analysis, onSelectIntention }: ImageAnalysis
           >
             {analysis.emotionalImpact}
           </Text>
-        </View>
-
-        {/* Section 4: Relationship Direction Selector */}
-        <View>
-          <Text
-            className="text-sm font-semibold mb-3"
-            style={{
-              fontFamily: "SF Pro Display",
-              color: "#9CA3AF",
-            }}
-          >
-            How would you like to respond?
-          </Text>
-          <View className="gap-3">
-            {intentions.map((intention) => {
-              const isSelected = selectedIntention === intention.id;
-
-              return (
-                <Pressable
-                  key={intention.id}
-                  onPress={() => handleSelectIntention(intention.id)}
-                  className="active:opacity-80"
-                  style={{
-                    backgroundColor: isSelected ? `${intention.color}18` : "#0F0F11",
-                    borderWidth: 1.5,
-                    borderColor: isSelected ? intention.color : `${intention.color}40`,
-                    borderRadius: 16,
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    shadowColor: intention.color,
-                    shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
-                    shadowOpacity: isSelected ? 0.5 : 0.25,
-                    shadowRadius: isSelected ? 16 : 8,
-                  }}
-                >
-                  {/* Icon */}
-                  <Ionicons
-                    name={intention.icon}
-                    size={20}
-                    color={isSelected ? intention.color : `${intention.color}CC`}
-                    style={{ width: 24 }}
-                  />
-
-                  {/* Label and description */}
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      className="font-semibold text-sm"
-                      style={{
-                        fontFamily: "SF Pro Display",
-                        color: isSelected ? intention.color : "#F9FAFB",
-                      }}
-                    >
-                      {intention.label}
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{
-                        fontFamily: "SF Pro Display",
-                        color: "#9CA3AF",
-                      }}
-                    >
-                      {intention.description}
-                    </Text>
-                  </View>
-
-                  {/* Selection indicator */}
-                  {isSelected && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={intention.color}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
         </View>
       </View>
     </Animated.View>
