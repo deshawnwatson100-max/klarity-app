@@ -47,9 +47,12 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       <View
         className={`${imageUrl ? "max-w-[85%]" : "max-w-[80%]"} rounded-2xl ${
           isUser
-            ? "bg-neutral-900 border border-[#B4FF39]"
-            : "bg-neutral-900 border border-neutral-800"
+            ? "border border-[#C7B5FF]"
+            : "border border-neutral-800"
         } ${imageUrl ? "p-2" : "px-4 py-3"}`}
+        style={{
+          backgroundColor: isUser ? "#D8CCFF" : "#0E0E0F",
+        }}
       >
         {/* Image Preview */}
         {imageUrl && (
@@ -70,7 +73,12 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         {/* Text Content */}
         {content && content !== "[Image]" && (
           <View className={imageUrl ? "px-2 pb-1" : ""}>
-            <Text className="text-white text-base leading-6">{content}</Text>
+            <Text
+              className="text-base leading-6"
+              style={{ color: isUser ? "#000000" : "#C7B5FF" }}
+            >
+              {content}
+            </Text>
           </View>
         )}
       </View>

@@ -482,9 +482,9 @@ export function ChatScreen({ navigation }: Props) {
   return (
     <GestureDetector gesture={swipeGesture}>
       <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        {/* Single-tone gradient background */}
+        {/* Deep charcoal gradient background with Klarity brand colors */}
         <LinearGradient
-          colors={["#050505", "#0A0A0A", "#050505"]}
+          colors={["#0E0E0F", "#171717", "#0E0E0F"]}
           locations={[0, 0.5, 1]}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />

@@ -68,7 +68,7 @@ export function Header({
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <Pressable className="active:opacity-60">
-              <Ionicons name="menu" size={28} color="#CFCFCF" />
+              <Ionicons name="menu" size={28} color="#C7B5FF" />
             </Pressable>
           </DropdownMenu.Trigger>
 
@@ -102,7 +102,7 @@ export function Header({
 
         {/* Right - New Loop Button */}
         <Pressable onPress={handleNewLoop} className="active:opacity-60">
-          <Ionicons name="add-circle-outline" size={24} color="#CFCFCF" />
+          <Ionicons name="add-circle-outline" size={24} color="#C7B5FF" />
         </Pressable>
       </View>
     </View>

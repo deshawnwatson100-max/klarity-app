@@ -113,7 +113,7 @@ export function InputBar({
           disabled={disabled}
           className="active:opacity-60"
         >
-          <Ionicons name="image-outline" size={28} color="white" />
+          <Ionicons name="image-outline" size={28} color="#C7B5FF" />
         </Pressable>
 
         {/* Input Field with Minimal Gradient Border */}
@@ -128,8 +128,8 @@ export function InputBar({
           >
             <LinearGradient
               colors={[
-                "rgba(79, 255, 215, 0.1)",
-                "rgba(166, 107, 255, 0.1)",
+                "rgba(199, 181, 255, 0.2)",
+                "rgba(247, 184, 212, 0.2)",
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -141,7 +141,7 @@ export function InputBar({
               {/* Inner input with matte charcoal background */}
               <View
                 style={{
-                  backgroundColor: "#111111",
+                  backgroundColor: "#0E0E0F",
                   borderRadius: 27.5,
                   paddingHorizontal: 16,
                   paddingVertical: 12,
@@ -163,7 +163,7 @@ export function InputBar({
                   multiline
                   maxLength={1000}
                   style={{
-                    color: "white",
+                    color: "#E6E6E6",
                     fontSize: 16,
                     lineHeight: 20,
                   }}
@@ -180,7 +180,7 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#70A0C0" />
+            <Ionicons name="send" size={24} color="#C7B5FF" />
           </Pressable>
         ) : (
           <Pressable
@@ -193,7 +193,7 @@ export function InputBar({
                 <Ionicons name="stop" size={24} color="white" />
               </View>
             ) : (
-              <Ionicons name="mic-outline" size={28} color="white" />
+              <Ionicons name="mic-outline" size={28} color="#C7B5FF" />
             )}
           </Pressable>
         )}

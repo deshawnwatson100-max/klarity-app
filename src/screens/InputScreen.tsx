@@ -331,9 +331,9 @@ export function InputScreen({ navigation }: Props) {
   return (
     <GestureDetector gesture={swipeGesture}>
       <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        {/* Deep midnight charcoal single-tone gradient background */}
+        {/* Deep charcoal gradient background with Klarity brand colors */}
         <LinearGradient
-          colors={["#050505", "#0A0A0A", "#050505"]}
+          colors={["#0E0E0F", "#171717", "#0E0E0F"]}
           locations={[0, 0.5, 1]}
           style={{
             position: "absolute",
@@ -361,7 +361,10 @@ export function InputScreen({ navigation }: Props) {
           <View className="flex-1 items-center justify-center px-6">
             {isRecording ? (
               <View className="items-center justify-center w-full">
-                <Text className="text-lime-400 text-xl font-medium mb-6">
+                <Text
+                  className="text-xl font-medium mb-6"
+                  style={{ color: "#C7B5FF" }}
+                >
                   Recording...
                 </Text>
                 <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
@@ -371,7 +374,7 @@ export function InputScreen({ navigation }: Props) {
               </View>
             ) : (
               <View className="items-center">
-                {/* Super soft halo behind text (5-8% opacity) */}
+                {/* Super soft halo behind text with brand colors */}
                 <View
                   style={{
                     position: "absolute",
@@ -384,8 +387,8 @@ export function InputScreen({ navigation }: Props) {
                   <LinearGradient
                     colors={[
                       "transparent",
-                      "rgba(80, 100, 120, 0.06)",
-                      "rgba(70, 90, 110, 0.05)",
+                      "rgba(199, 181, 255, 0.08)",
+                      "rgba(247, 184, 212, 0.06)",
                       "transparent",
                     ]}
                     style={{
@@ -400,7 +403,7 @@ export function InputScreen({ navigation }: Props) {
                 <Text
                   className="text-2xl font-medium text-center leading-relaxed"
                   style={{
-                    color: "#D0D0D0",
+                    color: "#E6E6E6",
                     letterSpacing: 0.3,
                   }}
                 >

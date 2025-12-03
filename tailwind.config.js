@@ -12,15 +12,14 @@ module.exports = {
     // NOTE to AI: You can extend the theme with custom colors or styles here.
     extend: {
       colors: {
-        // Dark Luxury Palette
-        "electric-blue": "#4C9EFF",
-        "grape-purple": "#A66BFF",
-        "aqua-teal": "#4FFFD7",
-        "midnight-black": "#000000",
-        "gunmetal-gray": "#0D0D0D",
-        "cloud-gray": "#CFCFCF",
-        "soft-gray": "#9A9A9A",
-        "rose-gold": "#FFB6C1",
+        // Klarity AI Brand Palette
+        "lavender-mist": "#C7B5FF", // Primary - calm, feminine, emotional safety
+        "rose-quartz": "#F7B8D4", // Secondary accent - warm supportive
+        "honey-peach": "#FFCE9E", // Signal - emotional insights
+        "soft-mint": "#C9F7D8", // Success - healthy relationship
+        "warm-coral": "#FF8B8B", // Warning - red flags
+        "soft-gray": "#E6E6E6", // Neutral light text/dividers
+        "deep-charcoal": "#0E0E0F", // Dark background
       },
       fontSize: {
         xs: "10px",

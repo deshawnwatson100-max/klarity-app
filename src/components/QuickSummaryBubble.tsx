@@ -34,10 +34,10 @@ export function QuickSummaryBubble({
   }));
 
   const summaryItems = [
-    { label: "Tone", value: tone, color: "#A3E635" },
-    { label: "Pattern", value: pattern, color: "#A3E635" },
-    { label: "Emotional Impact", value: emotionalImpact, color: "#A3E635" },
-    { label: "Core Issue", value: coreIssue, color: "#A3E635" },
+    { label: "Tone", value: tone, color: "#C7B5FF" },
+    { label: "Pattern", value: pattern, color: "#C7B5FF" },
+    { label: "Emotional Impact", value: emotionalImpact, color: "#C7B5FF" },
+    { label: "Core Issue", value: coreIssue, color: "#C7B5FF" },
   ];
 
   return (
@@ -54,10 +54,10 @@ export function QuickSummaryBubble({
       <View
         className="rounded-2xl px-6 py-6"
         style={{
-          backgroundColor: "#0A0A0A",
+          backgroundColor: "#151515",
           borderWidth: 1.5,
-          borderColor: "#A3E63540",
-          shadowColor: "#A3E635",
+          borderColor: "#C7B5FF40",
+          shadowColor: "#F7B8D4",
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.3,
           shadowRadius: 20,
