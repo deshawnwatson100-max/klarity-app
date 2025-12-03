@@ -21,21 +21,25 @@ const tones = [
     id: "calm" as ToneType,
     label: "Calm",
     icon: "water-outline" as const,
+    color: "#7DD3C0", // Soft Teal
   },
   {
     id: "direct" as ToneType,
     label: "Direct",
     icon: "arrow-forward-outline" as const,
+    color: "#FFB84D", // Soft Amber/Gold
   },
   {
     id: "empathetic" as ToneType,
     label: "Empathetic",
     icon: "heart-outline" as const,
+    color: "#FFB3C6", // Warm Pink/Rose
   },
   {
     id: "assertive" as ToneType,
     label: "Assertive",
     icon: "shield-checkmark-outline" as const,
+    color: "#B8A3E8", // Lavender/Purple
   },
 ];
 
@@ -105,16 +109,16 @@ export function ToneSelectionBubble({
                 onPress={() => onSelectTone(tone.id)}
                 className="active:opacity-80"
                 style={{
-                  backgroundColor: isSelected ? "#9CA3AF20" : "#0F0F11",
+                  backgroundColor: isSelected ? `${tone.color}20` : "#0F0F11",
                   borderWidth: 1.5,
-                  borderColor: isSelected ? "#9CA3AF" : "#9CA3AF40",
+                  borderColor: isSelected ? tone.color : `${tone.color}40`,
                   borderRadius: 24,
                   paddingHorizontal: 20,
                   paddingVertical: 12,
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 8,
-                  shadowColor: "#9CA3AF",
+                  shadowColor: tone.color,
                   shadowOffset: { width: 0, height: isSelected ? 3 : 1 },
                   shadowOpacity: isSelected ? 0.4 : 0.2,
                   shadowRadius: isSelected ? 12 : 6,
@@ -126,7 +130,7 @@ export function ToneSelectionBubble({
                 <Ionicons
                   name={tone.icon}
                   size={18}
-                  color={isSelected ? "#9CA3AF" : "#6B7280"}
+                  color={isSelected ? tone.color : `${tone.color}80`}
                   style={{ opacity: isSelected ? 1 : 0.8 }}
                 />
 
@@ -146,7 +150,7 @@ export function ToneSelectionBubble({
                   <Ionicons
                     name="checkmark-circle"
                     size={16}
-                    color="#9CA3AF"
+                    color={tone.color}
                   />
                 )}
               </Pressable>
