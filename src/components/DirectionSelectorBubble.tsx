@@ -20,28 +20,36 @@ const intentions = [
     id: "improve" as IntentionType,
     label: "Improve",
     icon: "heart-outline" as const,
-    color: "#B5FF4B", // Calm lime
+    color: "#6BB6FF", // Cool Sky Blue
+    glowColor: "#6BB6FF40", // Soft blue glow
+    textTint: "#A8D1FF", // Muted blue for description
     description: "Work toward better communication and connection",
   },
   {
     id: "distance" as IntentionType,
     label: "Distance",
     icon: "shield-outline" as const,
-    color: "#9CA3AF", // Luxury grey
+    color: "#FF9B6B", // Warm Orange
+    glowColor: "#FF9B6B40", // Soft orange glow
+    textTint: "#FFBFA0", // Muted orange for description
     description: "Create healthy space and protect your energy",
   },
   {
     id: "maintain" as IntentionType,
     label: "Maintain",
     icon: "eye-outline" as const,
-    color: "#9CA3AF", // Luxury grey
+    color: "#FFB84D", // Soft Amber/Gold
+    glowColor: "#FFB84D40", // Soft gold glow
+    textTint: "#FFD699", // Muted gold for description
     description: "Observe patterns before making decisions",
   },
   {
     id: "clarity" as IntentionType,
     label: "Gain Clarity",
     icon: "bulb-outline" as const,
-    color: "#B5FF4B", // Calm lime
+    color: "#B8A3E8", // Lavender/Soft Purple
+    glowColor: "#B8A3E840", // Soft purple glow
+    textTint: "#CDB8FF", // Muted lavender for description
     description: "Understand your feelings and the situation better",
   },
 ];
@@ -112,27 +120,27 @@ export function DirectionSelectorBubble({
                 onPress={() => onSelectIntention(intention.id)}
                 className="active:opacity-80"
                 style={{
-                  backgroundColor: isSelected ? `${intention.color}12` : "#0F0F11",
+                  backgroundColor: isSelected ? `${intention.color}18` : "#0F0F11",
                   borderWidth: 1.5,
-                  borderColor: isSelected ? intention.color : "#9CA3AF25",
+                  borderColor: isSelected ? intention.color : intention.glowColor,
                   borderRadius: 16,
                   paddingHorizontal: 16,
                   paddingVertical: 14,
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 12,
-                  shadowColor: isSelected ? intention.color : "#000000",
-                  shadowOffset: { width: 0, height: isSelected ? 3 : 1 },
-                  shadowOpacity: isSelected ? 0.35 : 0.1,
-                  shadowRadius: isSelected ? 12 : 4,
+                  shadowColor: intention.color,
+                  shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
+                  shadowOpacity: isSelected ? 0.5 : 0.25,
+                  shadowRadius: isSelected ? 16 : 8,
                 }}
               >
-                {/* Minimal line icon */}
+                {/* Minimal modern icon with color tint */}
                 <Ionicons
                   name={intention.icon}
                   size={22}
-                  color={isSelected ? intention.color : "#9CA3AF"}
-                  style={{ width: 28 }}
+                  color={isSelected ? intention.color : intention.textTint}
+                  style={{ width: 28, opacity: isSelected ? 1 : 0.85 }}
                 />
 
                 {/* Label and description */}
@@ -150,7 +158,7 @@ export function DirectionSelectorBubble({
                     className="text-xs leading-4"
                     style={{
                       fontFamily: "SF Pro Display",
-                      color: "#9CA3AF",
+                      color: isSelected ? intention.textTint : "#9CA3AF",
                     }}
                   >
                     {intention.description}
