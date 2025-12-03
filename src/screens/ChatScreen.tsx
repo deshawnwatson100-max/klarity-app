@@ -143,6 +143,20 @@ export function ChatScreen({ navigation }: Props) {
         };
         addMessageToActiveLoop(analysisMessage);
 
+        // Create a mock emotional analysis for the guidance generation
+        const mockAnalysis: EmotionalAnalysis = {
+          emotionalClarity: 75,
+          detectedState: "Concerned",
+          relationshipRisk: "medium",
+          summary: imageAnalysis.summary,
+          tone: "Defensive",
+          pattern: "Dysfunctional Communication",
+          emotionalImpact: imageAnalysis.emotionalImpact,
+          coreIssue: "Toxic Communication Patterns",
+          fullAnalysis: imageAnalysis.summary,
+        };
+        setCurrentAnalysis(mockAnalysis);
+
         // After image analysis, show direction selector
         await new Promise((resolve) => setTimeout(resolve, 600));
 
