@@ -6,18 +6,51 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import * as Clipboard from "expo-clipboard";
 import { ImageAnalysis } from "../types/chat";
 import { Ionicons } from "@expo/vector-icons";
 
+type IntentionType = "improve" | "distance" | "maintain" | "clarity";
+
 interface ImageAnalysisCardProps {
   analysis: ImageAnalysis;
+  onSelectIntention?: (intention: IntentionType) => void;
 }
 
-export function ImageAnalysisCard({ analysis }: ImageAnalysisCardProps) {
+const intentions = [
+  {
+    id: "improve" as IntentionType,
+    label: "Improve",
+    icon: "heart-outline" as const,
+    color: "#6BB6FF", // Cool Sky Blue
+    description: "Work toward better communication",
+  },
+  {
+    id: "distance" as IntentionType,
+    label: "Distance",
+    icon: "shield-outline" as const,
+    color: "#FF9B6B", // Warm Orange
+    description: "Create healthy space",
+  },
+  {
+    id: "maintain" as IntentionType,
+    label: "Maintain",
+    icon: "eye-outline" as const,
+    color: "#FFB84D", // Soft Amber/Gold
+    description: "Observe patterns",
+  },
+  {
+    id: "clarity" as IntentionType,
+    label: "Gain Clarity",
+    icon: "bulb-outline" as const,
+    color: "#B8A3E8", // Lavender/Soft Purple
+    description: "Understand the situation",
+  },
+];
+
+export function ImageAnalysisCard({ analysis, onSelectIntention }: ImageAnalysisCardProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
-  const [copied, setCopied] = useState(false);
+  const [selectedIntention, setSelectedIntention] = useState<IntentionType | null>(null);
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 400 });
@@ -29,10 +62,9 @@ export function ImageAnalysisCard({ analysis }: ImageAnalysisCardProps) {
     transform: [{ scale: scale.value }],
   }));
 
-  const handleCopyResponse = async () => {
-    await Clipboard.setStringAsync(analysis.suggestedResponse);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleSelectIntention = (intention: IntentionType) => {
+    setSelectedIntention(intention);
+    onSelectIntention?.(intention);
   };
 
   return (
@@ -175,63 +207,84 @@ export function ImageAnalysisCard({ analysis }: ImageAnalysisCardProps) {
           </Text>
         </View>
 
-        {/* Section 4: Suggested Response */}
+        {/* Section 4: Relationship Direction Selector */}
         <View>
           <Text
-            className="text-sm font-semibold mb-2"
+            className="text-sm font-semibold mb-3"
             style={{
               fontFamily: "SF Pro Display",
               color: "#9CA3AF",
             }}
           >
-            Suggested Response
+            How would you like to respond?
           </Text>
-          <View
-            className="rounded-xl p-4 mb-3"
-            style={{
-              backgroundColor: "#0F0F11",
-              borderWidth: 1,
-              borderColor: "#9CA3AF20",
-            }}
-          >
-            <Text
-              className="text-base leading-6"
-              style={{
-                fontFamily: "SF Pro Display",
-                color: "#E5E7EB",
-              }}
-            >
-              {analysis.suggestedResponse}
-            </Text>
+          <View className="gap-3">
+            {intentions.map((intention) => {
+              const isSelected = selectedIntention === intention.id;
+
+              return (
+                <Pressable
+                  key={intention.id}
+                  onPress={() => handleSelectIntention(intention.id)}
+                  className="active:opacity-80"
+                  style={{
+                    backgroundColor: isSelected ? `${intention.color}18` : "#0F0F11",
+                    borderWidth: 1.5,
+                    borderColor: isSelected ? intention.color : `${intention.color}40`,
+                    borderRadius: 16,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    shadowColor: intention.color,
+                    shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
+                    shadowOpacity: isSelected ? 0.5 : 0.25,
+                    shadowRadius: isSelected ? 16 : 8,
+                  }}
+                >
+                  {/* Icon */}
+                  <Ionicons
+                    name={intention.icon}
+                    size={20}
+                    color={isSelected ? intention.color : `${intention.color}CC`}
+                    style={{ width: 24 }}
+                  />
+
+                  {/* Label and description */}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      className="font-semibold text-sm"
+                      style={{
+                        fontFamily: "SF Pro Display",
+                        color: isSelected ? intention.color : "#F9FAFB",
+                      }}
+                    >
+                      {intention.label}
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{
+                        fontFamily: "SF Pro Display",
+                        color: "#9CA3AF",
+                      }}
+                    >
+                      {intention.description}
+                    </Text>
+                  </View>
+
+                  {/* Selection indicator */}
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={intention.color}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
-          <Pressable
-            onPress={handleCopyResponse}
-            className="rounded-lg py-3 px-4 active:opacity-80"
-            style={{
-              backgroundColor: "#9CA3AF",
-              shadowColor: "#9CA3AF",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-            }}
-          >
-            <View className="flex-row items-center justify-center gap-2">
-              <Ionicons
-                name={copied ? "checkmark-circle" : "copy-outline"}
-                size={20}
-                color="#000000"
-              />
-              <Text
-                className="text-base font-semibold"
-                style={{
-                  fontFamily: "SF Pro Display",
-                  color: "#000000",
-                }}
-              >
-                {copied ? "Copied!" : "Copy Reply"}
-              </Text>
-            </View>
-          </Pressable>
         </View>
       </View>
     </Animated.View>
