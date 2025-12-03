@@ -79,6 +79,7 @@ export function ChatScreen({ navigation }: Props) {
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const removeMessageFromActiveLoop = useLoopsStore((s) => s.removeMessageFromActiveLoop);
   const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
@@ -169,7 +170,9 @@ export function ChatScreen({ navigation }: Props) {
     // Wait briefly for animation
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Step 2: Generate and show emotional validation
+    // Step 2: Remove typing indicator and show emotional validation
+    removeMessageFromActiveLoop(typingMsg.id);
+
     const validation = await generateEmotionalValidation(userMessageContent);
     const validationMsg: EmotionalValidationMessage = {
       id: Date.now().toString() + "_validation",
@@ -192,7 +195,9 @@ export function ChatScreen({ navigation }: Props) {
 
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    // Step 4: Generate and show analysis
+    // Step 4: Remove typing indicator and generate analysis
+    removeMessageFromActiveLoop(typingMsg2.id);
+
     const analysis = await generateEmotionalAnalysis(userMessageContent);
     setCurrentAnalysis(analysis);
 
@@ -257,6 +262,9 @@ export function ChatScreen({ navigation }: Props) {
     addMessageToActiveLoop(typingMsg);
 
     await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Remove typing indicator before showing guidance
+    removeMessageFromActiveLoop(typingMsg.id);
 
     // Generate and show tailored guidance
     const guidance = await generateTailoredGuidance(

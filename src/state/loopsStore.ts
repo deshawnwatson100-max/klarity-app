@@ -40,6 +40,7 @@ interface LoopsState {
 
   // Actions - Message Management
   addMessageToActiveLoop: (message: ChatMessage) => void;
+  removeMessageFromActiveLoop: (messageId: string) => void;
   updateMessageInActiveLoop: (messageId: string, updatedMessage: ChatMessage) => void;
   setActiveLoopMessages: (messages: ChatMessage[]) => void;
   clearActiveLoopMessages: () => void;
@@ -161,6 +162,20 @@ export const useLoopsStore = create<LoopsState>()(
             ),
           };
         });
+      },
+
+      removeMessageFromActiveLoop: (messageId: string) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === state.activeLoopId
+              ? {
+                  ...loop,
+                  messages: loop.messages.filter((msg) => msg.id !== messageId),
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
       },
 
       updateMessageInActiveLoop: (messageId: string, updatedMessage: ChatMessage) => {

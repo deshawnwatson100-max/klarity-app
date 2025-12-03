@@ -99,9 +99,10 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 When you send a message about a relationship situation, Klarity responds with a beautiful step-by-step inline analysis:
 
 1. **Typing Indicator**
-   - Three pulsing dots with soft purple glow
-   - Appears in Klarity bubble with neon accent
+   - Three pulsing dots with soft luxury grey glow
+   - Appears in Klarity bubble
    - 1.5 second natural pause
+   - **Automatically removed when response is generated**
 
 2. **Emotional Validation Bubble**
    - Warm, empathetic message acknowledging your feelings
