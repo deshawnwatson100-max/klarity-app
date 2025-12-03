@@ -137,13 +137,17 @@ export function CalendarScreen({ navigation }: Props) {
         >
           <View
             className={`flex-1 items-center justify-center rounded-xl ${
-              isToday ? "bg-neutral-900 border border-[#B4FF39]" : ""
+              isToday ? "border border-[#9CA3AF]" : ""
             }`}
+            style={{
+              backgroundColor: isToday ? "#1A1A1A" : "transparent",
+            }}
           >
             <Text
-              className={`text-base font-medium ${
-                hasEntries ? "text-white" : "text-neutral-500"
-              }`}
+              className={`text-base font-medium`}
+              style={{
+                color: hasEntries ? "#F9FAFB" : "#6B7280",
+              }}
             >
               {day}
             </Text>
@@ -167,7 +171,7 @@ export function CalendarScreen({ navigation }: Props) {
                   />
                 ))}
                 {intentionColors.length > 3 && (
-                  <Text className="text-[10px] text-neutral-400">
+                  <Text className="text-[10px]" style={{ color: "#9CA3AF" }}>
                     +{intentionColors.length - 3}
                   </Text>
                 )}
@@ -246,15 +250,15 @@ export function CalendarScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1, backgroundColor: '#0A0A0A' }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1, backgroundColor: '#050608' }, animatedContainerStyle]}>
         <View className="flex-1" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="px-4 py-6 flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="text-white text-2xl font-bold mb-1">
+          <Text className="text-2xl font-bold mb-1" style={{ color: "#F9FAFB" }}>
             Your Emotional Timeline
           </Text>
-          <Text className="text-neutral-400 text-sm">
+          <Text className="text-sm" style={{ color: "#E5E7EB" }}>
             Track your clarity journey
           </Text>
         </View>
@@ -264,7 +268,7 @@ export function CalendarScreen({ navigation }: Props) {
           onPress={() => navigation.navigate("InputScreen")}
           className="active:opacity-60 mt-1"
         >
-          <Ionicons name="home" size={28} color="#B4FF39" />
+          <Ionicons name="home" size={28} color="#9CA3AF" />
         </Pressable>
       </View>
 
@@ -274,10 +278,10 @@ export function CalendarScreen({ navigation }: Props) {
           onPress={handlePreviousMonth}
           className="p-2 active:opacity-60"
         >
-          <Ionicons name="chevron-back" size={24} color="#B4FF39" />
+          <Ionicons name="chevron-back" size={24} color="#9CA3AF" />
         </Pressable>
 
-        <Text className="text-white text-xl font-semibold">
+        <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
           {MONTHS[currentMonth]} {currentYear}
         </Text>
 
@@ -285,7 +289,7 @@ export function CalendarScreen({ navigation }: Props) {
           onPress={handleNextMonth}
           className="p-2 active:opacity-60"
         >
-          <Ionicons name="chevron-forward" size={24} color="#B4FF39" />
+          <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
         </Pressable>
       </View>
 
@@ -299,7 +303,8 @@ export function CalendarScreen({ navigation }: Props) {
         {Object.entries(INTENTIONS).map(([key, config]) => (
           <View
             key={key}
-            className="flex-row items-center bg-neutral-900 rounded-full px-3 py-2"
+            className="flex-row items-center rounded-full px-3 py-2"
+            style={{ backgroundColor: "#1A1A1A" }}
           >
             <View
               style={{
@@ -313,7 +318,7 @@ export function CalendarScreen({ navigation }: Props) {
               }}
               className="rounded-full mr-2"
             />
-            <Text className="text-white text-xs font-medium">
+            <Text className="text-xs font-medium" style={{ color: "#F9FAFB" }}>
               {config.label}
             </Text>
           </View>
@@ -333,7 +338,7 @@ export function CalendarScreen({ navigation }: Props) {
               style={{ width: (Dimensions.get("window").width - 32) / 7 }}
               className="items-center"
             >
-              <Text className="text-neutral-500 text-xs font-semibold">
+              <Text className="text-xs font-semibold" style={{ color: "#9CA3AF" }}>
                 {day}
               </Text>
             </View>
@@ -345,8 +350,8 @@ export function CalendarScreen({ navigation }: Props) {
 
         {/* Empty state hint */}
         <View className="items-center py-8">
-          <Ionicons name="calendar-outline" size={48} color="#333" />
-          <Text className="text-neutral-500 text-sm mt-3 text-center px-8">
+          <Ionicons name="calendar-outline" size={48} color="#505050" />
+          <Text className="text-sm mt-3 text-center px-8" style={{ color: "#9CA3AF" }}>
             Dates with colored dots contain emotional log entries.{"\n"}Tap to
             view details.
           </Text>
