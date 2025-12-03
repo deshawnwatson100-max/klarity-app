@@ -61,7 +61,7 @@ export function TypingIndicator() {
         style={{
           backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#B5FF4B20",
+          borderColor: "#9CA3AF20",
           shadowColor: "#505050",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.3,
@@ -75,7 +75,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#B5FF4B",
+                backgroundColor: "#9CA3AF",
               },
               dot1Style,
             ]}
@@ -86,7 +86,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#B5FF4B",
+                backgroundColor: "#9CA3AF",
               },
               dot2Style,
             ]}
@@ -97,7 +97,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#B5FF4B",
+                backgroundColor: "#9CA3AF",
               },
               dot3Style,
             ]}

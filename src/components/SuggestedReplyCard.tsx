@@ -22,10 +22,10 @@ interface SuggestedReplyCardProps {
 }
 
 const intentionColors: Record<IntentionType, string> = {
-  improve: "#B5FF4B",
+  improve: "#9CA3AF",
   distance: "#FF8B8B",
   maintain: "#FFCE9E",
-  clarity: "#B5FF4B",
+  clarity: "#9CA3AF",
 };
 
 export function SuggestedReplyCard({

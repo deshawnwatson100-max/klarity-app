@@ -113,7 +113,7 @@ export function InputBar({
           disabled={disabled}
           className="active:opacity-60"
         >
-          <Ionicons name="image-outline" size={28} color="#B5FF4B" />
+          <Ionicons name="image-outline" size={28} color="#9CA3AF" />
         </Pressable>
 
         {/* Input Field with Minimal Gradient Border */}
@@ -128,8 +128,8 @@ export function InputBar({
           >
             <LinearGradient
               colors={[
-                "rgba(181, 255, 75, 0.15)",
-                "rgba(181, 255, 75, 0.08)",
+                "rgba(156, 163, 175, 0.15)",
+                "rgba(156, 163, 175, 0.08)",
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -180,7 +180,7 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#B5FF4B" />
+            <Ionicons name="send" size={24} color="#9CA3AF" />
           </Pressable>
         ) : (
           <Pressable
@@ -193,7 +193,7 @@ export function InputBar({
                 <Ionicons name="stop" size={24} color="white" />
               </View>
             ) : (
-              <Ionicons name="mic-outline" size={28} color="#B5FF4B" />
+              <Ionicons name="mic-outline" size={28} color="#9CA3AF" />
             )}
           </Pressable>
         )}

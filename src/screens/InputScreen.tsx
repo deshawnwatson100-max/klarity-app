@@ -363,7 +363,7 @@ export function InputScreen({ navigation }: Props) {
               <View className="items-center justify-center w-full">
                 <Text
                   className="text-xl font-medium mb-6"
-                  style={{ color: "#B5FF4B" }}
+                  style={{ color: "#9CA3AF" }}
                 >
                   Recording...
                 </Text>
@@ -374,7 +374,7 @@ export function InputScreen({ navigation }: Props) {
               </View>
             ) : (
               <View className="items-center">
-                {/* Super soft halo behind text with calm neon lime */}
+                {/* Super soft halo behind text with luxury grey */}
                 <View
                   style={{
                     position: "absolute",
@@ -387,8 +387,8 @@ export function InputScreen({ navigation }: Props) {
                   <LinearGradient
                     colors={[
                       "transparent",
-                      "rgba(181, 255, 75, 0.04)",
-                      "rgba(181, 255, 75, 0.03)",
+                      "rgba(156, 163, 175, 0.04)",
+                      "rgba(156, 163, 175, 0.03)",
                       "transparent",
                     ]}
                     style={{

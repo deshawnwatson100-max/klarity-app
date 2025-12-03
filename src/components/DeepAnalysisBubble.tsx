@@ -41,10 +41,10 @@ export function DeepAnalysisBubble({ content }: DeepAnalysisBubbleProps) {
         style={{
           backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#B5FF4B15",
-          shadowColor: "#B5FF4B",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.15,
+          borderColor: "#9CA3AF15",
+          shadowColor: "#505050",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
           shadowRadius: 10,
         }}
       >

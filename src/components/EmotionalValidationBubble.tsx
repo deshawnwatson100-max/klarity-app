@@ -41,10 +41,10 @@ export function EmotionalValidationBubble({ content }: EmotionalValidationBubble
         style={{
           backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#B5FF4B20",
-          shadowColor: "#B5FF4B",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.2,
+          borderColor: "#9CA3AF20",
+          shadowColor: "#505050",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
           shadowRadius: 12,
         }}
       >

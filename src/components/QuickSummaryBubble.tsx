@@ -34,10 +34,10 @@ export function QuickSummaryBubble({
   }));
 
   const summaryItems = [
-    { label: "Tone", value: tone, color: "#B5FF4B" },
-    { label: "Pattern", value: pattern, color: "#B5FF4B" },
-    { label: "Emotional Impact", value: emotionalImpact, color: "#B5FF4B" },
-    { label: "Core Issue", value: coreIssue, color: "#B5FF4B" },
+    { label: "Tone", value: tone, color: "#9CA3AF" },
+    { label: "Pattern", value: pattern, color: "#9CA3AF" },
+    { label: "Emotional Impact", value: emotionalImpact, color: "#9CA3AF" },
+    { label: "Core Issue", value: coreIssue, color: "#9CA3AF" },
   ];
 
   return (
@@ -56,10 +56,10 @@ export function QuickSummaryBubble({
         style={{
           backgroundColor: "#0A0A0A",
           borderWidth: 1.5,
-          borderColor: "#B5FF4B40",
-          shadowColor: "#B5FF4B",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.25,
+          borderColor: "#9CA3AF30",
+          shadowColor: "#505050",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
           shadowRadius: 20,
         }}
       >

@@ -15,10 +15,10 @@ interface TailoredGuidanceBubbleProps {
 }
 
 const intentionColors: Record<IntentionType, string> = {
-  improve: "#B5FF4B", // Calm neon lime - primary accent
+  improve: "#9CA3AF", // Soft luxury grey - primary accent
   distance: "#FF8B8B", // Warm Coral - warning
   maintain: "#FFCE9E", // Honey Peach - neutral
-  clarity: "#B5FF4B", // Calm neon lime - primary accent
+  clarity: "#9CA3AF", // Soft luxury grey - primary accent
 };
 
 export function TailoredGuidanceBubble({

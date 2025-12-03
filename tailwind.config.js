@@ -12,11 +12,11 @@ module.exports = {
     // NOTE to AI: You can extend the theme with custom colors or styles here.
     extend: {
       colors: {
-        // Klarity AI Dark Theme with Calm Neon Lime
+        // Klarity AI Dark Theme with Soft Luxury Grey
         "bg-primary": "#050608", // Charcoal/soft black - main background
         "text-primary": "#F9FAFB", // Clean white - main text
         "text-secondary": "#E5E7EB", // Soft warm gray - secondary text
-        "accent": "#B5FF4B", // Calm neon lime - CTAs, highlights, key icons
+        "accent": "#9CA3AF", // Soft luxury grey - CTAs, highlights, key icons
 
         // Legacy colors for backwards compatibility
         "lavender-mist": "#C7B5FF",

@@ -20,7 +20,7 @@ const intentions = [
     id: "improve" as IntentionType,
     label: "Improve",
     icon: "heart" as const,
-    color: "#B5FF4B",
+    color: "#9CA3AF",
     description: "Better communication",
   },
   {
@@ -41,7 +41,7 @@ const intentions = [
     id: "clarity" as IntentionType,
     label: "Gain Clarity",
     icon: "bulb" as const,
-    color: "#B5FF4B",
+    color: "#9CA3AF",
     description: "Understanding first",
   },
 ];
@@ -81,7 +81,7 @@ export function DirectionSelectorBubble({
         style={{
           backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#B5FF4B20",
+          borderColor: "#9CA3AF20",
           maxWidth: "85%",
         }}
       >
