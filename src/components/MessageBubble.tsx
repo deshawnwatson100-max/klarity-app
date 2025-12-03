@@ -53,9 +53,9 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         style={{
           backgroundColor: isUser ? "#1A1A1A" : "#050608",
           shadowColor: "#505050",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
         }}
       >
         {/* Image Preview */}

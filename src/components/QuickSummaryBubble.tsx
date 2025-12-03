@@ -34,10 +34,10 @@ export function QuickSummaryBubble({
   }));
 
   const summaryItems = [
-    { label: "Tone", value: tone, color: "#9CA3AF" },
-    { label: "Pattern", value: pattern, color: "#9CA3AF" },
-    { label: "Emotional Impact", value: emotionalImpact, color: "#9CA3AF" },
-    { label: "Core Issue", value: coreIssue, color: "#9CA3AF" },
+    { label: "Tone", value: tone, color: "#F9D76C" }, // Warm soft yellow
+    { label: "Pattern", value: pattern, color: "#5CD4D0" }, // Teal/aqua
+    { label: "Emotional Impact", value: emotionalImpact, color: "#FFB3C6" }, // Soft pink/rose
+    { label: "Core Issue", value: coreIssue, color: "#C7B5FF" }, // Lavender/purple
   ];
 
   return (
@@ -56,11 +56,11 @@ export function QuickSummaryBubble({
         style={{
           backgroundColor: "#0A0A0A",
           borderWidth: 1.5,
-          borderColor: "#9CA3AF30",
+          borderColor: "#505050",
           shadowColor: "#505050",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.4,
+          shadowRadius: 24,
         }}
       >
         {/* Header */}
