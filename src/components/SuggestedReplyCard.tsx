@@ -22,10 +22,10 @@ interface SuggestedReplyCardProps {
 }
 
 const intentionColors: Record<IntentionType, string> = {
-  improve: "#9CA3AF",
-  distance: "#FF8B8B",
-  maintain: "#FFCE9E",
-  clarity: "#9CA3AF",
+  improve: "#6BB6FF", // Cool Sky Blue
+  distance: "#FF9B6B", // Warm Orange
+  maintain: "#FFB84D", // Soft Amber/Gold
+  clarity: "#B8A3E8", // Lavender/Soft Purple
 };
 
 export function SuggestedReplyCard({
@@ -66,14 +66,18 @@ export function SuggestedReplyCard({
       <View className="gap-3">
         {replies.map((reply, index) => (
           <View key={reply.id}>
-            {/* Reply bubble */}
+            {/* Reply bubble with glow */}
             <View
               className="rounded-3xl px-5 py-4 mb-2"
               style={{
                 backgroundColor: "#050608",
-                borderWidth: 1,
-                borderColor: `${color}20`,
+                borderWidth: 1.5,
+                borderColor: `${color}40`,
                 maxWidth: "85%",
+                shadowColor: color,
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
               }}
             >
               <Text
@@ -96,8 +100,8 @@ export function SuggestedReplyCard({
                 alignSelf: "flex-start",
                 marginLeft: 8,
                 shadowColor: color,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.4,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.5,
                 shadowRadius: 10,
               }}
             >
