@@ -59,13 +59,13 @@ export function TypingIndicator() {
       <View
         className="rounded-3xl px-5 py-4"
         style={{
-          backgroundColor: "#0E0E0F",
+          backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#C7B5FF40",
-          shadowColor: "#F7B8D4",
-          shadowOffset: { width: 0, height: 0 },
+          borderColor: "#B5FF4B20",
+          shadowColor: "#505050",
+          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.3,
-          shadowRadius: 12,
+          shadowRadius: 8,
         }}
       >
         <View className="flex-row items-center gap-1.5">
@@ -75,7 +75,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#C7B5FF",
+                backgroundColor: "#B5FF4B",
               },
               dot1Style,
             ]}
@@ -86,7 +86,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#C7B5FF",
+                backgroundColor: "#B5FF4B",
               },
               dot2Style,
             ]}
@@ -97,7 +97,7 @@ export function TypingIndicator() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: "#C7B5FF",
+                backgroundColor: "#B5FF4B",
               },
               dot3Style,
             ]}

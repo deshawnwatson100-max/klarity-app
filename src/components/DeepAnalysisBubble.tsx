@@ -39,17 +39,17 @@ export function DeepAnalysisBubble({ content }: DeepAnalysisBubbleProps) {
       <View
         className="rounded-3xl px-5 py-4"
         style={{
-          backgroundColor: "#0E0E0F",
+          backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#C7B5FF20",
-          shadowColor: "#F7B8D4",
+          borderColor: "#B5FF4B15",
+          shadowColor: "#B5FF4B",
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.25,
+          shadowOpacity: 0.15,
           shadowRadius: 10,
         }}
       >
         <Text
-          style={{ fontFamily: "SF Pro Display", color: "#E6E6E6" }}
+          style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
           className="text-base leading-6"
         >
           {content}

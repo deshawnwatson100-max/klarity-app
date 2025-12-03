@@ -47,11 +47,15 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       <View
         className={`${imageUrl ? "max-w-[85%]" : "max-w-[80%]"} rounded-2xl ${
           isUser
-            ? "border border-[#C7B5FF]"
+            ? "border border-[#B5FF4B]"
             : "border border-neutral-800"
         } ${imageUrl ? "p-2" : "px-4 py-3"}`}
         style={{
-          backgroundColor: isUser ? "#D8CCFF" : "#0E0E0F",
+          backgroundColor: isUser ? "#1A1F1A" : "#050608",
+          shadowColor: isUser ? "#B5FF4B" : "#505050",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isUser ? 0.15 : 0.3,
+          shadowRadius: 8,
         }}
       >
         {/* Image Preview */}
@@ -75,7 +79,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           <View className={imageUrl ? "px-2 pb-1" : ""}>
             <Text
               className="text-base leading-6"
-              style={{ color: isUser ? "#000000" : "#C7B5FF" }}
+              style={{ color: isUser ? "#F9FAFB" : "#F9FAFB" }}
             >
               {content}
             </Text>

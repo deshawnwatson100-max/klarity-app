@@ -22,10 +22,10 @@ interface SuggestedReplyCardProps {
 }
 
 const intentionColors: Record<IntentionType, string> = {
-  improve: "#C9F7D8",
+  improve: "#B5FF4B",
   distance: "#FF8B8B",
   maintain: "#FFCE9E",
-  clarity: "#C7B5FF",
+  clarity: "#B5FF4B",
 };
 
 export function SuggestedReplyCard({
@@ -70,7 +70,7 @@ export function SuggestedReplyCard({
             <View
               className="rounded-3xl px-5 py-4 mb-2"
               style={{
-                backgroundColor: "#0E0E0F",
+                backgroundColor: "#050608",
                 borderWidth: 1,
                 borderColor: `${color}20`,
                 maxWidth: "85%",
@@ -78,7 +78,7 @@ export function SuggestedReplyCard({
             >
               <Text
                 className="text-base leading-6"
-                style={{ fontFamily: "SF Pro Display", color: "#E6E6E6" }}
+                style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
               >
                 {reply.text}
               </Text>
@@ -95,7 +95,7 @@ export function SuggestedReplyCard({
                 paddingVertical: 10,
                 alignSelf: "flex-start",
                 marginLeft: 8,
-                shadowColor: "#F7B8D4",
+                shadowColor: color,
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.4,
                 shadowRadius: 10,

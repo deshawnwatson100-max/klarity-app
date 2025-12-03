@@ -12,14 +12,20 @@ module.exports = {
     // NOTE to AI: You can extend the theme with custom colors or styles here.
     extend: {
       colors: {
-        // Klarity AI Brand Palette
-        "lavender-mist": "#C7B5FF", // Primary - calm, feminine, emotional safety
-        "rose-quartz": "#F7B8D4", // Secondary accent - warm supportive
-        "honey-peach": "#FFCE9E", // Signal - emotional insights
-        "soft-mint": "#C9F7D8", // Success - healthy relationship
-        "warm-coral": "#FF8B8B", // Warning - red flags
-        "soft-gray": "#E6E6E6", // Neutral light text/dividers
-        "deep-charcoal": "#0E0E0F", // Dark background
+        // Klarity AI Dark Theme with Calm Neon Lime
+        "bg-primary": "#050608", // Charcoal/soft black - main background
+        "text-primary": "#F9FAFB", // Clean white - main text
+        "text-secondary": "#E5E7EB", // Soft warm gray - secondary text
+        "accent": "#B5FF4B", // Calm neon lime - CTAs, highlights, key icons
+
+        // Legacy colors for backwards compatibility
+        "lavender-mist": "#C7B5FF",
+        "rose-quartz": "#F7B8D4",
+        "honey-peach": "#FFCE9E",
+        "soft-mint": "#C9F7D8",
+        "warm-coral": "#FF8B8B",
+        "soft-gray": "#E6E6E6",
+        "deep-charcoal": "#0E0E0F",
       },
       fontSize: {
         xs: "10px",

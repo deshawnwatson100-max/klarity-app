@@ -20,7 +20,7 @@ const intentions = [
     id: "improve" as IntentionType,
     label: "Improve",
     icon: "heart" as const,
-    color: "#C9F7D8",
+    color: "#B5FF4B",
     description: "Better communication",
   },
   {
@@ -41,7 +41,7 @@ const intentions = [
     id: "clarity" as IntentionType,
     label: "Gain Clarity",
     icon: "bulb" as const,
-    color: "#C7B5FF",
+    color: "#B5FF4B",
     description: "Understanding first",
   },
 ];
@@ -79,15 +79,15 @@ export function DirectionSelectorBubble({
       <View
         className="rounded-3xl px-5 py-4 mb-4"
         style={{
-          backgroundColor: "#0E0E0F",
+          backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#C7B5FF20",
+          borderColor: "#B5FF4B20",
           maxWidth: "85%",
         }}
       >
         <Text
           className="text-base leading-6"
-          style={{ fontFamily: "SF Pro Display", color: "#C7B5FF" }}
+          style={{ fontFamily: "SF Pro Display", color: "#F9FAFB" }}
         >
           Before I help you respond, which direction do you want to go with this relationship?
         </Text>
@@ -104,7 +104,7 @@ export function DirectionSelectorBubble({
               onPress={() => onSelectIntention(intention.id)}
               className="active:opacity-70"
               style={{
-                backgroundColor: isSelected ? intention.color : "#0E0E0F",
+                backgroundColor: isSelected ? intention.color : "#050608",
                 borderWidth: 1.5,
                 borderColor: isSelected ? intention.color : `${intention.color}40`,
                 borderRadius: 24,
@@ -113,9 +113,9 @@ export function DirectionSelectorBubble({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 8,
-                shadowColor: isSelected ? "#F7B8D4" : intention.color,
+                shadowColor: intention.color,
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: isSelected ? 0.5 : 0.2,
+                shadowOpacity: isSelected ? 0.4 : 0.2,
                 shadowRadius: isSelected ? 12 : 6,
               }}
             >
@@ -128,7 +128,7 @@ export function DirectionSelectorBubble({
                 className="font-semibold text-base"
                 style={{
                   fontFamily: "SF Pro Display",
-                  color: isSelected ? "#000000" : "#FFFFFF",
+                  color: isSelected ? "#000000" : "#F9FAFB",
                 }}
               >
                 {intention.label}

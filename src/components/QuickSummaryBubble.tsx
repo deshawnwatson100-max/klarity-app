@@ -34,10 +34,10 @@ export function QuickSummaryBubble({
   }));
 
   const summaryItems = [
-    { label: "Tone", value: tone, color: "#C7B5FF" },
-    { label: "Pattern", value: pattern, color: "#C7B5FF" },
-    { label: "Emotional Impact", value: emotionalImpact, color: "#C7B5FF" },
-    { label: "Core Issue", value: coreIssue, color: "#C7B5FF" },
+    { label: "Tone", value: tone, color: "#B5FF4B" },
+    { label: "Pattern", value: pattern, color: "#B5FF4B" },
+    { label: "Emotional Impact", value: emotionalImpact, color: "#B5FF4B" },
+    { label: "Core Issue", value: coreIssue, color: "#B5FF4B" },
   ];
 
   return (
@@ -54,19 +54,19 @@ export function QuickSummaryBubble({
       <View
         className="rounded-2xl px-6 py-6"
         style={{
-          backgroundColor: "#151515",
+          backgroundColor: "#0A0A0A",
           borderWidth: 1.5,
-          borderColor: "#C7B5FF40",
-          shadowColor: "#F7B8D4",
+          borderColor: "#B5FF4B40",
+          shadowColor: "#B5FF4B",
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.3,
+          shadowOpacity: 0.25,
           shadowRadius: 20,
         }}
       >
         {/* Header */}
         <Text
-          className="text-white text-lg font-bold mb-5"
-          style={{ fontFamily: "SF Pro Display" }}
+          className="text-lg font-bold mb-5"
+          style={{ fontFamily: "SF Pro Display", color: "#F9FAFB" }}
         >
           Quick Summary
         </Text>
@@ -87,8 +87,8 @@ export function QuickSummaryBubble({
               </Text>
               {/* Section content */}
               <Text
-                className="text-neutral-300 text-sm leading-5"
-                style={{ fontFamily: "SF Pro Display" }}
+                className="text-sm leading-5"
+                style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
               >
                 {item.value}
               </Text>

@@ -39,18 +39,18 @@ export function EmotionalValidationBubble({ content }: EmotionalValidationBubble
       <View
         className="rounded-3xl px-5 py-4"
         style={{
-          backgroundColor: "#0E0E0F",
+          backgroundColor: "#050608",
           borderWidth: 1,
-          borderColor: "#C7B5FF40",
-          shadowColor: "#F7B8D4",
+          borderColor: "#B5FF4B20",
+          shadowColor: "#B5FF4B",
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.3,
+          shadowOpacity: 0.2,
           shadowRadius: 12,
         }}
       >
         <Text
           className="text-base leading-6"
-          style={{ fontFamily: "SF Pro Display", color: "#C7B5FF" }}
+          style={{ fontFamily: "SF Pro Display", color: "#F9FAFB" }}
         >
           {content}
         </Text>

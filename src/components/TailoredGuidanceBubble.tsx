@@ -15,10 +15,10 @@ interface TailoredGuidanceBubbleProps {
 }
 
 const intentionColors: Record<IntentionType, string> = {
-  improve: "#C9F7D8", // Soft Mint - healthy relationship
-  distance: "#FF8B8B", // Warm Coral - red flags/warning
-  maintain: "#FFCE9E", // Honey Peach - emotional insights
-  clarity: "#C7B5FF", // Lavender Mist - primary
+  improve: "#B5FF4B", // Calm neon lime - primary accent
+  distance: "#FF8B8B", // Warm Coral - warning
+  maintain: "#FFCE9E", // Honey Peach - neutral
+  clarity: "#B5FF4B", // Calm neon lime - primary accent
 };
 
 export function TailoredGuidanceBubble({
@@ -54,18 +54,18 @@ export function TailoredGuidanceBubble({
       <View
         className="rounded-3xl px-5 py-4"
         style={{
-          backgroundColor: "#0E0E0F",
+          backgroundColor: "#050608",
           borderWidth: 1,
           borderColor: `${color}30`,
           shadowColor: color,
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.3,
+          shadowOpacity: 0.25,
           shadowRadius: 12,
         }}
       >
         <Text
           className="text-base leading-6"
-          style={{ fontFamily: "SF Pro Display", color: "#E6E6E6" }}
+          style={{ fontFamily: "SF Pro Display", color: "#F9FAFB" }}
         >
           {content}
         </Text>

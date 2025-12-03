@@ -113,12 +113,12 @@ export function InputBar({
           disabled={disabled}
           className="active:opacity-60"
         >
-          <Ionicons name="image-outline" size={28} color="#C7B5FF" />
+          <Ionicons name="image-outline" size={28} color="#B5FF4B" />
         </Pressable>
 
         {/* Input Field with Minimal Gradient Border */}
         <View className="flex-1 relative">
-          {/* Very thin gradient border at 10% opacity */}
+          {/* Very thin gradient border */}
           <View
             style={{
               borderRadius: 28,
@@ -128,8 +128,8 @@ export function InputBar({
           >
             <LinearGradient
               colors={[
-                "rgba(199, 181, 255, 0.2)",
-                "rgba(247, 184, 212, 0.2)",
+                "rgba(181, 255, 75, 0.15)",
+                "rgba(181, 255, 75, 0.08)",
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -138,10 +138,10 @@ export function InputBar({
                 padding: 0.5,
               }}
             >
-              {/* Inner input with matte charcoal background */}
+              {/* Inner input with charcoal background */}
               <View
                 style={{
-                  backgroundColor: "#0E0E0F",
+                  backgroundColor: "#050608",
                   borderRadius: 27.5,
                   paddingHorizontal: 16,
                   paddingVertical: 12,
@@ -156,14 +156,14 @@ export function InputBar({
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   placeholder={placeholder}
-                  placeholderTextColor="#A0A0A0"
+                  placeholderTextColor="#6B7280"
                   editable={!disabled}
                   onSubmitEditing={handleSend}
                   returnKeyType="send"
                   multiline
                   maxLength={1000}
                   style={{
-                    color: "#E6E6E6",
+                    color: "#F9FAFB",
                     fontSize: 16,
                     lineHeight: 20,
                   }}
@@ -180,7 +180,7 @@ export function InputBar({
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#C7B5FF" />
+            <Ionicons name="send" size={24} color="#B5FF4B" />
           </Pressable>
         ) : (
           <Pressable
@@ -193,7 +193,7 @@ export function InputBar({
                 <Ionicons name="stop" size={24} color="white" />
               </View>
             ) : (
-              <Ionicons name="mic-outline" size={28} color="#C7B5FF" />
+              <Ionicons name="mic-outline" size={28} color="#B5FF4B" />
             )}
           </Pressable>
         )}
