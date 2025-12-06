@@ -124,19 +124,21 @@ export function ChatScreen({ navigation }: Props) {
     try {
       // Check if this is an image message
       if (userMessage.imageBase64) {
-        // For image messages, analyze for toxic communication
-        const tempAnalyzing: ChatMessage = {
-          id: Date.now().toString() + "_analyzing",
-          role: "assistant",
-          content: "Analyzing screenshot for toxic or dysfunctional communication...",
+        // For image messages, show typing indicator while analyzing
+        const typingMsg: TypingMessage = {
+          id: Date.now().toString() + "_typing_image",
+          role: "typing",
+          content: "",
           timestamp: Date.now(),
         };
-        addMessageToActiveLoop(tempAnalyzing);
+        addMessageToActiveLoop(typingMsg);
 
         // Analyze the image
         const imageAnalysis = await analyzeImageToxicity(userMessage.imageBase64);
 
-        // Remove the temp analyzing message and add the real analysis
+        // Remove typing indicator and add the real analysis
+        removeMessageFromActiveLoop(typingMsg.id);
+
         const analysisMessage: ImageAnalysisMessage = {
           id: Date.now().toString() + "_image_analysis",
           role: "image-analysis",
