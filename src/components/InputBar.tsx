@@ -128,25 +128,13 @@ export function InputBar({
                 right: -2,
                 bottom: -2,
                 borderRadius: 30,
-                overflow: "hidden",
+                backgroundColor: "rgba(156, 163, 175, 0.12)",
+                shadowColor: "#9CA3AF",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
               }}
-            >
-              <LinearGradient
-                colors={[
-                  "rgba(181, 255, 75, 0.18)", // Lime
-                  "rgba(125, 211, 192, 0.18)", // Teal
-                  "rgba(184, 163, 232, 0.18)", // Purple
-                  "rgba(255, 179, 198, 0.18)", // Rose
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: 30,
-                }}
-              />
-            </View>
+            />
           )}
 
           {/* Very thin gradient border */}
@@ -161,10 +149,8 @@ export function InputBar({
               colors={
                 isFocused
                   ? [
-                      "rgba(181, 255, 75, 0.25)", // Lime
-                      "rgba(125, 211, 192, 0.25)", // Teal
-                      "rgba(184, 163, 232, 0.25)", // Purple
-                      "rgba(255, 179, 198, 0.25)", // Rose
+                      "rgba(156, 163, 175, 0.3)",
+                      "rgba(156, 163, 175, 0.2)",
                     ]
                   : [
                       "rgba(156, 163, 175, 0.15)",
