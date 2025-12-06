@@ -104,7 +104,7 @@ export function EmotionalFaceScanBubble({
         />
 
         {/* Header row */}
-        <View className="flex-row items-center justify-between mb-3">
+        <View className="items-center mb-3">
           <Text
             className="text-lg font-medium"
             style={{
