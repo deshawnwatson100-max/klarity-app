@@ -6,75 +6,135 @@ import Animated, {
   withRepeat,
   withTiming,
   withDelay,
+  withSequence,
   Easing,
 } from "react-native-reanimated";
 
 export function TypingIndicator() {
-  const dot1Opacity = useSharedValue(0.3);
-  const dot2Opacity = useSharedValue(0.3);
-  const dot3Opacity = useSharedValue(0.3);
+  const dot1TranslateY = useSharedValue(0);
+  const dot2TranslateY = useSharedValue(0);
+  const dot3TranslateY = useSharedValue(0);
+  const dot1Scale = useSharedValue(1);
+  const dot2Scale = useSharedValue(1);
+  const dot3Scale = useSharedValue(1);
 
   useEffect(() => {
-    // Pulsing animation for each dot with staggered timing
-    dot1Opacity.value = withRepeat(
-      withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+    // ChatGPT-style bouncing animation with scale
+    const animationConfig = {
+      duration: 500,
+      easing: Easing.bezier(0.33, 0.66, 0.66, 1),
+    };
+
+    // Dot 1 - bounce up and down with scale
+    dot1TranslateY.value = withRepeat(
+      withSequence(
+        withTiming(-6, animationConfig),
+        withTiming(0, animationConfig)
+      ),
       -1,
-      true
+      false
+    );
+    dot1Scale.value = withRepeat(
+      withSequence(
+        withTiming(0.85, animationConfig),
+        withTiming(1, animationConfig)
+      ),
+      -1,
+      false
     );
 
-    dot2Opacity.value = withDelay(
-      200,
+    // Dot 2 - delayed bounce
+    dot2TranslateY.value = withDelay(
+      150,
       withRepeat(
-        withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        withSequence(
+          withTiming(-6, animationConfig),
+          withTiming(0, animationConfig)
+        ),
         -1,
-        true
+        false
+      )
+    );
+    dot2Scale.value = withDelay(
+      150,
+      withRepeat(
+        withSequence(
+          withTiming(0.85, animationConfig),
+          withTiming(1, animationConfig)
+        ),
+        -1,
+        false
       )
     );
 
-    dot3Opacity.value = withDelay(
-      400,
+    // Dot 3 - delayed bounce
+    dot3TranslateY.value = withDelay(
+      300,
       withRepeat(
-        withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        withSequence(
+          withTiming(-6, animationConfig),
+          withTiming(0, animationConfig)
+        ),
         -1,
-        true
+        false
+      )
+    );
+    dot3Scale.value = withDelay(
+      300,
+      withRepeat(
+        withSequence(
+          withTiming(0.85, animationConfig),
+          withTiming(1, animationConfig)
+        ),
+        -1,
+        false
       )
     );
   }, []);
 
   const dot1Style = useAnimatedStyle(() => ({
-    opacity: dot1Opacity.value,
+    transform: [
+      { translateY: dot1TranslateY.value },
+      { scale: dot1Scale.value },
+    ],
   }));
 
   const dot2Style = useAnimatedStyle(() => ({
-    opacity: dot2Opacity.value,
+    transform: [
+      { translateY: dot2TranslateY.value },
+      { scale: dot2Scale.value },
+    ],
   }));
 
   const dot3Style = useAnimatedStyle(() => ({
-    opacity: dot3Opacity.value,
+    transform: [
+      { translateY: dot3TranslateY.value },
+      { scale: dot3Scale.value },
+    ],
   }));
 
   return (
     <View className="flex-row items-center self-start mb-4">
       {/* Klarity bubble with typing dots */}
       <View
-        className="rounded-3xl px-5 py-4"
+        className="rounded-3xl px-6 py-4"
         style={{
-          backgroundColor: "#050608",
+          backgroundColor: "#0A0A0C",
           borderWidth: 1,
-          borderColor: "#9CA3AF20",
+          borderColor: "#9CA3AF15",
           shadowColor: "#505050",
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
+          shadowOpacity: 0.2,
           shadowRadius: 8,
         }}
       >
-        <View className="flex-row items-center gap-1.5">
+        <View className="flex-row items-center gap-2">
           <Animated.View
             style={[
               {
-                width: 8,
-                height: 8,
-                borderRadius: 4,
+                width: 9,
+                height: 9,
+                borderRadius: 4.5,
                 backgroundColor: "#9CA3AF",
               },
               dot1Style,
@@ -83,9 +143,9 @@ export function TypingIndicator() {
           <Animated.View
             style={[
               {
-                width: 8,
-                height: 8,
-                borderRadius: 4,
+                width: 9,
+                height: 9,
+                borderRadius: 4.5,
                 backgroundColor: "#9CA3AF",
               },
               dot2Style,
@@ -94,9 +154,9 @@ export function TypingIndicator() {
           <Animated.View
             style={[
               {
-                width: 8,
-                height: 8,
-                borderRadius: 4,
+                width: 9,
+                height: 9,
+                borderRadius: 4.5,
                 backgroundColor: "#9CA3AF",
               },
               dot3Style,
