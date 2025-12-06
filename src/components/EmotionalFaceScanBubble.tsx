@@ -113,7 +113,7 @@ export function EmotionalFaceScanBubble({
               fontWeight: "500",
             }}
           >
-            Face Scan Emotional Reading
+            Emotion Face Scan
           </Text>
         </View>
 
