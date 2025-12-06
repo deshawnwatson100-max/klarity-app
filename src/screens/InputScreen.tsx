@@ -413,6 +413,106 @@ export function InputScreen({ navigation }: Props) {
             )}
           </View>
 
+          {/* Feature Buttons - Above Input Bar */}
+          <View className="px-6 pb-4">
+            <View className="flex-row items-center justify-center gap-6">
+              {/* Emotion Scan Button */}
+              <Pressable
+                onPress={() => {
+                  // Navigate to camera for emotion scan
+                  navigation.navigate("ChatScreen");
+                }}
+                className="items-center"
+              >
+                {({ pressed }) => (
+                  <View
+                    style={{
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    }}
+                  >
+                    {/* Glass-frost button with soft grey glow */}
+                    <View
+                      className="items-center justify-center rounded-2xl overflow-hidden"
+                      style={{
+                        width: 72,
+                        height: 72,
+                        backgroundColor: "rgba(20, 20, 24, 0.6)",
+                        borderWidth: 1,
+                        borderColor: "rgba(156, 163, 175, 0.15)",
+                        shadowColor: "#9CA3AF",
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: pressed ? 0.25 : 0.15,
+                        shadowRadius: pressed ? 12 : 8,
+                      }}
+                    >
+                      <Ionicons
+                        name="happy-outline"
+                        size={32}
+                        color={pressed ? "#B4B8C1" : "#9CA3AF"}
+                      />
+                    </View>
+                    {/* Label */}
+                    <Text
+                      className="text-xs mt-2.5 font-medium"
+                      style={{
+                        color: "#9CA3AF",
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      Emotion Scan
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+
+              {/* Past Loops Button */}
+              <Pressable
+                onPress={handleOpenPastLoops}
+                className="items-center"
+              >
+                {({ pressed }) => (
+                  <View
+                    style={{
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    }}
+                  >
+                    {/* Glass-frost button with soft grey glow */}
+                    <View
+                      className="items-center justify-center rounded-2xl overflow-hidden"
+                      style={{
+                        width: 72,
+                        height: 72,
+                        backgroundColor: "rgba(20, 20, 24, 0.6)",
+                        borderWidth: 1,
+                        borderColor: "rgba(156, 163, 175, 0.15)",
+                        shadowColor: "#9CA3AF",
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: pressed ? 0.25 : 0.15,
+                        shadowRadius: pressed ? 12 : 8,
+                      }}
+                    >
+                      <Ionicons
+                        name="time-outline"
+                        size={32}
+                        color={pressed ? "#B4B8C1" : "#9CA3AF"}
+                      />
+                    </View>
+                    {/* Label */}
+                    <Text
+                      className="text-xs mt-2.5 font-medium"
+                      style={{
+                        color: "#9CA3AF",
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      Past Loops
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
+          </View>
+
           {/* Input Bar */}
           <InputBar
             value={currentInput}
