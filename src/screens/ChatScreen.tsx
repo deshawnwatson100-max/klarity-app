@@ -307,23 +307,7 @@ export function ChatScreen({ navigation }: Props) {
       updateMessageInActiveLoop(lastMsg.id, updated);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
-    // Show typing
-    const typingMsg: TypingMessage = {
-      id: Date.now().toString() + "_typing3",
-      role: "typing",
-      content: "",
-      timestamp: Date.now(),
-    };
-    addMessageToActiveLoop(typingMsg);
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    // Remove typing indicator before showing guidance
-    removeMessageFromActiveLoop(typingMsg.id);
-
-    // Generate and show tailored guidance
+    // Generate and show tailored guidance immediately
     const guidance = await generateTailoredGuidance(
       currentUserMessage,
       currentIntention,
@@ -338,9 +322,7 @@ export function ChatScreen({ navigation }: Props) {
     };
     addMessageToActiveLoop(guidanceMsg);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    // Generate and show suggested replies with tone
+    // Generate and show suggested replies with tone immediately
     const replies = await generateIntentionBasedReplies(
       currentUserMessage,
       currentIntention,
