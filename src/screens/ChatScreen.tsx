@@ -75,6 +75,7 @@ export function ChatScreen({ navigation }: Props) {
   const [currentAnalysis, setCurrentAnalysis] = useState<EmotionalAnalysis | null>(null);
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [currentIntention, setCurrentIntention] = useState<IntentionType | null>(null);
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -295,7 +296,10 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleSelectTone = async (tone: ToneType) => {
-    if (!currentAnalysis || !currentIntention) return;
+    if (!currentAnalysis || !currentIntention || isGeneratingSuggestions) return;
+
+    // Prevent duplicate calls
+    setIsGeneratingSuggestions(true);
 
     // Update the tone selector message to show selection
     const lastMsg = messages[messages.length - 1];
@@ -307,48 +311,52 @@ export function ChatScreen({ navigation }: Props) {
       updateMessageInActiveLoop(lastMsg.id, updated);
     }
 
-    // Generate and show tailored guidance immediately
-    const guidance = await generateTailoredGuidance(
-      currentUserMessage,
-      currentIntention,
-      currentAnalysis
-    );
-    const guidanceMsg: TailoredGuidanceMessage = {
-      id: Date.now().toString() + "_guidance",
-      role: "tailored-guidance",
-      content: guidance,
-      timestamp: Date.now(),
-      intention: currentIntention,
-    };
-    addMessageToActiveLoop(guidanceMsg);
+    try {
+      // Generate and show tailored guidance immediately
+      const guidance = await generateTailoredGuidance(
+        currentUserMessage,
+        currentIntention,
+        currentAnalysis
+      );
+      const guidanceMsg: TailoredGuidanceMessage = {
+        id: Date.now().toString() + "_guidance",
+        role: "tailored-guidance",
+        content: guidance,
+        timestamp: Date.now(),
+        intention: currentIntention,
+      };
+      addMessageToActiveLoop(guidanceMsg);
 
-    // Generate and show suggested replies with tone immediately
-    const replies = await generateIntentionBasedReplies(
-      currentUserMessage,
-      currentIntention,
-      currentAnalysis
-    );
-    const repliesMsg: SuggestedReplyCardMessage = {
-      id: Date.now().toString() + "_replies",
-      role: "suggested-reply-card",
-      content: "",
-      timestamp: Date.now(),
-      replies,
-      intention: currentIntention,
-      tone,
-    };
-    addMessageToActiveLoop(repliesMsg);
+      // Generate and show suggested replies with tone immediately
+      const replies = await generateIntentionBasedReplies(
+        currentUserMessage,
+        currentIntention,
+        currentAnalysis
+      );
+      const repliesMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_replies",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies,
+        intention: currentIntention,
+        tone,
+      };
+      addMessageToActiveLoop(repliesMsg);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
-    // Show face scan card
-    const faceScanMsg: FaceScanCardMessage = {
-      id: Date.now().toString() + "_facescan",
-      role: "face-scan-card",
-      content: "",
-      timestamp: Date.now(),
-    };
-    addMessageToActiveLoop(faceScanMsg);
+      // Show face scan card
+      const faceScanMsg: FaceScanCardMessage = {
+        id: Date.now().toString() + "_facescan",
+        role: "face-scan-card",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(faceScanMsg);
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
   };
 
   const handleSelectReply = (replyText: string) => {
