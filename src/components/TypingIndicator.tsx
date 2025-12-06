@@ -1,161 +1,100 @@
-import React, { useEffect } from "react";
-import { View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  withDelay,
   withSequence,
   Easing,
 } from "react-native-reanimated";
 
+const thinkingWords = [
+  "processing",
+  "thinking",
+  "analyzing",
+  "structuring response",
+  "clarifying",
+];
+
 export function TypingIndicator() {
-  const dot1Opacity = useSharedValue(0.3);
-  const dot2Opacity = useSharedValue(0.3);
-  const dot3Opacity = useSharedValue(0.3);
-  const dot1Scale = useSharedValue(0.9);
-  const dot2Scale = useSharedValue(0.9);
-  const dot3Scale = useSharedValue(0.9);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const opacity = useSharedValue(0);
+  const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
-    // Elegant breathing animation - fade and scale
-    const breathingConfig = {
-      duration: 800,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material design easing
-    };
+    // Cycle through words every 2 seconds
+    const wordInterval = setInterval(() => {
+      setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
+    }, 2000);
 
-    // Dot 1 - breathing fade and scale
-    dot1Opacity.value = withRepeat(
+    // Fade in/out animation for word transitions
+    opacity.value = withRepeat(
       withSequence(
-        withTiming(1, breathingConfig),
-        withTiming(0.3, breathingConfig)
-      ),
-      -1,
-      false
-    );
-    dot1Scale.value = withRepeat(
-      withSequence(
-        withTiming(1, breathingConfig),
-        withTiming(0.9, breathingConfig)
+        withTiming(1, { duration: 600, easing: Easing.bezier(0.4, 0.0, 0.2, 1) }),
+        withTiming(1, { duration: 800 }), // Hold visible
+        withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0.0, 0.2, 1) })
       ),
       -1,
       false
     );
 
-    // Dot 2 - delayed breathing
-    dot2Opacity.value = withDelay(
-      200,
-      withRepeat(
-        withSequence(
-          withTiming(1, breathingConfig),
-          withTiming(0.3, breathingConfig)
-        ),
-        -1,
-        false
-      )
-    );
-    dot2Scale.value = withDelay(
-      200,
-      withRepeat(
-        withSequence(
-          withTiming(1, breathingConfig),
-          withTiming(0.9, breathingConfig)
-        ),
-        -1,
-        false
-      )
+    // Gentle glow pulse
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 1500, easing: Easing.bezier(0.4, 0.0, 0.2, 1) }),
+        withTiming(0.3, { duration: 1500, easing: Easing.bezier(0.4, 0.0, 0.2, 1) })
+      ),
+      -1,
+      false
     );
 
-    // Dot 3 - delayed breathing
-    dot3Opacity.value = withDelay(
-      400,
-      withRepeat(
-        withSequence(
-          withTiming(1, breathingConfig),
-          withTiming(0.3, breathingConfig)
-        ),
-        -1,
-        false
-      )
-    );
-    dot3Scale.value = withDelay(
-      400,
-      withRepeat(
-        withSequence(
-          withTiming(1, breathingConfig),
-          withTiming(0.9, breathingConfig)
-        ),
-        -1,
-        false
-      )
-    );
+    return () => clearInterval(wordInterval);
   }, []);
 
-  const dot1Style = useAnimatedStyle(() => ({
-    opacity: dot1Opacity.value,
-    transform: [{ scale: dot1Scale.value }],
+  const textAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
   }));
 
-  const dot2Style = useAnimatedStyle(() => ({
-    opacity: dot2Opacity.value,
-    transform: [{ scale: dot2Scale.value }],
-  }));
-
-  const dot3Style = useAnimatedStyle(() => ({
-    opacity: dot3Opacity.value,
-    transform: [{ scale: dot3Scale.value }],
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
   }));
 
   return (
     <View className="flex-row items-center self-start mb-4 px-4">
-      {/* Free-floating dots with no container */}
-      <View className="flex-row items-center gap-2.5">
+      {/* Free-floating text with glow */}
+      <View className="relative">
+        {/* Glow effect behind text */}
         <Animated.View
           style={[
             {
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#9CA3AF",
-              shadowColor: "#9CA3AF",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
-              shadowRadius: 4,
+              position: "absolute",
+              top: -8,
+              left: -12,
+              right: -12,
+              bottom: -8,
+              backgroundColor: "#B4FF39",
+              borderRadius: 16,
+              opacity: 0.15,
             },
-            dot1Style,
+            glowAnimatedStyle,
           ]}
         />
-        <Animated.View
-          style={[
-            {
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#9CA3AF",
-              shadowColor: "#9CA3AF",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
-              shadowRadius: 4,
-            },
-            dot2Style,
-          ]}
-        />
-        <Animated.View
-          style={[
-            {
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#9CA3AF",
-              shadowColor: "#9CA3AF",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
-              shadowRadius: 4,
-            },
-            dot3Style,
-          ]}
-        />
+
+        {/* Animated text */}
+        <Animated.View style={textAnimatedStyle}>
+          <Text
+            style={{
+              fontFamily: "SF Pro Display",
+              fontSize: 15,
+              color: "#9CA3AF",
+              fontWeight: "400",
+              letterSpacing: 0.3,
+            }}
+          >
+            {thinkingWords[currentWordIndex]}
+          </Text>
+        </Animated.View>
       </View>
     </View>
   );
