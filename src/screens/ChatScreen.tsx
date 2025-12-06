@@ -33,6 +33,7 @@ import { DirectionSelectorBubble } from "../components/DirectionSelectorBubble";
 import { ToneSelectionBubble } from "../components/ToneSelectionBubble";
 import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
+import { EmotionalFaceScanBubble } from "../components/EmotionalFaceScanBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -55,6 +56,7 @@ import {
   TailoredGuidanceMessage,
   SuggestedReplyCardMessage,
   ImageAnalysisMessage,
+  FaceScanCardMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -356,6 +358,17 @@ export function ChatScreen({ navigation }: Props) {
       tone,
     };
     addMessageToActiveLoop(repliesMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Show face scan card
+    const faceScanMsg: FaceScanCardMessage = {
+      id: Date.now().toString() + "_facescan",
+      role: "face-scan-card",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(faceScanMsg);
   };
 
   const handleSelectReply = (replyText: string) => {
@@ -395,6 +408,11 @@ export function ChatScreen({ navigation }: Props) {
 
   const handleVoicePress = () => {
     console.log("Voice input pressed");
+  };
+
+  const handleBeginFaceScan = () => {
+    // TODO: Navigate to camera screen for face scanning
+    console.log("Begin face scan pressed");
   };
 
   const renderMessage = (message: ChatMessage) => {
@@ -476,6 +494,15 @@ export function ChatScreen({ navigation }: Props) {
         <ImageAnalysisCard
           key={message.id}
           analysis={imageAnalysisMsg.analysis}
+        />
+      );
+    }
+
+    if (message.role === "face-scan-card") {
+      return (
+        <EmotionalFaceScanBubble
+          key={message.id}
+          onBeginScan={handleBeginFaceScan}
         />
       );
     }

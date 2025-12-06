@@ -11,7 +11,8 @@ export type MessageRole =
   | "direction-selector"
   | "tone-selector"
   | "tailored-guidance"
-  | "suggested-reply-card";
+  | "suggested-reply-card"
+  | "face-scan-card";
 
 export interface Message {
   id: string;
@@ -117,6 +118,10 @@ export interface SuggestedReplyCardMessage extends Message {
   tone?: "calm" | "direct" | "empathetic" | "assertive";
 }
 
+export interface FaceScanCardMessage extends Message {
+  role: "face-scan-card";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -129,4 +134,5 @@ export type ChatMessage =
   | DirectionSelectorMessage
   | ToneSelectorMessage
   | TailoredGuidanceMessage
-  | SuggestedReplyCardMessage;
+  | SuggestedReplyCardMessage
+  | FaceScanCardMessage;

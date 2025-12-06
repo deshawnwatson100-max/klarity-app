@@ -171,7 +171,20 @@ When you send a message about a relationship situation, Klarity responds with a 
    - Replies are tailored to your chosen direction AND tone
    - One tap inserts reply into input bar
 
-11. **Your Response Bubble**
+11. **Emotional Face Scan Card** ✨ NEW
+   - Appears after suggested replies
+   - Beautiful premium card with soft neon teal/lavender glow
+   - Features:
+     - **Header**: "Face Scan Emotional Reading" with 🎭 icon
+     - **Subtitle**: "Scan your face to understand how you are feeling inside."
+     - **Visual Center**: Animated aura rings with camera icon and waveform bars
+     - **Begin Scan Button**: Soft teal glow with camera icon
+     - **Helper Text**: "Your emotional insights will automatically be logged to your clarity calendar."
+   - Pulsing glow animation creates gentle, alive feeling
+   - Tap "Begin Scan" to start facial emotion analysis
+   - Premium minimal design - futuristic yet welcoming
+
+12. **Your Response Bubble**
     - When you tap "Use this reply", it appears as right-aligned user bubble
     - Smooth insert animation
     - Chat auto-scrolls to show your message
@@ -533,6 +546,7 @@ Each loop stores:
 │   │   ├── VoiceRecordingVisualizer.tsx  # Animated waveform for voice recording
 │   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
 │   │   ├── RelationshipDirectionSelector.tsx  # NEW: Choose relationship path
+│   │   ├── EmotionalFaceScanBubble.tsx  # NEW: Face scan emotional reading card
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -714,6 +728,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **NEW: Inline Direction Selector** - 4 pill buttons for choosing relationship path
 ✅ **NEW: Tailored Guidance Bubbles** - Personalized mindset messages per intention
 ✅ **NEW: Suggested Reply Cards** - Contextual responses with "Use this reply" buttons
+✅ **NEW: Emotional Face Scan Card** - Premium card for facial emotion analysis
 ✅ **NEW: Intention-Based Color Theming** - Blue/Orange/Yellow/Purple glow effects
 ✅ **NEW: Natural Conversational Timing** - Realistic pauses between responses
 ✅ **NEW: Smooth Bubble Animations** - Spring physics and fade-in effects
