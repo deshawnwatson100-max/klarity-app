@@ -4,7 +4,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSequence,
   Easing,
+  runOnJS,
 } from "react-native-reanimated";
 
 const thinkingWords = [
@@ -17,37 +19,43 @@ const thinkingWords = [
 
 export function TypingIndicator() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const opacity = useSharedValue(0);
+  const opacity = useSharedValue(1);
 
   useEffect(() => {
-    // Start with fade in
-    opacity.value = withTiming(1, {
-      duration: 400,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-    });
+    // Function to cycle to next word
+    const cycleWord = () => {
+      setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
+    };
 
-    // Cycle through words
-    const wordInterval = setInterval(() => {
-      // Fade out
-      opacity.value = withTiming(
-        0,
-        {
+    // Start animation loop
+    const startAnimation = () => {
+      opacity.value = withSequence(
+        withTiming(1, { duration: 300 }), // Hold visible
+        withTiming(0, {
           duration: 300,
-          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        },
-        () => {
-          // Change word while invisible
-          setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
-          // Fade back in
-          opacity.value = withTiming(1, {
-            duration: 300,
-            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-          });
-        }
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1)
+        }), // Fade out
+        withTiming(0, { duration: 0 }, (finished) => {
+          if (finished) {
+            runOnJS(cycleWord)();
+          }
+        }), // Change word
+        withTiming(1, {
+          duration: 300,
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1)
+        }) // Fade in
       );
+    };
+
+    // Initial animation
+    startAnimation();
+
+    // Set interval to restart animation
+    const interval = setInterval(() => {
+      startAnimation();
     }, 2000);
 
-    return () => clearInterval(wordInterval);
+    return () => clearInterval(interval);
   }, []);
 
   const textAnimatedStyle = useAnimatedStyle(() => ({
