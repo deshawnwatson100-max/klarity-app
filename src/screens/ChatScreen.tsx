@@ -284,9 +284,7 @@ export function ChatScreen({ navigation }: Props) {
       updateMessageInActiveLoop(lastMsg.id, updated);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
-    // Show tone selector
+    // Show tone selector immediately
     const toneSelectorMsg: ToneSelectorMessage = {
       id: Date.now().toString() + "_tone",
       role: "tone-selector",
