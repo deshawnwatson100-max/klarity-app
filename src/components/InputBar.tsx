@@ -118,6 +118,37 @@ export function InputBar({
 
         {/* Input Field with Minimal Gradient Border */}
         <View className="flex-1 relative">
+          {/* Outer glow - only visible when focused */}
+          {isFocused && (
+            <View
+              style={{
+                position: "absolute",
+                top: -4,
+                left: -4,
+                right: -4,
+                bottom: -4,
+                borderRadius: 32,
+                overflow: "hidden",
+              }}
+            >
+              <LinearGradient
+                colors={[
+                  "rgba(181, 255, 75, 0.3)", // Lime
+                  "rgba(125, 211, 192, 0.3)", // Teal
+                  "rgba(184, 163, 232, 0.3)", // Purple
+                  "rgba(255, 179, 198, 0.3)", // Rose
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 32,
+                }}
+              />
+            </View>
+          )}
+
           {/* Very thin gradient border */}
           <View
             style={{
@@ -127,10 +158,19 @@ export function InputBar({
             }}
           >
             <LinearGradient
-              colors={[
-                "rgba(156, 163, 175, 0.15)",
-                "rgba(156, 163, 175, 0.08)",
-              ]}
+              colors={
+                isFocused
+                  ? [
+                      "rgba(181, 255, 75, 0.4)", // Lime
+                      "rgba(125, 211, 192, 0.4)", // Teal
+                      "rgba(184, 163, 232, 0.4)", // Purple
+                      "rgba(255, 179, 198, 0.4)", // Rose
+                    ]
+                  : [
+                      "rgba(156, 163, 175, 0.15)",
+                      "rgba(156, 163, 175, 0.08)",
+                    ]
+              }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
