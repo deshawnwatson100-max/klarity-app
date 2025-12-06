@@ -115,7 +115,6 @@ export function EmotionalFaceScanBubble({
           >
             Face Scan Emotional Reading
           </Text>
-          <Text style={{ fontSize: 24 }}>🎭</Text>
         </View>
 
         {/* Subtitle */}
