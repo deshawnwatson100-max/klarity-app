@@ -311,13 +311,26 @@ export function ChatScreen({ navigation }: Props) {
       updateMessageInActiveLoop(lastMsg.id, updated);
     }
 
+    // Show typing indicator while generating
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_tone",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
     try {
-      // Generate and show tailored guidance immediately
+      // Generate and show tailored guidance
       const guidance = await generateTailoredGuidance(
         currentUserMessage,
         currentIntention,
         currentAnalysis
       );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
       const guidanceMsg: TailoredGuidanceMessage = {
         id: Date.now().toString() + "_guidance",
         role: "tailored-guidance",
@@ -327,7 +340,7 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(guidanceMsg);
 
-      // Generate and show suggested replies with tone immediately
+      // Generate and show suggested replies with tone
       const replies = await generateIntentionBasedReplies(
         currentUserMessage,
         currentIntention,
@@ -354,6 +367,10 @@ export function ChatScreen({ navigation }: Props) {
         timestamp: Date.now(),
       };
       addMessageToActiveLoop(faceScanMsg);
+    } catch (error) {
+      // Remove typing indicator on error
+      removeMessageFromActiveLoop(typingMsg.id);
+      throw error;
     } finally {
       setIsGeneratingSuggestions(false);
     }
