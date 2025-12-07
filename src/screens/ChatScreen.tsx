@@ -85,6 +85,7 @@ type ToneType = "calm" | "direct" | "empathetic" | "assertive";
 export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
+  const hasProcessedInitialMessage = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -126,7 +127,14 @@ export function ChatScreen({ navigation }: Props) {
 
   // Process the first message when screen loads
   useEffect(() => {
-    if (messages.length === 1 && !isProcessing) {
+    if (
+      messages.length === 1 &&
+      !isProcessing &&
+      !isLoading &&
+      messages[0].role === "user" &&
+      !hasProcessedInitialMessage.current
+    ) {
+      hasProcessedInitialMessage.current = true;
       processUserMessage(messages[0]);
     }
   }, [messages.length]);
