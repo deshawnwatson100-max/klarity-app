@@ -46,6 +46,7 @@ export function ContextOrDirectionChoice({
         {/* Option 1: Add More Context */}
         <Pressable
           onPress={onSelectAddContext}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
@@ -105,6 +106,7 @@ export function ContextOrDirectionChoice({
         {/* Option 2: Choose Relationship Direction */}
         <Pressable
           onPress={onSelectDirection}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,

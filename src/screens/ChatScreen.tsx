@@ -544,8 +544,6 @@ export function ChatScreen({ navigation }: Props) {
     }
 
     // Show direction selector immediately
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
     const directionMsg: DirectionSelectorMessage = {
       id: Date.now().toString() + "_direction",
       role: "direction-selector",
