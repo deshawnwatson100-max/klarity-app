@@ -35,6 +35,8 @@ import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { EmotionalFaceScanBubble } from "../components/EmotionalFaceScanBubble";
 import { EmotionalClaritySummaryBubble } from "../components/EmotionalClaritySummaryBubble";
+import { ToneModulationCard } from "../components/ToneModulationCard";
+import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -44,6 +46,7 @@ import {
   generateEmotionalValidation,
   generateTailoredGuidance,
   generateIntentionBasedReplies,
+  generateModulatedReplies,
   analyzeImageToxicity,
 } from "../api/klarity-api";
 import {
@@ -59,6 +62,8 @@ import {
   ImageAnalysisMessage,
   FaceScanCardMessage,
   EmotionScanResultMessage,
+  ToneModulationCardMessage,
+  ModulatedRepliesCardMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -361,6 +366,17 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(repliesMsg);
 
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      // Show tone modulation card
+      const toneModMsg: ToneModulationCardMessage = {
+        id: Date.now().toString() + "_tonemod",
+        role: "tone-modulation-card",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(toneModMsg);
+
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Show face scan card
@@ -382,6 +398,48 @@ export function ChatScreen({ navigation }: Props) {
 
   const handleSelectReply = (replyText: string) => {
     setCurrentInput(replyText);
+  };
+
+  const handleToneModulation = async (
+    tone: "direct" | "gentle" | "neutral"
+  ) => {
+    if (!currentAnalysis || !currentIntention) return;
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_modulation",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Generate modulated replies with guidance notes
+      const modulatedReplies = await generateModulatedReplies(
+        currentUserMessage,
+        currentIntention,
+        currentAnalysis,
+        tone
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add modulated replies card
+      const modulatedMsg: ModulatedRepliesCardMessage = {
+        id: Date.now().toString() + "_modulated",
+        role: "modulated-replies-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: modulatedReplies,
+        tone,
+      };
+      addMessageToActiveLoop(modulatedMsg);
+    } catch (error) {
+      console.error("Error generating modulated replies:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+    }
   };
 
   const handleSend = async () => {
@@ -617,6 +675,29 @@ export function ChatScreen({ navigation }: Props) {
           replies={msg.replies}
           intention={msg.intention}
           onSelectReply={handleSelectReply}
+        />
+      );
+    }
+
+    if (message.role === "tone-modulation-card") {
+      return (
+        <ToneModulationCard
+          key={message.id}
+          onToneSelect={handleToneModulation}
+          selectedIntention={currentIntention || undefined}
+        />
+      );
+    }
+
+    if (message.role === "modulated-replies-card") {
+      const msg = message as ModulatedRepliesCardMessage;
+      return (
+        <ModulatedRepliesCard
+          key={message.id}
+          replies={msg.replies}
+          tone={msg.tone}
+          onSelectReply={handleSelectReply}
+          selectedIntention={currentIntention || undefined}
         />
       );
     }

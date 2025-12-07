@@ -647,3 +647,140 @@ Tone should be calm, warm, emotionally intelligent. Focus on clarity, not diagno
     };
   }
 }
+
+/**
+ * Generate modulated replies with different tones
+ * Includes supportive guidance notes for each reply
+ */
+export async function generateModulatedReplies(
+  userMessage: string,
+  intention: "improve" | "distance" | "maintain" | "clarity",
+  analysis: EmotionalAnalysis,
+  modulationTone: "direct" | "gentle" | "neutral"
+): Promise<Array<{ id: string; text: string; guidanceNote: string }>> {
+  const toneContext: Record<typeof modulationTone, string> = {
+    direct:
+      "Generate replies that are clear, straightforward, and assertive. They should communicate boundaries or needs without hedging.",
+    gentle:
+      "Generate replies that are soft, empathetic, and non-confrontational. They should prioritize emotional safety and reduce tension.",
+    neutral:
+      "Generate replies that are balanced, calm, and emotionally neutral. They should avoid escalation while staying clear.",
+  };
+
+  const guidanceContext: Record<typeof modulationTone, string> = {
+    direct:
+      "Direct approaches bring clarity faster but may lead to pushback if the other person feels defensive. This works best when boundaries need to be clear.",
+    gentle:
+      "Gentle approaches may reduce tension and feel emotionally safer, but they might soften your boundary or make your needs less clear.",
+    neutral:
+      "Neutral keeps things simple and clean, but it may feel less emotionally validating or personally connected.",
+  };
+
+  const systemPrompt = `You are Klarity AI. ${toneContext[modulationTone]}
+
+Generate 2-3 suggested replies that fit the ${modulationTone} tone and the user's intention (${intention}).
+
+For each reply, also provide a short, calm guidance note (1-2 sentences) that helps the user understand the perspective or potential outcome of this approach. The guidance should be:
+- Supportive and neutral, not fear-based
+- Empowering autonomy, not prescriptive
+- Focused on awareness, not warnings
+
+Example guidance notes:
+- "Just something to consider — this approach may reduce tension, but they may not fully hear your boundary."
+- "More direct may bring clarity faster, but could lead to pushback if they're feeling defensive."
+- "Neutral keeps things clean and simple, but may feel less emotionally validating."
+
+Respond with valid JSON only containing:
+- replies: array of { id: string, text: string, guidanceNote: string }`;
+
+  const messages: GPT5Message[] = [
+    { role: "system", content: systemPrompt },
+    {
+      role: "user",
+      content: `Situation: ${userMessage}\n\nAnalysis: ${JSON.stringify(analysis)}\n\nGeneral guidance template: ${guidanceContext[modulationTone]}`,
+    },
+  ];
+
+  try {
+    const response = await callGPT5Mini(messages, 2500, true);
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    const replies = parsed.replies || [];
+    if (!Array.isArray(replies) || replies.length === 0) {
+      throw new Error("Invalid replies structure");
+    }
+
+    return replies.slice(0, 3).map((item: any, index: number) => ({
+      id: item.id || (index + 1).toString(),
+      text: item.text || "I hear you. Let me think about that.",
+      guidanceNote:
+        item.guidanceNote || guidanceContext[modulationTone],
+    }));
+  } catch (error) {
+    console.error("Error generating modulated replies:", error);
+
+    // Return fallback replies with guidance
+    const fallbacks: Record<
+      typeof modulationTone,
+      Array<{ id: string; text: string; guidanceNote: string }>
+    > = {
+      direct: [
+        {
+          id: "1",
+          text: "I need to be clear about this. What you said feels unfair to me, and I need us to talk about it directly.",
+          guidanceNote:
+            "This approach brings clarity quickly but may feel confrontational if they are feeling defensive.",
+        },
+        {
+          id: "2",
+          text: "I do not think this is working for me. Can we talk about what needs to change?",
+          guidanceNote:
+            "Direct communication sets clear boundaries, but may create tension if not received well.",
+        },
+      ],
+      gentle: [
+        {
+          id: "1",
+          text: "I hear what you are saying, and I want to understand your perspective better. Can we talk through this together?",
+          guidanceNote:
+            "This approach reduces tension and feels safer, but your boundary may not be as clear.",
+        },
+        {
+          id: "2",
+          text: "I appreciate you sharing that with me. I am feeling a little unsure about it — can we talk about how we move forward?",
+          guidanceNote:
+            "Gentle phrasing prioritizes emotional safety, but may soften the urgency of your needs.",
+        },
+      ],
+      neutral: [
+        {
+          id: "1",
+          text: "I see what you mean. Let me think about this and get back to you.",
+          guidanceNote:
+            "Neutral keeps things simple and calm, but may feel less emotionally engaged.",
+        },
+        {
+          id: "2",
+          text: "Got it. I will consider what you said and we can talk more later.",
+          guidanceNote:
+            "This approach avoids escalation but may not address the emotional weight of the situation.",
+        },
+      ],
+    };
+
+    return fallbacks[modulationTone];
+  }
+}

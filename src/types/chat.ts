@@ -13,7 +13,9 @@ export type MessageRole =
   | "tailored-guidance"
   | "suggested-reply-card"
   | "face-scan-card"
-  | "emotion-scan-result";
+  | "emotion-scan-result"
+  | "tone-modulation-card"
+  | "modulated-replies-card";
 
 export interface Message {
   id: string;
@@ -138,6 +140,22 @@ export interface EmotionScanResultMessage extends Message {
   emotionAnalysis: EmotionAnalysis;
 }
 
+export interface ToneModulationCardMessage extends Message {
+  role: "tone-modulation-card";
+}
+
+export interface ModulatedReply {
+  id: string;
+  text: string;
+  guidanceNote: string;
+}
+
+export interface ModulatedRepliesCardMessage extends Message {
+  role: "modulated-replies-card";
+  replies: ModulatedReply[];
+  tone: "direct" | "gentle" | "neutral";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -152,4 +170,6 @@ export type ChatMessage =
   | TailoredGuidanceMessage
   | SuggestedReplyCardMessage
   | FaceScanCardMessage
-  | EmotionScanResultMessage;
+  | EmotionScanResultMessage
+  | ToneModulationCardMessage
+  | ModulatedRepliesCardMessage;
