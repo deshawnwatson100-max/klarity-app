@@ -111,9 +111,11 @@ export function ChatScreen({ navigation }: Props) {
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
-  // Get active loop
-  const activeLoop = getActiveLoop();
-  const messages = activeLoop?.messages || [];
+  // Get active loop messages - subscribe to loops array to trigger re-renders
+  const messages = useLoopsStore((s) => {
+    const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
+    return activeLoop?.messages || [];
+  });
 
   // Reset animation values when screen is focused
   useEffect(() => {
