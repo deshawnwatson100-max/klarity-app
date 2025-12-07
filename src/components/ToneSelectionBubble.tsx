@@ -107,6 +107,7 @@ export function ToneSelectionBubble({
               <Pressable
                 key={tone.id}
                 onPress={() => onSelectTone(tone.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 className="active:opacity-80"
                 style={{
                   backgroundColor: isSelected ? `${tone.color}20` : "#0F0F11",

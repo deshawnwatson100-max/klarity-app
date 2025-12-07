@@ -118,6 +118,7 @@ export function DirectionSelectorBubble({
               <Pressable
                 key={intention.id}
                 onPress={() => onSelectIntention(intention.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 className="active:opacity-80"
                 style={{
                   backgroundColor: isSelected ? `${intention.color}18` : "#0F0F11",
