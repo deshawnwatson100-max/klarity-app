@@ -8,36 +8,54 @@ import { EmotionAnalysis } from "../types/chat";
 interface EmotionalClaritySummaryBubbleProps {
   emotionAnalysis: EmotionAnalysis;
   onFollowUpAction?: (action: string) => void;
+  selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
 }
 
 export function EmotionalClaritySummaryBubble({
   emotionAnalysis,
   onFollowUpAction,
+  selectedIntention,
 }: EmotionalClaritySummaryBubbleProps) {
-  const [showFollowUps, setShowFollowUps] = useState(false);
+  const [selectedFlow, setSelectedFlow] = useState<string | null>(null);
 
-  const followUpActions = [
+  // Get color based on relationship direction
+  const getIntentionColor = () => {
+    const colors = {
+      improve: "#B4FF39", // Lime green
+      distance: "#F97316", // Orange
+      maintain: "#6366F1", // Indigo
+      clarity: "#5EEAD4", // Teal (default)
+    };
+    return colors[selectedIntention || "clarity"];
+  };
+
+  const intentionColor = getIntentionColor();
+
+  const microFlowOptions = [
     {
-      id: "understand",
-      label: "Help me understand the emotion more",
-      icon: "bulb-outline" as const,
-    },
-    {
-      id: "calendar",
-      label: "Show emotional trend on calendar",
-      icon: "calendar-outline" as const,
-    },
-    {
-      id: "respond",
-      label: "Help me respond to the situation",
-      icon: "chatbubble-outline" as const,
-    },
-    {
-      id: "reflect",
-      label: "Reflect on what triggered this feeling",
+      id: "explore",
+      label: "Explore this feeling",
       icon: "leaf-outline" as const,
+      description: "Reflect on what might be triggering this emotion",
+    },
+    {
+      id: "connect",
+      label: "Connect it to your situation",
+      icon: "link-outline" as const,
+      description: "See how this emotion relates to your context",
+    },
+    {
+      id: "log",
+      label: "Log this for insight later",
+      icon: "bookmark-outline" as const,
+      description: "Save to calendar and track patterns over time",
     },
   ];
+
+  const handleMicroFlowSelect = (flowId: string) => {
+    setSelectedFlow(flowId);
+    onFollowUpAction?.(flowId);
+  };
 
   return (
     <Animated.View
@@ -50,7 +68,7 @@ export function EmotionalClaritySummaryBubble({
         style={{
           backgroundColor: "rgba(20, 20, 24, 0.7)",
           borderWidth: 1,
-          borderColor: "rgba(156, 163, 175, 0.12)",
+          borderColor: `${intentionColor}20`,
         }}
       >
         {/* Header with emotion and intensity */}
@@ -62,7 +80,7 @@ export function EmotionalClaritySummaryBubble({
                   width: 8,
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: "#5EEAD4",
+                  backgroundColor: intentionColor,
                 }}
               />
               <Text
@@ -81,7 +99,7 @@ export function EmotionalClaritySummaryBubble({
               </Text>
               <Text
                 className="text-sm font-medium"
-                style={{ color: "#5EEAD4" }}
+                style={{ color: intentionColor }}
               >
                 {emotionAnalysis.emotionalIntensity}%
               </Text>
@@ -97,9 +115,9 @@ export function EmotionalClaritySummaryBubble({
             }}
           />
 
-          {/* Full Summary */}
+          {/* Emotional Summary - Short and validating */}
           <Text
-            className="text-base leading-relaxed mb-3"
+            className="text-base leading-relaxed"
             style={{
               color: "#E5E7EB",
               letterSpacing: 0.2,
@@ -108,72 +126,23 @@ export function EmotionalClaritySummaryBubble({
           >
             {emotionAnalysis.fullSummary}
           </Text>
-
-          {/* Suggested Direction - Highlighted */}
-          {emotionAnalysis.suggestedDirection && (
-            <View
-              className="mt-3 p-4 rounded-2xl"
-              style={{
-                backgroundColor: "rgba(94, 234, 212, 0.06)",
-                borderWidth: 1,
-                borderColor: "rgba(94, 234, 212, 0.15)",
-              }}
-            >
-              <Text
-                className="text-sm font-light mb-1"
-                style={{ color: "#5EEAD4", letterSpacing: 0.3 }}
-              >
-                Suggested Direction
-              </Text>
-              <Text
-                className="text-sm leading-relaxed"
-                style={{
-                  color: "#F9FAFB",
-                  letterSpacing: 0.2,
-                  lineHeight: 20,
-                }}
-              >
-                {emotionAnalysis.suggestedDirection}
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* Follow-up Actions Toggle */}
-        <View
-          style={{
-            borderTopWidth: 0.5,
-            borderTopColor: "rgba(156, 163, 175, 0.12)",
-          }}
-        >
-          <Pressable
-            onPress={() => setShowFollowUps(!showFollowUps)}
-            className="px-5 py-3 flex-row items-center justify-between active:opacity-70"
-          >
-            <Text
-              className="text-sm font-light"
-              style={{ color: "#9CA3AF", letterSpacing: 0.3 }}
-            >
-              {showFollowUps ? "Hide options" : "Explore deeper insights"}
-            </Text>
-            <Ionicons
-              name={showFollowUps ? "chevron-up" : "chevron-down"}
-              size={20}
-              color="#9CA3AF"
-            />
-          </Pressable>
-        </View>
-
-        {/* Follow-up Action Buttons */}
-        {showFollowUps && (
+        {/* Micro-Flow Options */}
+        {!selectedFlow && (
           <Animated.View
-            entering={FadeIn.duration(300)}
+            entering={FadeIn.duration(300).delay(200)}
             className="px-3 pb-3"
+            style={{
+              borderTopWidth: 0.5,
+              borderTopColor: "rgba(156, 163, 175, 0.12)",
+              paddingTop: 12,
+            }}
           >
-            {followUpActions.map((action, index) => (
+            {microFlowOptions.map((option, index) => (
               <Pressable
-                key={action.id}
-                onPress={() => onFollowUpAction?.(action.id)}
+                key={option.id}
+                onPress={() => handleMicroFlowSelect(option.id)}
                 className="active:opacity-70"
                 style={{
                   marginTop: index === 0 ? 0 : 8,
@@ -181,45 +150,80 @@ export function EmotionalClaritySummaryBubble({
               >
                 {({ pressed }) => (
                   <View
-                    className="flex-row items-center px-4 py-3 rounded-2xl"
+                    className="flex-row items-center px-4 py-3.5 rounded-2xl"
                     style={{
                       backgroundColor: pressed
-                        ? "rgba(156, 163, 175, 0.12)"
-                        : "rgba(156, 163, 175, 0.06)",
+                        ? `${intentionColor}15`
+                        : `${intentionColor}08`,
                       borderWidth: 1,
-                      borderColor: "rgba(156, 163, 175, 0.1)",
+                      borderColor: `${intentionColor}20`,
                     }}
                   >
                     <View
                       className="items-center justify-center mr-3"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: "rgba(94, 234, 212, 0.1)",
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: `${intentionColor}15`,
                       }}
                     >
                       <Ionicons
-                        name={action.icon}
-                        size={18}
-                        color="#5EEAD4"
+                        name={option.icon}
+                        size={20}
+                        color={intentionColor}
                       />
                     </View>
-                    <Text
-                      className="text-sm font-light flex-1"
-                      style={{ color: "#F9FAFB", letterSpacing: 0.2 }}
-                    >
-                      {action.label}
-                    </Text>
+                    <View className="flex-1">
+                      <Text
+                        className="text-sm font-medium mb-0.5"
+                        style={{ color: "#F9FAFB", letterSpacing: 0.2 }}
+                      >
+                        {option.label}
+                      </Text>
+                      <Text
+                        className="text-xs font-light"
+                        style={{ color: "#9CA3AF", letterSpacing: 0.1 }}
+                      >
+                        {option.description}
+                      </Text>
+                    </View>
                     <Ionicons
                       name="arrow-forward"
-                      size={16}
+                      size={18}
                       color="#9CA3AF"
                     />
                   </View>
                 )}
               </Pressable>
             ))}
+          </Animated.View>
+        )}
+
+        {/* Selected Flow Indicator */}
+        {selectedFlow && (
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            className="px-5 py-3"
+            style={{
+              borderTopWidth: 0.5,
+              borderTopColor: "rgba(156, 163, 175, 0.12)",
+              backgroundColor: `${intentionColor}08`,
+            }}
+          >
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={intentionColor}
+              />
+              <Text
+                className="text-sm font-light"
+                style={{ color: "#E5E7EB", letterSpacing: 0.2 }}
+              >
+                {microFlowOptions.find((o) => o.id === selectedFlow)?.label}
+              </Text>
+            </View>
           </Animated.View>
         )}
       </View>
