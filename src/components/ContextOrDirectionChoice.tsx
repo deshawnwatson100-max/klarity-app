@@ -105,7 +105,10 @@ export function ContextOrDirectionChoice({
 
         {/* Option 2: Choose Relationship Direction */}
         <Pressable
-          onPress={onSelectDirection}
+          onPress={() => {
+            console.log("Choose Relationship Direction pressed");
+            onSelectDirection();
+          }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",

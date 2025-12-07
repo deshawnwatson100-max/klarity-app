@@ -535,10 +535,14 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleSkipToDirection = async () => {
+    console.log("handleSkipToDirection called");
+
     // Remove the choice message
     const choiceMsg = messages.find(
       (m) => m.role === "context-or-direction-choice"
     );
+    console.log("Found choice message:", choiceMsg?.id);
+
     if (choiceMsg) {
       removeMessageFromActiveLoop(choiceMsg.id);
     }
@@ -550,6 +554,7 @@ export function ChatScreen({ navigation }: Props) {
       content: "",
       timestamp: Date.now(),
     };
+    console.log("Adding direction message:", directionMsg.id);
     addMessageToActiveLoop(directionMsg);
   };
 
