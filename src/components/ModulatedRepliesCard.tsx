@@ -150,18 +150,99 @@ export function ModulatedRepliesCard({
                       </Text>
                     </View>
                   </View>
+
+                  {/* Adjustment controls inside bubble */}
+                  {onModifyLength && (
+                    <View
+                      style={{
+                        borderTopWidth: 1,
+                        borderTopColor: `${intentionColor}15`,
+                        paddingHorizontal: 16,
+                        paddingVertical: 10,
+                        backgroundColor: "rgba(0, 0, 0, 0.15)",
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 12,
+                        }}
+                      >
+                        {/* Shorten button */}
+                        <Pressable
+                          onPress={() => onModifyLength(reply.id, "shorten")}
+                          style={({ pressed }) => ({
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                            opacity: pressed ? 0.6 : 1,
+                          })}
+                        >
+                          <Ionicons
+                            name="remove-circle-outline"
+                            size={16}
+                            color={intentionColor}
+                          />
+                          <Text
+                            style={{
+                              fontFamily: "SF Pro Display",
+                              fontSize: 13,
+                              fontWeight: "500",
+                              color: intentionColor,
+                            }}
+                          >
+                            Shorten Reply
+                          </Text>
+                        </Pressable>
+
+                        {/* Divider */}
+                        <View
+                          style={{
+                            width: 1,
+                            height: 14,
+                            backgroundColor: `${intentionColor}30`,
+                          }}
+                        />
+
+                        {/* Lengthen button */}
+                        <Pressable
+                          onPress={() => onModifyLength(reply.id, "lengthen")}
+                          style={({ pressed }) => ({
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                            opacity: pressed ? 0.6 : 1,
+                          })}
+                        >
+                          <Ionicons
+                            name="add-circle-outline"
+                            size={16}
+                            color={intentionColor}
+                          />
+                          <Text
+                            style={{
+                              fontFamily: "SF Pro Display",
+                              fontSize: 13,
+                              fontWeight: "500",
+                              color: intentionColor,
+                            }}
+                          >
+                            Lengthen Reply
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
                 </View>
 
-                {/* Buttons container - horizontally aligned */}
+                {/* Use button below bubble */}
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
                     marginTop: 8,
                   }}
                 >
-                  {/* Use button */}
                   <Pressable
                     onPress={() => onSelectReply(reply.text)}
                     className="active:opacity-70"
@@ -174,6 +255,7 @@ export function ModulatedRepliesCard({
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.5,
                       shadowRadius: 10,
+                      alignSelf: "flex-start",
                     }}
                   >
                     <Text
@@ -186,82 +268,6 @@ export function ModulatedRepliesCard({
                       Use this reply
                     </Text>
                   </Pressable>
-
-                  {/* Shorten & Lengthen buttons (far right) */}
-                  {onModifyLength && (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        gap: 8,
-                      }}
-                    >
-                    {/* Shorten button */}
-                    <Pressable
-                      onPress={() => onModifyLength(reply.id, "shorten")}
-                      style={({ pressed }) => ({
-                        backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                        borderRadius: 16,
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderWidth: 0.5,
-                        borderColor: `${intentionColor}20`,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        opacity: pressed ? 0.7 : 1,
-                      })}
-                    >
-                      <Ionicons
-                        name="remove-circle-outline"
-                        size={16}
-                        color={intentionColor}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: "SF Pro Display",
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color: intentionColor,
-                        }}
-                      >
-                        Shorten
-                      </Text>
-                    </Pressable>
-
-                    {/* Lengthen button */}
-                    <Pressable
-                      onPress={() => onModifyLength(reply.id, "lengthen")}
-                      style={({ pressed }) => ({
-                        backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                        borderRadius: 16,
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderWidth: 0.5,
-                        borderColor: `${intentionColor}20`,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        opacity: pressed ? 0.7 : 1,
-                      })}
-                    >
-                      <Ionicons
-                        name="add-circle-outline"
-                        size={16}
-                        color={intentionColor}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: "SF Pro Display",
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color: intentionColor,
-                        }}
-                      >
-                        Lengthen
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
                 </View>
               </View>
             </View>
