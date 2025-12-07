@@ -52,6 +52,7 @@ import {
   generateIntentionBasedReplies,
   generateModulatedReplies,
   generateReflectiveUnderstanding,
+  modifyReplyLength,
   analyzeImageToxicity,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -411,6 +412,62 @@ export function ChatScreen({ navigation }: Props) {
 
   const handleSelectReply = (replyText: string) => {
     setCurrentInput(replyText);
+  };
+
+  const handleModifyReplyLength = async (
+    replyId: string,
+    action: "shorten" | "lengthen"
+  ) => {
+    if (!currentIntention) return;
+
+    // Find the reply card message and the specific reply
+    const replyCardMsg = messages.find(
+      (m) =>
+        (m.role === "suggested-reply-card" ||
+          m.role === "modulated-replies-card") &&
+        (m as SuggestedReplyCardMessage).replies.some((r) => r.id === replyId)
+    ) as SuggestedReplyCardMessage | undefined;
+
+    if (!replyCardMsg) return;
+
+    const reply = replyCardMsg.replies.find((r) => r.id === replyId);
+    if (!reply) return;
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_modify",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Modify the reply length
+      const modifiedText = await modifyReplyLength(
+        reply.text,
+        action,
+        currentIntention
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Update the reply in the message
+      const updatedReplies = replyCardMsg.replies.map((r) =>
+        r.id === replyId ? { ...r, text: modifiedText } : r
+      );
+
+      const updatedMsg = {
+        ...replyCardMsg,
+        replies: updatedReplies,
+      };
+
+      updateMessageInActiveLoop(replyCardMsg.id, updatedMsg);
+    } catch (error) {
+      console.error("Error modifying reply length:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+    }
   };
 
   const handleToneModulation = async (
@@ -918,6 +975,7 @@ export function ChatScreen({ navigation }: Props) {
           replies={msg.replies}
           intention={msg.intention}
           onSelectReply={handleSelectReply}
+          onModifyLength={handleModifyReplyLength}
         />
       );
     }
@@ -941,6 +999,7 @@ export function ChatScreen({ navigation }: Props) {
           tone={msg.tone}
           onSelectReply={handleSelectReply}
           selectedIntention={currentIntention || undefined}
+          onModifyLength={handleModifyReplyLength}
         />
       );
     }

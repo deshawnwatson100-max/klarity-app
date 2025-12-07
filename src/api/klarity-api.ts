@@ -873,3 +873,83 @@ Generate a two-part reflective understanding response. Return valid JSON only.`;
     };
   }
 }
+
+/**
+ * Modify the length of a suggested reply while preserving tone and intent
+ * @param originalReply The original reply text
+ * @param action Whether to shorten or lengthen
+ * @param intention The relationship direction
+ * @returns Modified reply text
+ */
+export async function modifyReplyLength(
+  originalReply: string,
+  action: "shorten" | "lengthen",
+  intention: "improve" | "distance" | "maintain" | "clarity"
+): Promise<string> {
+  const client = getOpenAIClient();
+
+  const actionInstructions = {
+    shorten:
+      "Make this reply SHORTER and more concise while keeping the same emotional intelligence, tone, and intent. Remove unnecessary words but maintain clarity and warmth. Aim for about 50-70% of the original length.",
+    lengthen:
+      "Make this reply LONGER and more elaborate while keeping the same emotional intelligence, tone, and intent. Add more context, nuance, or emotional detail without changing the core message. Aim for about 130-150% of the original length.",
+  };
+
+  const intentionContext = {
+    improve:
+      "This is for improving the relationship - keep the supportive, connecting tone.",
+    distance:
+      "This is for creating healthy distance - keep the calm, protective boundary-setting tone.",
+    maintain:
+      "This is for maintaining the current dynamic - keep the neutral, observant tone.",
+    clarity:
+      "This is for gaining clarity - keep the reflective, understanding tone.",
+  };
+
+  const systemPrompt = `You are an expert at modifying message length while preserving emotional intelligence and intent.
+
+${actionInstructions[action]}
+
+Important:
+- Keep the EXACT same tone and emotional quality
+- Maintain the same relationship intention (${intention})
+- ${intentionContext[intention]}
+- Do NOT change the core message or meaning
+- Do NOT add new topics or change the subject
+- Keep natural, conversational language
+- Preserve any emotional validation or boundary-setting
+
+Return ONLY the modified reply text, nothing else.`;
+
+  const userPrompt = `Original reply:
+"${originalReply}"
+
+${action === "shorten" ? "Shorten" : "Lengthen"} this reply while keeping the same tone, intent, and emotional intelligence.`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 500,
+      temperature: 1,
+    });
+
+    const modifiedReply = completion.choices[0]?.message?.content?.trim();
+
+    if (!modifiedReply) {
+      console.warn("No modified reply returned, using original");
+      return originalReply;
+    }
+
+    // Remove quotes if the model wrapped the response
+    const cleanedReply = modifiedReply.replace(/^["']|["']$/g, "");
+
+    return cleanedReply;
+  } catch (error) {
+    console.error(`Error modifying reply length (${action}):`, error);
+    return originalReply; // Fallback to original
+  }
+}

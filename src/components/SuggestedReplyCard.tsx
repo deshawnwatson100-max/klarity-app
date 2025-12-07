@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,6 +20,7 @@ interface SuggestedReplyCardProps {
   replies: SuggestedReply[];
   intention: IntentionType;
   onSelectReply: (reply: string) => void;
+  onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => void;
 }
 
 const intentionColors: Record<IntentionType, string> = {
@@ -32,6 +34,7 @@ export function SuggestedReplyCard({
   replies,
   intention,
   onSelectReply,
+  onModifyLength,
 }: SuggestedReplyCardProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
@@ -88,33 +91,108 @@ export function SuggestedReplyCard({
               </Text>
             </View>
 
-            {/* Use button */}
-            <Pressable
-              onPress={() => handlePress(reply.text)}
-              className="active:opacity-70"
+            {/* Action buttons row */}
+            <View
               style={{
-                backgroundColor: color,
-                borderRadius: 20,
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                alignSelf: "flex-start",
+                flexDirection: "row",
+                alignItems: "center",
                 marginLeft: 8,
-                shadowColor: color,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.5,
-                shadowRadius: 10,
+                gap: 8,
               }}
             >
-              <Text
-                className="font-semibold text-sm"
+              {/* Shorten button */}
+              {onModifyLength && (
+                <Pressable
+                  onPress={() => onModifyLength(reply.id, "shorten")}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderWidth: 0.5,
+                    borderColor: `${color}20`,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons
+                    name="remove-circle-outline"
+                    size={16}
+                    color={color}
+                  />
+                  <Text
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: color,
+                    }}
+                  >
+                    Shorten
+                  </Text>
+                </Pressable>
+              )}
+
+              {/* Lengthen button */}
+              {onModifyLength && (
+                <Pressable
+                  onPress={() => onModifyLength(reply.id, "lengthen")}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderWidth: 0.5,
+                    borderColor: `${color}20`,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons name="add-circle-outline" size={16} color={color} />
+                  <Text
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: color,
+                    }}
+                  >
+                    Lengthen
+                  </Text>
+                </Pressable>
+              )}
+
+              {/* Use button */}
+              <Pressable
+                onPress={() => handlePress(reply.text)}
+                className="active:opacity-70"
                 style={{
-                  fontFamily: "SF Pro Display",
-                  color: "#000000",
+                  backgroundColor: color,
+                  borderRadius: 20,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  shadowColor: color,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 10,
+                  marginLeft: "auto",
                 }}
               >
-                Use this reply
-              </Text>
-            </Pressable>
+                <Text
+                  className="font-semibold text-sm"
+                  style={{
+                    fontFamily: "SF Pro Display",
+                    color: "#000000",
+                  }}
+                >
+                  Use this reply
+                </Text>
+              </Pressable>
+            </View>
           </View>
         ))}
       </View>
