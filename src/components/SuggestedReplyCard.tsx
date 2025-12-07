@@ -71,70 +71,74 @@ export function SuggestedReplyCard({
           <View key={reply.id} style={{ marginBottom: 16 }}>
             {/* Reply bubble with glow */}
             <View
-              className="rounded-3xl px-5 py-4"
               style={{
-                backgroundColor: "#050608",
-                borderWidth: 1.5,
-                borderColor: `${color}40`,
                 maxWidth: "85%",
-                shadowColor: color,
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-              }}
-            >
-              <Text
-                className="text-base leading-6"
-                style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
-              >
-                {reply.text}
-              </Text>
-            </View>
-
-            {/* Use button */}
-            <View
-              style={{
-                marginTop: 8,
                 alignSelf: "flex-start",
               }}
             >
-              <Pressable
-                onPress={() => handlePress(reply.text)}
-                className="active:opacity-70"
+              <View
+                className="rounded-3xl px-5 py-4"
                 style={{
-                  backgroundColor: color,
-                  borderRadius: 20,
-                  paddingHorizontal: 20,
-                  paddingVertical: 10,
+                  backgroundColor: "#050608",
+                  borderWidth: 1.5,
+                  borderColor: `${color}40`,
                   shadowColor: color,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
                 }}
               >
                 <Text
-                  className="font-semibold text-sm"
-                  style={{
-                    fontFamily: "SF Pro Display",
-                    color: "#000000",
-                  }}
+                  className="text-base leading-6"
+                  style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
                 >
-                  Use this reply
+                  {reply.text}
                 </Text>
-              </Pressable>
-            </View>
+              </View>
 
-            {/* Shorten & Lengthen buttons (far right) */}
-            {onModifyLength && (
+              {/* Use button */}
               <View
                 style={{
-                  flexDirection: "row",
-                  gap: 8,
                   marginTop: 8,
-                  alignSelf: "flex-end",
-                  maxWidth: "85%",
                 }}
               >
+                <Pressable
+                  onPress={() => handlePress(reply.text)}
+                  className="active:opacity-70"
+                  style={{
+                    backgroundColor: color,
+                    borderRadius: 20,
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    shadowColor: color,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 10,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <Text
+                    className="font-semibold text-sm"
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      color: "#000000",
+                    }}
+                  >
+                    Use this reply
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Shorten & Lengthen buttons (far right) */}
+              {onModifyLength && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 8,
+                    marginTop: 8,
+                    justifyContent: "flex-end",
+                  }}
+                >
                   {/* Shorten button */}
                   <Pressable
                     onPress={() => onModifyLength(reply.id, "shorten")}
@@ -198,6 +202,7 @@ export function SuggestedReplyCard({
                   </Pressable>
                 </View>
               )}
+            </View>
           </View>
         ))}
       </View>
