@@ -40,6 +40,7 @@ import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
 import { AddContextButton } from "../components/AddContextButton";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { ReflectiveUnderstandingBubble } from "../components/ReflectiveUnderstandingBubble";
+import { ContextOrDirectionChoice } from "../components/ContextOrDirectionChoice";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -72,6 +73,7 @@ import {
   AddContextButtonMessage,
   InlineContextInputMessage,
   ReflectiveUnderstandingMessage,
+  ContextOrDirectionChoiceMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -182,24 +184,14 @@ export function ChatScreen({ navigation }: Props) {
         // After image analysis, show add context button
         await new Promise((resolve) => setTimeout(resolve, 400));
 
-        const addContextMsg: AddContextButtonMessage = {
-          id: Date.now().toString() + "_addcontext_image",
-          role: "add-context-button",
+        // Show choice: Add Context OR Choose Direction
+        const choiceMsg: ContextOrDirectionChoiceMessage = {
+          id: Date.now().toString() + "_choice_image",
+          role: "context-or-direction-choice",
           content: "",
           timestamp: Date.now(),
         };
-        addMessageToActiveLoop(addContextMsg);
-
-        // Then show direction selector
-        await new Promise((resolve) => setTimeout(resolve, 400));
-
-        const directionMsg: DirectionSelectorMessage = {
-          id: Date.now().toString() + "_direction",
-          role: "direction-selector",
-          content: "",
-          timestamp: Date.now(),
-        };
-        addMessageToActiveLoop(directionMsg);
+        addMessageToActiveLoop(choiceMsg);
       } else {
         // For text messages, do inline emotional analysis flow
         await startInlineAnalysisFlow(userMessage.content);
@@ -289,25 +281,14 @@ export function ChatScreen({ navigation }: Props) {
 
     await new Promise((resolve) => setTimeout(resolve, 400));
 
-    // Show add context button after deep analysis
-    const addContextMsg: AddContextButtonMessage = {
-      id: Date.now().toString() + "_addcontext_text",
-      role: "add-context-button",
+    // Show choice: Add Context OR Choose Direction
+    const choiceMsg: ContextOrDirectionChoiceMessage = {
+      id: Date.now().toString() + "_choice_text",
+      role: "context-or-direction-choice",
       content: "",
       timestamp: Date.now(),
     };
-    addMessageToActiveLoop(addContextMsg);
-
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
-    // Step 6: Show direction selector
-    const directionMsg: DirectionSelectorMessage = {
-      id: Date.now().toString() + "_direction",
-      role: "direction-selector",
-      content: "",
-      timestamp: Date.now(),
-    };
-    addMessageToActiveLoop(directionMsg);
+    addMessageToActiveLoop(choiceMsg);
   };
 
   const handleSelectIntention = async (intention: IntentionType) => {
@@ -475,6 +456,14 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleAddContext = async () => {
+    // Remove the choice message
+    const choiceMsg = messages.find(
+      (m) => m.role === "context-or-direction-choice"
+    );
+    if (choiceMsg) {
+      removeMessageFromActiveLoop(choiceMsg.id);
+    }
+
     // Set flag that we're awaiting context
     setIsAwaitingContext(true);
 
@@ -486,6 +475,27 @@ export function ChatScreen({ navigation }: Props) {
       timestamp: Date.now(),
     };
     addMessageToActiveLoop(inlineInputMsg);
+  };
+
+  const handleSkipToDirection = async () => {
+    // Remove the choice message
+    const choiceMsg = messages.find(
+      (m) => m.role === "context-or-direction-choice"
+    );
+    if (choiceMsg) {
+      removeMessageFromActiveLoop(choiceMsg.id);
+    }
+
+    // Show direction selector immediately
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const directionMsg: DirectionSelectorMessage = {
+      id: Date.now().toString() + "_direction",
+      role: "direction-selector",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(directionMsg);
   };
 
   const handleContextSubmit = async (contextInput: string, isVoice: boolean) => {
@@ -616,13 +626,13 @@ export function ChatScreen({ navigation }: Props) {
     console.log("currentIntention:", currentIntention);
     console.log("currentUserMessage:", currentUserMessage);
 
-    if (!currentAnalysis || !currentIntention) {
-      console.warn("Missing currentAnalysis or currentIntention - cannot reanalyze");
+    if (!currentAnalysis) {
+      console.warn("Missing currentAnalysis - cannot reanalyze");
       addMessageToActiveLoop({
         id: Date.now().toString(),
         role: "assistant",
         content:
-          "I apologize, but I need you to complete the initial analysis flow first before adding more context. Please select your relationship intention from the options above.",
+          "I apologize, but I need the initial analysis first before adding more context. Please complete the analysis flow.",
         timestamp: Date.now(),
       });
       return;
@@ -670,72 +680,16 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(reflectiveMsg);
 
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Show updated deep analysis
-      const deepAnalysisMsg: DeepAnalysisMessage = {
-        id: Date.now().toString() + "_deep_reanalysis",
-        role: "deep-analysis",
-        content: reanalysis.fullAnalysis || reanalysis.summary,
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(deepAnalysisMsg);
-
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      // Re-generate tailored guidance
-      const guidance = await generateTailoredGuidance(
-        enrichedMessage,
-        currentIntention,
-        reanalysis
-      );
-
-      const guidanceMsg: TailoredGuidanceMessage = {
-        id: Date.now().toString() + "_guidance_reanalysis",
-        role: "tailored-guidance",
-        content: guidance,
-        timestamp: Date.now(),
-        intention: currentIntention,
-      };
-      addMessageToActiveLoop(guidanceMsg);
-
-      // Re-generate improved replies
-      const replies = await generateIntentionBasedReplies(
-        enrichedMessage,
-        currentIntention,
-        reanalysis
-      );
-
-      const repliesMsg: SuggestedReplyCardMessage = {
-        id: Date.now().toString() + "_replies_reanalysis",
-        role: "suggested-reply-card",
-        content: "",
-        timestamp: Date.now(),
-        replies,
-        intention: currentIntention,
-      };
-      addMessageToActiveLoop(repliesMsg);
-
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
-      // Show tone modulation again
-      const toneModMsg: ToneModulationCardMessage = {
-        id: Date.now().toString() + "_tonemod_reanalysis",
-        role: "tone-modulation-card",
+      // Show direction selector after reflective understanding
+      const directionMsg: DirectionSelectorMessage = {
+        id: Date.now().toString() + "_direction_after_context",
+        role: "direction-selector",
         content: "",
         timestamp: Date.now(),
       };
-      addMessageToActiveLoop(toneModMsg);
-
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      // Show confirmation question
-      addMessageToActiveLoop({
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "Is this more aligned with how you're feeling?",
-        timestamp: Date.now(),
-      });
+      addMessageToActiveLoop(directionMsg);
     } catch (error) {
       console.error("Error re-analyzing with context:", error);
       removeMessageFromActiveLoop(typingMsg.id);
@@ -1050,6 +1004,16 @@ export function ChatScreen({ navigation }: Props) {
           emotionAnalysis={emotionScanMsg.emotionAnalysis}
           onFollowUpAction={handleEmotionFollowUp}
           selectedIntention={currentIntention || undefined}
+        />
+      );
+    }
+
+    if (message.role === "context-or-direction-choice") {
+      return (
+        <ContextOrDirectionChoice
+          key={message.id}
+          onSelectAddContext={handleAddContext}
+          onSelectDirection={handleSkipToDirection}
         />
       );
     }

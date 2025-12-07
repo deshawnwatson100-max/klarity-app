@@ -18,7 +18,8 @@ export type MessageRole =
   | "modulated-replies-card"
   | "add-context-button"
   | "inline-context-input"
-  | "reflective-understanding";
+  | "reflective-understanding"
+  | "context-or-direction-choice";
 
 export interface Message {
   id: string;
@@ -173,6 +174,10 @@ export interface ReflectiveUnderstandingMessage extends Message {
   situationClarity: string;
 }
 
+export interface ContextOrDirectionChoiceMessage extends Message {
+  role: "context-or-direction-choice";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -192,4 +197,5 @@ export type ChatMessage =
   | ModulatedRepliesCardMessage
   | AddContextButtonMessage
   | InlineContextInputMessage
-  | ReflectiveUnderstandingMessage;
+  | ReflectiveUnderstandingMessage
+  | ContextOrDirectionChoiceMessage;

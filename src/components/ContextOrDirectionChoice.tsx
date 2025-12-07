@@ -1,0 +1,165 @@
+import React from "react";
+import { View, Text, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+
+interface ContextOrDirectionChoiceProps {
+  onSelectAddContext: () => void;
+  onSelectDirection: () => void;
+}
+
+export function ContextOrDirectionChoice({
+  onSelectAddContext,
+  onSelectDirection,
+}: ContextOrDirectionChoiceProps) {
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(500).springify()}
+      style={{
+        marginVertical: 12,
+        marginHorizontal: 16,
+      }}
+    >
+      {/* Container */}
+      <View
+        style={{
+          backgroundColor: "#0A0A0A",
+          borderRadius: 16,
+          padding: 16,
+          borderWidth: 0.5,
+          borderColor: "#262626",
+        }}
+      >
+        {/* Header */}
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "600",
+            color: "#F9FAFB",
+            marginBottom: 12,
+            letterSpacing: 0.2,
+          }}
+        >
+          What would you like to do next?
+        </Text>
+
+        {/* Option 1: Add More Context */}
+        <Pressable
+          onPress={onSelectAddContext}
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? "#1A1A1A" : "#141414",
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "#B8A3E820",
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Icon */}
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#B8A3E815",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={22} color="#B8A3E8" />
+            </View>
+
+            {/* Text Content */}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: "#F9FAFB",
+                  marginBottom: 2,
+                  letterSpacing: 0.2,
+                }}
+              >
+                Add More Context
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                  lineHeight: 18,
+                  letterSpacing: 0.1,
+                }}
+              >
+                Share additional details for better guidance
+              </Text>
+            </View>
+
+            {/* Arrow */}
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </View>
+        </Pressable>
+
+        {/* Option 2: Choose Relationship Direction */}
+        <Pressable
+          onPress={onSelectDirection}
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? "#1A1A1A" : "#141414",
+            borderRadius: 12,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: "#4C9EFF20",
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Icon */}
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#4C9EFF15",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name="compass-outline" size={22} color="#4C9EFF" />
+            </View>
+
+            {/* Text Content */}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: "#F9FAFB",
+                  marginBottom: 2,
+                  letterSpacing: 0.2,
+                }}
+              >
+                Choose Relationship Direction
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                  lineHeight: 18,
+                  letterSpacing: 0.1,
+                }}
+              >
+                Continue with current understanding
+              </Text>
+            </View>
+
+            {/* Arrow */}
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </View>
+        </Pressable>
+      </View>
+    </Animated.View>
+  );
+}
