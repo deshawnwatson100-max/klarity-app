@@ -88,7 +88,8 @@ export function ModulatedRepliesCard({
             <View
               key={reply.id}
               style={{
-                marginTop: index === 0 ? 0 : 12,
+                marginTop: index === 0 ? 0 : 16,
+                marginBottom: 16,
               }}
             >
               {/* Reply Card (non-pressable) */}
@@ -144,16 +145,17 @@ export function ModulatedRepliesCard({
                 </View>
               </View>
 
-              {/* Action buttons row */}
+              {/* Buttons container */}
               <View
                 style={{
                   flexDirection: "row",
-                  alignItems: "center",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
                   marginTop: 8,
-                  gap: 8,
+                  paddingHorizontal: 4,
                 }}
               >
-                {/* Use button */}
+                {/* Use button (left side) */}
                 <Pressable
                   onPress={() => onSelectReply(reply.text)}
                   className="active:opacity-70"
@@ -179,74 +181,80 @@ export function ModulatedRepliesCard({
                   </Text>
                 </Pressable>
 
-                {/* Shorten button */}
+                {/* Shorten & Lengthen buttons (right side) */}
                 {onModifyLength && (
-                  <Pressable
-                    onPress={() => onModifyLength(reply.id, "shorten")}
-                    style={({ pressed }) => ({
-                      backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                      borderRadius: 16,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderWidth: 0.5,
-                      borderColor: `${intentionColor}20`,
+                  <View
+                    style={{
                       flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      opacity: pressed ? 0.7 : 1,
-                    })}
+                      gap: 8,
+                    }}
                   >
-                    <Ionicons
-                      name="remove-circle-outline"
-                      size={16}
-                      color={intentionColor}
-                    />
-                    <Text
-                      style={{
-                        fontFamily: "SF Pro Display",
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: intentionColor,
-                      }}
+                    {/* Shorten button */}
+                    <Pressable
+                      onPress={() => onModifyLength(reply.id, "shorten")}
+                      style={({ pressed }) => ({
+                        backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                        borderRadius: 16,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderWidth: 0.5,
+                        borderColor: `${intentionColor}20`,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
                     >
-                      Shorten
-                    </Text>
-                  </Pressable>
-                )}
+                      <Ionicons
+                        name="remove-circle-outline"
+                        size={16}
+                        color={intentionColor}
+                      />
+                      <Text
+                        style={{
+                          fontFamily: "SF Pro Display",
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color: intentionColor,
+                        }}
+                      >
+                        Shorten
+                      </Text>
+                    </Pressable>
 
-                {/* Lengthen button */}
-                {onModifyLength && (
-                  <Pressable
-                    onPress={() => onModifyLength(reply.id, "lengthen")}
-                    style={({ pressed }) => ({
-                      backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                      borderRadius: 16,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderWidth: 0.5,
-                      borderColor: `${intentionColor}20`,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      opacity: pressed ? 0.7 : 1,
-                    })}
-                  >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={16}
-                      color={intentionColor}
-                    />
-                    <Text
-                      style={{
-                        fontFamily: "SF Pro Display",
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: intentionColor,
-                      }}
+                    {/* Lengthen button */}
+                    <Pressable
+                      onPress={() => onModifyLength(reply.id, "lengthen")}
+                      style={({ pressed }) => ({
+                        backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                        borderRadius: 16,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderWidth: 0.5,
+                        borderColor: `${intentionColor}20`,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
                     >
-                      Lengthen
-                    </Text>
-                  </Pressable>
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={16}
+                        color={intentionColor}
+                      />
+                      <Text
+                        style={{
+                          fontFamily: "SF Pro Display",
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color: intentionColor,
+                        }}
+                      >
+                        Lengthen
+                      </Text>
+                    </Pressable>
+                  </View>
                 )}
               </View>
             </View>

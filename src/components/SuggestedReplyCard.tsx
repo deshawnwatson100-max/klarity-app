@@ -68,10 +68,10 @@ export function SuggestedReplyCard({
     >
       <View className="gap-3">
         {replies.map((reply, index) => (
-          <View key={reply.id}>
+          <View key={reply.id} style={{ marginBottom: 16 }}>
             {/* Reply bubble with glow */}
             <View
-              className="rounded-3xl px-5 py-4 mb-2"
+              className="rounded-3xl px-5 py-4"
               style={{
                 backgroundColor: "#050608",
                 borderWidth: 1.5,
@@ -91,16 +91,17 @@ export function SuggestedReplyCard({
               </Text>
             </View>
 
-            {/* Action buttons row */}
+            {/* Buttons container */}
             <View
               style={{
                 flexDirection: "row",
-                alignItems: "center",
-                marginLeft: 8,
-                gap: 8,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                marginTop: 8,
+                paddingHorizontal: 8,
               }}
             >
-              {/* Use button */}
+              {/* Use button (left side) */}
               <Pressable
                 onPress={() => handlePress(reply.text)}
                 className="active:opacity-70"
@@ -126,70 +127,76 @@ export function SuggestedReplyCard({
                 </Text>
               </Pressable>
 
-              {/* Shorten button */}
+              {/* Shorten & Lengthen buttons (right side) */}
               {onModifyLength && (
-                <Pressable
-                  onPress={() => onModifyLength(reply.id, "shorten")}
-                  style={({ pressed }) => ({
-                    backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                    borderRadius: 16,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderWidth: 0.5,
-                    borderColor: `${color}20`,
+                <View
+                  style={{
                     flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
+                    gap: 8,
+                  }}
                 >
-                  <Ionicons
-                    name="remove-circle-outline"
-                    size={16}
-                    color={color}
-                  />
-                  <Text
-                    style={{
-                      fontFamily: "SF Pro Display",
-                      fontSize: 12,
-                      fontWeight: "600",
-                      color: color,
-                    }}
+                  {/* Shorten button */}
+                  <Pressable
+                    onPress={() => onModifyLength(reply.id, "shorten")}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                      borderRadius: 16,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderWidth: 0.5,
+                      borderColor: `${color}20`,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
                   >
-                    Shorten
-                  </Text>
-                </Pressable>
-              )}
+                    <Ionicons
+                      name="remove-circle-outline"
+                      size={16}
+                      color={color}
+                    />
+                    <Text
+                      style={{
+                        fontFamily: "SF Pro Display",
+                        fontSize: 12,
+                        fontWeight: "600",
+                        color: color,
+                      }}
+                    >
+                      Shorten
+                    </Text>
+                  </Pressable>
 
-              {/* Lengthen button */}
-              {onModifyLength && (
-                <Pressable
-                  onPress={() => onModifyLength(reply.id, "lengthen")}
-                  style={({ pressed }) => ({
-                    backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
-                    borderRadius: 16,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderWidth: 0.5,
-                    borderColor: `${color}20`,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Ionicons name="add-circle-outline" size={16} color={color} />
-                  <Text
-                    style={{
-                      fontFamily: "SF Pro Display",
-                      fontSize: 12,
-                      fontWeight: "600",
-                      color: color,
-                    }}
+                  {/* Lengthen button */}
+                  <Pressable
+                    onPress={() => onModifyLength(reply.id, "lengthen")}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? "#1A1A1A" : "#0F0F0F",
+                      borderRadius: 16,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderWidth: 0.5,
+                      borderColor: `${color}20`,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
                   >
-                    Lengthen
-                  </Text>
-                </Pressable>
+                    <Ionicons name="add-circle-outline" size={16} color={color} />
+                    <Text
+                      style={{
+                        fontFamily: "SF Pro Display",
+                        fontSize: 12,
+                        fontWeight: "600",
+                        color: color,
+                      }}
+                    >
+                      Lengthen
+                    </Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           </View>
