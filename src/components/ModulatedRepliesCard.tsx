@@ -145,18 +145,13 @@ export function ModulatedRepliesCard({
                 </View>
               </View>
 
-              {/* Buttons container */}
+              {/* Use button */}
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
                   marginTop: 8,
-                  maxWidth: "85%",
                   alignSelf: "flex-start",
                 }}
               >
-                {/* Use button (left side) */}
                 <Pressable
                   onPress={() => onSelectReply(reply.text)}
                   className="active:opacity-70"
@@ -181,15 +176,19 @@ export function ModulatedRepliesCard({
                     Use this reply
                   </Text>
                 </Pressable>
+              </View>
 
-                {/* Shorten & Lengthen buttons (right side) */}
-                {onModifyLength && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      gap: 8,
-                    }}
-                  >
+              {/* Shorten & Lengthen buttons (far right) */}
+              {onModifyLength && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 8,
+                    marginTop: 8,
+                    alignSelf: "flex-end",
+                    maxWidth: "85%",
+                  }}
+                >
                     {/* Shorten button */}
                     <Pressable
                       onPress={() => onModifyLength(reply.id, "shorten")}
@@ -257,7 +256,6 @@ export function ModulatedRepliesCard({
                     </Pressable>
                   </View>
                 )}
-              </View>
             </View>
           ))}
         </View>
