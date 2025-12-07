@@ -173,8 +173,19 @@ export function ChatScreen({ navigation }: Props) {
         };
         setCurrentAnalysis(mockAnalysis);
 
-        // After image analysis, show direction selector
-        await new Promise((resolve) => setTimeout(resolve, 600));
+        // After image analysis, show add context button
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
+        const addContextMsg: AddContextButtonMessage = {
+          id: Date.now().toString() + "_addcontext_image",
+          role: "add-context-button",
+          content: "",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(addContextMsg);
+
+        // Then show direction selector
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         const directionMsg: DirectionSelectorMessage = {
           id: Date.now().toString() + "_direction",
@@ -270,7 +281,18 @@ export function ChatScreen({ navigation }: Props) {
     };
     addMessageToActiveLoop(deepAnalysisMsg);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // Show add context button after deep analysis
+    const addContextMsg: AddContextButtonMessage = {
+      id: Date.now().toString() + "_addcontext_text",
+      role: "add-context-button",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(addContextMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     // Step 6: Show direction selector
     const directionMsg: DirectionSelectorMessage = {
@@ -380,17 +402,6 @@ export function ChatScreen({ navigation }: Props) {
         timestamp: Date.now(),
       };
       addMessageToActiveLoop(toneModMsg);
-
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // Show add context button
-      const addContextMsg: AddContextButtonMessage = {
-        id: Date.now().toString() + "_addcontext",
-        role: "add-context-button",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(addContextMsg);
 
       await new Promise((resolve) => setTimeout(resolve, 600));
 
