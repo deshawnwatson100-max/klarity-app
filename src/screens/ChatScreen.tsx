@@ -38,6 +38,7 @@ import { EmotionalClaritySummaryBubble } from "../components/EmotionalClaritySum
 import { ToneModulationCard } from "../components/ToneModulationCard";
 import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
 import { AddContextButton } from "../components/AddContextButton";
+import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -50,6 +51,7 @@ import {
   generateModulatedReplies,
   analyzeImageToxicity,
 } from "../api/klarity-api";
+import { transcribeAudio } from "../api/transcribe-audio";
 import {
   ChatMessage,
   TypingMessage,
@@ -66,6 +68,7 @@ import {
   ToneModulationCardMessage,
   ModulatedRepliesCardMessage,
   AddContextButtonMessage,
+  InlineContextInputMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -472,36 +475,94 @@ export function ChatScreen({ navigation }: Props) {
     // Set flag that we're awaiting context
     setIsAwaitingContext(true);
 
-    // Show typing indicator
-    const typingMsg: TypingMessage = {
-      id: Date.now().toString() + "_typing_context",
-      role: "typing",
+    // Show inline context input
+    const inlineInputMsg: InlineContextInputMessage = {
+      id: Date.now().toString() + "_inline_context",
+      role: "inline-context-input",
       content: "",
       timestamp: Date.now(),
     };
-    addMessageToActiveLoop(typingMsg);
+    addMessageToActiveLoop(inlineInputMsg);
+  };
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    removeMessageFromActiveLoop(typingMsg.id);
+  const handleContextSubmit = async (contextInput: string, isVoice: boolean) => {
+    // Remove the inline input
+    const inlineInputMsg = messages.find(
+      (m) => m.role === "inline-context-input"
+    );
+    if (inlineInputMsg) {
+      removeMessageFromActiveLoop(inlineInputMsg.id);
+    }
 
-    // Show context gathering prompt
+    let contextText = contextInput;
+
+    // If voice, transcribe first
+    if (isVoice) {
+      // Show typing indicator for transcription
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing_transcribe",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(typingMsg);
+
+      try {
+        const transcription = await transcribeAudio(contextInput);
+        removeMessageFromActiveLoop(typingMsg.id);
+
+        if (!transcription) {
+          addMessageToActiveLoop({
+            id: Date.now().toString(),
+            role: "assistant",
+            content:
+              "I'm sorry, I couldn't transcribe that audio. Please try again with text input.",
+            timestamp: Date.now(),
+          });
+          setIsAwaitingContext(false);
+          return;
+        }
+
+        contextText = transcription;
+      } catch (error) {
+        console.error("Transcription error:", error);
+        removeMessageFromActiveLoop(typingMsg.id);
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            "I'm sorry, I couldn't transcribe that audio. Please try again.",
+          timestamp: Date.now(),
+        });
+        setIsAwaitingContext(false);
+        return;
+      }
+    }
+
+    // Add user's context as a message
     addMessageToActiveLoop({
       id: Date.now().toString(),
-      role: "assistant",
-      content:
-        "Thank you — the more I understand, the better I can support you.\n\nTo sharpen the clarity, can you tell me one or more of the following?",
+      role: "user",
+      content: contextText,
       timestamp: Date.now(),
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    setAdditionalContext(contextText);
+    setIsAwaitingContext(false);
 
-    addMessageToActiveLoop({
-      id: Date.now().toString(),
-      role: "assistant",
-      content:
-        "• What led up to this situation?\n• How did their message make you feel?\n• What outcome would feel healthiest for you?\n• Is there anything you want to avoid in your reply?\n\nShare what feels relevant — no pressure to answer all of them. I'm here to help you navigate this with clarity.",
-      timestamp: Date.now(),
-    });
+    // Re-analyze with additional context
+    await handleReanalyzeWithContext(contextText);
+  };
+
+  const handleContextCancel = () => {
+    // Remove the inline input
+    const inlineInputMsg = messages.find(
+      (m) => m.role === "inline-context-input"
+    );
+    if (inlineInputMsg) {
+      removeMessageFromActiveLoop(inlineInputMsg.id);
+    }
+    setIsAwaitingContext(false);
   };
 
   const handleSend = async () => {
@@ -636,6 +697,16 @@ export function ChatScreen({ navigation }: Props) {
         timestamp: Date.now(),
       };
       addMessageToActiveLoop(toneModMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Show confirmation question
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Is this more aligned with how you're feeling?",
+        timestamp: Date.now(),
+      });
     } catch (error) {
       console.error("Error re-analyzing with context:", error);
       removeMessageFromActiveLoop(typingMsg.id);
@@ -896,6 +967,17 @@ export function ChatScreen({ navigation }: Props) {
         <AddContextButton
           key={message.id}
           onPress={handleAddContext}
+          selectedIntention={currentIntention || undefined}
+        />
+      );
+    }
+
+    if (message.role === "inline-context-input") {
+      return (
+        <InlineContextInput
+          key={message.id}
+          onSubmit={handleContextSubmit}
+          onCancel={handleContextCancel}
           selectedIntention={currentIntention || undefined}
         />
       );

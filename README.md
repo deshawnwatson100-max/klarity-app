@@ -184,7 +184,22 @@ When you send a message about a relationship situation, Klarity responds with a 
    - Tap "Begin Scan" to start facial emotion analysis
    - Premium minimal design - futuristic yet welcoming
 
-12. **Your Response Bubble**
+12. **Add More Context Feature** ✨ NEW
+   - "Add More Context" button appears after dysfunctional communication analysis or deep analysis
+   - Tapping opens an inline context input section with two options:
+   - **📄 Text Input** - Expandable text field (up to 500 characters) to type additional details
+   - **🎤 Voice Input** - One-tap recording interface to speak your thoughts
+   - Voice recordings are automatically transcribed using Whisper API
+   - After submission:
+     - Context is added as a user message
+     - AI re-analyzes the situation with enriched information
+     - Updates deep analysis, guidance, and suggested replies
+     - Asks: "Is this more aligned with how you're feeling?"
+   - Dynamic color theming based on your chosen intention
+   - Smooth animations and visual feedback
+   - Cancel option to dismiss input without submitting
+
+13. **Your Response Bubble**
     - When you tap "Use this reply", it appears as right-aligned user bubble
     - Smooth insert animation
     - Chat auto-scrolls to show your message
@@ -547,6 +562,10 @@ Each loop stores:
 │   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
 │   │   ├── RelationshipDirectionSelector.tsx  # NEW: Choose relationship path
 │   │   ├── EmotionalFaceScanBubble.tsx  # NEW: Face scan emotional reading card
+│   │   ├── ToneModulationCard.tsx       # NEW: Tone adjustment options (Direct/Gentle/Neutral)
+│   │   ├── ModulatedRepliesCard.tsx     # NEW: Tone-modulated replies with guidance notes
+│   │   ├── AddContextButton.tsx         # NEW: Button to trigger context gathering
+│   │   ├── InlineContextInput.tsx       # NEW: Text/voice context input component
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -764,6 +783,12 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Animated waveform visualizer with 35 bars**
 ✅ **Organic animation with randomized timing**
 ✅ **Processing overlay with status messages**
+✅ **Tone Modulation Feature** - "Need a Different Approach?" card with Direct/Gentle/Neutral options
+✅ **Modulated Replies** - Context-aware replies with supportive guidance notes
+✅ **Add More Context** - Inline text/voice input for enriching analysis
+✅ **Voice Context Transcription** - Whisper API integration for spoken context
+✅ **Context Re-analysis** - Updates guidance with enriched information
+✅ **Confirmation Questions** - "Is this more aligned with how you're feeling?"
 
 ## Future Enhancements
 

@@ -16,7 +16,8 @@ export type MessageRole =
   | "emotion-scan-result"
   | "tone-modulation-card"
   | "modulated-replies-card"
-  | "add-context-button";
+  | "add-context-button"
+  | "inline-context-input";
 
 export interface Message {
   id: string;
@@ -161,6 +162,10 @@ export interface AddContextButtonMessage extends Message {
   role: "add-context-button";
 }
 
+export interface InlineContextInputMessage extends Message {
+  role: "inline-context-input";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -178,4 +183,5 @@ export type ChatMessage =
   | EmotionScanResultMessage
   | ToneModulationCardMessage
   | ModulatedRepliesCardMessage
-  | AddContextButtonMessage;
+  | AddContextButtonMessage
+  | InlineContextInputMessage;
