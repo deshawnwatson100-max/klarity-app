@@ -100,6 +100,32 @@ export function SuggestedReplyCard({
                 gap: 8,
               }}
             >
+              {/* Use button */}
+              <Pressable
+                onPress={() => handlePress(reply.text)}
+                className="active:opacity-70"
+                style={{
+                  backgroundColor: color,
+                  borderRadius: 20,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  shadowColor: color,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 10,
+                }}
+              >
+                <Text
+                  className="font-semibold text-sm"
+                  style={{
+                    fontFamily: "SF Pro Display",
+                    color: "#000000",
+                  }}
+                >
+                  Use this reply
+                </Text>
+              </Pressable>
+
               {/* Shorten button */}
               {onModifyLength && (
                 <Pressable
@@ -165,33 +191,6 @@ export function SuggestedReplyCard({
                   </Text>
                 </Pressable>
               )}
-
-              {/* Use button */}
-              <Pressable
-                onPress={() => handlePress(reply.text)}
-                className="active:opacity-70"
-                style={{
-                  backgroundColor: color,
-                  borderRadius: 20,
-                  paddingHorizontal: 20,
-                  paddingVertical: 10,
-                  shadowColor: color,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 10,
-                  marginLeft: "auto",
-                }}
-              >
-                <Text
-                  className="font-semibold text-sm"
-                  style={{
-                    fontFamily: "SF Pro Display",
-                    color: "#000000",
-                  }}
-                >
-                  Use this reply
-                </Text>
-              </Pressable>
             </View>
           </View>
         ))}

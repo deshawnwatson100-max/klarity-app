@@ -153,6 +153,32 @@ export function ModulatedRepliesCard({
                   gap: 8,
                 }}
               >
+                {/* Use button */}
+                <Pressable
+                  onPress={() => onSelectReply(reply.text)}
+                  className="active:opacity-70"
+                  style={{
+                    backgroundColor: intentionColor,
+                    borderRadius: 20,
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    shadowColor: intentionColor,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 10,
+                  }}
+                >
+                  <Text
+                    className="font-semibold text-sm"
+                    style={{
+                      fontFamily: "SF Pro Display",
+                      color: "#000000",
+                    }}
+                  >
+                    Use this reply
+                  </Text>
+                </Pressable>
+
                 {/* Shorten button */}
                 {onModifyLength && (
                   <Pressable
@@ -222,33 +248,6 @@ export function ModulatedRepliesCard({
                     </Text>
                   </Pressable>
                 )}
-
-                {/* Use button */}
-                <Pressable
-                  onPress={() => onSelectReply(reply.text)}
-                  className="active:opacity-70"
-                  style={{
-                    backgroundColor: intentionColor,
-                    borderRadius: 20,
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    shadowColor: intentionColor,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.5,
-                    shadowRadius: 10,
-                    marginLeft: "auto",
-                  }}
-                >
-                  <Text
-                    className="font-semibold text-sm"
-                    style={{
-                      fontFamily: "SF Pro Display",
-                      color: "#000000",
-                    }}
-                  >
-                    Use this reply
-                  </Text>
-                </Pressable>
               </View>
             </View>
           ))}
