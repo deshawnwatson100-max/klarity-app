@@ -37,6 +37,7 @@ import { EmotionalFaceScanBubble } from "../components/EmotionalFaceScanBubble";
 import { EmotionalClaritySummaryBubble } from "../components/EmotionalClaritySummaryBubble";
 import { ToneModulationCard } from "../components/ToneModulationCard";
 import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
+import { AddContextButton } from "../components/AddContextButton";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -64,6 +65,7 @@ import {
   EmotionScanResultMessage,
   ToneModulationCardMessage,
   ModulatedRepliesCardMessage,
+  AddContextButtonMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -83,6 +85,8 @@ export function ChatScreen({ navigation }: Props) {
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [currentIntention, setCurrentIntention] = useState<IntentionType | null>(null);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [isAwaitingContext, setIsAwaitingContext] = useState(false);
+  const [additionalContext, setAdditionalContext] = useState<string>("");
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -377,6 +381,17 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(toneModMsg);
 
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Show add context button
+      const addContextMsg: AddContextButtonMessage = {
+        id: Date.now().toString() + "_addcontext",
+        role: "add-context-button",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(addContextMsg);
+
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Show face scan card
@@ -442,8 +457,65 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
+  const handleAddContext = async () => {
+    // Set flag that we're awaiting context
+    setIsAwaitingContext(true);
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_context",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    removeMessageFromActiveLoop(typingMsg.id);
+
+    // Show context gathering prompt
+    addMessageToActiveLoop({
+      id: Date.now().toString(),
+      role: "assistant",
+      content:
+        "Thank you — the more I understand, the better I can support you.\n\nTo sharpen the clarity, can you tell me one or more of the following?",
+      timestamp: Date.now(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    addMessageToActiveLoop({
+      id: Date.now().toString(),
+      role: "assistant",
+      content:
+        "• What led up to this situation?\n• How did their message make you feel?\n• What outcome would feel healthiest for you?\n• Is there anything you want to avoid in your reply?\n\nShare what feels relevant — no pressure to answer all of them. I'm here to help you navigate this with clarity.",
+      timestamp: Date.now(),
+    });
+  };
+
   const handleSend = async () => {
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
+
+    // Check if we're awaiting context for re-analysis
+    if (isAwaitingContext) {
+      // Store additional context
+      setAdditionalContext(currentInput);
+
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content: currentInput,
+        timestamp: Date.now(),
+      };
+
+      addMessageToActiveLoop(userMessage);
+      setCurrentInput("");
+      setIsAwaitingContext(false);
+
+      // Re-analyze with additional context
+      await handleReanalyzeWithContext(currentInput);
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -461,6 +533,112 @@ export function ChatScreen({ navigation }: Props) {
 
     // Process the message
     await processUserMessage(userMessage);
+  };
+
+  const handleReanalyzeWithContext = async (contextInfo: string) => {
+    if (!currentAnalysis || !currentIntention) return;
+
+    setIsLoading(true);
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_reanalyze",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Combine original message with additional context
+      const enrichedMessage = `${currentUserMessage}\n\nAdditional Context: ${contextInfo}`;
+
+      // Re-generate emotional analysis with context
+      const reanalysis = await generateEmotionalAnalysis(enrichedMessage);
+      setCurrentAnalysis(reanalysis);
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Show acknowledgment
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content:
+          "Thank you for sharing that context — it helps me understand the situation more deeply. Let me re-assess based on what you've told me.",
+        timestamp: Date.now(),
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Show updated deep analysis
+      const deepAnalysisMsg: DeepAnalysisMessage = {
+        id: Date.now().toString() + "_deep_reanalysis",
+        role: "deep-analysis",
+        content: reanalysis.fullAnalysis || reanalysis.summary,
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(deepAnalysisMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Re-generate tailored guidance
+      const guidance = await generateTailoredGuidance(
+        enrichedMessage,
+        currentIntention,
+        reanalysis
+      );
+
+      const guidanceMsg: TailoredGuidanceMessage = {
+        id: Date.now().toString() + "_guidance_reanalysis",
+        role: "tailored-guidance",
+        content: guidance,
+        timestamp: Date.now(),
+        intention: currentIntention,
+      };
+      addMessageToActiveLoop(guidanceMsg);
+
+      // Re-generate improved replies
+      const replies = await generateIntentionBasedReplies(
+        enrichedMessage,
+        currentIntention,
+        reanalysis
+      );
+
+      const repliesMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_replies_reanalysis",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies,
+        intention: currentIntention,
+      };
+      addMessageToActiveLoop(repliesMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      // Show tone modulation again
+      const toneModMsg: ToneModulationCardMessage = {
+        id: Date.now().toString() + "_tonemod_reanalysis",
+        role: "tone-modulation-card",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(toneModMsg);
+    } catch (error) {
+      console.error("Error re-analyzing with context:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content:
+          "I apologize, but I encountered an error re-analyzing. Please try again.",
+        timestamp: Date.now(),
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleImageSelected = (uri: string, base64: string) => {
@@ -697,6 +875,16 @@ export function ChatScreen({ navigation }: Props) {
           replies={msg.replies}
           tone={msg.tone}
           onSelectReply={handleSelectReply}
+          selectedIntention={currentIntention || undefined}
+        />
+      );
+    }
+
+    if (message.role === "add-context-button") {
+      return (
+        <AddContextButton
+          key={message.id}
+          onPress={handleAddContext}
           selectedIntention={currentIntention || undefined}
         />
       );
