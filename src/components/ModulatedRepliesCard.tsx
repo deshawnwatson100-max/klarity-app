@@ -173,10 +173,13 @@ export function ModulatedRepliesCard({
                         {/* Shorten button */}
                         <Pressable
                           onPress={() => onModifyLength(reply.id, "shorten")}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
                             gap: 6,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
@@ -209,10 +212,13 @@ export function ModulatedRepliesCard({
                         {/* Lengthen button */}
                         <Pressable
                           onPress={() => onModifyLength(reply.id, "lengthen")}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
                             gap: 6,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
