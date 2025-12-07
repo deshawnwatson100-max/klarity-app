@@ -152,12 +152,16 @@ export function ModulatedRepliesCard({
                   </View>
                 </View>
 
-                {/* Use button */}
+                {/* Buttons container - horizontally aligned */}
                 <View
                   style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     marginTop: 8,
                   }}
                 >
+                  {/* Use button */}
                   <Pressable
                     onPress={() => onSelectReply(reply.text)}
                     className="active:opacity-70"
@@ -170,7 +174,6 @@ export function ModulatedRepliesCard({
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.5,
                       shadowRadius: 10,
-                      alignSelf: "flex-start",
                     }}
                   >
                     <Text
@@ -183,18 +186,15 @@ export function ModulatedRepliesCard({
                       Use this reply
                     </Text>
                   </Pressable>
-                </View>
 
-                {/* Shorten & Lengthen buttons (far right) */}
-                {onModifyLength && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      gap: 8,
-                      marginTop: 8,
-                      justifyContent: "flex-end",
-                    }}
-                  >
+                  {/* Shorten & Lengthen buttons (far right) */}
+                  {onModifyLength && (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 8,
+                      }}
+                    >
                     {/* Shorten button */}
                     <Pressable
                       onPress={() => onModifyLength(reply.id, "shorten")}
@@ -262,6 +262,7 @@ export function ModulatedRepliesCard({
                     </Pressable>
                   </View>
                 )}
+                </View>
               </View>
             </View>
           ))}
