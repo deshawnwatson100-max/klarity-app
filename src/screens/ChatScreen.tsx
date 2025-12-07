@@ -611,7 +611,22 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleReanalyzeWithContext = async (contextInfo: string) => {
-    if (!currentAnalysis || !currentIntention) return;
+    console.log("handleReanalyzeWithContext called with context:", contextInfo);
+    console.log("currentAnalysis:", currentAnalysis);
+    console.log("currentIntention:", currentIntention);
+    console.log("currentUserMessage:", currentUserMessage);
+
+    if (!currentAnalysis || !currentIntention) {
+      console.warn("Missing currentAnalysis or currentIntention - cannot reanalyze");
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content:
+          "I apologize, but I need you to complete the initial analysis flow first before adding more context. Please select your relationship intention from the options above.",
+        timestamp: Date.now(),
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -635,12 +650,14 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
+      console.log("Generating reflective understanding...");
       // Generate reflective understanding (two-part response)
       const reflectiveResponse = await generateReflectiveUnderstanding(
         currentUserMessage,
         contextInfo,
         reanalysis
       );
+      console.log("Reflective response:", reflectiveResponse);
 
       // Show reflective understanding bubble
       const reflectiveMsg: ReflectiveUnderstandingMessage = {
