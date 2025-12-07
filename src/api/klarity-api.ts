@@ -784,3 +784,92 @@ Respond with valid JSON only containing:
     return fallbacks[modulationTone];
   }
 }
+
+/**
+ * Generate a two-part reflective understanding response after user adds context
+ * Part 1: Reflective Understanding (empathy + validation)
+ * Part 2: Situation Clarity (neutral objective summary)
+ */
+export async function generateReflectiveUnderstanding(
+  originalMessage: string,
+  additionalContext: string,
+  analysis: EmotionalAnalysis
+): Promise<{
+  reflectiveUnderstanding: string;
+  situationClarity: string;
+}> {
+  const systemPrompt = `You are an emotionally intelligent AI assistant specializing in relationship clarity and communication.
+
+After the user provides additional context, respond in TWO distinct parts:
+
+**Part 1: Reflective Understanding** (Empathy + Clarity + Calm Validation)
+- Briefly reflect back the situation with warmth and understanding
+- Acknowledge the user's emotional experience without judging or telling them what to feel
+- Focus on emotional clarity, validation, and presence
+- Tone: grounded, gentle, supportive, emotionally intelligent
+- Example style: "It sounds like you're feeling ___ because ___. I can see why this situation would feel ___ — especially since ___."
+- Keep it 2-3 sentences, deeply empathetic
+
+**Part 2: Situation Clarity — Short Summary** (Neutral + Objective)
+- Summarize the situation in a concise, balanced snapshot
+- State facts of the conflict + emotional dynamics neutrally
+- No advice, no solutions yet — just clarity
+- Example style: "In short: you're dealing with X behavior, it impacts you in Y way, and the tension comes from Z."
+- Keep it 1-2 sentences, factual and clear
+
+Return valid JSON only with this structure:
+{
+  "reflectiveUnderstanding": "string (Part 1 - empathetic reflection)",
+  "situationClarity": "string (Part 2 - neutral summary)"
+}`;
+
+  const userPrompt = `Original situation: ${originalMessage}
+
+Additional context provided: ${additionalContext}
+
+Emotional analysis detected:
+- Tone: ${analysis.tone || "mixed"}
+- Pattern: ${analysis.pattern || "unclear"}
+- Emotional Impact: ${analysis.emotionalImpact || "significant"}
+- Core Issue: ${analysis.coreIssue || "communication breakdown"}
+
+Generate a two-part reflective understanding response. Return valid JSON only.`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 800,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      throw new Error("No response from API");
+    }
+
+    const parsed = JSON.parse(responseText);
+    return {
+      reflectiveUnderstanding:
+        parsed.reflectiveUnderstanding ||
+        "Thank you for sharing more context. I understand this situation is affecting you deeply.",
+      situationClarity:
+        parsed.situationClarity ||
+        "In short: you're navigating a challenging dynamic that impacts your emotional well-being.",
+    };
+  } catch (error) {
+    console.error("Error generating reflective understanding:", error);
+    return {
+      reflectiveUnderstanding:
+        "Thank you for sharing that additional context. I can see why this situation feels complex and emotionally charged.",
+      situationClarity:
+        "In short: you're dealing with a communication pattern that creates tension and uncertainty in the relationship.",
+    };
+  }
+}

@@ -39,6 +39,7 @@ import { ToneModulationCard } from "../components/ToneModulationCard";
 import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
 import { AddContextButton } from "../components/AddContextButton";
 import { InlineContextInput } from "../components/InlineContextInput";
+import { ReflectiveUnderstandingBubble } from "../components/ReflectiveUnderstandingBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -49,6 +50,7 @@ import {
   generateTailoredGuidance,
   generateIntentionBasedReplies,
   generateModulatedReplies,
+  generateReflectiveUnderstanding,
   analyzeImageToxicity,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -69,6 +71,7 @@ import {
   ModulatedRepliesCardMessage,
   AddContextButtonMessage,
   InlineContextInputMessage,
+  ReflectiveUnderstandingMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -632,14 +635,23 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
-      // Show acknowledgment
-      addMessageToActiveLoop({
-        id: Date.now().toString(),
-        role: "assistant",
-        content:
-          "Thank you for sharing that context — it helps me understand the situation more deeply. Let me re-assess based on what you've told me.",
+      // Generate reflective understanding (two-part response)
+      const reflectiveResponse = await generateReflectiveUnderstanding(
+        currentUserMessage,
+        contextInfo,
+        reanalysis
+      );
+
+      // Show reflective understanding bubble
+      const reflectiveMsg: ReflectiveUnderstandingMessage = {
+        id: Date.now().toString() + "_reflective",
+        role: "reflective-understanding",
+        content: "",
         timestamp: Date.now(),
-      });
+        reflectiveUnderstanding: reflectiveResponse.reflectiveUnderstanding,
+        situationClarity: reflectiveResponse.situationClarity,
+      };
+      addMessageToActiveLoop(reflectiveMsg);
 
       await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -979,6 +991,17 @@ export function ChatScreen({ navigation }: Props) {
           onSubmit={handleContextSubmit}
           onCancel={handleContextCancel}
           selectedIntention={currentIntention || undefined}
+        />
+      );
+    }
+
+    if (message.role === "reflective-understanding") {
+      const reflectiveMsg = message as ReflectiveUnderstandingMessage;
+      return (
+        <ReflectiveUnderstandingBubble
+          key={message.id}
+          reflectiveUnderstanding={reflectiveMsg.reflectiveUnderstanding}
+          situationClarity={reflectiveMsg.situationClarity}
         />
       );
     }

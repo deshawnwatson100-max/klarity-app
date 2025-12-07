@@ -17,7 +17,8 @@ export type MessageRole =
   | "tone-modulation-card"
   | "modulated-replies-card"
   | "add-context-button"
-  | "inline-context-input";
+  | "inline-context-input"
+  | "reflective-understanding";
 
 export interface Message {
   id: string;
@@ -166,6 +167,12 @@ export interface InlineContextInputMessage extends Message {
   role: "inline-context-input";
 }
 
+export interface ReflectiveUnderstandingMessage extends Message {
+  role: "reflective-understanding";
+  reflectiveUnderstanding: string;
+  situationClarity: string;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -184,4 +191,5 @@ export type ChatMessage =
   | ToneModulationCardMessage
   | ModulatedRepliesCardMessage
   | AddContextButtonMessage
-  | InlineContextInputMessage;
+  | InlineContextInputMessage
+  | ReflectiveUnderstandingMessage;

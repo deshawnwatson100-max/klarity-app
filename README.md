@@ -190,10 +190,14 @@ When you send a message about a relationship situation, Klarity responds with a 
    - **📄 Text Input** - Expandable text field (up to 500 characters) to type additional details
    - **🎤 Voice Input** - One-tap recording interface to speak your thoughts
    - Voice recordings are automatically transcribed using Whisper API
-   - After submission:
+   - After submission, AI responds with a **two-part reflective understanding**:
+     - **Part 1: Reflective Understanding** - Empathetic reflection acknowledging your feelings (2-3 sentences with warmth and validation)
+     - **Part 2: Situation Clarity** - Neutral objective summary of the conflict and emotional dynamics (1-2 sentences, factual)
+   - Then re-analyzes with enriched information:
      - Context is added as a user message
-     - AI re-analyzes the situation with enriched information
-     - Updates deep analysis, guidance, and suggested replies
+     - Updates deep analysis with additional context
+     - Regenerates tailored guidance based on fuller picture
+     - Provides fresh suggested replies
      - Asks: "Is this more aligned with how you're feeling?"
    - Dynamic color theming based on your chosen intention
    - Smooth animations and visual feedback
@@ -566,6 +570,7 @@ Each loop stores:
 │   │   ├── ModulatedRepliesCard.tsx     # NEW: Tone-modulated replies with guidance notes
 │   │   ├── AddContextButton.tsx         # NEW: Button to trigger context gathering
 │   │   ├── InlineContextInput.tsx       # NEW: Text/voice context input component
+│   │   ├── ReflectiveUnderstandingBubble.tsx  # NEW: Two-part empathy + clarity response
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -788,6 +793,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Add More Context** - Inline text/voice input for enriching analysis
 ✅ **Voice Context Transcription** - Whisper API integration for spoken context
 ✅ **Context Re-analysis** - Updates guidance with enriched information
+✅ **Reflective Understanding Response** - Two-part empathy + clarity format after context
 ✅ **Confirmation Questions** - "Is this more aligned with how you're feeling?"
 
 ## Future Enhancements
