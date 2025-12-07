@@ -419,8 +419,8 @@ export function InputScreen({ navigation }: Props) {
               {/* Emotion Scan Button */}
               <Pressable
                 onPress={() => {
-                  // Navigate to camera for emotion scan
-                  navigation.navigate("ChatScreen");
+                  // Navigate to EmotionScanScreen for face scanning
+                  navigation.navigate("EmotionScanScreen");
                 }}
                 className="items-center"
               >

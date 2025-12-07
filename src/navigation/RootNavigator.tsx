@@ -9,11 +9,13 @@ import { SuggestionsScreen } from "../screens/SuggestionsScreen";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen";
 import { StyleDetailScreen } from "../screens/StyleDetailScreen";
+import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
   ChatScreen: undefined;
   CalendarScreen: undefined;
+  EmotionScanScreen: undefined;
   LogDetailScreen: {
     date: string;
     entryIds: string[];
@@ -393,6 +395,17 @@ export function RootNavigator() {
             },
             close: TransitionSpecs.TransitionIOSSpec,
           },
+        }}
+      />
+
+      {/* Emotion Scan Screen - Full screen modal */}
+      <Stack.Screen
+        name="EmotionScanScreen"
+        component={EmotionScanScreen}
+        options={{
+          presentation: "modal",
+          gestureEnabled: false,
+          cardStyle: { backgroundColor: "black" },
         }}
       />
     </Stack.Navigator>

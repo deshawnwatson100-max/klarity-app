@@ -544,4 +544,106 @@ Respond with valid JSON only containing:
   }
 }
 
+/**
+ * Analyze facial emotion from an image
+ * Uses GPT-4o's vision capabilities to detect emotional state
+ */
+export async function analyzeFacialEmotion(
+  imageBase64: string
+): Promise<import("../types/chat").EmotionAnalysis> {
+  const client = getOpenAIClient();
 
+  const systemPrompt = `You are an emotionally intelligent AI specialized in facial emotion analysis. Analyze the person's face in the image and provide insights with calm emotional intelligence.
+
+Respond with valid JSON only containing:
+- primaryEmotion: string (1-3 words describing the main emotion detected)
+- emotionalIntensity: number (0-100 scale)
+- facialCues: string (brief description of facial tension, microexpressions, or stress indicators - 1-2 sentences)
+- selfAwarenessInsight: string (gentle observation about what the person might be feeling internally - 1-2 sentences, unbiased and supportive)
+- clarityReflection: string (what this emotional state might mean for them - 1-2 sentences)
+- suggestedDirection: string (one grounding suggestion or clarity prompt - 1-2 sentences, actionable and emotionally regulating)
+- fullSummary: string (complete emotional clarity summary combining all insights - 3-4 sentences)
+
+Tone should be calm, warm, emotionally intelligent. Focus on clarity, not diagnosis.`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high",
+              },
+            },
+            {
+              type: "text",
+              text: "Analyze my facial emotion and provide an emotional clarity summary. Return valid JSON only.",
+            },
+          ],
+        },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    // Validate structure
+    if (
+      typeof parsed.primaryEmotion !== "string" ||
+      typeof parsed.emotionalIntensity !== "number" ||
+      typeof parsed.fullSummary !== "string"
+    ) {
+      throw new Error("Invalid emotion analysis structure");
+    }
+
+    return parsed as import("../types/chat").EmotionAnalysis;
+  } catch (error: any) {
+    console.error("Error analyzing facial emotion:", error);
+
+    // Return fallback analysis
+    return {
+      primaryEmotion: "Mixed emotions",
+      emotionalIntensity: 50,
+      facialCues:
+        "Unable to fully analyze facial cues at this time. Your expression suggests you may be processing something emotionally.",
+      selfAwarenessInsight:
+        "You may be feeling a mix of emotions that could benefit from deeper reflection.",
+      clarityReflection:
+        "This moment could be an opportunity to check in with yourself about what you are truly feeling.",
+      suggestedDirection:
+        "Take a few deep breaths and notice what emotion feels strongest right now. If you are ready, I can help you explore what triggered this feeling.",
+      fullSummary:
+        "Here is what I noticed: You appear to be experiencing mixed emotions. This could mean you are processing something complex internally. You may benefit from slowing down and checking what part of this situation feels personal versus external. If you are ready, I can help you gain clarity on what emotion needs attention first.",
+    };
+  }
+}

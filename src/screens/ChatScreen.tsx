@@ -34,6 +34,7 @@ import { ToneSelectionBubble } from "../components/ToneSelectionBubble";
 import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { EmotionalFaceScanBubble } from "../components/EmotionalFaceScanBubble";
+import { EmotionalClaritySummaryBubble } from "../components/EmotionalClaritySummaryBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -57,6 +58,7 @@ import {
   SuggestedReplyCardMessage,
   ImageAnalysisMessage,
   FaceScanCardMessage,
+  EmotionScanResultMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -418,8 +420,47 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleBeginFaceScan = () => {
-    // TODO: Navigate to camera screen for face scanning
-    console.log("Begin face scan pressed");
+    // Navigate to EmotionScanScreen for face scanning
+    navigation.navigate("EmotionScanScreen");
+  };
+
+  const handleEmotionFollowUp = (action: string) => {
+    // Handle follow-up actions from emotion scan
+    switch (action) {
+      case "understand":
+        // Generate deeper insight about the emotion
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "user",
+          content: "Help me understand this emotion better",
+          timestamp: Date.now(),
+        });
+        break;
+      case "calendar":
+        // Navigate to calendar to show emotional trends
+        navigation.navigate("CalendarScreen");
+        break;
+      case "respond":
+        // Offer help with responding to the situation
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "user",
+          content: "Help me respond to this situation",
+          timestamp: Date.now(),
+        });
+        break;
+      case "reflect":
+        // Help reflect on triggers
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "user",
+          content: "Help me understand what triggered this feeling",
+          timestamp: Date.now(),
+        });
+        break;
+      default:
+        break;
+    }
   };
 
   const renderMessage = (message: ChatMessage) => {
@@ -510,6 +551,17 @@ export function ChatScreen({ navigation }: Props) {
         <EmotionalFaceScanBubble
           key={message.id}
           onBeginScan={handleBeginFaceScan}
+        />
+      );
+    }
+
+    if (message.role === "emotion-scan-result") {
+      const emotionScanMsg = message as EmotionScanResultMessage;
+      return (
+        <EmotionalClaritySummaryBubble
+          key={message.id}
+          emotionAnalysis={emotionScanMsg.emotionAnalysis}
+          onFollowUpAction={handleEmotionFollowUp}
         />
       );
     }

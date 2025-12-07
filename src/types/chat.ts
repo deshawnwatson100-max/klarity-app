@@ -12,7 +12,8 @@ export type MessageRole =
   | "tone-selector"
   | "tailored-guidance"
   | "suggested-reply-card"
-  | "face-scan-card";
+  | "face-scan-card"
+  | "emotion-scan-result";
 
 export interface Message {
   id: string;
@@ -122,6 +123,21 @@ export interface FaceScanCardMessage extends Message {
   role: "face-scan-card";
 }
 
+export interface EmotionAnalysis {
+  primaryEmotion: string;
+  emotionalIntensity: number;
+  facialCues: string;
+  selfAwarenessInsight: string;
+  clarityReflection: string;
+  suggestedDirection: string;
+  fullSummary: string;
+}
+
+export interface EmotionScanResultMessage extends Message {
+  role: "emotion-scan-result";
+  emotionAnalysis: EmotionAnalysis;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -135,4 +151,5 @@ export type ChatMessage =
   | ToneSelectorMessage
   | TailoredGuidanceMessage
   | SuggestedReplyCardMessage
-  | FaceScanCardMessage;
+  | FaceScanCardMessage
+  | EmotionScanResultMessage;
