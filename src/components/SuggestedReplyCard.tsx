@@ -98,7 +98,8 @@ export function SuggestedReplyCard({
                 alignItems: "flex-start",
                 justifyContent: "space-between",
                 marginTop: 8,
-                paddingHorizontal: 8,
+                maxWidth: "85%",
+                alignSelf: "flex-start",
               }}
             >
               {/* Use button (left side) */}

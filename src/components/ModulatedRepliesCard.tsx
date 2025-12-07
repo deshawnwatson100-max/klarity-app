@@ -152,7 +152,8 @@ export function ModulatedRepliesCard({
                   alignItems: "flex-start",
                   justifyContent: "space-between",
                   marginTop: 8,
-                  paddingHorizontal: 4,
+                  maxWidth: "85%",
+                  alignSelf: "flex-start",
                 }}
               >
                 {/* Use button (left side) */}
