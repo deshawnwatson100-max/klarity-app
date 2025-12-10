@@ -283,6 +283,8 @@ Respond with valid JSON only containing:
 - suggestedResponse: a healthy, regulated reply the recipient could send (2-3 sentences)`;
 
   try {
+    console.log("[analyzeImageToxicity] Starting image analysis, base64 length:", imageBase64?.length);
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-2024-11-20",
       messages: [
@@ -312,10 +314,27 @@ Respond with valid JSON only containing:
       response_format: { type: "json_object" },
     });
 
+    console.log("[analyzeImageToxicity] API response received");
     const content = completion.choices[0]?.message?.content || "";
 
     if (!content) {
-      throw new Error("Empty response from API");
+      console.warn("[analyzeImageToxicity] Empty content from API, using fallback");
+      // Return fallback instead of throwing
+      return {
+        summary:
+          "This message appears to contain challenging communication patterns that may be affecting the relationship negatively.",
+        labels: [
+          {
+            tag: "Communication Issue",
+            description:
+              "Unable to fully analyze the specific patterns at this time.",
+          },
+        ],
+        emotionalImpact:
+          "Messages like this can create confusion, frustration, and emotional distance in relationships.",
+        suggestedResponse:
+          "I need some time to process this. Can we talk about this calmly when we are both ready?",
+      };
     }
 
     // Parse JSON response
@@ -345,9 +364,14 @@ Respond with valid JSON only containing:
 
     return parsed as ImageAnalysis;
   } catch (error: any) {
-    console.error("Error analyzing image:", error);
+    console.error("[analyzeImageToxicity] Error:", error?.message || error);
+    console.error("[analyzeImageToxicity] Error details:", {
+      status: error?.status,
+      code: error?.code,
+      type: error?.type,
+    });
 
-    // Return fallback analysis
+    // Return fallback analysis - graceful degradation
     return {
       summary:
         "This message appears to contain challenging communication patterns that may be affecting the relationship negatively.",
