@@ -18,7 +18,7 @@ export function ContextOrDirectionChoice({
     <Animated.View
       entering={FadeInDown.duration(500).springify()}
       style={{
-        marginVertical: 16,
+        marginVertical: 20,
         marginHorizontal: 16,
       }}
     >
@@ -27,7 +27,7 @@ export function ContextOrDirectionChoice({
         style={{
           backgroundColor: "#0A0A0A",
           borderRadius: 16,
-          padding: 20,
+          padding: 18,
           borderWidth: 0.5,
           borderColor: "#262626",
         }}
@@ -38,7 +38,7 @@ export function ContextOrDirectionChoice({
             fontSize: 16,
             fontWeight: "600",
             color: "#F9FAFB",
-            marginBottom: 16,
+            marginBottom: 18,
             letterSpacing: 0.3,
           }}
         >
@@ -52,9 +52,9 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            paddingVertical: 18,
-            paddingHorizontal: 16,
-            marginBottom: 14,
+            paddingVertical: 16,
+            paddingHorizontal: 14,
+            marginBottom: 12,
             borderWidth: 1,
             borderColor: "#B8A3E820",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -64,24 +64,24 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16,
+                marginRight: 14,
               }}
             >
               <Ionicons name="add-circle-outline" size={24} color="#B8A3E8" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 8,
+                  marginBottom: 5,
                   letterSpacing: 0.2,
                 }}
               >
@@ -91,7 +91,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 20,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
@@ -111,9 +111,9 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            paddingVertical: 18,
-            paddingHorizontal: 16,
-            marginBottom: 14,
+            paddingVertical: 16,
+            paddingHorizontal: 14,
+            marginBottom: 12,
             borderWidth: 1,
             borderColor: "#4FFFD720",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -123,24 +123,24 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16,
+                marginRight: 14,
               }}
             >
               <Ionicons name="chatbox-ellipses-outline" size={24} color="#4FFFD7" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 8,
+                  marginBottom: 5,
                   letterSpacing: 0.2,
                 }}
               >
@@ -150,7 +150,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 20,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
@@ -173,8 +173,8 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            paddingVertical: 18,
-            paddingHorizontal: 16,
+            paddingVertical: 16,
+            paddingHorizontal: 14,
             borderWidth: 1,
             borderColor: "#4C9EFF20",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -184,24 +184,24 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16,
+                marginRight: 14,
               }}
             >
               <Ionicons name="compass-outline" size={24} color="#4C9EFF" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 8,
+                  marginBottom: 5,
                   letterSpacing: 0.2,
                 }}
               >
@@ -211,7 +211,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 20,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
