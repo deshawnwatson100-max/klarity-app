@@ -80,9 +80,9 @@ export function ToneSelectionBubble({
           borderWidth: 1.5,
           borderColor: "#9CA3AF30",
           shadowColor: "#9CA3AF",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
           maxWidth: "95%",
         }}
       >
