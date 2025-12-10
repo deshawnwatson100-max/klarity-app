@@ -38,18 +38,18 @@ const intentions = [
     id: "maintain" as IntentionType,
     label: "Maintain",
     icon: "eye-outline" as const,
-    color: "#FFB84D", // Soft Amber/Gold
-    glowColor: "#FFB84D40", // Soft gold glow
-    textTint: "#FFD699", // Muted gold for description
+    color: "#B8A3E8", // Lavender/Soft Purple
+    glowColor: "#B8A3E840", // Soft purple glow
+    textTint: "#CDB8FF", // Muted lavender for description
     description: "Observe patterns before making decisions",
   },
   {
     id: "clarity" as IntentionType,
     label: "Set Boundaries",
     icon: "hand-left-outline" as const,
-    color: "#B8A3E8", // Lavender/Soft Purple
-    glowColor: "#B8A3E840", // Soft purple glow
-    textTint: "#CDB8FF", // Muted lavender for description
+    color: "#FFB84D", // Soft Amber/Gold
+    glowColor: "#FFB84D40", // Soft gold glow
+    textTint: "#FFD699", // Muted gold for description
     description: "Communicate your limits clearly and protect your well-being",
   },
 ];
