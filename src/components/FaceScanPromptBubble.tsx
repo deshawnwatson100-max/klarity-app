@@ -46,13 +46,12 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
         }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        className="active:opacity-90"
+        style={{ width: "100%" }}
       >
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
             backgroundColor: "rgba(125, 211, 192, 0.08)",
             borderWidth: 1,
             borderColor: "rgba(125, 211, 192, 0.2)",
@@ -63,7 +62,6 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
             shadowRadius: 8,
-            maxWidth: "90%",
           }}
         >
           <View
@@ -74,18 +72,20 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
               backgroundColor: "rgba(125, 211, 192, 0.15)",
               alignItems: "center",
               justifyContent: "center",
+              marginRight: 12,
             }}
           >
             <Ionicons name="scan-outline" size={20} color="#7DD3C0" />
           </View>
           <Text
+            numberOfLines={2}
             style={{
               fontFamily: "SF Pro Display",
               color: "#E5E7EB",
               fontWeight: "500",
               fontSize: 14,
               lineHeight: 20,
-              flex: 1,
+              flexShrink: 1,
             }}
           >
             Scan your face for deeper emotional insight?
