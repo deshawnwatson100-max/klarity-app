@@ -876,6 +876,50 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
+  const handleGenerateDifferentReply = async () => {
+    if (!currentIntention || !currentAnalysis || !currentUserMessage) {
+      console.log("[handleGenerateDifferentReply] Missing required data");
+      return;
+    }
+
+    console.log("[handleGenerateDifferentReply] Generating new reply");
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_different",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Generate a new reply
+      const newReplies = await generateIntentionBasedReplies(
+        currentUserMessage,
+        currentIntention,
+        currentAnalysis
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add the new reply as a separate message below
+      const newReplyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_newreply",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: newReplies,
+        intention: currentIntention,
+      };
+      addMessageToActiveLoop(newReplyMsg);
+    } catch (error) {
+      console.error("[handleGenerateDifferentReply] Error:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+    }
+  };
+
   const handleEmotionFollowUp = async (action: string) => {
     // Handle micro-flow actions from emotion scan
     switch (action) {
@@ -1129,6 +1173,7 @@ export function ChatScreen({ navigation }: Props) {
           intention={msg.intention}
           onSelectReply={handleSelectReply}
           onModifyLength={handleModifyReplyLength}
+          onGenerateDifferent={handleGenerateDifferentReply}
         />
       );
     }

@@ -21,6 +21,7 @@ interface SuggestedReplyCardProps {
   intention: IntentionType;
   onSelectReply: (reply: string) => void;
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => void;
+  onGenerateDifferent?: () => void;
 }
 
 const intentionColors: Record<IntentionType, string> = {
@@ -35,6 +36,7 @@ export function SuggestedReplyCard({
   intention,
   onSelectReply,
   onModifyLength,
+  onGenerateDifferent,
 }: SuggestedReplyCardProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
@@ -190,10 +192,12 @@ export function SuggestedReplyCard({
                 )}
               </View>
 
-              {/* Use button below bubble */}
+              {/* Use button and Generate Different button below bubble */}
               <View
                 style={{
                   marginTop: 8,
+                  flexDirection: "row",
+                  gap: 8,
                 }}
               >
                 <Pressable
@@ -208,7 +212,6 @@ export function SuggestedReplyCard({
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.5,
                     shadowRadius: 10,
-                    alignSelf: "flex-start",
                   }}
                 >
                   <Text
@@ -221,6 +224,35 @@ export function SuggestedReplyCard({
                     Use this reply
                   </Text>
                 </Pressable>
+
+                {onGenerateDifferent && (
+                  <Pressable
+                    onPress={onGenerateDifferent}
+                    className="active:opacity-70"
+                    style={{
+                      backgroundColor: "transparent",
+                      borderWidth: 1.5,
+                      borderColor: color,
+                      borderRadius: 20,
+                      paddingHorizontal: 20,
+                      paddingVertical: 10,
+                      shadowColor: color,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                    }}
+                  >
+                    <Text
+                      className="font-semibold text-sm"
+                      style={{
+                        fontFamily: "SF Pro Display",
+                        color: color,
+                      }}
+                    >
+                      Use different reply
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             </View>
           </View>
