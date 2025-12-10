@@ -41,6 +41,7 @@ import { AddContextButton } from "../components/AddContextButton";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { ReflectiveUnderstandingBubble } from "../components/ReflectiveUnderstandingBubble";
 import { ContextOrDirectionChoice } from "../components/ContextOrDirectionChoice";
+import { VoiceEmotionScanBubble } from "../components/VoiceEmotionScanBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -54,6 +55,7 @@ import {
   generateReflectiveUnderstanding,
   modifyReplyLength,
   analyzeImageToxicity,
+  analyzeVoiceEmotion,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -75,6 +77,7 @@ import {
   InlineContextInputMessage,
   ReflectiveUnderstandingMessage,
   ContextOrDirectionChoiceMessage,
+  VoiceEmotionScanResultMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -97,6 +100,7 @@ export function ChatScreen({ navigation }: Props) {
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [additionalContext, setAdditionalContext] = useState<string>("");
+  const [isVoiceMessage, setIsVoiceMessage] = useState(false);
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -152,8 +156,47 @@ export function ChatScreen({ navigation }: Props) {
     setCurrentUserMessage(userMessage.content);
 
     try {
-      // Check if this is an image message
-      if (userMessage.imageBase64) {
+      // Check if this is a voice message - trigger voice emotion analysis
+      if (userMessage.isVoiceMessage) {
+        // Show typing indicator while analyzing
+        const typingMsg: TypingMessage = {
+          id: Date.now().toString() + "_typing_voice",
+          role: "typing",
+          content: "",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(typingMsg);
+
+        // Analyze voice emotion
+        const voiceEmotionAnalysis = await analyzeVoiceEmotion(userMessage.content);
+
+        // Remove typing indicator
+        removeMessageFromActiveLoop(typingMsg.id);
+
+        // Add voice emotion scan result
+        const voiceEmotionMsg: VoiceEmotionScanResultMessage = {
+          id: Date.now().toString() + "_voice_emotion",
+          role: "voice-emotion-scan-result",
+          content: "",
+          timestamp: Date.now(),
+          voiceEmotionAnalysis,
+        };
+        addMessageToActiveLoop(voiceEmotionMsg);
+
+        // Create emotional analysis from voice analysis for later use
+        const mockAnalysis: EmotionalAnalysis = {
+          emotionalClarity: 75,
+          detectedState: voiceEmotionAnalysis.primaryEmotions,
+          relationshipRisk: "medium",
+          summary: voiceEmotionAnalysis.contextUnderstanding,
+          tone: "Emotional",
+          pattern: "Voice Expression",
+          emotionalImpact: voiceEmotionAnalysis.emotionalMeaningSummary,
+          coreIssue: voiceEmotionAnalysis.primaryEmotions,
+          fullAnalysis: voiceEmotionAnalysis.supportiveReflection,
+        };
+        setCurrentAnalysis(mockAnalysis);
+      } else if (userMessage.imageBase64) {
         // For image messages, show typing indicator while analyzing
         const typingMsg: TypingMessage = {
           id: Date.now().toString() + "_typing_image",
@@ -919,6 +962,65 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
+  const handleVoiceEmotionFollowUp = async (action: string) => {
+    // Handle follow-up actions from voice emotion analysis
+    switch (action) {
+      case "add-context":
+        // User wants to add more context
+        handleAddContext();
+        break;
+
+      case "choose-direction":
+        // User wants to choose relationship direction
+        handleSkipToDirection();
+        break;
+
+      case "generate-replies":
+        // User wants reply suggestions - need to pick direction first
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            "To generate the best reply suggestions for you, I first need to understand your relationship intention. Let me ask you to choose your direction.",
+          timestamp: Date.now(),
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        handleSkipToDirection();
+        break;
+
+      case "check-outcomes":
+        // User wants to check possible outcomes
+        const typingMsg: TypingMessage = {
+          id: Date.now().toString() + "_typing_outcomes",
+          role: "typing",
+          content: "",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(typingMsg);
+
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        removeMessageFromActiveLoop(typingMsg.id);
+
+        addMessageToActiveLoop({
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            "To give you the most accurate outcome analysis, I need to know: what direction do you want to take with this relationship? This will help me show you how different approaches might play out.",
+          timestamp: Date.now(),
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        handleSkipToDirection();
+        break;
+
+      default:
+        break;
+    }
+  };
+
   const renderMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
@@ -1086,6 +1188,17 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           onSelectAddContext={handleAddContext}
           onSelectDirection={handleSkipToDirection}
+        />
+      );
+    }
+
+    if (message.role === "voice-emotion-scan-result") {
+      const voiceEmotionMsg = message as VoiceEmotionScanResultMessage;
+      return (
+        <VoiceEmotionScanBubble
+          key={message.id}
+          voiceEmotionAnalysis={voiceEmotionMsg.voiceEmotionAnalysis}
+          onFollowUpAction={handleVoiceEmotionFollowUp}
         />
       );
     }

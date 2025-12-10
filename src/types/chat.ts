@@ -19,7 +19,8 @@ export type MessageRole =
   | "add-context-button"
   | "inline-context-input"
   | "reflective-understanding"
-  | "context-or-direction-choice";
+  | "context-or-direction-choice"
+  | "voice-emotion-scan-result";
 
 export interface Message {
   id: string;
@@ -28,6 +29,7 @@ export interface Message {
   timestamp: number;
   imageUrl?: string; // Optional image attachment
   imageBase64?: string; // Base64 encoded image for API calls
+  isVoiceMessage?: boolean; // Marks if this message came from voice recording
 }
 
 export interface EmotionalAnalysis {
@@ -178,6 +180,19 @@ export interface ContextOrDirectionChoiceMessage extends Message {
   role: "context-or-direction-choice";
 }
 
+export interface VoiceEmotionAnalysis {
+  primaryEmotions: string;
+  voiceIndicators: string[];
+  emotionalMeaningSummary: string;
+  contextUnderstanding: string;
+  supportiveReflection: string;
+}
+
+export interface VoiceEmotionScanResultMessage extends Message {
+  role: "voice-emotion-scan-result";
+  voiceEmotionAnalysis: VoiceEmotionAnalysis;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -198,4 +213,5 @@ export type ChatMessage =
   | AddContextButtonMessage
   | InlineContextInputMessage
   | ReflectiveUnderstandingMessage
-  | ContextOrDirectionChoiceMessage;
+  | ContextOrDirectionChoiceMessage
+  | VoiceEmotionScanResultMessage;

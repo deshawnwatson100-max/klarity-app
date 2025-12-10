@@ -315,7 +315,7 @@ This screen is now replaced by the Guidance Screen flow, but the old inline sugg
 - Smart context-aware responses
 
 ### NEW: Voice Recording Feature 🎤
-Record voice messages and have them automatically transcribed and analyzed.
+Record voice messages and have them automatically transcribed and analyzed with emotional intelligence.
 
 #### How it Works
 1. Tap the **microphone icon** in the input bar (when no text is entered)
@@ -323,21 +323,42 @@ Record voice messages and have them automatically transcribed and analyzed.
 3. Tap the stop button when done speaking
 4. App automatically:
    - Transcribes your audio using GPT-4o Transcribe
-   - Adds the transcribed text to the conversation
-   - Navigates to chat screen for AI analysis
+   - **Analyzes voice emotion** examining both content AND emotional vocal qualities
+   - Displays comprehensive voice-emotion scan results
+   - Provides actionable next steps
+
+#### Voice-Emotion Analysis (Automatic When Recording Audio)
+When you record audio to describe a situation, Klarity analyzes BOTH:
+1. **Content** - Words, meaning, tone of conflict
+2. **Emotional Quality** - Rhythm, stress, hesitation, volume shifts, energy
+
+The analysis includes:
+- **Primary Detected Emotion(s)** - Main emotions identified (e.g., anxious, frustrated, hopeful)
+- **Voice Indicators** - Observable vocal/linguistic cues revealing emotional state
+- **Emotional Meaning Summary** - Calm interpretation of what emotions may signal internally
+- **Context & Situation Understanding** - Neutral summary of the core situation
+- **Supportive Reflection** - Empathetic validation acknowledging emotional state
+
+#### Options After Voice-Emotion Analysis
+After receiving your voice-emotion scan, choose your next step:
+1. **Add more context** - Provide additional voice or text input
+2. **Choose relationship direction** - Select your intention (Improve/Distance/Maintain/Clarity)
+3. **Generate reply suggestions** - Get tailored response options
+4. **Check possible outcomes** - Understand how different approaches might play out
 
 #### Processing Flow
 - **Recording** - Red pulsing stop button shows active recording
 - **Animated waveform** - 35 lime green bars animate to visualize voice input
 - **Visual feedback** - "Recording..." text with helper text below visualizer
 - **Transcribing** - Loading overlay with "Transcribing your voice..." message
-- **Analyzing** - "Analyzing your message..." appears while processing
-- **Complete** - Automatically enters chat screen with your transcribed message
+- **Analyzing** - Voice-emotion analysis with AI
+- **Complete** - Displays comprehensive emotion scan card with next step options
 
 #### Technical Details
 - Uses **expo-av** for high-quality audio recording
 - **react-native-reanimated v3** for smooth waveform animations
 - **GPT-4o Transcribe** model for accurate speech-to-text
+- **o4-mini** model for emotional and linguistic pattern analysis
 - 35 animated bars with randomized timing for organic feel
 - Each bar animates independently with different durations and delays
 - Supports microphone permissions request
@@ -571,6 +592,7 @@ Each loop stores:
 │   │   ├── AddContextButton.tsx         # NEW: Button to trigger context gathering
 │   │   ├── InlineContextInput.tsx       # NEW: Text/voice context input component
 │   │   ├── ReflectiveUnderstandingBubble.tsx  # NEW: Two-part empathy + clarity response
+│   │   ├── VoiceEmotionScanBubble.tsx   # NEW: Voice emotion analysis result card
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -784,6 +806,9 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Voice recording with microphone icon**
 ✅ **Audio transcription with GPT-4o Transcribe**
 ✅ **Automatic voice-to-text processing**
+✅ **Voice-Emotion Analysis** - Analyzes both content and emotional vocal qualities
+✅ **Voice Emotion Scan Result Card** - Comprehensive analysis with structured format
+✅ **Voice emotion follow-up options** - 4 actionable next steps after analysis
 ✅ **Visual recording feedback (red stop button)**
 ✅ **Animated waveform visualizer with 35 bars**
 ✅ **Organic animation with randomized timing**

@@ -875,6 +875,122 @@ Generate a two-part reflective understanding response. Return valid JSON only.`;
 }
 
 /**
+ * Analyze voice emotion from transcribed audio
+ * Examines both content and emotional vocal qualities to provide holistic analysis
+ */
+export async function analyzeVoiceEmotion(
+  transcribedText: string,
+  audioUri?: string
+): Promise<{
+  primaryEmotions: string;
+  voiceIndicators: string[];
+  emotionalMeaningSummary: string;
+  contextUnderstanding: string;
+  supportiveReflection: string;
+}> {
+  const systemPrompt = `You are an emotionally intelligent AI specializing in voice emotion analysis and communication clarity.
+
+When a user records audio to describe their situation, analyze BOTH:
+1) The CONTENT of what they are saying (words, meaning, tone of conflict)
+2) The EMOTIONAL QUALITY of their voice (rhythm, stress, hesitation, volume shifts, energy)
+
+Based on the transcribed text (which may contain linguistic patterns revealing emotional state), provide:
+
+**Primary Detected Emotion(s):** 1-3 emotions (e.g., anxious, frustrated, hopeful, guarded, overwhelmed)
+
+**Voice Indicators:** 2-3 brief observable vocal cues based on the language patterns that suggest emotional state:
+- Look for signs of tension, uncertainty, or intensity in word choice
+- Identify emotional tone shifts through punctuation patterns, repetition, or emphasis
+- Note pacing indicators (long sentences = rushed/anxious, fragments = hesitation)
+
+**Emotional Meaning Summary:** 2 sentences max
+- A calm, grounded interpretation of what the emotions may be signaling internally
+- Example: "It sounds like this situation is important to you, and it may be causing stress because you feel unheard."
+
+**Context & Situation Understanding:** 1-3 sentences
+- Summarize the core situation neutrally and intelligently
+- No judgment, just clarity
+
+**Supportive Reflection Back (Empathic):** 2-3 sentences
+- A gentle, validating reflection you would give a close friend
+- Acknowledge their emotional state
+- Normalize the feeling without minimizing it
+- Maintain grounding, softness, and emotional safety
+
+Return valid JSON only with this structure:
+{
+  "primaryEmotions": "string (1-3 emotions detected)",
+  "voiceIndicators": ["string", "string"] (2-3 vocal/linguistic cues),
+  "emotionalMeaningSummary": "string (2 sentences)",
+  "contextUnderstanding": "string (1-3 sentences)",
+  "supportiveReflection": "string (2-3 sentences)"
+}`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Transcribed voice message: "${transcribedText}"
+
+Analyze both the content and the emotional patterns in this voice recording. Return valid JSON only.`,
+        },
+      ],
+      max_completion_tokens: 1200,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      throw new Error("No response from API");
+    }
+
+    const parsed = JSON.parse(responseText);
+
+    return {
+      primaryEmotions:
+        parsed.primaryEmotions || "Mixed emotions",
+      voiceIndicators: Array.isArray(parsed.voiceIndicators)
+        ? parsed.voiceIndicators
+        : [
+            "Unable to fully analyze vocal patterns at this time",
+            "Your message suggests emotional processing",
+          ],
+      emotionalMeaningSummary:
+        parsed.emotionalMeaningSummary ||
+        "It sounds like this situation is affecting you emotionally. Your feelings are valid.",
+      contextUnderstanding:
+        parsed.contextUnderstanding ||
+        "You are navigating a challenging communication dynamic.",
+      supportiveReflection:
+        parsed.supportiveReflection ||
+        "I hear you. This sounds like it has been weighing on you, and that makes sense given what you are experiencing. Your feelings matter, and it is okay to feel this way.",
+    };
+  } catch (error) {
+    console.error("Error analyzing voice emotion:", error);
+
+    return {
+      primaryEmotions: "Concerned, Processing",
+      voiceIndicators: [
+        "Your message suggests you are working through something emotionally complex",
+        "There may be underlying tension or uncertainty in this situation",
+      ],
+      emotionalMeaningSummary:
+        "It sounds like this situation is important to you and may be causing some emotional stress as you process it.",
+      contextUnderstanding:
+        "You are dealing with a communication situation that has emotional weight and requires clarity.",
+      supportiveReflection:
+        "I can tell this has been on your mind. It is completely valid to feel uncertain or concerned when navigating relationship dynamics. You are not alone in this, and seeking clarity is a healthy step.",
+    };
+  }
+}
+
+/**
  * Modify the length of a suggested reply while preserving tone and intent
  * @param originalReply The original reply text
  * @param action Whether to shorten or lengthen

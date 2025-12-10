@@ -199,6 +199,7 @@ export function InputScreen({ navigation }: Props) {
           role: "user",
           content: transcription,
           timestamp: Date.now(),
+          isVoiceMessage: true, // Mark as voice message for emotion analysis
         });
 
         // Navigate to chat screen for AI response
