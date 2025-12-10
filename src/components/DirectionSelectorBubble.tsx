@@ -87,9 +87,9 @@ export function DirectionSelectorBubble({
       <View
         className="rounded-3xl px-6 py-6 mb-3"
         style={{
-          backgroundColor: "#1A1A1C",
-          borderWidth: 1.5,
-          borderColor: "#9CA3AF30",
+          backgroundColor: "rgba(20, 20, 24, 0.6)",
+          borderWidth: 1,
+          borderColor: "rgba(156, 163, 175, 0.1)",
           shadowColor: "#9CA3AF",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.08,
