@@ -52,8 +52,9 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 16,
-            marginBottom: 12,
+            paddingVertical: 18,
+            paddingHorizontal: 16,
+            marginBottom: 14,
             borderWidth: 1,
             borderColor: "#B8A3E820",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -67,20 +68,20 @@ export function ContextOrDirectionChoice({
                 height: 44,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 14,
+                marginRight: 16,
               }}
             >
               <Ionicons name="add-circle-outline" size={24} color="#B8A3E8" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 8 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 6,
+                  marginBottom: 8,
                   letterSpacing: 0.2,
                 }}
               >
@@ -110,8 +111,9 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 16,
-            marginBottom: 12,
+            paddingVertical: 18,
+            paddingHorizontal: 16,
+            marginBottom: 14,
             borderWidth: 1,
             borderColor: "#4FFFD720",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -125,20 +127,20 @@ export function ContextOrDirectionChoice({
                 height: 44,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 14,
+                marginRight: 16,
               }}
             >
               <Ionicons name="chatbox-ellipses-outline" size={24} color="#4FFFD7" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 8 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 6,
+                  marginBottom: 8,
                   letterSpacing: 0.2,
                 }}
               >
@@ -171,7 +173,8 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 16,
+            paddingVertical: 18,
+            paddingHorizontal: 16,
             borderWidth: 1,
             borderColor: "#4C9EFF20",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -185,20 +188,20 @@ export function ContextOrDirectionChoice({
                 height: 44,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 14,
+                marginRight: 16,
               }}
             >
               <Ionicons name="compass-outline" size={24} color="#4C9EFF" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1, paddingRight: 8 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 6,
+                  marginBottom: 8,
                   letterSpacing: 0.2,
                 }}
               >
