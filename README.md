@@ -163,13 +163,16 @@ When you send a message about a relationship situation, Klarity responds with a 
    - Sets the tone for suggested responses
 
 10. **Suggested Reply Cards**
-   - 2-3 contextual response options appear as card-style bubbles
+   - 1 contextual response option appears as card-style bubble
    - Each includes:
      - Message text in bubble format with color-matched glow
      - "Use this reply" button beneath (glows in intention color)
+     - "Use different reply" button (outlined style) - generates alternative suggestion
      - Smooth lift animation on tap
    - Replies are tailored to your chosen direction AND tone
    - One tap inserts reply into input bar
+   - Tap "Use different reply" to generate another suggestion
+   - Shorten/Lengthen options hidden until you tap the reply bubble (smooth fade-in animation)
 
 11. **Emotional Face Scan Prompt** ✨ NEW
    - Appears after tone modulation card in the chat flow
@@ -934,7 +937,9 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Organic animation with randomized timing**
 ✅ **Processing overlay with status messages**
 ✅ **Tone Modulation Feature** - "Need a Different Approach?" card with Direct/Gentle/Neutral options
-✅ **Modulated Replies** - Context-aware replies with supportive guidance notes
+✅ **Modulated Replies** - 1 context-aware reply with supportive guidance notes
+✅ **Use Different Reply** - Generate alternative suggestions for both standard and modulated replies
+✅ **Expandable Reply Controls** - Shorten/Lengthen options appear when tapping reply bubble
 ✅ **Add More Context** - Inline text/voice input for enriching analysis
 ✅ **Voice Context Transcription** - Whisper API integration for spoken context
 ✅ **Context Re-analysis** - Updates guidance with enriched information

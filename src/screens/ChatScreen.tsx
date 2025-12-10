@@ -920,6 +920,51 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
+  const handleGenerateDifferentModulatedReply = async (tone: "direct" | "gentle" | "neutral") => {
+    if (!currentIntention || !currentAnalysis || !currentUserMessage) {
+      console.log("[handleGenerateDifferentModulatedReply] Missing required data");
+      return;
+    }
+
+    console.log("[handleGenerateDifferentModulatedReply] Generating new modulated reply with tone:", tone);
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_modulated_different",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Generate a new modulated reply with the same tone
+      const newModulatedReplies = await generateModulatedReplies(
+        currentUserMessage,
+        currentIntention,
+        currentAnalysis,
+        tone
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add the new modulated reply as a separate message below
+      const newModulatedMsg: ModulatedRepliesCardMessage = {
+        id: Date.now().toString() + "_newmodulated",
+        role: "modulated-replies-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: newModulatedReplies,
+        tone,
+      };
+      addMessageToActiveLoop(newModulatedMsg);
+    } catch (error) {
+      console.error("[handleGenerateDifferentModulatedReply] Error:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+    }
+  };
+
   const handleEmotionFollowUp = async (action: string) => {
     // Handle micro-flow actions from emotion scan
     switch (action) {
@@ -1198,6 +1243,7 @@ export function ChatScreen({ navigation }: Props) {
           onSelectReply={handleSelectReply}
           selectedIntention={currentIntention || undefined}
           onModifyLength={handleModifyReplyLength}
+          onGenerateDifferent={() => handleGenerateDifferentModulatedReply(msg.tone)}
         />
       );
     }

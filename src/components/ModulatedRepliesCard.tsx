@@ -15,6 +15,7 @@ interface ModulatedRepliesCardProps {
   onSelectReply: (reply: string) => void;
   selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => void;
+  onGenerateDifferent?: () => void;
 }
 
 export function ModulatedRepliesCard({
@@ -23,6 +24,7 @@ export function ModulatedRepliesCard({
   onSelectReply,
   selectedIntention,
   onModifyLength,
+  onGenerateDifferent,
 }: ModulatedRepliesCardProps) {
   // Get color based on relationship direction
   const getIntentionColor = () => {
@@ -247,6 +249,8 @@ export function ModulatedRepliesCard({
                 <View
                   style={{
                     marginTop: 8,
+                    flexDirection: "row",
+                    gap: 8,
                   }}
                 >
                   <Pressable
@@ -274,6 +278,33 @@ export function ModulatedRepliesCard({
                       Use this reply
                     </Text>
                   </Pressable>
+
+                  {/* Use different reply button */}
+                  {onGenerateDifferent && (
+                    <Pressable
+                      onPress={onGenerateDifferent}
+                      className="active:opacity-70"
+                      style={{
+                        backgroundColor: "transparent",
+                        borderWidth: 1.5,
+                        borderColor: intentionColor,
+                        borderRadius: 20,
+                        paddingHorizontal: 20,
+                        paddingVertical: 10,
+                        alignSelf: "flex-start",
+                      }}
+                    >
+                      <Text
+                        className="font-semibold text-sm"
+                        style={{
+                          fontFamily: "SF Pro Display",
+                          color: intentionColor,
+                        }}
+                      >
+                        Use different reply
+                      </Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             </View>

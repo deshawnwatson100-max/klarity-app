@@ -686,7 +686,7 @@ export async function generateModulatedReplies(
 
   const systemPrompt = `You are Klarity AI. ${toneContext[modulationTone]}
 
-Generate 2-3 suggested replies that fit the ${modulationTone} tone and the user's intention (${intention}).
+Generate 1 suggested reply that fits the ${modulationTone} tone and the user's intention (${intention}).
 
 For each reply, also provide a short, calm guidance note (1-2 sentences) that helps the user understand the perspective or potential outcome of this approach. The guidance should be:
 - Supportive and neutral, not fear-based
@@ -731,7 +731,7 @@ Respond with valid JSON only containing:
       throw new Error("Invalid replies structure");
     }
 
-    return replies.slice(0, 3).map((item: any, index: number) => ({
+    return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
       text: item.text || "I hear you. Let me think about that.",
       guidanceNote:
@@ -752,12 +752,6 @@ Respond with valid JSON only containing:
           guidanceNote:
             "This approach brings clarity quickly but may feel confrontational if they are feeling defensive.",
         },
-        {
-          id: "2",
-          text: "I do not think this is working for me. Can we talk about what needs to change?",
-          guidanceNote:
-            "Direct communication sets clear boundaries, but may create tension if not received well.",
-        },
       ],
       gentle: [
         {
@@ -766,12 +760,6 @@ Respond with valid JSON only containing:
           guidanceNote:
             "This approach reduces tension and feels safer, but your boundary may not be as clear.",
         },
-        {
-          id: "2",
-          text: "I appreciate you sharing that with me. I am feeling a little unsure about it — can we talk about how we move forward?",
-          guidanceNote:
-            "Gentle phrasing prioritizes emotional safety, but may soften the urgency of your needs.",
-        },
       ],
       neutral: [
         {
@@ -779,12 +767,6 @@ Respond with valid JSON only containing:
           text: "I see what you mean. Let me think about this and get back to you.",
           guidanceNote:
             "Neutral keeps things simple and calm, but may feel less emotionally engaged.",
-        },
-        {
-          id: "2",
-          text: "Got it. I will consider what you said and we can talk more later.",
-          guidanceNote:
-            "This approach avoids escalation but may not address the emotional weight of the situation.",
         },
       ],
     };
