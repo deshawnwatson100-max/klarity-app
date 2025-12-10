@@ -53,7 +53,7 @@ export function RootNavigator() {
         component={InputScreen}
         options={{
           gestureEnabled: false,
-          cardStyle: { backgroundColor: "black" },
+          cardStyle: { backgroundColor: "#050608" }, // Match the gradient background
           // Add parallax effect to InputScreen when ChatScreen slides over it
           cardStyleInterpolator: ({ current, next, layouts }) => {
             return {
@@ -132,7 +132,7 @@ export function RootNavigator() {
       <Stack.Screen name="CalendarScreen" component={CalendarScreen}
         options={{
           gestureEnabled: false,
-          cardStyle: { backgroundColor: "transparent" },
+          cardStyle: { backgroundColor: "#050608" }, // Match the gradient background
           cardStyleInterpolator: ({ current, layouts }) => {
             return {
               cardStyle: {
@@ -148,7 +148,7 @@ export function RootNavigator() {
               overlayStyle: {
                 opacity: current.progress.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, 0.5], // Dark overlay on InputScreen
+                  outputRange: [0, 0], // No overlay - seamless transition
                 }),
               },
             };
