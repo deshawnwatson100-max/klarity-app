@@ -391,48 +391,46 @@ export function CalendarScreen({ navigation }: Props) {
       </View>
 
       {/* Legend */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="px-4 mb-4"
-        contentContainerClassName="gap-3"
-      >
-        {Object.entries(INTENTIONS).map(([key, config]) => (
-          <View
-            key={key}
-            className="flex-row items-center rounded-full px-3 py-2"
-            style={{
-              backgroundColor: "rgba(20, 20, 24, 0.4)",
-              borderWidth: 0.5,
-              borderColor: "rgba(156, 163, 175, 0.1)",
-            }}
-          >
+      <View className="px-4 mb-4">
+        <View className="flex-row flex-wrap gap-2 justify-center">
+          {Object.entries(INTENTIONS).map(([key, config]) => (
             <View
+              key={key}
+              className="flex-row items-center rounded-full px-3 py-2"
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                shadowColor: config.color,
-                shadowOpacity: 0.8,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 0 },
+                backgroundColor: "rgba(20, 20, 24, 0.4)",
+                borderWidth: 0.5,
+                borderColor: "rgba(156, 163, 175, 0.1)",
+                minWidth: "22%",
               }}
             >
-              <LinearGradient
-                colors={[config.color, config.color + "CC", config.color + "88"]}
+              <View
                 style={{
                   width: 6,
                   height: 6,
                   borderRadius: 3,
+                  shadowColor: config.color,
+                  shadowOpacity: 0.8,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 0 },
                 }}
-              />
+              >
+                <LinearGradient
+                  colors={[config.color, config.color + "CC", config.color + "88"]}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                  }}
+                />
+              </View>
+              <Text className="text-xs font-medium ml-2" style={{ color: "#E5E7EB" }}>
+                {config.label}
+              </Text>
             </View>
-            <Text className="text-xs font-medium ml-2" style={{ color: "#E5E7EB" }}>
-              {config.label}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </View>
+      </View>
 
       {/* Calendar Grid */}
       <ScrollView
