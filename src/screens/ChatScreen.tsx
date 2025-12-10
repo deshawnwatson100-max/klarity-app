@@ -996,12 +996,73 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   const handleGenerateDifferentReply = async (currentMessageId: string) => {
-    if (!currentIntention || !currentAnalysis || !currentUserMessage) {
-      console.log("[handleGenerateDifferentReply] Missing required data");
+    // Find the current reply card message
+    const currentReplyCard = messages.find(
+      (m) => m.id === currentMessageId
+    ) as SuggestedReplyCardMessage | undefined;
+
+    // Check if this is an instant reply (maintain intention) without full analysis
+    const isInstantReply = currentReplyCard?.intention === "maintain" && !currentIntention;
+
+    if (isInstantReply) {
+      // Handle instant reply regeneration
+      console.log("[handleGenerateDifferentReply] Regenerating instant reply");
+
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing_different",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      insertMessageAfter(currentMessageId, typingMsg);
+
+      try {
+        const conversationHistory = messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+
+        const response = await generateChatResponse(
+          "Based on the conversation, provide a single thoughtful, balanced reply suggestion that the user could send. Keep it natural, empathetic, and appropriate for the situation discussed. Provide a DIFFERENT response than before, using alternative wording or approach. Just provide the reply text, nothing else.",
+          conversationHistory
+        );
+
+        // Remove typing indicator
+        removeMessageFromActiveLoop(typingMsg.id);
+
+        // Add the new reply as a separate message below the current one
+        const newReplyMsg: SuggestedReplyCardMessage = {
+          id: Date.now().toString() + "_newreply",
+          role: "suggested-reply-card",
+          content: "",
+          timestamp: Date.now(),
+          intention: "maintain",
+          replies: [
+            {
+              id: "instant_" + Date.now(),
+              text: response.trim(),
+              guidanceNote: "An alternative balanced response based on your conversation context",
+            },
+          ],
+        };
+        insertMessageAfter(currentMessageId, newReplyMsg);
+      } catch (error) {
+        console.error("[handleGenerateDifferentReply] Error generating instant reply:", error);
+        removeMessageFromActiveLoop(typingMsg.id);
+      }
       return;
     }
 
-    console.log("[handleGenerateDifferentReply] Generating new reply");
+    // Original flow for intention-based replies
+    if (!currentIntention || !currentAnalysis || !currentUserMessage) {
+      console.log("[handleGenerateDifferentReply] Missing required data for intention-based reply");
+      return;
+    }
+
+    console.log("[handleGenerateDifferentReply] Generating new intention-based reply");
 
     // Show typing indicator
     const typingMsg: TypingMessage = {
