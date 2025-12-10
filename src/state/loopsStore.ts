@@ -40,6 +40,7 @@ interface LoopsState {
 
   // Actions - Message Management
   addMessageToActiveLoop: (message: ChatMessage) => void;
+  insertMessageAfter: (afterMessageId: string, message: ChatMessage) => void;
   removeMessageFromActiveLoop: (messageId: string) => void;
   updateMessageInActiveLoop: (messageId: string, updatedMessage: ChatMessage) => void;
   setActiveLoopMessages: (messages: ChatMessage[]) => void;
@@ -157,6 +158,55 @@ export const useLoopsStore = create<LoopsState>()(
                     messages: [...loop.messages, message],
                     updatedAt: new Date().toISOString(),
                     emotionalClarity,
+                  }
+                : loop
+            ),
+          };
+        });
+      },
+
+      insertMessageAfter: (afterMessageId: string, message: ChatMessage) => {
+        set((state) => {
+          const activeLoop = state.loops.find(
+            (loop) => loop.id === state.activeLoopId
+          );
+
+          if (!activeLoop) return state;
+
+          // Find the index of the message to insert after
+          const afterIndex = activeLoop.messages.findIndex(
+            (msg) => msg.id === afterMessageId
+          );
+
+          if (afterIndex === -1) {
+            // If message not found, append to end
+            return {
+              loops: state.loops.map((loop) =>
+                loop.id === state.activeLoopId
+                  ? {
+                      ...loop,
+                      messages: [...loop.messages, message],
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : loop
+              ),
+            };
+          }
+
+          // Insert the message right after the found message
+          const newMessages = [
+            ...activeLoop.messages.slice(0, afterIndex + 1),
+            message,
+            ...activeLoop.messages.slice(afterIndex + 1),
+          ];
+
+          return {
+            loops: state.loops.map((loop) =>
+              loop.id === state.activeLoopId
+                ? {
+                    ...loop,
+                    messages: newMessages,
+                    updatedAt: new Date().toISOString(),
                   }
                 : loop
             ),

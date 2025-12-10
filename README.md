@@ -171,7 +171,7 @@ When you send a message about a relationship situation, Klarity responds with a 
      - Smooth lift animation on tap
    - Replies are tailored to your chosen direction AND tone
    - One tap inserts reply into input bar
-   - Tap "Use different reply" to generate another suggestion
+   - Tap "Use different reply" to generate another suggestion that appears directly below in the chat
    - Shorten/Lengthen options hidden until you tap the reply bubble (smooth fade-in animation)
 
 11. **Emotional Face Scan Prompt** ✨ NEW

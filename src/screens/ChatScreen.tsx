@@ -115,6 +115,7 @@ export function ChatScreen({ navigation }: Props) {
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const insertMessageAfter = useLoopsStore((s) => s.insertMessageAfter);
   const removeMessageFromActiveLoop = useLoopsStore((s) => s.removeMessageFromActiveLoop);
   const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
@@ -876,7 +877,7 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
-  const handleGenerateDifferentReply = async () => {
+  const handleGenerateDifferentReply = async (currentMessageId: string) => {
     if (!currentIntention || !currentAnalysis || !currentUserMessage) {
       console.log("[handleGenerateDifferentReply] Missing required data");
       return;
@@ -891,7 +892,7 @@ export function ChatScreen({ navigation }: Props) {
       content: "",
       timestamp: Date.now(),
     };
-    addMessageToActiveLoop(typingMsg);
+    insertMessageAfter(currentMessageId, typingMsg);
 
     try {
       // Generate a new reply
@@ -904,7 +905,7 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
-      // Add the new reply as a separate message below
+      // Add the new reply as a separate message below the current one
       const newReplyMsg: SuggestedReplyCardMessage = {
         id: Date.now().toString() + "_newreply",
         role: "suggested-reply-card",
@@ -913,14 +914,14 @@ export function ChatScreen({ navigation }: Props) {
         replies: newReplies,
         intention: currentIntention,
       };
-      addMessageToActiveLoop(newReplyMsg);
+      insertMessageAfter(currentMessageId, newReplyMsg);
     } catch (error) {
       console.error("[handleGenerateDifferentReply] Error:", error);
       removeMessageFromActiveLoop(typingMsg.id);
     }
   };
 
-  const handleGenerateDifferentModulatedReply = async (tone: "direct" | "gentle" | "neutral") => {
+  const handleGenerateDifferentModulatedReply = async (currentMessageId: string, tone: "direct" | "gentle" | "neutral") => {
     if (!currentIntention || !currentAnalysis || !currentUserMessage) {
       console.log("[handleGenerateDifferentModulatedReply] Missing required data");
       return;
@@ -935,7 +936,7 @@ export function ChatScreen({ navigation }: Props) {
       content: "",
       timestamp: Date.now(),
     };
-    addMessageToActiveLoop(typingMsg);
+    insertMessageAfter(currentMessageId, typingMsg);
 
     try {
       // Generate a new modulated reply with the same tone
@@ -949,7 +950,7 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
-      // Add the new modulated reply as a separate message below
+      // Add the new modulated reply as a separate message below the current one
       const newModulatedMsg: ModulatedRepliesCardMessage = {
         id: Date.now().toString() + "_newmodulated",
         role: "modulated-replies-card",
@@ -958,7 +959,7 @@ export function ChatScreen({ navigation }: Props) {
         replies: newModulatedReplies,
         tone,
       };
-      addMessageToActiveLoop(newModulatedMsg);
+      insertMessageAfter(currentMessageId, newModulatedMsg);
     } catch (error) {
       console.error("[handleGenerateDifferentModulatedReply] Error:", error);
       removeMessageFromActiveLoop(typingMsg.id);
@@ -1218,7 +1219,7 @@ export function ChatScreen({ navigation }: Props) {
           intention={msg.intention}
           onSelectReply={handleSelectReply}
           onModifyLength={handleModifyReplyLength}
-          onGenerateDifferent={handleGenerateDifferentReply}
+          onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
         />
       );
     }
@@ -1243,7 +1244,7 @@ export function ChatScreen({ navigation }: Props) {
           onSelectReply={handleSelectReply}
           selectedIntention={currentIntention || undefined}
           onModifyLength={handleModifyReplyLength}
-          onGenerateDifferent={() => handleGenerateDifferentModulatedReply(msg.tone)}
+          onGenerateDifferent={() => handleGenerateDifferentModulatedReply(message.id, msg.tone)}
         />
       );
     }
