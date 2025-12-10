@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -89,6 +90,7 @@ export function ChatScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const hasProcessedInitialMessage = useRef(false);
+  const processedMessageIds = useRef<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -129,19 +131,26 @@ export function ChatScreen({ navigation }: Props) {
     opacity.value = 1;
   }, []);
 
-  // Process the first message when screen loads
-  useEffect(() => {
-    if (
-      messages.length === 1 &&
-      !isProcessing &&
-      !isLoading &&
-      messages[0].role === "user" &&
-      !hasProcessedInitialMessage.current
-    ) {
-      hasProcessedInitialMessage.current = true;
-      processUserMessage(messages[0]);
-    }
-  }, [messages.length]);
+  // Reset processing refs when navigating to this screen
+  useFocusEffect(
+    React.useCallback(() => {
+      // When screen comes into focus, check if we need to process the initial message
+      const activeLoop = getActiveLoop();
+      if (activeLoop && activeLoop.messages.length === 1 && activeLoop.messages[0].role === "user") {
+        const firstMessage = activeLoop.messages[0];
+        if (!processedMessageIds.current.has(firstMessage.id)) {
+          console.log("[ChatScreen] Processing initial message on focus:", firstMessage.id);
+          processedMessageIds.current.add(firstMessage.id);
+          processUserMessage(firstMessage);
+        }
+      }
+
+      return () => {
+        // Cleanup when screen loses focus
+        console.log("[ChatScreen] Screen lost focus");
+      };
+    }, [])
+  );
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -151,6 +160,8 @@ export function ChatScreen({ navigation }: Props) {
   }, [messages.length]);
 
   const processUserMessage = async (userMessage: ChatMessage) => {
+    console.log("[ChatScreen] processUserMessage called for:", userMessage.id, "isVoice:", userMessage.isVoiceMessage);
+
     setIsProcessing(true);
     setIsLoading(true);
     setCurrentUserMessage(userMessage.content);
@@ -158,6 +169,7 @@ export function ChatScreen({ navigation }: Props) {
     try {
       // Check if this is a voice message - trigger voice emotion analysis
       if (userMessage.isVoiceMessage) {
+        console.log("[ChatScreen] Processing voice message");
         // Show typing indicator while analyzing
         const typingMsg: TypingMessage = {
           id: Date.now().toString() + "_typing_voice",
@@ -169,6 +181,7 @@ export function ChatScreen({ navigation }: Props) {
 
         // Analyze voice emotion
         const voiceEmotionAnalysis = await analyzeVoiceEmotion(userMessage.content);
+        console.log("[ChatScreen] Voice emotion analysis complete");
 
         // Remove typing indicator
         removeMessageFromActiveLoop(typingMsg.id);
