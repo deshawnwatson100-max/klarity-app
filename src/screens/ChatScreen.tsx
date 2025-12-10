@@ -532,14 +532,18 @@ export function ChatScreen({ navigation }: Props) {
   ) => {
     if (!currentAnalysis || !currentIntention) return;
 
-    // Show typing indicator
+    // Find the tone modulation card message
+    const toneModCard = messages.find((m) => m.role === "tone-modulation-card");
+    if (!toneModCard) return;
+
+    // Show typing indicator directly after tone modulation card
     const typingMsg: TypingMessage = {
       id: Date.now().toString() + "_typing_modulation",
       role: "typing",
       content: "",
       timestamp: Date.now(),
     };
-    addMessageToActiveLoop(typingMsg);
+    insertMessageAfter(toneModCard.id, typingMsg);
 
     try {
       // Generate modulated replies with guidance notes
@@ -553,7 +557,7 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
-      // Add modulated replies card
+      // Add modulated replies card directly after tone modulation card
       const modulatedMsg: ModulatedRepliesCardMessage = {
         id: Date.now().toString() + "_modulated",
         role: "modulated-replies-card",
@@ -562,7 +566,7 @@ export function ChatScreen({ navigation }: Props) {
         replies: modulatedReplies,
         tone,
       };
-      addMessageToActiveLoop(modulatedMsg);
+      insertMessageAfter(toneModCard.id, modulatedMsg);
     } catch (error) {
       console.error("Error generating modulated replies:", error);
       removeMessageFromActiveLoop(typingMsg.id);
