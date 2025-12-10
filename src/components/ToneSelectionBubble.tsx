@@ -120,9 +120,9 @@ export function ToneSelectionBubble({
                   alignItems: "center",
                   gap: 8,
                   shadowColor: tone.color,
-                  shadowOffset: { width: 0, height: isSelected ? 2 : 1 },
-                  shadowOpacity: isSelected ? 0.2 : 0.1,
-                  shadowRadius: isSelected ? 8 : 4,
+                  shadowOffset: { width: 0, height: isSelected ? 1 : 0 },
+                  shadowOpacity: isSelected ? 0.08 : 0,
+                  shadowRadius: isSelected ? 4 : 0,
                   minWidth: "45%",
                   justifyContent: "center",
                 }}
