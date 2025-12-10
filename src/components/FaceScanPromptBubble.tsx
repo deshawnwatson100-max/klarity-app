@@ -49,11 +49,16 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
         className="active:opacity-90"
       >
         <View
-          className="rounded-3xl px-5 py-4 flex-row items-center gap-3"
           style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
             backgroundColor: "rgba(125, 211, 192, 0.08)",
             borderWidth: 1,
             borderColor: "rgba(125, 211, 192, 0.2)",
+            borderRadius: 24,
+            paddingHorizontal: 20,
+            paddingVertical: 16,
             shadowColor: "#7DD3C0",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
@@ -62,26 +67,29 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
           }}
         >
           <View
-            className="w-9 h-9 rounded-full items-center justify-center"
             style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
               backgroundColor: "rgba(125, 211, 192, 0.15)",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <Ionicons name="scan-outline" size={20} color="#7DD3C0" />
           </View>
-          <View className="flex-1">
-            <Text
-              style={{
-                fontFamily: "SF Pro Display",
-                color: "#E5E7EB",
-                fontWeight: "500",
-                fontSize: 14,
-                lineHeight: 20,
-              }}
-            >
-              Scan your face for deeper emotional insight?
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontFamily: "SF Pro Display",
+              color: "#E5E7EB",
+              fontWeight: "500",
+              fontSize: 14,
+              lineHeight: 20,
+              flex: 1,
+            }}
+          >
+            Scan your face for deeper emotional insight?
+          </Text>
         </View>
       </Pressable>
     </Animated.View>
