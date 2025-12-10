@@ -80,7 +80,7 @@ export function ContextOrDirectionChoice({
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 4,
+                  marginBottom: 6,
                   letterSpacing: 0.2,
                 }}
               >
@@ -90,7 +90,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 19,
+                  lineHeight: 20,
                   letterSpacing: 0.1,
                 }}
               >
@@ -138,7 +138,7 @@ export function ContextOrDirectionChoice({
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 4,
+                  marginBottom: 6,
                   letterSpacing: 0.2,
                 }}
               >
@@ -148,7 +148,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 19,
+                  lineHeight: 20,
                   letterSpacing: 0.1,
                 }}
               >
@@ -198,7 +198,7 @@ export function ContextOrDirectionChoice({
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 4,
+                  marginBottom: 6,
                   letterSpacing: 0.2,
                 }}
               >
@@ -208,7 +208,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 19,
+                  lineHeight: 20,
                   letterSpacing: 0.1,
                 }}
               >
