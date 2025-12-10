@@ -20,8 +20,10 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 import { useCalendarStore } from "../state/calendarStore";
-import { INTENTIONS } from "../types/calendar";
+import { INTENTIONS, EVENT_TYPES } from "../types/calendar";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { DayDetailDrawer } from "../components/DayDetailDrawer";
+import { ReflectionModal } from "../components/ReflectionModal";
 
 type Props = StackScreenProps<RootStackParamList, "CalendarScreen">;
 
@@ -44,6 +46,14 @@ const MONTHS = [
 export function CalendarScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedEntries, setSelectedEntries] = useState<any[]>([]);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [reflectionModalVisible, setReflectionModalVisible] = useState(false);
+  const [selectedEntryForReflection, setSelectedEntryForReflection] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // Shared values for swipe transition
   const translateX = useSharedValue(0);
@@ -51,6 +61,7 @@ export function CalendarScreen({ navigation }: Props) {
   const opacity = useSharedValue(1);
 
   const getEntriesForDate = useCalendarStore((s) => s.getEntriesForDate);
+  const updateEntry = useCalendarStore((s) => s.updateEntry);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -86,10 +97,43 @@ export function CalendarScreen({ navigation }: Props) {
     const entries = getEntriesForDate(dateStr);
 
     if (entries.length > 0) {
-      navigation.navigate("LogDetailScreen", {
-        date: dateStr,
-        entryIds: entries.map((e) => e.id),
+      setSelectedDate(dateStr);
+      setSelectedEntries(entries);
+      setDrawerVisible(true);
+    }
+  };
+
+  const handleOpenLoop = (loopId: string) => {
+    // Navigate to ChatScreen with the specific loop
+    setDrawerVisible(false);
+    // You would implement navigation to the specific loop here
+    console.log("Opening loop:", loopId);
+  };
+
+  const handleAddReflection = (entryId: string) => {
+    const entry = selectedEntries.find((e) => e.id === entryId);
+    if (entry) {
+      setSelectedEntryForReflection({
+        id: entryId,
+        title: entry.title || entry.quickSummary,
       });
+      setReflectionModalVisible(true);
+    }
+  };
+
+  const handleSaveReflection = (clarityScore: number, reflectionNotes: string) => {
+    if (selectedEntryForReflection) {
+      updateEntry(selectedEntryForReflection.id, {
+        clarityScore,
+        reflectionNotes,
+        status: "completed",
+      });
+      setReflectionModalVisible(false);
+      setSelectedEntryForReflection(null);
+      // Refresh the entries
+      if (selectedDate) {
+        setSelectedEntries(getEntriesForDate(selectedDate));
+      }
     }
   };
 
@@ -152,27 +196,30 @@ export function CalendarScreen({ navigation }: Props) {
               {day}
             </Text>
 
-            {/* Intention indicators */}
+            {/* Intention + Event Type indicators */}
             {hasEntries && (
-              <View className="flex-row gap-1 mt-1">
-                {intentionColors.slice(0, 3).map((color, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      width: 6,
-                      height: 6,
-                      backgroundColor: color,
-                      shadowColor: color,
-                      shadowOpacity: 0.8,
-                      shadowRadius: 4,
-                      elevation: 5,
-                    }}
-                    className="rounded-full"
-                  />
-                ))}
-                {intentionColors.length > 3 && (
-                  <Text className="text-[10px]" style={{ color: "#9CA3AF" }}>
-                    +{intentionColors.length - 3}
+              <View className="flex-row gap-0.5 mt-1 flex-wrap justify-center">
+                {/* Show event type dots (unique types only) */}
+                {Array.from(new Set(entries.map((e) => e.eventType)))
+                  .slice(0, 3)
+                  .map((eventType, index) => (
+                    <View
+                      key={`event-${index}`}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        backgroundColor: EVENT_TYPES[eventType].color,
+                        shadowColor: EVENT_TYPES[eventType].glowColor,
+                        shadowOpacity: 0.8,
+                        shadowRadius: 4,
+                        elevation: 5,
+                      }}
+                      className="rounded-full"
+                    />
+                  ))}
+                {entries.length > 3 && (
+                  <Text className="text-[10px] ml-0.5" style={{ color: "#9CA3AF" }}>
+                    +{entries.length - 3}
                   </Text>
                 )}
               </View>
@@ -357,6 +404,27 @@ export function CalendarScreen({ navigation }: Props) {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Day Detail Drawer */}
+      <DayDetailDrawer
+        visible={drawerVisible}
+        date={selectedDate || ""}
+        entries={selectedEntries}
+        onClose={() => setDrawerVisible(false)}
+        onOpenLoop={handleOpenLoop}
+        onAddReflection={handleAddReflection}
+      />
+
+      {/* Reflection Modal */}
+      <ReflectionModal
+        visible={reflectionModalVisible}
+        entryTitle={selectedEntryForReflection?.title || ""}
+        onClose={() => {
+          setReflectionModalVisible(false);
+          setSelectedEntryForReflection(null);
+        }}
+        onSave={handleSaveReflection}
+      />
     </View>
       </Animated.View>
     </GestureDetector>

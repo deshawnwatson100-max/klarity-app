@@ -394,23 +394,95 @@ Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns inc
 
 The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
-### NEW: Emotional Log Calendar 🎉🗓️
-Track your emotional journey over time with a beautiful calendar interface.
+### NEW: Enhanced Emotional Log Calendar 🎉🗓️✨
+Track your emotional journey over time with conversation tracking, reflections, and pattern insights.
 
-#### Calendar Home Screen (Monthly View)
-A full-screen monthly calendar showing your emotional timeline:
+#### Calendar Home Screen (Monthly View with Event Types)
+A full-screen monthly calendar showing your emotional timeline with **glowing event type indicators**:
 - **Home button** (top-right) - Quick return to welcome screen
 - **Dark luxury design** with deep black background (#0A0A0A)
-- **Color-coded intention dots** on dates with entries
-  - 🔵 **Blue** - Improve (working to improve the relationship)
-  - 🟠 **Orange** - Distance (creating healthy distance)
-  - 🟡 **Yellow** - Maintain (maintaining current boundaries)
-  - 🟣 **Purple** - Gain Clarity (understanding the situation better)
-- **Glowing neon indicators** with soft shadows on logged dates
+- **Event type dots** beneath dates (glowing with shadows):
+  - 🟣 **Purple** - Active conversation loop
+  - 🟡 **Gold** - Scheduled high-stakes talk
+  - 🔵 **Blue** - Reflection logged
+  - 🟠 **Red-Orange** - Emotional spike day
 - **Month navigation** with arrow buttons
 - **Legend** showing all intention types
-- **Multiple entries per day** shown with stacked color dots
-- Tap any date to view full log details
+- **Multiple events per day** - shows unique event types (up to 3 dots + counter)
+- Tap any date to open **Day Detail Drawer**
+
+#### Day Detail Drawer (Slide-Up Bottom Sheet)
+When you tap a date with events, a beautiful drawer slides up showing:
+
+**Header**
+- Full formatted date (e.g., "Monday, December 10, 2025")
+- Event count indicator
+
+**Event Cards** (for each event that day)
+- **Event Type Badge** - Icon + label with colored glow
+  - Icons: chatbubbles (loop), calendar (scheduled), bulb (reflection), pulse (spike)
+- **Status Indicator** - Color-coded pill badge
+  - Green: "Complete"
+  - Amber: "In Progress"
+  - Gray: "Upcoming"
+- **Title** - Auto-generated from chat loop or user-provided
+- **Tag Chips** - family, romantic, work, etc. (rounded neutral badges)
+- **Intention Indicator** - Small colored dot + label + timestamp
+- **Action Buttons**:
+  - **"Open Chat Loop Thread"** (blue) - Navigate to linked conversation
+  - **"Add Reflection"** (purple) - Log reflection for past events
+  - **Reflection Status** (green) - Shows "Reflection Added" with clarity score
+
+**Interaction**
+- Smooth animations with staggered card entrance
+- Tap outside or swipe down to dismiss
+- Scrollable list for days with many events
+
+#### Reflection Logging Modal
+After a date passes, add reflections via the drawer's "Add Reflection" button:
+
+**Clarity Score Slider** (1-10)
+- Large color-coded display:
+  - 1-3: Red (Confused)
+  - 4-6: Amber (Unclear)
+  - 7-10: Green (Very Clear)
+- Smooth slider with purple accent
+- Labels: "Confused" ←→ "Very Clear"
+
+**Outcome Summary**
+- Multi-line text input (4 lines)
+- Placeholder: "e.g., We talked it through and agreed to check in weekly..."
+- Dark input with neutral borders
+
+**Actions**
+- Cancel button (neutral gray)
+- Save Reflection button (purple with glow)
+
+**Design**
+- Purple accent throughout
+- Modal with rounded corners and shadow
+- Smooth spring animations
+
+#### Event Metadata Tracking
+Each calendar entry now includes:
+- **Event Type** - active-loop, scheduled-talk, reflection, emotional-spike
+- **Status** - upcoming, in-progress, completed
+- **Title** - Auto from loop or custom
+- **Tags** - Custom categorization (family, romantic, work, etc.)
+- **Clarity Score** - 1-10 rating from reflection
+- **Reflection Notes** - Post-event summary
+- **Loop ID** - Direct link to conversation thread
+
+#### Calendar as Emotional Journal
+The enhanced calendar becomes a comprehensive journal tracking:
+- **Communication patterns** over time
+- **Emotional growth** through clarity scores
+- **Conversation outcomes** via reflections
+- **Relationship trajectories** with linked loops
+- **Pattern recognition** through event type visualization
+
+#### Design Aesthetic
+✨ **Dark luxury mood with glowing event indicators**
 
 #### Log Detail Screen
 When you tap a date, see everything from that day:
