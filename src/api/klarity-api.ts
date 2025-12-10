@@ -475,7 +475,7 @@ export async function generateIntentionBasedReplies(
 
   const systemPrompt = `You are Klarity AI. ${intentionContext[intention]}.
 
-Generate 2-3 suggested replies that fit this intention. Each reply should be 1-2 sentences, healthy, and emotionally regulated.
+Generate 1 suggested reply that fits this intention. The reply should be 1-2 sentences, healthy, and emotionally regulated.
 
 Respond with valid JSON only containing:
 - replies: array of { id: string, text: string }`;
@@ -510,7 +510,7 @@ Respond with valid JSON only containing:
       throw new Error("Invalid replies structure");
     }
 
-    return replies.slice(0, 3).map((item: any, index: number) => ({
+    return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
       text: item.text || "I hear you. Let me think about that.",
     }));
@@ -527,19 +527,11 @@ Respond with valid JSON only containing:
           id: "1",
           text: "I hear what you are saying. Can we talk about this calmly and work through it together?",
         },
-        {
-          id: "2",
-          text: "I want to understand your perspective better. Can you help me see where you are coming from?",
-        },
       ],
       distance: [
         {
           id: "1",
           text: "I hear you. I think I need a little space right now to process this.",
-        },
-        {
-          id: "2",
-          text: "I understand. Let me take some time to think about this, and we can talk later.",
         },
       ],
       maintain: [
@@ -547,19 +539,11 @@ Respond with valid JSON only containing:
           id: "1",
           text: "I see what you are saying. Let me think about that for a bit.",
         },
-        {
-          id: "2",
-          text: "Got it. I will keep that in mind as we move forward.",
-        },
       ],
       clarity: [
         {
           id: "1",
           text: "I am not sure I fully understand. Can you explain what you mean by that?",
-        },
-        {
-          id: "2",
-          text: "I feel confused about this. Can we talk through it so I can understand better?",
         },
       ],
     };
