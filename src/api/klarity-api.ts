@@ -1033,17 +1033,22 @@ Return ONLY the modified reply text, nothing else.`;
 ${action === "shorten" ? "Shorten" : "Lengthen"} this reply while keeping the same tone, intent, and emotional intelligence.`;
 
   try {
+    console.log(`[modifyReplyLength] Action: ${action}, Intention: ${intention}`);
+    console.log(`[modifyReplyLength] Original reply: "${originalReply}"`);
+
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: 500,
-      temperature: 1,
+      temperature: 0.7,
     });
 
     const modifiedReply = completion.choices[0]?.message?.content?.trim();
+
+    console.log(`[modifyReplyLength] Modified reply: "${modifiedReply}"`);
 
     if (!modifiedReply) {
       console.warn("No modified reply returned, using original");
@@ -1052,6 +1057,8 @@ ${action === "shorten" ? "Shorten" : "Lengthen"} this reply while keeping the sa
 
     // Remove quotes if the model wrapped the response
     const cleanedReply = modifiedReply.replace(/^["']|["']$/g, "");
+
+    console.log(`[modifyReplyLength] Cleaned reply: "${cleanedReply}"`);
 
     return cleanedReply;
   } catch (error) {
