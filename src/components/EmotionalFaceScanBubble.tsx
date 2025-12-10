@@ -106,10 +106,9 @@ export function EmotionalFaceScanBubble({
         />
 
         {/* Header row */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-1" />
+        <View className="items-center justify-center mb-3" style={{ position: "relative" }}>
           <Text
-            className="text-lg font-medium flex-1 text-center"
+            className="text-lg font-medium"
             style={{
               fontFamily: "SF Pro Display",
               color: "#E5E7EB",
@@ -122,12 +121,11 @@ export function EmotionalFaceScanBubble({
             <Pressable
               onPress={onMinimize}
               className="active:opacity-60 p-1"
-              style={{ alignSelf: "flex-start" }}
+              style={{ position: "absolute", right: 0, top: 0 }}
             >
               <Ionicons name="remove-circle-outline" size={24} color="#9CA3AF" />
             </Pressable>
           )}
-          {!onMinimize && <View className="flex-1" />}
         </View>
 
         {/* Subtitle */}
