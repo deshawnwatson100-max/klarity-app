@@ -131,9 +131,9 @@ export function DirectionSelectorBubble({
                   alignItems: "center",
                   gap: 12,
                   shadowColor: intention.color,
-                  shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
-                  shadowOpacity: isSelected ? 0.5 : 0.25,
-                  shadowRadius: isSelected ? 16 : 8,
+                  shadowOffset: { width: 0, height: isSelected ? 2 : 1 },
+                  shadowOpacity: isSelected ? 0.2 : 0.1,
+                  shadowRadius: isSelected ? 8 : 4,
                 }}
               >
                 {/* Minimal modern icon with color tint */}
