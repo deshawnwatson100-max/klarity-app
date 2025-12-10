@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeIn, FadeOut } from "react-native-reanimated";
 
 interface ModulatedReply {
   id: string;
@@ -26,6 +26,13 @@ export function ModulatedRepliesCard({
   onModifyLength,
   onGenerateDifferent,
 }: ModulatedRepliesCardProps) {
+  // State to track which reply bubble is expanded
+  const [expandedReplyId, setExpandedReplyId] = useState<string | null>(null);
+
+  const handleReplyPress = (replyId: string) => {
+    setExpandedReplyId(expandedReplyId === replyId ? null : replyId);
+  };
+
   // Get color based on relationship direction
   const getIntentionColor = () => {
     const colors = {
@@ -101,69 +108,72 @@ export function ModulatedRepliesCard({
                   alignSelf: "flex-start",
                 }}
               >
-                {/* Reply Card (non-pressable) */}
-                <View
-                  className="rounded-2xl overflow-hidden"
-                  style={{
-                    backgroundColor: `${intentionColor}06`,
-                    borderWidth: 1,
-                    borderColor: `${intentionColor}15`,
-                  }}
-                >
-                  {/* Reply Text */}
-                  <View className="px-4 pt-3.5 pb-3">
-                    <Text
-                      className="text-sm leading-relaxed"
-                      style={{
-                        color: "#F9FAFB",
-                        letterSpacing: 0.2,
-                        lineHeight: 20,
-                      }}
-                    >
-                      {reply.text}
-                    </Text>
-                  </View>
-
-                  {/* Guidance Note */}
+                {/* Reply Card - Wrap in Pressable to make tappable */}
+                <Pressable onPress={() => handleReplyPress(reply.id)}>
                   <View
-                    className="px-4 py-2.5"
+                    className="rounded-2xl overflow-hidden"
                     style={{
-                      backgroundColor: "rgba(0, 0, 0, 0.2)",
-                      borderTopWidth: 0.5,
-                      borderTopColor: "rgba(156, 163, 175, 0.1)",
+                      backgroundColor: `${intentionColor}06`,
+                      borderWidth: 1,
+                      borderColor: `${intentionColor}15`,
                     }}
                   >
-                    <View className="flex-row items-start gap-2">
-                      <Ionicons
-                        name="bulb-outline"
-                        size={14}
-                        color="#9CA3AF"
-                        style={{ marginTop: 2 }}
-                      />
+                    {/* Reply Text */}
+                    <View className="px-4 pt-3.5 pb-3">
                       <Text
-                        className="text-xs leading-relaxed flex-1"
+                        className="text-sm leading-relaxed"
                         style={{
-                          color: "#9CA3AF",
-                          letterSpacing: 0.1,
-                          lineHeight: 16,
+                          color: "#F9FAFB",
+                          letterSpacing: 0.2,
+                          lineHeight: 20,
                         }}
                       >
-                        {reply.guidanceNote}
+                        {reply.text}
                       </Text>
                     </View>
-                  </View>
 
-                  {/* Adjustment controls inside bubble */}
-                  {onModifyLength && (
+                    {/* Guidance Note */}
                     <View
+                      className="px-4 py-2.5"
                       style={{
-                        borderTopWidth: 1,
-                        borderTopColor: `${intentionColor}15`,
-                        paddingHorizontal: 16,
-                        paddingVertical: 10,
-                        backgroundColor: "rgba(0, 0, 0, 0.15)",
+                        backgroundColor: "rgba(0, 0, 0, 0.2)",
+                        borderTopWidth: 0.5,
+                        borderTopColor: "rgba(156, 163, 175, 0.1)",
                       }}
                     >
+                      <View className="flex-row items-start gap-2">
+                        <Ionicons
+                          name="bulb-outline"
+                          size={14}
+                          color="#9CA3AF"
+                          style={{ marginTop: 2 }}
+                        />
+                        <Text
+                          className="text-xs leading-relaxed flex-1"
+                          style={{
+                            color: "#9CA3AF",
+                            letterSpacing: 0.1,
+                            lineHeight: 16,
+                          }}
+                        >
+                          {reply.guidanceNote}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Adjustment controls inside bubble - Only show when expanded */}
+                    {onModifyLength && expandedReplyId === reply.id && (
+                      <Animated.View
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(150)}
+                        style={{
+                          borderTopWidth: 1,
+                          borderTopColor: `${intentionColor}15`,
+                          paddingHorizontal: 16,
+                          paddingVertical: 10,
+                          backgroundColor: "rgba(0, 0, 0, 0.15)",
+                        }}
+                      >
                       <View
                         style={{
                           flexDirection: "row",
@@ -241,9 +251,10 @@ export function ModulatedRepliesCard({
                           </Text>
                         </Pressable>
                       </View>
-                    </View>
-                  )}
-                </View>
+                    </Animated.View>
+                    )}
+                  </View>
+                </Pressable>
 
                 {/* Use button below bubble */}
                 <View
