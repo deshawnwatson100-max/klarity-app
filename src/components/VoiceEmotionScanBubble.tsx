@@ -73,10 +73,10 @@ export function VoiceEmotionScanBubble({
 
         {/* Supportive Reflection */}
         <View className="mb-4">
-          <Text className="text-pink-300 font-medium text-sm mb-2">
-            💛 Supportive Reflection
+          <Text className="text-blue-300 font-medium text-sm mb-2">
+            Supportive Reflection
           </Text>
-          <View className="bg-pink-500/5 border border-pink-500/10 rounded-xl p-4">
+          <View className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
             <Text className="text-neutral-200 text-sm leading-relaxed">
               {voiceEmotionAnalysis.supportiveReflection}
             </Text>
