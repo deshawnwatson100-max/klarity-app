@@ -35,6 +35,7 @@ import { ToneSelectionBubble } from "../components/ToneSelectionBubble";
 import { TailoredGuidanceBubble } from "../components/TailoredGuidanceBubble";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { EmotionalFaceScanBubble } from "../components/EmotionalFaceScanBubble";
+import { FaceScanPromptBubble } from "../components/FaceScanPromptBubble";
 import { EmotionalClaritySummaryBubble } from "../components/EmotionalClaritySummaryBubble";
 import { ToneModulationCard } from "../components/ToneModulationCard";
 import { ModulatedRepliesCard } from "../components/ModulatedRepliesCard";
@@ -70,6 +71,7 @@ import {
   TailoredGuidanceMessage,
   SuggestedReplyCardMessage,
   ImageAnalysisMessage,
+  FaceScanPromptMessage,
   FaceScanCardMessage,
   EmotionScanResultMessage,
   ToneModulationCardMessage,
@@ -459,14 +461,15 @@ export function ChatScreen({ navigation }: Props) {
 
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      // Show face scan card
-      const faceScanMsg: FaceScanCardMessage = {
-        id: Date.now().toString() + "_facescan",
-        role: "face-scan-card",
+      // Show face scan prompt (tappable bubble)
+      const faceScanPromptMsg: FaceScanPromptMessage = {
+        id: Date.now().toString() + "_facescanprompt",
+        role: "face-scan-prompt",
         content: "",
         timestamp: Date.now(),
+        isExpanded: false,
       };
-      addMessageToActiveLoop(faceScanMsg);
+      addMessageToActiveLoop(faceScanPromptMsg);
     } catch (error) {
       // Remove typing indicator on error
       removeMessageFromActiveLoop(typingMsg.id);
@@ -851,6 +854,28 @@ export function ChatScreen({ navigation }: Props) {
     navigation.navigate("EmotionScanScreen");
   };
 
+  const handleExpandFaceScan = (messageId: string) => {
+    // Update the message to mark it as expanded
+    const activeLoop = getActiveLoop();
+    if (activeLoop) {
+      const message = activeLoop.messages.find((msg) => msg.id === messageId);
+      if (message && message.role === "face-scan-prompt") {
+        updateMessageInActiveLoop(messageId, { ...message, isExpanded: true });
+      }
+    }
+  };
+
+  const handleMinimizeFaceScan = (messageId: string) => {
+    // Update the message to mark it as collapsed
+    const activeLoop = getActiveLoop();
+    if (activeLoop) {
+      const message = activeLoop.messages.find((msg) => msg.id === messageId);
+      if (message && message.role === "face-scan-prompt") {
+        updateMessageInActiveLoop(messageId, { ...message, isExpanded: false });
+      }
+    }
+  };
+
   const handleEmotionFollowUp = async (action: string) => {
     // Handle micro-flow actions from emotion scan
     switch (action) {
@@ -1172,6 +1197,29 @@ export function ChatScreen({ navigation }: Props) {
           analysis={imageAnalysisMsg.analysis}
         />
       );
+    }
+
+    if (message.role === "face-scan-prompt") {
+      const promptMsg = message as FaceScanPromptMessage;
+
+      if (promptMsg.isExpanded) {
+        // Show the full face scan card when expanded
+        return (
+          <EmotionalFaceScanBubble
+            key={message.id}
+            onBeginScan={handleBeginFaceScan}
+            onMinimize={() => handleMinimizeFaceScan(message.id)}
+          />
+        );
+      } else {
+        // Show the tappable prompt bubble when collapsed
+        return (
+          <FaceScanPromptBubble
+            key={message.id}
+            onTap={() => handleExpandFaceScan(message.id)}
+          />
+        );
+      }
     }
 
     if (message.role === "face-scan-card") {

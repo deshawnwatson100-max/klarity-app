@@ -171,18 +171,25 @@ When you send a message about a relationship situation, Klarity responds with a 
    - Replies are tailored to your chosen direction AND tone
    - One tap inserts reply into input bar
 
-11. **Emotional Face Scan Card** ✨ NEW
-   - Appears after suggested replies
-   - Beautiful premium card with soft neon teal/lavender glow
-   - Features:
-     - **Header**: "Face Scan Emotional Reading" with 🎭 icon
+11. **Emotional Face Scan Prompt** ✨ NEW
+   - Appears after tone modulation card in the chat flow
+   - **Tappable Chat Bubble**: "Scan your face for deeper emotional insight?"
+   - Styled as a system message bubble with:
+     - Soft teal glow and frosted glass background
+     - Scan icon in rounded circle
+     - Tap anywhere on the bubble to expand
+   - **On Tap - Expanded Card View**:
+     - Full premium card with soft neon teal/lavender glow
+     - **Minimize Button**: Top-right icon to collapse back to prompt
+     - **Header**: "Emotion Face Scan" centered
      - **Subtitle**: "Scan your face to understand how you are feeling inside."
      - **Visual Center**: Animated aura rings with camera icon and waveform bars
-     - **Begin Scan Button**: Soft teal glow with camera icon
+     - **Begin Scan Button**: Soft teal glow with scan icon
      - **Helper Text**: "Your emotional insights will automatically be logged to your clarity calendar."
    - Pulsing glow animation creates gentle, alive feeling
-   - Tap "Begin Scan" to start facial emotion analysis
+   - Tap "Begin Scan" to open camera for facial emotion analysis
    - Premium minimal design - futuristic yet welcoming
+   - **Seamless UX**: Question appears naturally in chat, expands on interest
 
 12. **Add More Context Feature** ✨ NEW
    - "Add More Context" button appears after dysfunctional communication analysis or deep analysis
@@ -698,13 +705,14 @@ Each loop stores:
 │   │   ├── VoiceRecordingVisualizer.tsx  # Animated waveform for voice recording
 │   │   ├── IntentionSelectionModal.tsx  # Intention picker for calendar
 │   │   ├── RelationshipDirectionSelector.tsx  # NEW: Choose relationship path
-│   │   ├── EmotionalFaceScanBubble.tsx  # NEW: Face scan emotional reading card
 │   │   ├── ToneModulationCard.tsx       # NEW: Tone adjustment options (Direct/Gentle/Neutral)
 │   │   ├── ModulatedRepliesCard.tsx     # NEW: Tone-modulated replies with guidance notes
 │   │   ├── AddContextButton.tsx         # NEW: Button to trigger context gathering
 │   │   ├── InlineContextInput.tsx       # NEW: Text/voice context input component
 │   │   ├── ReflectiveUnderstandingBubble.tsx  # NEW: Two-part empathy + clarity response
 │   │   ├── VoiceEmotionScanBubble.tsx   # NEW: Voice emotion analysis result card
+│   │   ├── FaceScanPromptBubble.tsx     # NEW: Tappable prompt for face scan
+│   │   ├── EmotionalFaceScanBubble.tsx  # NEW: Expandable face scan card with minimize
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)

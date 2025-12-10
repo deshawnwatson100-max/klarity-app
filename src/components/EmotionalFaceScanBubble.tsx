@@ -13,10 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 
 interface EmotionalFaceScanBubbleProps {
   onBeginScan: () => void;
+  onMinimize?: () => void;
 }
 
 export function EmotionalFaceScanBubble({
   onBeginScan,
+  onMinimize,
 }: EmotionalFaceScanBubbleProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
@@ -104,9 +106,10 @@ export function EmotionalFaceScanBubble({
         />
 
         {/* Header row */}
-        <View className="items-center mb-3">
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-1" />
           <Text
-            className="text-lg font-medium"
+            className="text-lg font-medium flex-1 text-center"
             style={{
               fontFamily: "SF Pro Display",
               color: "#E5E7EB",
@@ -115,6 +118,16 @@ export function EmotionalFaceScanBubble({
           >
             Emotion Face Scan
           </Text>
+          {onMinimize && (
+            <Pressable
+              onPress={onMinimize}
+              className="active:opacity-60 p-1"
+              style={{ alignSelf: "flex-start" }}
+            >
+              <Ionicons name="remove-circle-outline" size={24} color="#9CA3AF" />
+            </Pressable>
+          )}
+          {!onMinimize && <View className="flex-1" />}
         </View>
 
         {/* Subtitle */}

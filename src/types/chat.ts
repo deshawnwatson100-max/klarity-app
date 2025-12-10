@@ -12,6 +12,7 @@ export type MessageRole =
   | "tone-selector"
   | "tailored-guidance"
   | "suggested-reply-card"
+  | "face-scan-prompt"
   | "face-scan-card"
   | "emotion-scan-result"
   | "tone-modulation-card"
@@ -127,6 +128,11 @@ export interface SuggestedReplyCardMessage extends Message {
   tone?: "calm" | "direct" | "empathetic" | "assertive";
 }
 
+export interface FaceScanPromptMessage extends Message {
+  role: "face-scan-prompt";
+  isExpanded?: boolean; // Whether the card is currently expanded
+}
+
 export interface FaceScanCardMessage extends Message {
   role: "face-scan-card";
 }
@@ -206,6 +212,7 @@ export type ChatMessage =
   | ToneSelectorMessage
   | TailoredGuidanceMessage
   | SuggestedReplyCardMessage
+  | FaceScanPromptMessage
   | FaceScanCardMessage
   | EmotionScanResultMessage
   | ToneModulationCardMessage
