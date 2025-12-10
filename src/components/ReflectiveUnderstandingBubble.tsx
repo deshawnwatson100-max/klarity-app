@@ -28,8 +28,8 @@ export function ReflectiveUnderstandingBubble({
           borderRadius: 16,
           padding: 16,
           borderWidth: 0.5,
-          borderColor: "#B8A3E8",
-          shadowColor: "#B8A3E8",
+          borderColor: "#60A5FA",
+          shadowColor: "#60A5FA",
           shadowOpacity: 0.2,
           shadowRadius: 10,
           shadowOffset: { width: 0, height: 4 },
@@ -51,12 +51,12 @@ export function ReflectiveUnderstandingBubble({
             style={{
               fontSize: 11,
               fontWeight: "600",
-              color: "#B8A3E8",
+              color: "#60A5FA",
               letterSpacing: 0.5,
               textTransform: "uppercase",
             }}
           >
-            💜 Reflective Understanding
+            Reflective Understanding
           </Text>
         </View>
 
