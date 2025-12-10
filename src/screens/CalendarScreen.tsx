@@ -100,11 +100,14 @@ export function CalendarScreen({ navigation }: Props) {
     )}-${String(day).padStart(2, "0")}`;
     const entries = getEntriesForDate(dateStr);
 
-    if (entries.length > 0) {
-      setSelectedDate(dateStr);
-      setSelectedEntries(entries);
-      setDrawerVisible(true);
-    }
+    console.log("[CalendarScreen] Date pressed:", dateStr);
+    console.log("[CalendarScreen] Entries found:", entries.length);
+
+    // Always open the drawer, even if there are no entries
+    // The drawer will show the Daily Clarity Summary or empty state
+    setSelectedDate(dateStr);
+    setSelectedEntries(entries);
+    setDrawerVisible(true);
   };
 
   const handleOpenLoop = (loopId: string) => {
