@@ -65,8 +65,6 @@ export function ContextOrDirectionChoice({
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 22,
-                backgroundColor: "#B8A3E815",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 14,
@@ -125,8 +123,6 @@ export function ContextOrDirectionChoice({
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 22,
-                backgroundColor: "#4FFFD715",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 14,
@@ -187,8 +183,6 @@ export function ContextOrDirectionChoice({
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 22,
-                backgroundColor: "#4C9EFF15",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 14,
