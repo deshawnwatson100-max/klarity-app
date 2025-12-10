@@ -45,12 +45,12 @@ const intentions = [
   },
   {
     id: "clarity" as IntentionType,
-    label: "Gain Clarity",
-    icon: "bulb-outline" as const,
+    label: "Set Boundaries",
+    icon: "hand-left-outline" as const,
     color: "#B8A3E8", // Lavender/Soft Purple
     glowColor: "#B8A3E840", // Soft purple glow
     textTint: "#CDB8FF", // Muted lavender for description
-    description: "Understand your feelings and the situation better",
+    description: "Communicate your limits clearly and protect your well-being",
   },
 ];
 
