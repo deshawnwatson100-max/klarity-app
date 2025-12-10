@@ -53,7 +53,7 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
             shadowRadius: 8,
-            maxWidth: "85%",
+            maxWidth: "90%",
           }}
         >
           <View
@@ -64,16 +64,19 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
           >
             <Ionicons name="scan-outline" size={20} color="#7DD3C0" />
           </View>
-          <Text
-            className="text-base flex-1"
-            style={{
-              fontFamily: "SF Pro Display",
-              color: "#E5E7EB",
-              fontWeight: "500",
-            }}
-          >
-            Scan your face for deeper emotional insight?
-          </Text>
+          <View className="flex-1">
+            <Text
+              style={{
+                fontFamily: "SF Pro Display",
+                color: "#E5E7EB",
+                fontWeight: "500",
+                fontSize: 14,
+                lineHeight: 20,
+              }}
+            >
+              Scan your face for deeper emotional insight?
+            </Text>
+          </View>
         </View>
       </Pressable>
     </Animated.View>
