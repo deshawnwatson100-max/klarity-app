@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -21,7 +21,7 @@ interface SuggestedReplyCardProps {
   replies: SuggestedReply[];
   intention: IntentionType;
   onSelectReply: (reply: string) => void;
-  onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => void;
+  onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onGenerateDifferent?: () => void;
 }
 
@@ -42,6 +42,7 @@ export function SuggestedReplyCard({
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
   const [expandedReplyId, setExpandedReplyId] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 400 });
@@ -61,6 +62,16 @@ export function SuggestedReplyCard({
 
   const handleReplyPress = (replyId: string) => {
     setExpandedReplyId(expandedReplyId === replyId ? null : replyId);
+  };
+
+  const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
+    if (!onModifyLength) return;
+    setLoadingAction({ replyId, action });
+    try {
+      await onModifyLength(replyId, action);
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   return (
@@ -130,8 +141,9 @@ export function SuggestedReplyCard({
                       >
                         {/* Shorten button */}
                         <Pressable
-                          onPress={() => onModifyLength(reply.id, "shorten")}
+                          onPress={() => handleModifyLength(reply.id, "shorten")}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={loadingAction?.replyId === reply.id}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
@@ -141,21 +153,27 @@ export function SuggestedReplyCard({
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
-                          <Ionicons
-                            name="remove-circle-outline"
-                            size={16}
-                            color={color}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "SF Pro Display",
-                              fontSize: 13,
-                              fontWeight: "500",
-                              color: color,
-                            }}
-                          >
-                            Shorten Reply
-                          </Text>
+                          {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
+                            <ActivityIndicator size="small" color={color} />
+                          ) : (
+                            <>
+                              <Ionicons
+                                name="remove-circle-outline"
+                                size={16}
+                                color={color}
+                              />
+                              <Text
+                                style={{
+                                  fontFamily: "SF Pro Display",
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  color: color,
+                                }}
+                              >
+                                Shorten Reply
+                              </Text>
+                            </>
+                          )}
                         </Pressable>
 
                         {/* Divider */}
@@ -169,8 +187,9 @@ export function SuggestedReplyCard({
 
                         {/* Lengthen button */}
                         <Pressable
-                          onPress={() => onModifyLength(reply.id, "lengthen")}
+                          onPress={() => handleModifyLength(reply.id, "lengthen")}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={loadingAction?.replyId === reply.id}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
@@ -180,21 +199,27 @@ export function SuggestedReplyCard({
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
-                          <Ionicons
-                            name="add-circle-outline"
-                            size={16}
-                            color={color}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "SF Pro Display",
-                              fontSize: 13,
-                              fontWeight: "500",
-                              color: color,
-                            }}
-                          >
-                            Lengthen Reply
-                          </Text>
+                          {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
+                            <ActivityIndicator size="small" color={color} />
+                          ) : (
+                            <>
+                              <Ionicons
+                                name="add-circle-outline"
+                                size={16}
+                                color={color}
+                              />
+                              <Text
+                                style={{
+                                  fontFamily: "SF Pro Display",
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  color: color,
+                                }}
+                              >
+                                Lengthen Reply
+                              </Text>
+                            </>
+                          )}
                         </Pressable>
                       </View>
                     </Animated.View>

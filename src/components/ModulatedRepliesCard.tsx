@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown, FadeIn, FadeOut } from "react-native-reanimated";
 
@@ -14,7 +14,7 @@ interface ModulatedRepliesCardProps {
   tone: "direct" | "gentle" | "neutral";
   onSelectReply: (reply: string) => void;
   selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
-  onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => void;
+  onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onGenerateDifferent?: () => void;
 }
 
@@ -28,9 +28,20 @@ export function ModulatedRepliesCard({
 }: ModulatedRepliesCardProps) {
   // State to track which reply bubble is expanded
   const [expandedReplyId, setExpandedReplyId] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
 
   const handleReplyPress = (replyId: string) => {
     setExpandedReplyId(expandedReplyId === replyId ? null : replyId);
+  };
+
+  const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
+    if (!onModifyLength) return;
+    setLoadingAction({ replyId, action });
+    try {
+      await onModifyLength(replyId, action);
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   // Get color based on relationship direction
@@ -184,8 +195,9 @@ export function ModulatedRepliesCard({
                       >
                         {/* Shorten button */}
                         <Pressable
-                          onPress={() => onModifyLength(reply.id, "shorten")}
+                          onPress={() => handleModifyLength(reply.id, "shorten")}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={loadingAction?.replyId === reply.id}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
@@ -195,21 +207,27 @@ export function ModulatedRepliesCard({
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
-                          <Ionicons
-                            name="remove-circle-outline"
-                            size={16}
-                            color={intentionColor}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "SF Pro Display",
-                              fontSize: 13,
-                              fontWeight: "500",
-                              color: intentionColor,
-                            }}
-                          >
-                            Shorten Reply
-                          </Text>
+                          {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
+                            <ActivityIndicator size="small" color={intentionColor} />
+                          ) : (
+                            <>
+                              <Ionicons
+                                name="remove-circle-outline"
+                                size={16}
+                                color={intentionColor}
+                              />
+                              <Text
+                                style={{
+                                  fontFamily: "SF Pro Display",
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  color: intentionColor,
+                                }}
+                              >
+                                Shorten Reply
+                              </Text>
+                            </>
+                          )}
                         </Pressable>
 
                         {/* Divider */}
@@ -223,8 +241,9 @@ export function ModulatedRepliesCard({
 
                         {/* Lengthen button */}
                         <Pressable
-                          onPress={() => onModifyLength(reply.id, "lengthen")}
+                          onPress={() => handleModifyLength(reply.id, "lengthen")}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={loadingAction?.replyId === reply.id}
                           style={({ pressed }) => ({
                             flexDirection: "row",
                             alignItems: "center",
@@ -234,21 +253,27 @@ export function ModulatedRepliesCard({
                             opacity: pressed ? 0.6 : 1,
                           })}
                         >
-                          <Ionicons
-                            name="add-circle-outline"
-                            size={16}
-                            color={intentionColor}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "SF Pro Display",
-                              fontSize: 13,
-                              fontWeight: "500",
-                              color: intentionColor,
-                            }}
-                          >
-                            Lengthen Reply
-                          </Text>
+                          {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
+                            <ActivityIndicator size="small" color={intentionColor} />
+                          ) : (
+                            <>
+                              <Ionicons
+                                name="add-circle-outline"
+                                size={16}
+                                color={intentionColor}
+                              />
+                              <Text
+                                style={{
+                                  fontFamily: "SF Pro Display",
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  color: intentionColor,
+                                }}
+                              >
+                                Lengthen Reply
+                              </Text>
+                            </>
+                          )}
                         </Pressable>
                       </View>
                     </Animated.View>

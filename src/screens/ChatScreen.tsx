@@ -503,15 +503,6 @@ export function ChatScreen({ navigation }: Props) {
     const reply = replyCardMsg.replies.find((r) => r.id === replyId);
     if (!reply) return;
 
-    // Show typing indicator
-    const typingMsg: TypingMessage = {
-      id: Date.now().toString() + "_typing_modify",
-      role: "typing",
-      content: "",
-      timestamp: Date.now(),
-    };
-    addMessageToActiveLoop(typingMsg);
-
     try {
       // Modify the reply length
       const modifiedText = await modifyReplyLength(
@@ -519,9 +510,6 @@ export function ChatScreen({ navigation }: Props) {
         action,
         currentIntention
       );
-
-      // Remove typing indicator
-      removeMessageFromActiveLoop(typingMsg.id);
 
       // Update the reply in the message
       const updatedReplies = replyCardMsg.replies.map((r) =>
@@ -536,7 +524,6 @@ export function ChatScreen({ navigation }: Props) {
       updateMessageInActiveLoop(replyCardMsg.id, updatedMsg);
     } catch (error) {
       console.error("Error modifying reply length:", error);
-      removeMessageFromActiveLoop(typingMsg.id);
     }
   };
 
