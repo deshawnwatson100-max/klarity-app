@@ -18,7 +18,7 @@ export function ContextOrDirectionChoice({
     <Animated.View
       entering={FadeInDown.duration(500).springify()}
       style={{
-        marginVertical: 12,
+        marginVertical: 16,
         marginHorizontal: 16,
       }}
     >
@@ -27,7 +27,7 @@ export function ContextOrDirectionChoice({
         style={{
           backgroundColor: "#0A0A0A",
           borderRadius: 16,
-          padding: 16,
+          padding: 20,
           borderWidth: 0.5,
           borderColor: "#262626",
         }}
@@ -35,11 +35,11 @@ export function ContextOrDirectionChoice({
         {/* Header */}
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "600",
             color: "#F9FAFB",
-            marginBottom: 12,
-            letterSpacing: 0.2,
+            marginBottom: 16,
+            letterSpacing: 0.3,
           }}
         >
           What would you like to do next?
@@ -52,8 +52,8 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 14,
-            marginBottom: 10,
+            padding: 16,
+            marginBottom: 12,
             borderWidth: 1,
             borderColor: "#B8A3E820",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -63,26 +63,26 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: "#B8A3E815",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 12,
+                marginRight: 14,
               }}
             >
-              <Ionicons name="add-circle-outline" size={22} color="#B8A3E8" />
+              <Ionicons name="add-circle-outline" size={24} color="#B8A3E8" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 2,
+                  marginBottom: 4,
                   letterSpacing: 0.2,
                 }}
               >
@@ -92,7 +92,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 18,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
@@ -112,8 +112,8 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 14,
-            marginBottom: 10,
+            padding: 16,
+            marginBottom: 12,
             borderWidth: 1,
             borderColor: "#4FFFD720",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -123,26 +123,26 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: "#4FFFD715",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 12,
+                marginRight: 14,
               }}
             >
-              <Ionicons name="chatbox-ellipses-outline" size={22} color="#4FFFD7" />
+              <Ionicons name="chatbox-ellipses-outline" size={24} color="#4FFFD7" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 2,
+                  marginBottom: 4,
                   letterSpacing: 0.2,
                 }}
               >
@@ -152,7 +152,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 18,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
@@ -175,7 +175,7 @@ export function ContextOrDirectionChoice({
           style={({ pressed }) => ({
             backgroundColor: pressed ? "#1A1A1A" : "#141414",
             borderRadius: 12,
-            padding: 14,
+            padding: 16,
             borderWidth: 1,
             borderColor: "#4C9EFF20",
             transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -185,26 +185,26 @@ export function ContextOrDirectionChoice({
             {/* Icon */}
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: "#4C9EFF15",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 12,
+                marginRight: 14,
               }}
             >
-              <Ionicons name="compass-outline" size={22} color="#4C9EFF" />
+              <Ionicons name="compass-outline" size={24} color="#4C9EFF" />
             </View>
 
             {/* Text Content */}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "600",
                   color: "#F9FAFB",
-                  marginBottom: 2,
+                  marginBottom: 4,
                   letterSpacing: 0.2,
                 }}
               >
@@ -214,7 +214,7 @@ export function ContextOrDirectionChoice({
                 style={{
                   fontSize: 13,
                   color: "#9CA3AF",
-                  lineHeight: 18,
+                  lineHeight: 19,
                   letterSpacing: 0.1,
                 }}
               >
