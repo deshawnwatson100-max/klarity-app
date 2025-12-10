@@ -15,6 +15,7 @@ type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 interface SuggestedReply {
   id: string;
   text: string;
+  guidanceNote: string;
 }
 
 interface SuggestedReplyCardProps {
@@ -116,6 +117,35 @@ export function SuggestedReplyCard({
                     >
                       {reply.text}
                     </Text>
+                  </View>
+
+                  {/* Guidance Note */}
+                  <View
+                    className="px-4 py-2.5"
+                    style={{
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      borderTopWidth: 0.5,
+                      borderTopColor: "rgba(156, 163, 175, 0.1)",
+                    }}
+                  >
+                    <View className="flex-row items-start gap-2">
+                      <Ionicons
+                        name="bulb-outline"
+                        size={14}
+                        color="#9CA3AF"
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text
+                        className="text-xs leading-relaxed flex-1"
+                        style={{
+                          color: "#9CA3AF",
+                          letterSpacing: 0.1,
+                          lineHeight: 16,
+                        }}
+                      >
+                        {reply.guidanceNote}
+                      </Text>
+                    </View>
                   </View>
 
                   {/* Adjustment controls inside bubble - Only show when expanded */}

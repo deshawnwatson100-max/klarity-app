@@ -123,6 +123,7 @@ export interface SuggestedReplyCardMessage extends Message {
   replies: Array<{
     id: string;
     text: string;
+    guidanceNote: string;
   }>;
   intention: "improve" | "distance" | "maintain" | "clarity";
   tone?: "calm" | "direct" | "empathetic" | "assertive";

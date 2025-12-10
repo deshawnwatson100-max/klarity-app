@@ -461,7 +461,7 @@ export async function generateIntentionBasedReplies(
   userMessage: string,
   intention: "improve" | "distance" | "maintain" | "clarity",
   analysis: EmotionalAnalysis
-): Promise<Array<{ id: string; text: string }>> {
+): Promise<Array<{ id: string; text: string; guidanceNote: string }>> {
   const intentionContext: Record<typeof intention, string> = {
     improve:
       "Generate responses that are warm, open to dialogue, and show willingness to work on the relationship",
@@ -473,12 +473,25 @@ export async function generateIntentionBasedReplies(
       "Generate responses that ask for clarification, express feelings openly, and seek to understand better",
   };
 
+  const guidanceContext: Record<typeof intention, string> = {
+    improve:
+      "This approach invites connection and shows openness, but may feel vulnerable if they are not receptive.",
+    distance:
+      "This approach protects your peace and sets boundaries, but may create more distance than intended.",
+    maintain:
+      "This approach keeps things balanced and neutral, but may not fully resolve the underlying issue.",
+    clarity:
+      "This approach seeks understanding and opens dialogue, but may prolong the conversation if they are defensive.",
+  };
+
   const systemPrompt = `You are Klarity AI. ${intentionContext[intention]}.
 
 Generate 1 suggested reply that fits this intention. The reply should be 1-2 sentences, healthy, and emotionally regulated.
 
+Also provide a brief guidance note (1 sentence) explaining how this reply might affect the recipient or the dynamic.
+
 Respond with valid JSON only containing:
-- replies: array of { id: string, text: string }`;
+- replies: array of { id: string, text: string, guidanceNote: string }`;
 
   const messages: GPT5Message[] = [
     { role: "system", content: systemPrompt },
@@ -513,6 +526,7 @@ Respond with valid JSON only containing:
     return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
       text: item.text || "I hear you. Let me think about that.",
+      guidanceNote: item.guidanceNote || guidanceContext[intention],
     }));
   } catch (error) {
     console.error("Error generating intention-based replies:", error);
@@ -520,30 +534,34 @@ Respond with valid JSON only containing:
     // Return fallback replies based on intention
     const fallbacks: Record<
       typeof intention,
-      Array<{ id: string; text: string }>
+      Array<{ id: string; text: string; guidanceNote: string }>
     > = {
       improve: [
         {
           id: "1",
           text: "I hear what you are saying. Can we talk about this calmly and work through it together?",
+          guidanceNote: guidanceContext.improve,
         },
       ],
       distance: [
         {
           id: "1",
           text: "I hear you. I think I need a little space right now to process this.",
+          guidanceNote: guidanceContext.distance,
         },
       ],
       maintain: [
         {
           id: "1",
           text: "I see what you are saying. Let me think about that for a bit.",
+          guidanceNote: guidanceContext.maintain,
         },
       ],
       clarity: [
         {
           id: "1",
           text: "I am not sure I fully understand. Can you explain what you mean by that?",
+          guidanceNote: guidanceContext.clarity,
         },
       ],
     };
