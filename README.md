@@ -397,28 +397,67 @@ The analysis appears inline in the conversation thread with the same calm lime +
 ### NEW: Enhanced Emotional Log Calendar 🎉🗓️✨
 Track your emotional journey over time with conversation tracking, reflections, and pattern insights.
 
+#### Calendar Aesthetic (Matching Input Screen)
+The calendar now uses the **same luxurious dark gradient background** as the Input Screen for visual consistency:
+
+**Background**
+- Deep charcoal gradient foundation (#050608 → #0A0A0C → #050608)
+- Subtle floating particles (20 tiny dots, 1-3px, cool gray/teal tints)
+- Soft flares with whisper-soft cool gray-blue tones (3% opacity)
+- Calm, minimal, emotional, and luxurious vibe
+
+**Calendar Grid with Frosted Glass Cells**
+- Translucent frosted-glass calendar day cells
+- Semi-transparent backgrounds: `rgba(20, 20, 24, 0.15-0.45)`
+- Soft inner-shadow for depth effect
+- Subtle borders in cool gray (`rgba(156, 163, 175, 0.08)`)
+- Today's date highlighted with stronger border and glow
+- Dates with events have brighter backgrounds
+- Smooth press animation (scale 0.95)
+
+**Gradient-Based Event Dots with Glow**
+- Event type dots now use **LinearGradient** instead of flat colors
+- Three-step gradient per dot (full → CC → 88 opacity)
+- Strong glow effect (shadowRadius: 6, shadowOpacity: 0.9)
+- 5x5px rounded dots beneath dates
+- Event types:
+  - 🟣 **Purple (#A855F7)** - Active conversation loop
+  - 🟡 **Gold (#F59E0B)** - Scheduled high-stakes talk
+  - 🔵 **Blue (#3B82F6)** - Reflection logged
+  - 🟠 **Red-Orange (#F97316)** - Emotional spike day
+
+**Legend Pills**
+- Frosted glass pills with gradient event dots
+- Semi-transparent backgrounds matching calendar cells
+- Horizontal scrollable layout
+
 #### Calendar Home Screen (Monthly View with Event Types)
 A full-screen monthly calendar showing your emotional timeline with **glowing event type indicators**:
 - **Home button** (top-right) - Quick return to welcome screen
-- **Dark luxury design** with deep black background (#0A0A0A)
-- **Event type dots** beneath dates (glowing with shadows):
-  - 🟣 **Purple** - Active conversation loop
-  - 🟡 **Gold** - Scheduled high-stakes talk
-  - 🔵 **Blue** - Reflection logged
-  - 🟠 **Red-Orange** - Emotional spike day
+- **Calm, air-like UI motion** - Slow, soft animations
+- **No hard lines** - Everything blends with soft borders and gradients
 - **Month navigation** with arrow buttons
-- **Legend** showing all intention types
+- **Legend** showing all intention types with gradient dots
 - **Multiple events per day** - shows unique event types (up to 3 dots + counter)
 - Tap any date to open **Day Detail Drawer**
 
-#### Day Detail Drawer (Slide-Up Bottom Sheet)
-When you tap a date with events, a beautiful drawer slides up showing:
+#### Day Detail Drawer (Slide-Up Bottom Sheet with Blur-Glass)
+When you tap a date with events, a beautiful drawer slides up with **blur-glass background**:
+
+**Background Style**
+- Dark backdrop with gradient overlay (rgba(5, 6, 8, 0.75) → rgba(10, 10, 12, 0.85))
+- Drawer background: `rgba(10, 10, 12, 0.85)` for frosted glass effect
+- Soft borders with cool gray accents (`rgba(156, 163, 175, 0.15)`)
+- Deep shadow for depth (shadowRadius: 24, shadowOpacity: 0.5)
 
 **Header**
+- Soft handle bar in translucent gray
 - Full formatted date (e.g., "Monday, December 10, 2025")
 - Event count indicator
+- Minimal border separator
 
 **Event Cards** (for each event that day)
+- **Frosted glass cards** with semi-transparent backgrounds
 - **Event Type Badge** - Icon + label with colored glow
   - Icons: chatbubbles (loop), calendar (scheduled), bulb (reflection), pulse (spike)
 - **Status Indicator** - Color-coded pill badge
@@ -426,17 +465,18 @@ When you tap a date with events, a beautiful drawer slides up showing:
   - Amber: "In Progress"
   - Gray: "Upcoming"
 - **Title** - Auto-generated from chat loop or user-provided
-- **Tag Chips** - family, romantic, work, etc. (rounded neutral badges)
+- **Tag Chips** - Frosted glass tags with soft borders
 - **Intention Indicator** - Small colored dot + label + timestamp
-- **Action Buttons**:
-  - **"Open Chat Loop Thread"** (blue) - Navigate to linked conversation
-  - **"Add Reflection"** (purple) - Log reflection for past events
-  - **Reflection Status** (green) - Shows "Reflection Added" with clarity score
+- **Action Buttons** (frosted glass style):
+  - **"Open Chat Loop"** (blue, rgba(59, 130, 246, 0.15))
+  - **"Add Reflection"** (purple, rgba(168, 85, 247, 0.15))
+  - **Reflection Status** (green, rgba(16, 185, 129, 0.1))
 
 **Interaction**
-- Smooth animations with staggered card entrance
+- Smooth spring animations with staggered card entrance (50ms delay per card)
 - Tap outside or swipe down to dismiss
 - Scrollable list for days with many events
+- Calm, slow UI pacing
 
 #### Reflection Logging Modal
 After a date passes, add reflections via the drawer's "Add Reflection" button:

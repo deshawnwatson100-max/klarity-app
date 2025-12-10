@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, Pressable, ScrollView, Modal } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { CalendarLogEntry } from "../types/calendar";
 import { EVENT_TYPES, INTENTIONS } from "../types/calendar";
-import { BlurView } from "expo-blur";
 
 interface DayDetailDrawerProps {
   visible: boolean;
@@ -43,41 +43,59 @@ export function DayDetailDrawer({
       animationType="fade"
       onRequestClose={onClose}
     >
-      {/* Backdrop */}
+      {/* Backdrop with dark gradient */}
       <Pressable
-        className="flex-1 bg-black/60"
+        className="flex-1"
         onPress={onClose}
         style={{ flex: 1 }}
       >
-        {/* Drawer - bottom sheet */}
+        <LinearGradient
+          colors={["rgba(5, 6, 8, 0.75)", "rgba(10, 10, 12, 0.85)", "rgba(5, 6, 8, 0.9)"]}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        />
+
+        {/* Drawer - bottom sheet with blur-glass effect */}
         <Animated.View
           entering={FadeInUp.duration(300).springify()}
-          className="absolute bottom-0 left-0 right-0 bg-neutral-950 rounded-t-3xl"
+          className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
           style={{
             maxHeight: "75%",
+            backgroundColor: "rgba(10, 10, 12, 0.85)",
             borderTopWidth: 1,
-            borderTopColor: "#262626",
+            borderLeftWidth: 0.5,
+            borderRightWidth: 0.5,
+            borderTopColor: "rgba(156, 163, 175, 0.15)",
+            borderLeftColor: "rgba(156, 163, 175, 0.08)",
+            borderRightColor: "rgba(156, 163, 175, 0.08)",
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 20,
+            shadowOffset: { width: 0, height: -8 },
+            shadowOpacity: 0.5,
+            shadowRadius: 24,
           }}
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             {/* Handle bar */}
             <View className="items-center py-3">
               <View
-                className="w-12 h-1 bg-neutral-700 rounded-full"
-                style={{ opacity: 0.5 }}
+                className="w-12 h-1 rounded-full"
+                style={{
+                  backgroundColor: "rgba(156, 163, 175, 0.25)",
+                }}
               />
             </View>
 
             {/* Header */}
-            <View className="px-6 pb-4 border-b border-neutral-800">
+            <View className="px-6 pb-4" style={{ borderBottomWidth: 0.5, borderBottomColor: "rgba(156, 163, 175, 0.1)" }}>
               <Text className="text-white text-2xl font-semibold mb-1">
                 {formattedDate}
               </Text>
-              <Text className="text-neutral-400 text-sm">
+              <Text className="text-sm" style={{ color: "#9CA3AF" }}>
                 {entries.length} {entries.length === 1 ? "event" : "events"}
               </Text>
             </View>
@@ -104,15 +122,17 @@ export function DayDetailDrawer({
                       .springify()}
                     className="mb-4"
                   >
-                    {/* Event Card */}
+                    {/* Event Card with frosted glass */}
                     <View
-                      className="bg-neutral-900/60 rounded-2xl p-4 border"
+                      className="rounded-2xl p-4"
                       style={{
-                        borderColor: EVENT_TYPES[entry.eventType].color + "40",
-                        shadowColor: EVENT_TYPES[entry.eventType].glowColor,
-                        shadowOpacity: 0.15,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 2 },
+                        backgroundColor: "rgba(20, 20, 24, 0.5)",
+                        borderWidth: 0.5,
+                        borderColor: EVENT_TYPES[entry.eventType].color + "30",
+                        shadowColor: EVENT_TYPES[entry.eventType].color,
+                        shadowOpacity: 0.2,
+                        shadowRadius: 12,
+                        shadowOffset: { width: 0, height: 4 },
                       }}
                     >
                       {/* Event Type Badge */}
@@ -184,9 +204,14 @@ export function DayDetailDrawer({
                           {entry.tags.map((tag, i) => (
                             <View
                               key={i}
-                              className="px-2 py-1 rounded-full bg-neutral-800"
+                              className="px-2 py-1 rounded-full"
+                              style={{
+                                backgroundColor: "rgba(156, 163, 175, 0.15)",
+                                borderWidth: 0.5,
+                                borderColor: "rgba(156, 163, 175, 0.2)",
+                              }}
                             >
-                              <Text className="text-neutral-400 text-xs">
+                              <Text className="text-xs" style={{ color: "#9CA3AF" }}>
                                 {tag}
                               </Text>
                             </View>
@@ -219,9 +244,14 @@ export function DayDetailDrawer({
                         {entry.loopId && (
                           <Pressable
                             onPress={() => onOpenLoop(entry.loopId!)}
-                            className="flex-1 bg-blue-500/20 border border-blue-500/30 rounded-xl py-2.5 items-center active:opacity-70"
+                            className="flex-1 rounded-xl py-2.5 items-center active:opacity-70"
+                            style={{
+                              backgroundColor: "rgba(59, 130, 246, 0.15)",
+                              borderWidth: 0.5,
+                              borderColor: "rgba(59, 130, 246, 0.3)",
+                            }}
                           >
-                            <Text className="text-blue-400 text-sm font-medium">
+                            <Text className="text-sm font-medium" style={{ color: "#60A5FA" }}>
                               Open Chat Loop
                             </Text>
                           </Pressable>
@@ -230,21 +260,30 @@ export function DayDetailDrawer({
                         {isPastDate && !entry.reflectionNotes && (
                           <Pressable
                             onPress={() => onAddReflection(entry.id)}
-                            className="flex-1 bg-purple-500/20 border border-purple-500/30 rounded-xl py-2.5 items-center active:opacity-70"
+                            className="flex-1 rounded-xl py-2.5 items-center active:opacity-70"
+                            style={{
+                              backgroundColor: "rgba(168, 85, 247, 0.15)",
+                              borderWidth: 0.5,
+                              borderColor: "rgba(168, 85, 247, 0.3)",
+                            }}
                           >
-                            <Text className="text-purple-400 text-sm font-medium">
+                            <Text className="text-sm font-medium" style={{ color: "#B47CFF" }}>
                               Add Reflection
                             </Text>
                           </Pressable>
                         )}
 
                         {entry.reflectionNotes && (
-                          <View className="flex-1 bg-green-500/10 border border-green-500/20 rounded-xl py-2.5 px-3">
-                            <Text className="text-green-400 text-xs font-medium mb-1">
+                          <View className="flex-1 rounded-xl py-2.5 px-3" style={{
+                            backgroundColor: "rgba(16, 185, 129, 0.1)",
+                            borderWidth: 0.5,
+                            borderColor: "rgba(16, 185, 129, 0.2)",
+                          }}>
+                            <Text className="text-xs font-medium mb-1" style={{ color: "#10B981" }}>
                               Reflection Added
                             </Text>
                             {entry.clarityScore && (
-                              <Text className="text-neutral-400 text-xs">
+                              <Text className="text-xs" style={{ color: "#9CA3AF" }}>
                                 Clarity: {entry.clarityScore}/10
                               </Text>
                             )}

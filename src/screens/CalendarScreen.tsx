@@ -6,6 +6,7 @@ import {
   Pressable,
   Dimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,8 @@ import { INTENTIONS, EVENT_TYPES } from "../types/calendar";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { DayDetailDrawer } from "../components/DayDetailDrawer";
 import { ReflectionModal } from "../components/ReflectionModal";
+import { FloatingParticles } from "../components/FloatingParticles";
+import { SoftFlares } from "../components/SoftFlares";
 
 type Props = StackScreenProps<RootStackParamList, "CalendarScreen">;
 
@@ -179,52 +182,80 @@ export function CalendarScreen({ navigation }: Props) {
           style={{ width: dayWidth, height: dayWidth }}
           className="p-1"
         >
-          <View
-            className={`flex-1 items-center justify-center rounded-xl ${
-              isToday ? "border border-[#9CA3AF]" : ""
-            }`}
-            style={{
-              backgroundColor: isToday ? "#1A1A1A" : "transparent",
-            }}
-          >
-            <Text
-              className={`text-base font-medium`}
+          {({ pressed }) => (
+            <View
+              className="flex-1 items-center justify-center rounded-xl"
               style={{
-                color: hasEntries ? "#F9FAFB" : "#6B7280",
+                backgroundColor: hasEntries
+                  ? "rgba(20, 20, 24, 0.45)"
+                  : isToday
+                  ? "rgba(20, 20, 24, 0.35)"
+                  : "rgba(20, 20, 24, 0.15)",
+                borderWidth: isToday ? 1 : 0.5,
+                borderColor: isToday
+                  ? "rgba(156, 163, 175, 0.4)"
+                  : "rgba(156, 163, 175, 0.08)",
+                transform: [{ scale: pressed ? 0.95 : 1 }],
+                // Frosted glass inner shadow effect
+                shadowColor: "#000000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3,
               }}
             >
-              {day}
-            </Text>
+              <Text
+                className="text-base font-medium"
+                style={{
+                  color: hasEntries ? "#F9FAFB" : "#9CA3AF",
+                }}
+              >
+                {day}
+              </Text>
 
-            {/* Intention + Event Type indicators */}
-            {hasEntries && (
-              <View className="flex-row gap-0.5 mt-1 flex-wrap justify-center">
-                {/* Show event type dots (unique types only) */}
-                {Array.from(new Set(entries.map((e) => e.eventType)))
-                  .slice(0, 3)
-                  .map((eventType, index) => (
-                    <View
-                      key={`event-${index}`}
-                      style={{
-                        width: 6,
-                        height: 6,
-                        backgroundColor: EVENT_TYPES[eventType].color,
-                        shadowColor: EVENT_TYPES[eventType].glowColor,
-                        shadowOpacity: 0.8,
-                        shadowRadius: 4,
-                        elevation: 5,
-                      }}
-                      className="rounded-full"
-                    />
-                  ))}
-                {entries.length > 3 && (
-                  <Text className="text-[10px] ml-0.5" style={{ color: "#9CA3AF" }}>
-                    +{entries.length - 3}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
+              {/* Event Type indicators with gradient glow */}
+              {hasEntries && (
+                <View className="flex-row gap-1 mt-1.5 flex-wrap justify-center">
+                  {Array.from(new Set(entries.map((e) => e.eventType)))
+                    .slice(0, 3)
+                    .map((eventType, index) => (
+                      <View
+                        key={`event-${index}`}
+                        style={{
+                          width: 5,
+                          height: 5,
+                          borderRadius: 2.5,
+                          shadowColor: EVENT_TYPES[eventType].color,
+                          shadowOpacity: 0.9,
+                          shadowRadius: 6,
+                          shadowOffset: { width: 0, height: 0 },
+                        }}
+                      >
+                        <LinearGradient
+                          colors={[
+                            EVENT_TYPES[eventType].color,
+                            EVENT_TYPES[eventType].color + "CC",
+                            EVENT_TYPES[eventType].color + "88",
+                          ]}
+                          style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: 2.5,
+                          }}
+                        />
+                      </View>
+                    ))}
+                  {entries.length > 3 && (
+                    <Text
+                      className="text-[9px] ml-0.5"
+                      style={{ color: "#9CA3AF", opacity: 0.7 }}
+                    >
+                      +{entries.length - 3}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
         </Pressable>
       );
     }
@@ -297,7 +328,26 @@ export function CalendarScreen({ navigation }: Props) {
 
   return (
     <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1, backgroundColor: '#050608' }, animatedContainerStyle]}>
+      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+        {/* Deep charcoal background - identical to InputScreen */}
+        <LinearGradient
+          colors={["#050608", "#0A0A0C", "#050608"]}
+          locations={[0, 0.5, 1]}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        />
+
+        {/* Soft flares - Layer 1 */}
+        <SoftFlares />
+
+        {/* Floating particles - Layer 2 */}
+        <FloatingParticles count={20} />
+
         <View className="flex-1" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="px-4 py-6 flex-row items-start justify-between">
@@ -351,21 +401,33 @@ export function CalendarScreen({ navigation }: Props) {
           <View
             key={key}
             className="flex-row items-center rounded-full px-3 py-2"
-            style={{ backgroundColor: "#1A1A1A" }}
+            style={{
+              backgroundColor: "rgba(20, 20, 24, 0.4)",
+              borderWidth: 0.5,
+              borderColor: "rgba(156, 163, 175, 0.1)",
+            }}
           >
             <View
               style={{
-                width: 8,
-                height: 8,
-                backgroundColor: config.color,
+                width: 6,
+                height: 6,
+                borderRadius: 3,
                 shadowColor: config.color,
-                shadowOpacity: 0.6,
-                shadowRadius: 3,
-                elevation: 3,
+                shadowOpacity: 0.8,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 0 },
               }}
-              className="rounded-full mr-2"
-            />
-            <Text className="text-xs font-medium" style={{ color: "#F9FAFB" }}>
+            >
+              <LinearGradient
+                colors={[config.color, config.color + "CC", config.color + "88"]}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                }}
+              />
+            </View>
+            <Text className="text-xs font-medium ml-2" style={{ color: "#E5E7EB" }}>
               {config.label}
             </Text>
           </View>
