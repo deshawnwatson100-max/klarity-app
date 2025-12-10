@@ -492,6 +492,14 @@ When you tap a date with events, a beautiful drawer slides up with **blur-glass 
   - **"Add Reflection"** (purple, rgba(168, 85, 247, 0.15))
   - **Reflection Status** (green, rgba(16, 185, 129, 0.1))
 
+**Daily Comment Input Bar** ✨ NEW
+- Fixed at bottom of drawer
+- Frosted glass input field with placeholder "Add a comment about this day..."
+- Multiline support (up to 80px height)
+- Purple send button that turns green on save
+- Comments are persisted per date
+- Existing comments load automatically when drawer opens
+
 **Interaction**
 - Smooth spring animations with staggered card entrance (50ms delay per card)
 - Tap outside or swipe down to dismiss
@@ -957,6 +965,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Confirmation Questions** - "Is this more aligned with how you're feeling?"
 ✅ **What would you like to do next? Card** - Three-option choice card (Add Context / Instant Reply / Choose Direction)
 ✅ **Instant Reply Suggestion** - Quick, balanced response generation without direction selection
+✅ **Daily Comment Input** - Add personal comments/notes to any calendar day
 
 ## Future Enhancements
 

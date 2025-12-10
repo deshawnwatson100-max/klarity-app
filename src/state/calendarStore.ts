@@ -5,6 +5,7 @@ import { CalendarLogEntry, IntentionType, MonthlyPattern } from "../types/calend
 
 interface CalendarState {
   entries: CalendarLogEntry[];
+  dailyComments: Record<string, string>; // key: YYYY-MM-DD, value: comment
 
   // Actions
   addEntry: (entry: CalendarLogEntry) => void;
@@ -14,12 +15,15 @@ interface CalendarState {
   getEntriesForMonth: (year: number, month: number) => CalendarLogEntry[];
   getMonthlyPattern: (year: number, month: number) => MonthlyPattern | null;
   getAllEntries: () => CalendarLogEntry[];
+  setDailyComment: (date: string, comment: string) => void;
+  getDailyComment: (date: string) => string;
 }
 
 export const useCalendarStore = create<CalendarState>()(
   persist(
     (set, get) => ({
       entries: [],
+      dailyComments: {},
 
       addEntry: (entry) => {
         set((state) => ({
@@ -104,6 +108,19 @@ export const useCalendarStore = create<CalendarState>()(
 
       getAllEntries: () => {
         return get().entries;
+      },
+
+      setDailyComment: (date, comment) => {
+        set((state) => ({
+          dailyComments: {
+            ...state.dailyComments,
+            [date]: comment,
+          },
+        }));
+      },
+
+      getDailyComment: (date) => {
+        return get().dailyComments[date] || "";
       },
     }),
     {

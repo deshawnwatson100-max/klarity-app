@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Pressable, ScrollView, Modal } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, ScrollView, Modal, TextInput, Keyboard } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,6 +9,7 @@ import {
   DailyClaritySummaryCard,
   DailyClaritySummary,
 } from "./DailyClaritySummaryCard";
+import { useCalendarStore } from "../state/calendarStore";
 
 interface DayDetailDrawerProps {
   visible: boolean;
@@ -31,6 +32,31 @@ export function DayDetailDrawer({
   summary,
   onViewChatLoops,
 }: DayDetailDrawerProps) {
+  const setDailyComment = useCalendarStore((s) => s.setDailyComment);
+  const getDailyComment = useCalendarStore((s) => s.getDailyComment);
+
+  const [comment, setComment] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Load existing comment when drawer opens
+  useEffect(() => {
+    if (visible && date) {
+      const existingComment = getDailyComment(date);
+      setComment(existingComment);
+      setIsSaved(false);
+    }
+  }, [visible, date, getDailyComment]);
+
+  const handleSaveComment = () => {
+    if (comment.trim()) {
+      setDailyComment(date, comment.trim());
+      setIsSaved(true);
+      Keyboard.dismiss();
+      // Reset saved indicator after 2 seconds
+      setTimeout(() => setIsSaved(false), 2000);
+    }
+  };
+
   if (!visible) return null;
 
   // Format date for display
@@ -321,6 +347,77 @@ export function DayDetailDrawer({
               {/* Bottom padding */}
               <View style={{ height: 20 }} />
             </ScrollView>
+
+            {/* Comment Input Bar */}
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: "rgba(156, 163, 175, 0.1)",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                backgroundColor: "rgba(10, 10, 12, 0.95)",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "rgba(20, 20, 24, 0.8)",
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "rgba(156, 163, 175, 0.15)",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <TextInput
+                    value={comment}
+                    onChangeText={setComment}
+                    placeholder="Add a comment about this day..."
+                    placeholderTextColor="#6B7280"
+                    multiline
+                    style={{
+                      flex: 1,
+                      color: "#E5E7EB",
+                      fontSize: 14,
+                      maxHeight: 80,
+                      lineHeight: 20,
+                    }}
+                  />
+                </View>
+                <Pressable
+                  onPress={handleSaveComment}
+                  disabled={!comment.trim()}
+                  style={({ pressed }) => ({
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: comment.trim()
+                      ? isSaved
+                        ? "#10B981"
+                        : "#A855F7"
+                      : "rgba(156, 163, 175, 0.2)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons
+                    name={isSaved ? "checkmark" : "arrow-up"}
+                    size={20}
+                    color={comment.trim() ? "#FFFFFF" : "#6B7280"}
+                  />
+                </Pressable>
+              </View>
+            </View>
           </Pressable>
         </Animated.View>
       </Pressable>
