@@ -59,6 +59,7 @@ import {
   modifyReplyLength,
   analyzeImageToxicity,
   analyzeVoiceEmotion,
+  generateChatResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -676,6 +677,73 @@ export function ChatScreen({ navigation }: Props) {
     };
     console.log("Adding direction message:", directionMsg.id);
     addMessageToActiveLoop(directionMsg);
+  };
+
+  const handleInstantReply = async () => {
+    console.log("handleInstantReply called");
+
+    // Remove the choice message
+    const choiceMsg = messages.find(
+      (m) => m.role === "context-or-direction-choice"
+    );
+    if (choiceMsg) {
+      removeMessageFromActiveLoop(choiceMsg.id);
+    }
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_instant",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    // Generate instant reply without needing direction
+    try {
+      const conversationHistory = messages
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        }));
+
+      const response = await generateChatResponse(
+        "Based on the conversation, provide a single thoughtful, balanced reply suggestion that the user could send. Keep it natural, empathetic, and appropriate for the situation discussed. Just provide the reply text, nothing else.",
+        conversationHistory
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add the reply suggestion as a suggested reply card
+      const replyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_instant_reply",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        intention: "maintain", // Use neutral intention for instant replies
+        replies: [
+          {
+            id: "instant_1",
+            text: response.trim(),
+            guidanceNote: "A balanced response based on your conversation context",
+          },
+        ],
+      };
+      addMessageToActiveLoop(replyMsg);
+    } catch (error) {
+      console.error("Error generating instant reply:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      const errorMsg: ChatMessage = {
+        id: Date.now().toString() + "_error",
+        role: "assistant",
+        content: "I apologize, but I encountered an error generating a reply suggestion. Please try again.",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(errorMsg);
+    }
   };
 
   const handleContextSubmit = async (contextInput: string, isVoice: boolean) => {
@@ -1394,6 +1462,7 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           onSelectAddContext={handleAddContext}
           onSelectDirection={handleSkipToDirection}
+          onSelectInstantReply={handleInstantReply}
         />
       );
     }

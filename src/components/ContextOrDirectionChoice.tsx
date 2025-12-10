@@ -6,11 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 interface ContextOrDirectionChoiceProps {
   onSelectAddContext: () => void;
   onSelectDirection: () => void;
+  onSelectInstantReply: () => void;
 }
 
 export function ContextOrDirectionChoice({
   onSelectAddContext,
   onSelectDirection,
+  onSelectInstantReply,
 }: ContextOrDirectionChoiceProps) {
   return (
     <Animated.View
@@ -103,7 +105,67 @@ export function ContextOrDirectionChoice({
           </View>
         </Pressable>
 
-        {/* Option 2: Choose Relationship Direction */}
+        {/* Option 2: Get Instant Reply Suggestion */}
+        <Pressable
+          onPress={onSelectInstantReply}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? "#1A1A1A" : "#141414",
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "#4FFFD720",
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Icon */}
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#4FFFD715",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name="chatbox-ellipses-outline" size={22} color="#4FFFD7" />
+            </View>
+
+            {/* Text Content */}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: "#F9FAFB",
+                  marginBottom: 2,
+                  letterSpacing: 0.2,
+                }}
+              >
+                Get Instant Reply Suggestion
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                  lineHeight: 18,
+                  letterSpacing: 0.1,
+                }}
+              >
+                Receive a quick response suggestion
+              </Text>
+            </View>
+
+            {/* Arrow */}
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </View>
+        </Pressable>
+
+        {/* Option 3: Choose Relationship Direction */}
         <Pressable
           onPress={() => {
             console.log("Choose Relationship Direction pressed");

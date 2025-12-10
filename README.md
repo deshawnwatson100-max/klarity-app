@@ -213,7 +213,17 @@ When you send a message about a relationship situation, Klarity responds with a 
    - Smooth animations and visual feedback
    - Cancel option to dismiss input without submitting
 
-13. **Your Response Bubble**
+13. **What would you like to do next? Card** ✨ NEW
+   - Appears after deep analysis as a choice card
+   - Three actionable options presented as elegant cards:
+     - **Add More Context** (Purple accent) - Share additional details for better guidance
+     - **Get Instant Reply Suggestion** (Aqua Teal accent) - Receive a quick, balanced response suggestion without choosing a direction
+     - **Choose Relationship Direction** (Blue accent) - Select your intention and get tailored guidance
+   - Each option has icon, title, description, and smooth press animation
+   - **Instant Reply** generates a thoughtful, balanced response immediately using the conversation context
+   - Provides flexibility: quick reply vs. deep intentional guidance
+
+14. **Your Response Bubble**
     - When you tap "Use this reply", it appears as right-aligned user bubble
     - Smooth insert animation
     - Chat auto-scrolls to show your message
@@ -945,6 +955,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Context Re-analysis** - Updates guidance with enriched information
 ✅ **Reflective Understanding Response** - Two-part empathy + clarity format after context
 ✅ **Confirmation Questions** - "Is this more aligned with how you're feeling?"
+✅ **What would you like to do next? Card** - Three-option choice card (Add Context / Instant Reply / Choose Direction)
+✅ **Instant Reply Suggestion** - Quick, balanced response generation without direction selection
 
 ## Future Enhancements
 
