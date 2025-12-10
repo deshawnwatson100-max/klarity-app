@@ -24,6 +24,7 @@ import { useCalendarStore } from "../state/calendarStore";
 import { INTENTIONS, EVENT_TYPES } from "../types/calendar";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { DayDetailDrawer } from "../components/DayDetailDrawer";
+import { DailyClaritySummary } from "../components/DailyClaritySummaryCard";
 import { ReflectionModal } from "../components/ReflectionModal";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -138,6 +139,42 @@ export function CalendarScreen({ navigation }: Props) {
         setSelectedEntries(getEntriesForDate(selectedDate));
       }
     }
+  };
+
+  const handleViewChatLoops = () => {
+    setDrawerVisible(false);
+    // Navigate to ChatScreen with loops for the selected date
+    navigation.navigate("ChatScreen");
+    console.log("Viewing chat loops for date:", selectedDate);
+  };
+
+  // Generate mock daily clarity summary for dates with entries
+  const getDailySummaryForDate = (dateStr: string): DailyClaritySummary | null => {
+    const entries = getEntriesForDate(dateStr);
+    if (entries.length === 0) return null;
+
+    // Mock data - in production, this would come from actual chat loop analysis
+    return {
+      date: dateStr,
+      navigatedItems: [
+        "Handled a difficult conversation with patience",
+        "Set boundaries in a professional setting",
+        "Expressed feelings clearly without escalation",
+      ],
+      emotionalImpact: {
+        summary: "The interactions today were emotionally charged but manageable. You stayed composed during challenging moments.",
+        intensity: 6,
+      },
+      whatYouDidWell: [
+        "Maintained composure during difficult moments",
+        "Communicated needs effectively and respectfully",
+      ],
+      whatToImprove: [
+        "Could have taken more time before responding in heated moments",
+        "Consider setting clearer expectations upfront",
+      ],
+      intentionForTomorrow: "Approach conversations with more patience and clarity, taking time to breathe before responding.",
+    };
   };
 
   const renderCalendarDays = () => {
@@ -473,6 +510,8 @@ export function CalendarScreen({ navigation }: Props) {
         onClose={() => setDrawerVisible(false)}
         onOpenLoop={handleOpenLoop}
         onAddReflection={handleAddReflection}
+        summary={selectedDate ? getDailySummaryForDate(selectedDate) : null}
+        onViewChatLoops={handleViewChatLoops}
       />
 
       {/* Reflection Modal */}

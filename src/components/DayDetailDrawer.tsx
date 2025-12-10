@@ -5,6 +5,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { CalendarLogEntry } from "../types/calendar";
 import { EVENT_TYPES, INTENTIONS } from "../types/calendar";
+import {
+  DailyClaritySummaryCard,
+  DailyClaritySummary,
+} from "./DailyClaritySummaryCard";
 
 interface DayDetailDrawerProps {
   visible: boolean;
@@ -13,6 +17,8 @@ interface DayDetailDrawerProps {
   onClose: () => void;
   onOpenLoop: (loopId: string) => void;
   onAddReflection: (entryId: string) => void;
+  summary?: DailyClaritySummary | null;
+  onViewChatLoops?: () => void;
 }
 
 export function DayDetailDrawer({
@@ -22,6 +28,8 @@ export function DayDetailDrawer({
   onClose,
   onOpenLoop,
   onAddReflection,
+  summary,
+  onViewChatLoops,
 }: DayDetailDrawerProps) {
   if (!visible) return null;
 
@@ -102,10 +110,24 @@ export function DayDetailDrawer({
 
             {/* Events List */}
             <ScrollView
-              className="flex-1 px-6 pt-4"
+              className="flex-1 pt-4"
               showsVerticalScrollIndicator={false}
               style={{ maxHeight: 450 }}
             >
+              {/* Daily Clarity Summary Card */}
+              <DailyClaritySummaryCard
+                summary={summary || null}
+                onViewChatLoops={() => {
+                  if (onViewChatLoops) {
+                    onViewChatLoops();
+                  } else {
+                    console.log("View chat loops for date:", date);
+                  }
+                }}
+              />
+
+              {/* Events List Container */}
+              <View className="px-6">
               {entries.length === 0 ? (
                 <View className="items-center justify-center py-12">
                   <Ionicons name="calendar-outline" size={48} color="#6B7280" />
@@ -294,6 +316,7 @@ export function DayDetailDrawer({
                   </Animated.View>
                 ))
               )}
+              </View>
 
               {/* Bottom padding */}
               <View style={{ height: 20 }} />
