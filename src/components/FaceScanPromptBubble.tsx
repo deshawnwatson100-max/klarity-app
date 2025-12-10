@@ -14,6 +14,8 @@ interface FaceScanPromptBubbleProps {
 export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
   const scale = useSharedValue(1);
 
+  console.log("[FaceScanPromptBubble] Rendering");
+
   const handlePressIn = () => {
     scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
   };
@@ -38,7 +40,10 @@ export function FaceScanPromptBubble({ onTap }: FaceScanPromptBubbleProps) {
       ]}
     >
       <Pressable
-        onPress={onTap}
+        onPress={() => {
+          console.log("[FaceScanPromptBubble] Tapped");
+          onTap();
+        }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         className="active:opacity-90"

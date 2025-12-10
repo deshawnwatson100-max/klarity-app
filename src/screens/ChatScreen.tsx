@@ -1201,9 +1201,11 @@ export function ChatScreen({ navigation }: Props) {
 
     if (message.role === "face-scan-prompt") {
       const promptMsg = message as FaceScanPromptMessage;
+      console.log("[ChatScreen] Rendering face-scan-prompt, isExpanded:", promptMsg.isExpanded);
 
       if (promptMsg.isExpanded) {
         // Show the full face scan card when expanded
+        console.log("[ChatScreen] Rendering expanded face scan card");
         return (
           <EmotionalFaceScanBubble
             key={message.id}
@@ -1213,6 +1215,7 @@ export function ChatScreen({ navigation }: Props) {
         );
       } else {
         // Show the tappable prompt bubble when collapsed
+        console.log("[ChatScreen] Rendering collapsed face scan prompt");
         return (
           <FaceScanPromptBubble
             key={message.id}
