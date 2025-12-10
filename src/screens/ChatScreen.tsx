@@ -1323,15 +1323,6 @@ export function ChatScreen({ navigation }: Props) {
           >
             {messages.map(renderMessage)}
 
-            {isLoading && (
-              <View className="flex-row items-center gap-3 mb-4">
-                <ActivityIndicator size="small" color="#B47CFF" />
-                <Text className="text-neutral-400 text-sm">
-                  Processing...
-                </Text>
-              </View>
-            )}
-
             <View style={{ height: 20 }} />
           </ScrollView>
 
