@@ -214,7 +214,7 @@ export function VoiceEmotionScanBubble({
                   color: "#E5E7EB",
                 }}
               >
-                [ 1 ] Add more context / voice or text input
+                Add more context / voice or text input
               </Text>
             </Pressable>
 
@@ -234,7 +234,7 @@ export function VoiceEmotionScanBubble({
                   color: "#E5E7EB",
                 }}
               >
-                [ 2 ] Choose relationship direction
+                Choose relationship direction
               </Text>
             </Pressable>
 
@@ -254,7 +254,7 @@ export function VoiceEmotionScanBubble({
                   color: "#E5E7EB",
                 }}
               >
-                [ 3 ] Generate reply suggestions
+                Generate reply suggestions
               </Text>
             </Pressable>
 
@@ -274,7 +274,7 @@ export function VoiceEmotionScanBubble({
                   color: "#E5E7EB",
                 }}
               >
-                [ 4 ] Check possible outcomes of responding this way
+                Check possible outcomes of responding this way
               </Text>
             </Pressable>
           </View>
