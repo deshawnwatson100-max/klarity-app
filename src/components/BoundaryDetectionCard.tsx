@@ -11,14 +11,16 @@ import { BoundaryAnalysis } from "../types/chat";
 
 interface BoundaryDetectionCardProps {
   analysis: BoundaryAnalysis;
-  onExploreBoundaryResponse?: () => void;
   onAddMoreContext?: () => void;
+  onExploreResponse?: () => void;
+  onUnderstandBoundaries?: () => void;
 }
 
 export function BoundaryDetectionCard({
   analysis,
-  onExploreBoundaryResponse,
   onAddMoreContext,
+  onExploreResponse,
+  onUnderstandBoundaries,
 }: BoundaryDetectionCardProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
@@ -68,7 +70,7 @@ export function BoundaryDetectionCard({
               color: "#E5E7EB",
             }}
           >
-            Possible Boundary Signal Detected
+            Possible Boundary Tension Detected
           </Text>
         </View>
         <Text
@@ -94,22 +96,7 @@ export function BoundaryDetectionCard({
           </Text>
         </View>
 
-        {/* Secondary Context (Optional) */}
-        {analysis.secondaryContext && (
-          <View className="mb-5">
-            <Text
-              className="text-sm leading-5 italic"
-              style={{
-                fontFamily: "SF Pro Display",
-                color: "#9CA3AF",
-              }}
-            >
-              {analysis.secondaryContext}
-            </Text>
-          </View>
-        )}
-
-        {/* Detected Signals */}
+        {/* What Was Noticed (Detected Signals) - max 2 */}
         {analysis.detectedSignals && analysis.detectedSignals.length > 0 && (
           <View className="mb-5">
             <Text
@@ -119,10 +106,10 @@ export function BoundaryDetectionCard({
                 color: "#9CA3AF",
               }}
             >
-              Observed Signals
+              What Was Noticed
             </Text>
             <View className="gap-2">
-              {analysis.detectedSignals.map((signal, index) => (
+              {analysis.detectedSignals.slice(0, 2).map((signal, index) => (
                 <View
                   key={index}
                   className="rounded-xl p-3"
@@ -147,7 +134,7 @@ export function BoundaryDetectionCard({
           </View>
         )}
 
-        {/* Supportive Note */}
+        {/* Supportive Reassurance */}
         {analysis.supportiveNote && (
           <View className="mb-5">
             <View
@@ -174,7 +161,7 @@ export function BoundaryDetectionCard({
         {/* Action Buttons */}
         <View className="gap-3">
           <Pressable
-            onPress={onExploreBoundaryResponse}
+            onPress={onAddMoreContext}
             className="rounded-xl p-3 active:opacity-70"
             style={{
               backgroundColor: "#0F0F11",
@@ -189,12 +176,32 @@ export function BoundaryDetectionCard({
                 color: "#E5E7EB",
               }}
             >
-              Explore a Boundaried Response
+              Add more context
             </Text>
           </Pressable>
 
           <Pressable
-            onPress={onAddMoreContext}
+            onPress={onExploreResponse}
+            className="rounded-xl p-3 active:opacity-70"
+            style={{
+              backgroundColor: "#0F0F11",
+              borderWidth: 1,
+              borderColor: "#9CA3AF20",
+            }}
+          >
+            <Text
+              className="text-sm font-medium text-center"
+              style={{
+                fontFamily: "SF Pro Display",
+                color: "#E5E7EB",
+              }}
+            >
+              Explore a healthier response
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onUnderstandBoundaries}
             className="rounded-xl p-3 active:opacity-70"
             style={{
               backgroundColor: "transparent",
@@ -209,7 +216,7 @@ export function BoundaryDetectionCard({
                 color: "#9CA3AF",
               }}
             >
-              Add More Context
+              Understand my boundaries better
             </Text>
           </Pressable>
         </View>

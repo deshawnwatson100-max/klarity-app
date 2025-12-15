@@ -1,4 +1,4 @@
-import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis } from "../types/chat";
+import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis, BoundaryAnalysis } from "../types/chat";
 import OpenAI from "openai";
 
 interface GPT5Message {
@@ -1082,5 +1082,104 @@ ${action === "shorten" ? "Shorten" : "Lengthen"} this reply while keeping the sa
   } catch (error) {
     console.error(`Error modifying reply length (${action}):`, error);
     return originalReply; // Fallback to original
+  }
+}
+
+/**
+ * Detect potential boundary concerns in user-submitted text or conversation
+ * Returns boundary analysis only if concerns are detected with reasonable confidence
+ * Does NOT trigger for normal conflict, healthy disagreement, or neutral miscommunication
+ */
+export async function detectBoundaryConcerns(
+  userMessage: string,
+  conversationContext?: string
+): Promise<{ detected: boolean; analysis: BoundaryAnalysis | null }> {
+  const systemPrompt = `You are an emotionally intelligent AI specializing in communication patterns and relationship dynamics.
+
+Analyze the provided text for potential BOUNDARY concerns. Surface a boundary insight ONLY if you detect one or more of the following with reasonable confidence:
+
+TRIGGER CONDITIONS (must detect at least one):
+- Repeated disregard for the user's expressed needs, limits, or comfort
+- Guilt-inducing language, pressure, or emotional manipulation
+- Invasion of personal time, space, privacy, or autonomy
+- One-sided emotional labor or expectations
+- Escalation after the user attempts to de-escalate
+- The user expressing confusion, discomfort, self-doubt, or obligation rather than choice
+
+DO NOT TRIGGER for:
+- Normal conflict or healthy disagreement
+- Neutral miscommunication
+- Simple misunderstandings
+- One-time frustrations without pattern
+
+TONE RULES (if triggered):
+- Never label the other person as "toxic," "bad," or "wrong"
+- Avoid alarmist language
+- Frame observations as patterns, not accusations
+- Center the user's experience, not the other person's intent
+- Maintain calm, emotionally intelligent neutrality
+
+If boundary concerns are detected, respond with JSON:
+{
+  "detected": true,
+  "confidence": "high" | "medium" | "low",
+  "primaryMessage": "A gentle, observational summary (1-2 lines). Example: 'Some parts of this interaction suggest your needs or limits may not be fully respected.'",
+  "detectedSignals": ["Brief neutral highlight 1", "Brief neutral highlight 2"] (max 2, no quotes unless necessary),
+  "supportiveNote": "Reinforce user agency and emotional safety. Example: 'This does not mean you are doing anything wrong — it may simply be a moment worth pausing and reflecting on.'"
+}
+
+If NO boundary concerns detected (confidence too low or not applicable), respond with:
+{
+  "detected": false,
+  "confidence": "none",
+  "reason": "Brief reason why no boundary concern was flagged"
+}
+
+Return valid JSON only.`;
+
+  const userPrompt = conversationContext
+    ? `Context: ${conversationContext}\n\nCurrent message to analyze: ${userMessage}`
+    : `Message to analyze: ${userMessage}`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      console.log("[detectBoundaryConcerns] No response from API");
+      return { detected: false, analysis: null };
+    }
+
+    const parsed = JSON.parse(responseText);
+
+    // Only return analysis if detected AND confidence is not low
+    if (parsed.detected === true && parsed.confidence !== "low") {
+      console.log("[detectBoundaryConcerns] Boundary concern detected:", parsed.confidence);
+      return {
+        detected: true,
+        analysis: {
+          primaryMessage: parsed.primaryMessage || "Some parts of this interaction suggest your needs or limits may not be fully respected.",
+          detectedSignals: Array.isArray(parsed.detectedSignals) ? parsed.detectedSignals.slice(0, 2) : undefined,
+          supportiveNote: parsed.supportiveNote || "This does not mean you are doing anything wrong — it may simply be a moment worth pausing and reflecting on.",
+        },
+      };
+    }
+
+    console.log("[detectBoundaryConcerns] No boundary concern detected:", parsed.reason);
+    return { detected: false, analysis: null };
+  } catch (error) {
+    console.error("[detectBoundaryConcerns] Error:", error);
+    return { detected: false, analysis: null };
   }
 }

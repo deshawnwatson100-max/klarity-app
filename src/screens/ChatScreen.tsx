@@ -61,6 +61,7 @@ import {
   analyzeImageToxicity,
   analyzeVoiceEmotion,
   generateChatResponse,
+  detectBoundaryConcerns,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -403,6 +404,23 @@ export function ChatScreen({ navigation }: Props) {
     addMessageToActiveLoop(deepAnalysisMsg);
 
     await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // Step 6: Check for boundary concerns (runs in parallel with UI)
+    const boundaryResult = await detectBoundaryConcerns(userMessageContent);
+
+    // Only show boundary card if detected with reasonable confidence
+    if (boundaryResult.detected && boundaryResult.analysis) {
+      const boundaryMsg: BoundaryDetectionMessage = {
+        id: Date.now().toString() + "_boundary",
+        role: "boundary-detection",
+        content: "",
+        timestamp: Date.now(),
+        boundaryAnalysis: boundaryResult.analysis,
+      };
+      addMessageToActiveLoop(boundaryMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
 
     // Show choice: Add Context OR Choose Direction
     const choiceMsg: ContextOrDirectionChoiceMessage = {
@@ -1547,8 +1565,9 @@ export function ChatScreen({ navigation }: Props) {
         <BoundaryDetectionCard
           key={message.id}
           analysis={boundaryMsg.boundaryAnalysis}
-          onExploreBoundaryResponse={handleSkipToDirection}
+          onExploreResponse={handleSkipToDirection}
           onAddMoreContext={handleAddContext}
+          onUnderstandBoundaries={handleSkipToDirection}
         />
       );
     }
