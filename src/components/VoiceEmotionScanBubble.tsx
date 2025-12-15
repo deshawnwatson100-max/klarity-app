@@ -41,7 +41,7 @@ export function VoiceEmotionScanBubble({
             color: "#E5E7EB",
           }}
         >
-          🎙️ Voice Emotion Analysis
+          Voice Emotion Analysis
         </Text>
         <Text
           className="text-xs uppercase tracking-wider mb-4"
