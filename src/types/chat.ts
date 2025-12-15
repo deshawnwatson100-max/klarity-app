@@ -21,7 +21,8 @@ export type MessageRole =
   | "inline-context-input"
   | "reflective-understanding"
   | "context-or-direction-choice"
-  | "voice-emotion-scan-result";
+  | "voice-emotion-scan-result"
+  | "boundary-detection";
 
 export interface Message {
   id: string;
@@ -200,6 +201,18 @@ export interface VoiceEmotionScanResultMessage extends Message {
   voiceEmotionAnalysis: VoiceEmotionAnalysis;
 }
 
+export interface BoundaryAnalysis {
+  primaryMessage: string;
+  secondaryContext?: string;
+  detectedSignals?: string[];
+  supportiveNote?: string;
+}
+
+export interface BoundaryDetectionMessage extends Message {
+  role: "boundary-detection";
+  boundaryAnalysis: BoundaryAnalysis;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -222,4 +235,5 @@ export type ChatMessage =
   | InlineContextInputMessage
   | ReflectiveUnderstandingMessage
   | ContextOrDirectionChoiceMessage
-  | VoiceEmotionScanResultMessage;
+  | VoiceEmotionScanResultMessage
+  | BoundaryDetectionMessage;

@@ -44,6 +44,7 @@ import { InlineContextInput } from "../components/InlineContextInput";
 import { ReflectiveUnderstandingBubble } from "../components/ReflectiveUnderstandingBubble";
 import { ContextOrDirectionChoice } from "../components/ContextOrDirectionChoice";
 import { VoiceEmotionScanBubble } from "../components/VoiceEmotionScanBubble";
+import { BoundaryDetectionCard } from "../components/BoundaryDetectionCard";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -83,6 +84,7 @@ import {
   ReflectiveUnderstandingMessage,
   ContextOrDirectionChoiceMessage,
   VoiceEmotionScanResultMessage,
+  BoundaryDetectionMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -1535,6 +1537,18 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           voiceEmotionAnalysis={voiceEmotionMsg.voiceEmotionAnalysis}
           onFollowUpAction={handleVoiceEmotionFollowUp}
+        />
+      );
+    }
+
+    if (message.role === "boundary-detection") {
+      const boundaryMsg = message as BoundaryDetectionMessage;
+      return (
+        <BoundaryDetectionCard
+          key={message.id}
+          analysis={boundaryMsg.boundaryAnalysis}
+          onExploreBoundaryResponse={handleSkipToDirection}
+          onAddMoreContext={handleAddContext}
         />
       );
     }
