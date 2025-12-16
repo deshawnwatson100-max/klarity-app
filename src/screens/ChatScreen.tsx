@@ -45,6 +45,7 @@ import { ReflectiveUnderstandingBubble } from "../components/ReflectiveUnderstan
 import { ContextOrDirectionChoice } from "../components/ContextOrDirectionChoice";
 import { VoiceEmotionScanBubble } from "../components/VoiceEmotionScanBubble";
 import { BoundaryDetectionCard } from "../components/BoundaryDetectionCard";
+import { BoundaryClaritySummaryBubble } from "../components/BoundaryClaritySummaryBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { useLoopsStore } from "../state/loopsStore";
@@ -62,6 +63,7 @@ import {
   analyzeVoiceEmotion,
   generateChatResponse,
   detectBoundaryConcerns,
+  generateBoundaryClarity,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -86,6 +88,7 @@ import {
   ContextOrDirectionChoiceMessage,
   VoiceEmotionScanResultMessage,
   BoundaryDetectionMessage,
+  BoundaryClaritySummaryMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -1231,6 +1234,67 @@ export function ChatScreen({ navigation }: Props) {
     }
   };
 
+  const handleUnderstandBoundaries = async (boundaryMessageId: string) => {
+    console.log("[handleUnderstandBoundaries] Starting boundary clarity flow");
+
+    // Find the boundary detection message to get the analysis
+    const boundaryMsg = messages.find(
+      (m) => m.id === boundaryMessageId && m.role === "boundary-detection"
+    ) as BoundaryDetectionMessage | undefined;
+
+    if (!boundaryMsg) {
+      console.warn("[handleUnderstandBoundaries] Boundary message not found");
+      handleSkipToDirection();
+      return;
+    }
+
+    // Show typing indicator
+    const typingMsg: TypingMessage = {
+      id: Date.now().toString() + "_typing_boundary_clarity",
+      role: "typing",
+      content: "",
+      timestamp: Date.now(),
+    };
+    addMessageToActiveLoop(typingMsg);
+
+    try {
+      // Generate boundary clarity summary
+      const boundaryClarity = await generateBoundaryClarity(
+        boundaryMsg.boundaryAnalysis,
+        currentUserMessage
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Show boundary clarity summary
+      const clarityMsg: BoundaryClaritySummaryMessage = {
+        id: Date.now().toString() + "_boundary_clarity",
+        role: "boundary-clarity-summary",
+        content: "",
+        timestamp: Date.now(),
+        boundaryClarity,
+      };
+      addMessageToActiveLoop(clarityMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Show direction selector (Relationship Direction Card)
+      const directionMsg: DirectionSelectorMessage = {
+        id: Date.now().toString() + "_direction_after_boundary",
+        role: "direction-selector",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(directionMsg);
+    } catch (error) {
+      console.error("[handleUnderstandBoundaries] Error:", error);
+      removeMessageFromActiveLoop(typingMsg.id);
+      // Fallback to direction selector
+      handleSkipToDirection();
+    }
+  };
+
   const renderMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
@@ -1450,7 +1514,17 @@ export function ChatScreen({ navigation }: Props) {
           analysis={boundaryMsg.boundaryAnalysis}
           onExploreResponse={handleSkipToDirection}
           onAddMoreContext={handleAddContext}
-          onUnderstandBoundaries={handleSkipToDirection}
+          onUnderstandBoundaries={() => handleUnderstandBoundaries(message.id)}
+        />
+      );
+    }
+
+    if (message.role === "boundary-clarity-summary") {
+      const clarityMsg = message as BoundaryClaritySummaryMessage;
+      return (
+        <BoundaryClaritySummaryBubble
+          key={message.id}
+          boundaryClarity={clarityMsg.boundaryClarity}
         />
       );
     }

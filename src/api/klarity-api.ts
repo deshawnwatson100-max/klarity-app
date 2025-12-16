@@ -1183,3 +1183,112 @@ Return valid JSON only.`;
     return { detected: false, analysis: null };
   }
 }
+
+/**
+ * Generate boundary clarity summary when user taps "Understand My Boundaries Better"
+ * Provides educational insight into what boundary was crossed, how it impacts them, and the relationship
+ */
+export async function generateBoundaryClarity(
+  boundaryAnalysis: BoundaryAnalysis,
+  originalMessage?: string
+): Promise<{
+  whatBoundaryCrossed: string;
+  howItImpactsYou: string;
+  howItAffectsRelationship: string;
+  transitionLine: string;
+}> {
+  const systemPrompt = `You are an emotionally intelligent AI specializing in boundary awareness and relationship dynamics.
+
+The user has asked to understand their boundaries better after a potential boundary concern was detected. Generate a calm, grounded, educational response in THREE parts:
+
+**Part 1: What Boundary May Have Been Crossed** (2-3 sentences)
+- Name the boundary category neutrally (e.g., emotional availability, personal time, autonomy, respect for decisions)
+- Explain briefly what this boundary means in relationships
+- Keep it educational, not accusatory
+
+**Part 2: How This Might Impact You** (2-3 sentences)
+- Describe the internal emotional experience when this boundary is crossed
+- Help them understand why they may feel confused, drained, or uneasy
+- Normalize the feeling
+
+**Part 3: How This Could Affect the Relationship** (2-3 sentences)
+- Explain the potential long-term dynamic if this pattern continues
+- Keep it balanced — not fear-based, but awareness-focused
+- Frame as something worth noticing, not a verdict
+
+Also provide a brief **Transition Line** (1 sentence) that gently bridges to choosing their relationship direction:
+- Example: "Now that you have more clarity, you can choose how you want to move forward."
+
+TONE:
+- Calm, grounded, emotionally intelligent
+- Educational without lecturing
+- Supportive of autonomy
+- No labels like "toxic" or "bad"
+- Center the user's experience
+
+Return valid JSON only:
+{
+  "whatBoundaryCrossed": "string (2-3 sentences)",
+  "howItImpactsYou": "string (2-3 sentences)",
+  "howItAffectsRelationship": "string (2-3 sentences)",
+  "transitionLine": "string (1 sentence)"
+}`;
+
+  const userPrompt = `Boundary analysis detected:
+- Primary message: ${boundaryAnalysis.primaryMessage}
+- Detected signals: ${boundaryAnalysis.detectedSignals?.join("; ") || "General boundary concern"}
+- Supportive note: ${boundaryAnalysis.supportiveNote || "N/A"}
+${originalMessage ? `\nOriginal situation: ${originalMessage}` : ""}
+
+Generate a boundary clarity summary to help the user understand their boundaries better. Return valid JSON only.`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      throw new Error("No response from API");
+    }
+
+    const parsed = JSON.parse(responseText);
+
+    return {
+      whatBoundaryCrossed:
+        parsed.whatBoundaryCrossed ||
+        "This situation may involve a boundary around emotional availability or respect for your expressed needs.",
+      howItImpactsYou:
+        parsed.howItImpactsYou ||
+        "When this boundary is crossed, you might feel drained, confused, or like your needs are not being heard. This is a normal response to feeling unseen.",
+      howItAffectsRelationship:
+        parsed.howItAffectsRelationship ||
+        "Over time, unaddressed boundary patterns can create distance, resentment, or emotional exhaustion. Noticing this now gives you a chance to address it intentionally.",
+      transitionLine:
+        parsed.transitionLine ||
+        "Now that you have more clarity, you can choose how you want to move forward.",
+    };
+  } catch (error) {
+    console.error("[generateBoundaryClarity] Error:", error);
+
+    return {
+      whatBoundaryCrossed:
+        "This situation may involve a boundary around emotional availability or respect for your expressed needs. Boundaries are the limits we set to protect our well-being and maintain healthy relationships.",
+      howItImpactsYou:
+        "When this boundary is crossed, you might feel drained, confused, or like your needs are not being heard. This is a normal response to feeling unseen or pressured.",
+      howItAffectsRelationship:
+        "Over time, unaddressed boundary patterns can create emotional distance or resentment. Recognizing this early gives you the opportunity to address it intentionally.",
+      transitionLine:
+        "Now that you have more clarity, you can choose how you want to move forward.",
+    };
+  }
+}

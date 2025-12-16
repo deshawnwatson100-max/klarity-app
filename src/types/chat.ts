@@ -22,7 +22,8 @@ export type MessageRole =
   | "reflective-understanding"
   | "context-or-direction-choice"
   | "voice-emotion-scan-result"
-  | "boundary-detection";
+  | "boundary-detection"
+  | "boundary-clarity-summary";
 
 export interface Message {
   id: string;
@@ -213,6 +214,18 @@ export interface BoundaryDetectionMessage extends Message {
   boundaryAnalysis: BoundaryAnalysis;
 }
 
+export interface BoundaryClarity {
+  whatBoundaryCrossed: string;
+  howItImpactsYou: string;
+  howItAffectsRelationship: string;
+  transitionLine: string;
+}
+
+export interface BoundaryClaritySummaryMessage extends Message {
+  role: "boundary-clarity-summary";
+  boundaryClarity: BoundaryClarity;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -236,4 +249,5 @@ export type ChatMessage =
   | ReflectiveUnderstandingMessage
   | ContextOrDirectionChoiceMessage
   | VoiceEmotionScanResultMessage
-  | BoundaryDetectionMessage;
+  | BoundaryDetectionMessage
+  | BoundaryClaritySummaryMessage;

@@ -966,6 +966,9 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **What would you like to do next? Card** - Three-option choice card (Add Context / Instant Reply / Choose Direction)
 ✅ **Instant Reply Suggestion** - Quick, balanced response generation without direction selection
 ✅ **Daily Comment Input** - Add personal comments/notes to any calendar day
+✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
+✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
+✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
 
 ## Future Enhancements
 
