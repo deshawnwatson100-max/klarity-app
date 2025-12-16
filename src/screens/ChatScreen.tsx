@@ -1232,43 +1232,12 @@ export function ChatScreen({ navigation }: Props) {
         break;
 
       case "generate-replies":
-        // User wants reply suggestions - need to pick direction first
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "To generate the best reply suggestions for you, I first need to understand your relationship intention. Let me ask you to choose your direction.",
-          timestamp: Date.now(),
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
+        // User wants reply suggestions - skip to direction first
         handleSkipToDirection();
         break;
 
       case "check-outcomes":
-        // User wants to check possible outcomes
-        const typingMsg: TypingMessage = {
-          id: Date.now().toString() + "_typing_outcomes",
-          role: "typing",
-          content: "",
-          timestamp: Date.now(),
-        };
-        addMessageToActiveLoop(typingMsg);
-
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        removeMessageFromActiveLoop(typingMsg.id);
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "To give you the most accurate outcome analysis, I need to know: what direction do you want to take with this relationship? This will help me show you how different approaches might play out.",
-          timestamp: Date.now(),
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
+        // User wants to check possible outcomes - skip to direction first
         handleSkipToDirection();
         break;
 
