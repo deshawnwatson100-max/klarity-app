@@ -501,8 +501,8 @@ export function ChatScreen({ navigation }: Props) {
     addMessageToActiveLoop(typingMsg);
 
     try {
-      // Generate and show tailored guidance
-      const guidance = await generateTailoredGuidance(
+      // Generate suggested replies directly (skip guidance message)
+      const replies = await generateIntentionBasedReplies(
         currentUserMessage,
         currentIntention,
         currentAnalysis
@@ -511,21 +511,6 @@ export function ChatScreen({ navigation }: Props) {
       // Remove typing indicator
       removeMessageFromActiveLoop(typingMsg.id);
 
-      const guidanceMsg: TailoredGuidanceMessage = {
-        id: Date.now().toString() + "_guidance",
-        role: "tailored-guidance",
-        content: guidance,
-        timestamp: Date.now(),
-        intention: currentIntention,
-      };
-      addMessageToActiveLoop(guidanceMsg);
-
-      // Generate and show suggested replies with tone
-      const replies = await generateIntentionBasedReplies(
-        currentUserMessage,
-        currentIntention,
-        currentAnalysis
-      );
       const repliesMsg: SuggestedReplyCardMessage = {
         id: Date.now().toString() + "_replies",
         role: "suggested-reply-card",
@@ -542,7 +527,7 @@ export function ChatScreen({ navigation }: Props) {
         currentUserMessage,
         currentAnalysis,
         currentIntention,
-        guidance,
+        "", // No guidance message
         replies
       );
 
