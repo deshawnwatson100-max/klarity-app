@@ -276,20 +276,37 @@ export function ChatScreen({ navigation }: Props) {
         };
         addMessageToActiveLoop(typingMsg);
 
-        // Analyze the image
+        // Analyze the image for dysfunctional communication
         const imageAnalysis = await analyzeImageToxicity(userMessage.imageBase64);
 
-        // Remove typing indicator and add the real analysis
+        // Also check for boundary concerns based on the image analysis summary
+        const boundaryResult = await detectBoundaryConcerns(imageAnalysis.summary + " " + imageAnalysis.emotionalImpact);
+
+        // Remove typing indicator
         removeMessageFromActiveLoop(typingMsg.id);
 
-        const analysisMessage: ImageAnalysisMessage = {
-          id: Date.now().toString() + "_image_analysis",
-          role: "image-analysis",
-          content: "",
-          timestamp: Date.now(),
-          analysis: imageAnalysis,
-        };
-        addMessageToActiveLoop(analysisMessage);
+        // CARD REPLACEMENT RULE: Show either Boundary Detection OR Dysfunctional Communication, not both
+        if (boundaryResult.detected && boundaryResult.analysis) {
+          // Boundary violations detected - show Boundary Detection Card instead
+          const boundaryMsg: BoundaryDetectionMessage = {
+            id: Date.now().toString() + "_boundary_image",
+            role: "boundary-detection",
+            content: "",
+            timestamp: Date.now(),
+            boundaryAnalysis: boundaryResult.analysis,
+          };
+          addMessageToActiveLoop(boundaryMsg);
+        } else {
+          // No boundary violations - show Dysfunctional Communication Card as normal
+          const analysisMessage: ImageAnalysisMessage = {
+            id: Date.now().toString() + "_image_analysis",
+            role: "image-analysis",
+            content: "",
+            timestamp: Date.now(),
+            analysis: imageAnalysis,
+          };
+          addMessageToActiveLoop(analysisMessage);
+        }
 
         // Create a mock emotional analysis for the guidance generation
         const mockAnalysis: EmotionalAnalysis = {
@@ -305,7 +322,7 @@ export function ChatScreen({ navigation }: Props) {
         };
         setCurrentAnalysis(mockAnalysis);
 
-        // After image analysis, show add context button
+        // After analysis, show add context button
         await new Promise((resolve) => setTimeout(resolve, 400));
 
         // Show choice: Add Context OR Choose Direction
