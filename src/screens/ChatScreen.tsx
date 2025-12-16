@@ -1186,88 +1186,17 @@ export function ChatScreen({ navigation }: Props) {
     // Handle micro-flow actions from emotion scan
     switch (action) {
       case "explore":
-        // A) Explore this feeling - Ask reflective question
-        const exploreMsg: TypingMessage = {
-          id: Date.now().toString() + "_typing_explore",
-          role: "typing",
-          content: "",
-          timestamp: Date.now(),
-        };
-        addMessageToActiveLoop(exploreMsg);
-
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        removeMessageFromActiveLoop(exploreMsg.id);
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "Let me ask you this: What situation or interaction do you think might have triggered this feeling? Sometimes understanding the trigger helps us see the emotion more clearly.",
-          timestamp: Date.now(),
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "Would you like clarity on how to process this, a calm reply to send, or deeper insight into this emotion?",
-          timestamp: Date.now(),
-        });
+        // A) Explore this feeling - Skip to direction selector
+        handleSkipToDirection();
         break;
 
       case "connect":
-        // B) Connect it to your situation - Link emotion to context
-        const connectMsg: TypingMessage = {
-          id: Date.now().toString() + "_typing_connect",
-          role: "typing",
-          content: "",
-          timestamp: Date.now(),
-        };
-        addMessageToActiveLoop(connectMsg);
-
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        removeMessageFromActiveLoop(connectMsg.id);
-
-        // Get the user's last message for context
-        const lastUserMsg = messages
-          .slice()
-          .reverse()
-          .find((m) => m.role === "user");
-        const contextContent = lastUserMsg?.content || "your situation";
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content: `Looking at ${contextContent}, this emotional state might be influencing how you perceive the situation. When we feel this way, it can shape our tone, decision-making, and reactions — sometimes making things feel more intense than they need to be.`,
-          timestamp: Date.now(),
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "Would you like a suggested response to send, or deeper clarity on how this emotion is affecting your perspective?",
-          timestamp: Date.now(),
-        });
+        // B) Connect it to your situation - Skip to add context
+        handleAddContext();
         break;
 
       case "log":
-        // C) Log this for insight later - Save to calendar
-        const logMsg: TypingMessage = {
-          id: Date.now().toString() + "_typing_log",
-          role: "typing",
-          content: "",
-          timestamp: Date.now(),
-        };
-        addMessageToActiveLoop(logMsg);
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        removeMessageFromActiveLoop(logMsg.id);
-
+        // C) Log this for insight later - Save to calendar silently
         // Get emotion scan result from messages
         const emotionScanMsg = messages
           .slice()
@@ -1276,29 +1205,12 @@ export function ChatScreen({ navigation }: Props) {
           | EmotionScanResultMessage
           | undefined;
 
-        const emotion = emotionScanMsg?.emotionAnalysis.primaryEmotion || "Mixed emotions";
-        const intensity = emotionScanMsg?.emotionAnalysis.emotionalIntensity || 50;
-        const timestamp = new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        });
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content: `Logged to your calendar: "${emotion}" (Intensity: ${intensity}%) at ${timestamp} today. This emotional snapshot has been saved for pattern tracking.`,
-          timestamp: Date.now(),
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        addMessageToActiveLoop({
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "You can view this scan in your calendar and compare it with past patterns. Would you like to see your emotional trends now?",
-          timestamp: Date.now(),
-        });
+        if (emotionScanMsg) {
+          const emotion = emotionScanMsg.emotionAnalysis.primaryEmotion || "Mixed emotions";
+          const intensity = emotionScanMsg.emotionAnalysis.emotionalIntensity || 50;
+          // Log to calendar store silently (no message shown)
+          console.log(`[handleEmotionFollowUp] Logged emotion: ${emotion} (${intensity}%)`);
+        }
         break;
 
       default:
