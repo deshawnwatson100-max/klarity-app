@@ -1,5 +1,14 @@
-import React, { useEffect } from "react";
-import { View, Text, Pressable, Dimensions, BackHandler } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Dimensions,
+  BackHandler,
+  TextInput,
+  ScrollView,
+  Keyboard,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -10,12 +19,15 @@ import Animated, {
   withSpring,
   runOnJS,
   Easing,
+  FadeIn,
+  FadeOut,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
+import { KlarityLoop } from "../types/loop";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.85;
 
 interface SlideOverDrawerProps {
   visible: boolean;
@@ -27,9 +39,13 @@ interface MenuItemProps {
   label: string;
   onPress: () => void;
   isLast?: boolean;
+  subtitle?: string;
 }
 
-function MenuItem({ icon, label, onPress, isLast = false }: MenuItemProps) {
+// Drawer view states
+type DrawerView = "menu" | "search" | "chats";
+
+function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -42,7 +58,7 @@ function MenuItem({ icon, label, onPress, isLast = false }: MenuItemProps) {
         className="flex-row items-center px-5 py-4"
         style={{
           borderBottomWidth: isLast ? 0 : 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.08)",
+          borderBottomColor: "rgba(255, 255, 255, 0.06)",
         }}
       >
         <View
@@ -57,12 +73,120 @@ function MenuItem({ icon, label, onPress, isLast = false }: MenuItemProps) {
         >
           <Ionicons name={icon} size={18} color="#9CA3AF" />
         </View>
+        <View className="ml-3 flex-1">
+          <Text
+            className="text-base font-medium"
+            style={{ color: "#E5E7EB" }}
+          >
+            {label}
+          </Text>
+          {subtitle && (
+            <Text
+              className="text-xs mt-0.5"
+              style={{ color: "#6B7280" }}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={16} color="#4B5563" />
+      </View>
+    </Pressable>
+  );
+}
+
+interface ChatListItemProps {
+  loop: KlarityLoop;
+  onPress: () => void;
+  isLast?: boolean;
+}
+
+function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
+  // Get emotional theme from first user message or title
+  const getPreview = () => {
+    const userMessages = loop.messages.filter((m) => m.role === "user");
+    if (userMessages.length > 0) {
+      const firstMessage = userMessages[0].content;
+      return firstMessage.length > 60
+        ? firstMessage.substring(0, 60) + "..."
+        : firstMessage;
+    }
+    return "No messages yet";
+  };
+
+  // Format date relative
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return "Today";
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className="active:opacity-60"
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
+      })}
+    >
+      <View
+        className="px-5 py-3"
+        style={{
+          borderBottomWidth: isLast ? 0 : 0.5,
+          borderBottomColor: "rgba(255, 255, 255, 0.06)",
+        }}
+      >
+        <View className="flex-row items-center justify-between mb-1">
+          <Text
+            className="text-sm font-medium flex-1 mr-2"
+            style={{ color: "#E5E7EB" }}
+            numberOfLines={1}
+          >
+            {loop.title}
+          </Text>
+          <Text className="text-xs" style={{ color: "#6B7280" }}>
+            {formatDate(loop.updatedAt)}
+          </Text>
+        </View>
         <Text
-          className="text-base font-medium ml-3"
-          style={{ color: "#E5E7EB" }}
+          className="text-xs"
+          style={{ color: "#9CA3AF" }}
+          numberOfLines={2}
         >
-          {label}
+          {getPreview()}
         </Text>
+        {loop.emotionalClarity !== undefined && (
+          <View className="flex-row items-center mt-2">
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor:
+                  loop.emotionalClarity >= 70
+                    ? "#10B981"
+                    : loop.emotionalClarity >= 40
+                    ? "#F59E0B"
+                    : "#EF4444",
+                marginRight: 6,
+              }}
+            />
+            <Text className="text-xs" style={{ color: "#6B7280" }}>
+              {loop.emotionalClarity}% clarity
+            </Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -72,8 +196,14 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
+  // View state
+  const [currentView, setCurrentView] = useState<DrawerView>("menu");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Store
+  const loops = useLoopsStore((s) => s.loops);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
-  const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
+  const switchToLoop = useLoopsStore((s) => s.switchToLoop);
 
   // Animation values
   const translateX = useSharedValue(-DRAWER_WIDTH);
@@ -82,6 +212,33 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Animation config
   const ANIMATION_DURATION = 280;
   const EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
+  // Filter loops based on search query
+  const filteredLoops = useMemo(() => {
+    if (!searchQuery.trim()) return loops;
+
+    const query = searchQuery.toLowerCase();
+    return loops.filter((loop) => {
+      // Search in title
+      if (loop.title.toLowerCase().includes(query)) return true;
+
+      // Search in messages
+      return loop.messages.some(
+        (msg) =>
+          msg.role === "user" && msg.content.toLowerCase().includes(query)
+      );
+    });
+  }, [loops, searchQuery]);
+
+  // Reset view when drawer closes
+  useEffect(() => {
+    if (!visible) {
+      setTimeout(() => {
+        setCurrentView("menu");
+        setSearchQuery("");
+      }, 300);
+    }
+  }, [visible]);
 
   // Handle visibility changes
   useEffect(() => {
@@ -112,17 +269,23 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       "hardwareBackPress",
       () => {
         if (visible) {
-          onClose();
+          if (currentView !== "menu") {
+            setCurrentView("menu");
+            setSearchQuery("");
+          } else {
+            onClose();
+          }
           return true;
         }
         return false;
       }
     );
     return () => backHandler.remove();
-  }, [visible, onClose]);
+  }, [visible, currentView, onClose]);
 
   // Close drawer helper
   const closeDrawer = () => {
+    Keyboard.dismiss();
     onClose();
   };
 
@@ -166,6 +329,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Menu handlers
   const handleNewChat = () => {
     closeDrawer();
+    // Create new loop and navigate to input
     setTimeout(() => {
       createNewLoop();
       navigation.navigate("InputScreen" as never);
@@ -173,10 +337,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   };
 
   const handleSearchChats = () => {
-    closeDrawer();
-    setTimeout(() => {
-      setHistoryPanelOpen(true);
-    }, 100);
+    setCurrentView("search");
   };
 
   const handleCalendar = () => {
@@ -187,15 +348,185 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   };
 
   const handleYourChats = () => {
+    setCurrentView("chats");
+  };
+
+  const handleSelectChat = (loopId: string) => {
     closeDrawer();
     setTimeout(() => {
-      setHistoryPanelOpen(true);
+      switchToLoop(loopId);
+      navigation.navigate("ChatScreen" as never);
     }, 100);
+  };
+
+  const handleBackToMenu = () => {
+    setCurrentView("menu");
+    setSearchQuery("");
   };
 
   if (!visible && translateX.value === -DRAWER_WIDTH) {
     return null;
   }
+
+  // Render header based on current view
+  const renderHeader = () => {
+    if (currentView === "menu") {
+      return (
+        <View
+          style={{
+            paddingTop: insets.top + 16,
+            paddingBottom: 20,
+            paddingHorizontal: 20,
+            borderBottomWidth: 0.5,
+            borderBottomColor: "rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+            Klarity
+          </Text>
+          <Text className="text-sm mt-1" style={{ color: "#6B7280" }}>
+            Find your clarity
+          </Text>
+        </View>
+      );
+    }
+
+    // Search or Chats view header
+    return (
+      <View
+        style={{
+          paddingTop: insets.top + 12,
+          paddingBottom: 12,
+          paddingHorizontal: 16,
+          borderBottomWidth: 0.5,
+          borderBottomColor: "rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <View className="flex-row items-center">
+          <Pressable
+            onPress={handleBackToMenu}
+            className="active:opacity-60 mr-3"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+          </Pressable>
+          <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
+            {currentView === "search" ? "Search Chats" : "Your Chats"}
+          </Text>
+        </View>
+
+        {currentView === "search" && (
+          <View
+            className="flex-row items-center mt-3 px-3 py-2 rounded-lg"
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
+          >
+            <Ionicons name="search" size={18} color="#6B7280" />
+            <TextInput
+              className="flex-1 ml-2 text-base"
+              style={{ color: "#E5E7EB" }}
+              placeholder="Search by keyword, person, or theme..."
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Render content based on current view
+  const renderContent = () => {
+    if (currentView === "menu") {
+      return (
+        <View style={{ marginTop: 8 }}>
+          <MenuItem
+            icon="add-outline"
+            label="New Chat"
+            subtitle="Start a fresh conversation"
+            onPress={handleNewChat}
+          />
+          <MenuItem
+            icon="search-outline"
+            label="Search Chats"
+            subtitle="Find past conversations"
+            onPress={handleSearchChats}
+          />
+          <MenuItem
+            icon="calendar-outline"
+            label="Calendar"
+            subtitle="View emotional timeline"
+            onPress={handleCalendar}
+          />
+          <MenuItem
+            icon="chatbubbles-outline"
+            label="Your Chats"
+            subtitle={`${loops.length} conversation${loops.length !== 1 ? "s" : ""}`}
+            onPress={handleYourChats}
+            isLast
+          />
+        </View>
+      );
+    }
+
+    // Search or Chats view - show list of loops
+    const displayLoops = currentView === "search" ? filteredLoops : loops;
+
+    if (displayLoops.length === 0) {
+      return (
+        <View className="flex-1 items-center justify-center px-8">
+          <Ionicons
+            name={currentView === "search" ? "search-outline" : "chatbubbles-outline"}
+            size={48}
+            color="#4B5563"
+          />
+          <Text
+            className="text-base font-medium mt-4 text-center"
+            style={{ color: "#9CA3AF" }}
+          >
+            {currentView === "search"
+              ? searchQuery
+                ? "No chats found"
+                : "Search your conversations"
+              : "No conversations yet"}
+          </Text>
+          <Text
+            className="text-sm mt-2 text-center"
+            style={{ color: "#6B7280" }}
+          >
+            {currentView === "search"
+              ? "Try different keywords or phrases"
+              : "Start a new chat to begin"}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {displayLoops.map((loop, index) => (
+          <ChatListItem
+            key={loop.id}
+            loop={loop}
+            onPress={() => handleSelectChat(loop.id)}
+            isLast={index === displayLoops.length - 1}
+          />
+        ))}
+        <View style={{ height: insets.bottom + 100 }} />
+      </ScrollView>
+    );
+  };
 
   return (
     <View
@@ -223,10 +554,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           backdropStyle,
         ]}
       >
-        <Pressable
-          style={{ flex: 1 }}
-          onPress={closeDrawer}
-        />
+        <Pressable style={{ flex: 1 }} onPress={closeDrawer} />
       </Animated.View>
 
       {/* Drawer */}
@@ -251,105 +579,61 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             drawerStyle,
           ]}
         >
-          {/* Header */}
-          <View
-            style={{
-              paddingTop: insets.top + 16,
-              paddingBottom: 20,
-              paddingHorizontal: 20,
-              borderBottomWidth: 0.5,
-              borderBottomColor: "rgba(255, 255, 255, 0.08)",
-            }}
-          >
-            <Text
-              className="text-xl font-semibold"
-              style={{ color: "#F9FAFB" }}
-            >
-              Klarity
-            </Text>
-            <Text
-              className="text-sm mt-1"
-              style={{ color: "#6B7280" }}
-            >
-              Find your clarity
-            </Text>
-          </View>
+          {/* Dynamic Header */}
+          {renderHeader()}
 
-          {/* Menu Items */}
-          <View style={{ marginTop: 8 }}>
-            <MenuItem
-              icon="add-outline"
-              label="New Chat"
-              onPress={handleNewChat}
-            />
-            <MenuItem
-              icon="search-outline"
-              label="Search Chats"
-              onPress={handleSearchChats}
-            />
-            <MenuItem
-              icon="calendar-outline"
-              label="Calendar"
-              onPress={handleCalendar}
-            />
-            <MenuItem
-              icon="chatbubbles-outline"
-              label="Your Chats"
-              onPress={handleYourChats}
-              isLast
-            />
-          </View>
+          {/* Dynamic Content */}
+          <View style={{ flex: 1 }}>{renderContent()}</View>
 
-          {/* Footer */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: insets.bottom + 20,
-              left: 0,
-              right: 0,
-              paddingHorizontal: 20,
-            }}
-          >
+          {/* Footer - only show on menu view */}
+          {currentView === "menu" && (
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
-                borderRadius: 12,
-                borderWidth: 0.5,
-                borderColor: "rgba(255, 255, 255, 0.06)",
+                position: "absolute",
+                bottom: insets.bottom + 20,
+                left: 0,
+                right: 0,
+                paddingHorizontal: 20,
               }}
             >
               <View
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: "rgba(167, 139, 250, 0.15)",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  borderRadius: 12,
+                  borderWidth: 0.5,
+                  borderColor: "rgba(255, 255, 255, 0.06)",
                 }}
               >
-                <Ionicons name="person-outline" size={18} color="#A78BFA" />
-              </View>
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text
-                  className="text-sm font-medium"
-                  style={{ color: "#E5E7EB" }}
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    backgroundColor: "rgba(167, 139, 250, 0.15)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  Personal
-                </Text>
-                <Text
-                  className="text-xs"
-                  style={{ color: "#6B7280" }}
-                >
-                  Free Plan
-                </Text>
+                  <Ionicons name="person-outline" size={18} color="#A78BFA" />
+                </View>
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                  <Text
+                    className="text-sm font-medium"
+                    style={{ color: "#E5E7EB" }}
+                  >
+                    Personal
+                  </Text>
+                  <Text className="text-xs" style={{ color: "#6B7280" }}>
+                    Free Plan
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          )}
         </Animated.View>
       </GestureDetector>
     </View>
