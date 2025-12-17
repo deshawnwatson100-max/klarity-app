@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { KlarityLoop, TrackedRelationship, createNewLoop, generateLoopTitle } from "../types/loop";
+import { KlarityLoop, TrackedRelationship, RelationshipType, createNewLoop, generateLoopTitle } from "../types/loop";
 import { ChatMessage, AnalysisMessage } from "../types/chat";
 
 /**
@@ -56,7 +56,7 @@ interface LoopsState {
   toggleHistoryPanel: () => void;
 
   // Actions - Relationship Tracking
-  createRelationship: (name: string) => string; // Returns the new relationship ID
+  createRelationship: (name: string, relationshipType?: RelationshipType, note?: string) => string; // Returns the new relationship ID
   deleteRelationship: (relationshipId: string) => void;
   linkLoopToRelationship: (loopId: string, relationshipId: string) => void;
   unlinkLoopFromRelationship: (loopId: string) => void;
@@ -295,10 +295,12 @@ export const useLoopsStore = create<LoopsState>()(
       },
 
       // Relationship Tracking Actions
-      createRelationship: (name: string) => {
+      createRelationship: (name: string, relationshipType?: RelationshipType, note?: string) => {
         const newRelationship: TrackedRelationship = {
           id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name,
+          relationshipType,
+          note,
           createdAt: new Date().toISOString(),
           loopIds: [],
         };

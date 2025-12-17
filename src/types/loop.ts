@@ -1,11 +1,18 @@
 import { ChatMessage } from "./chat";
 
 /**
+ * Relationship type categories
+ */
+export type RelationshipType = "family" | "romantic" | "friend" | "work" | "other";
+
+/**
  * Represents a tracked relationship for long-term clarity
  */
 export interface TrackedRelationship {
   id: string;
   name: string; // User-provided label (e.g., "Mom", "Manager", "Alex")
+  relationshipType?: RelationshipType; // Optional category
+  note?: string; // Optional context note (e.g., "What usually causes tension here?")
   createdAt: string;
   loopIds: string[]; // IDs of associated chat loops
 }

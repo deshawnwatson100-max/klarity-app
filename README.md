@@ -985,6 +985,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
 ✅ **Relationship Growth Tracking** - Track patterns with specific people over time for long-term clarity
+✅ **Manual Relationship Add** - Proactively add relationships with name, type, and optional context note
 
 ### NEW: Relationship Growth Tracking Feature
 Track ongoing patterns with specific people (e.g., "Mom," "Coworker," "Ex") to gain long-term clarity without forcing structure or emotional labeling.
@@ -1010,10 +1011,25 @@ A subtle option card appears:
 #### Relationship Growth Screen
 Access via the slide-over drawer menu:
 - Lists all tracked relationships (simple list, no metrics)
+- **+ Add Relationship button** at top of list with dashed border styling
 - Tapping a name shows:
+  - Relationship type badge (if set)
   - All related chat loops
   - Emotional clarity summaries
+  - Optional context note displayed in quotes
   - Patterns over time (if available)
+
+#### Manual Relationship Add
+Users can proactively add relationships from the Relationship Growth screen:
+- **Location**: Top of relationship list (or center if list is empty)
+- **Trigger**: Tap "+ Add Relationship" button
+- **Modal Design**: Dark luxury bottom sheet with subtle glow
+- **Input Fields**:
+  - **Name/Label** (required): e.g., "Mom," "Manager," "Alex"
+  - **Relationship Type** (optional): Family, Romantic, Friend, Work, Other
+  - **Short Note** (optional): Context like "What usually causes tension here?"
+- **Behavior**: Creates an empty relationship container for future chat loops
+- **Aesthetic**: Dark mode optimized with luxury grey accents and soft purple glow
 
 #### Design Philosophy
 - Never implies the other person is "toxic"

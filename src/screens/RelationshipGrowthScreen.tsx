@@ -8,12 +8,22 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { TrackedRelationship, KlarityLoop } from "../types/loop";
+import { AddRelationshipModal } from "../components/AddRelationshipModal";
 
 type Props = StackScreenProps<RootStackParamList, "RelationshipGrowthScreen">;
+
+const RELATIONSHIP_TYPE_LABELS: Record<string, string> = {
+  family: "Family",
+  romantic: "Romantic",
+  friend: "Friend",
+  work: "Work",
+  other: "Other",
+};
 
 export function RelationshipGrowthScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [selectedRelationship, setSelectedRelationship] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const trackedRelationships = useLoopsStore((s) => s.trackedRelationships);
   const getLoopsForRelationship = useLoopsStore((s) => s.getLoopsForRelationship);
@@ -90,11 +100,33 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
             No relationships tracked yet
           </Text>
           <Text
-            className="text-sm text-center"
+            className="text-sm text-center mb-6"
             style={{ color: "#6B7280", lineHeight: 20 }}
           >
-            When you have conversations about specific people, you can choose to track patterns for long-term clarity.
+            Track patterns with specific people to gain long-term clarity on your relationships.
           </Text>
+          <Pressable
+            onPress={() => setShowAddModal(true)}
+            className="active:opacity-70"
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              backgroundColor: "rgba(167, 139, 250, 0.15)",
+              borderWidth: 1,
+              borderColor: "rgba(167, 139, 250, 0.3)",
+            }}
+          >
+            <Ionicons name="add" size={20} color="#A78BFA" />
+            <Text
+              className="ml-2 font-medium"
+              style={{ color: "#A78BFA" }}
+            >
+              Add Relationship
+            </Text>
+          </Pressable>
         </View>
       );
     }
@@ -105,6 +137,47 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
+        {/* Add Relationship Button */}
+        <Animated.View entering={FadeInDown.duration(300)}>
+          <Pressable
+            onPress={() => setShowAddModal(true)}
+            className="mx-4 mb-3 active:opacity-60"
+          >
+            <View
+              style={{
+                backgroundColor: "rgba(167, 139, 250, 0.08)",
+                borderRadius: 16,
+                padding: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "rgba(167, 139, 250, 0.15)",
+                borderStyle: "dashed",
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(167, 139, 250, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="add" size={22} color="#A78BFA" />
+              </View>
+              <Text
+                className="text-base font-medium"
+                style={{ color: "#A78BFA" }}
+              >
+                Add Relationship
+              </Text>
+            </View>
+          </Pressable>
+        </Animated.View>
+
         {trackedRelationships.map((relationship, index) => {
           const loops = getLoopsForRelationship(relationship.id);
           const avgClarity = getEmotionalSummary(loops);
@@ -112,7 +185,7 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
           return (
             <Animated.View
               key={relationship.id}
-              entering={FadeInDown.duration(300).delay(index * 50)}
+              entering={FadeInDown.duration(300).delay((index + 1) * 50)}
             >
               <Pressable
                 onPress={() => handleSelectRelationship(relationship.id)}
@@ -126,12 +199,29 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
                   }}
                 >
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text
-                      className="text-lg font-medium"
-                      style={{ color: "#E5E7EB" }}
-                    >
-                      {relationship.name}
-                    </Text>
+                    <View className="flex-row items-center flex-1">
+                      <Text
+                        className="text-lg font-medium"
+                        style={{ color: "#E5E7EB" }}
+                      >
+                        {relationship.name}
+                      </Text>
+                      {relationship.relationshipType && (
+                        <View
+                          style={{
+                            marginLeft: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 6,
+                            backgroundColor: "rgba(167, 139, 250, 0.1)",
+                          }}
+                        >
+                          <Text className="text-xs" style={{ color: "#A78BFA" }}>
+                            {RELATIONSHIP_TYPE_LABELS[relationship.relationshipType]}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <Ionicons name="chevron-forward" size={20} color="#6B7280" />
                   </View>
 
@@ -202,6 +292,22 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
               padding: 16,
             }}
           >
+            {relationship.relationshipType && (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                  backgroundColor: "rgba(167, 139, 250, 0.12)",
+                  marginBottom: 10,
+                }}
+              >
+                <Text className="text-xs font-medium" style={{ color: "#A78BFA" }}>
+                  {RELATIONSHIP_TYPE_LABELS[relationship.relationshipType]}
+                </Text>
+              </View>
+            )}
             <Text
               className="text-sm mb-1"
               style={{ color: "#6B7280" }}
@@ -214,6 +320,20 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
             >
               {loops.length} conversation{loops.length !== 1 ? "s" : ""} recorded
             </Text>
+            {relationship.note && (
+              <View
+                style={{
+                  marginTop: 12,
+                  paddingTop: 12,
+                  borderTopWidth: 1,
+                  borderTopColor: "rgba(255, 255, 255, 0.06)",
+                }}
+              >
+                <Text className="text-sm italic" style={{ color: "#6B7280", lineHeight: 20 }}>
+                  {`"${relationship.note}"`}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -336,6 +456,12 @@ export function RelationshipGrowthScreen({ navigation }: Props) {
 
       {/* Content */}
       {selectedRelationship ? renderRelationshipDetail() : renderRelationshipList()}
+
+      {/* Add Relationship Modal */}
+      <AddRelationshipModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+      />
     </View>
   );
 }
