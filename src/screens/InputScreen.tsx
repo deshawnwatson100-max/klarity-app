@@ -41,6 +41,10 @@ export function InputScreen({ navigation }: Props) {
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
 
+  // Bottom elements animation values (feature buttons and input bar)
+  const bottomOpacity = useSharedValue(1);
+  const bottomTranslateY = useSharedValue(0);
+
   // Track if we can navigate to chat (has messages)
   const canNavigate = useSharedValue(false);
 
@@ -87,6 +91,20 @@ export function InputScreen({ navigation }: Props) {
         easing: CONTENT_EASING,
       });
 
+      // Animate bottom elements with slight delay for staggered effect
+      bottomOpacity.value = 0;
+      bottomTranslateY.value = 20;
+
+      // Stagger by 50ms for smooth cascade effect
+      bottomOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      bottomTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+
       return () => {};
     }, [])
   );
@@ -95,6 +113,12 @@ export function InputScreen({ navigation }: Props) {
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
     transform: [{ translateY: contentTranslateY.value }],
+  }));
+
+  // Animated style for bottom elements (feature buttons and input bar)
+  const bottomAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: bottomOpacity.value,
+    transform: [{ translateY: bottomTranslateY.value }],
   }));
 
   // Navigation helper functions for runOnJS
@@ -108,7 +132,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
-    // Fade out and slide up slightly
+    // Fade out and slide up slightly - center content
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
       easing: CONTENT_EASING,
@@ -124,6 +148,16 @@ export function InputScreen({ navigation }: Props) {
           runOnJS(navigateToCalendarScreen)();
         }
       }
+    });
+
+    // Fade out bottom elements - slide down slightly for natural exit
+    bottomOpacity.value = withTiming(0, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
+    bottomTranslateY.value = withTiming(15, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
     });
   };
 
@@ -403,118 +437,121 @@ export function InputScreen({ navigation }: Props) {
             )}
           </Animated.View>
 
-          {/* Feature Buttons - Above Input Bar */}
-          <View className="px-6 pb-4">
-            <View className="flex-row items-center justify-center gap-6">
-              {/* Emotion Scan Button */}
-              <Pressable
-                onPress={() => {
-                  // Navigate to EmotionScanScreen for face scanning
-                  navigation.navigate("EmotionScanScreen");
-                }}
-                className="items-center"
-              >
-                {({ pressed }) => (
-                  <View
-                    style={{
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    }}
-                  >
-                    {/* Glass-frost button with soft grey glow */}
+          {/* Bottom Elements - Feature Buttons and Input Bar - Animated for transitions */}
+          <Animated.View style={bottomAnimatedStyle}>
+            {/* Feature Buttons - Above Input Bar */}
+            <View className="px-6 pb-4">
+              <View className="flex-row items-center justify-center gap-6">
+                {/* Emotion Scan Button */}
+                <Pressable
+                  onPress={() => {
+                    // Navigate to EmotionScanScreen for face scanning
+                    navigation.navigate("EmotionScanScreen");
+                  }}
+                  className="items-center"
+                >
+                  {({ pressed }) => (
                     <View
-                      className="items-center justify-center rounded-2xl overflow-hidden"
                       style={{
-                        width: 72,
-                        height: 72,
-                        backgroundColor: "rgba(20, 20, 24, 0.6)",
-                        borderWidth: 1,
-                        borderColor: "rgba(156, 163, 175, 0.15)",
-                        shadowColor: "#9CA3AF",
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: pressed ? 0.25 : 0.15,
-                        shadowRadius: pressed ? 12 : 8,
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
                       }}
                     >
-                      <Ionicons
-                        name="happy-outline"
-                        size={32}
-                        color={pressed ? "#B4B8C1" : "#9CA3AF"}
-                      />
+                      {/* Glass-frost button with soft grey glow */}
+                      <View
+                        className="items-center justify-center rounded-2xl overflow-hidden"
+                        style={{
+                          width: 72,
+                          height: 72,
+                          backgroundColor: "rgba(20, 20, 24, 0.6)",
+                          borderWidth: 1,
+                          borderColor: "rgba(156, 163, 175, 0.15)",
+                          shadowColor: "#9CA3AF",
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: pressed ? 0.25 : 0.15,
+                          shadowRadius: pressed ? 12 : 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="happy-outline"
+                          size={32}
+                          color={pressed ? "#B4B8C1" : "#9CA3AF"}
+                        />
+                      </View>
+                      {/* Label */}
+                      <Text
+                        className="text-xs mt-2.5 font-medium"
+                        style={{
+                          color: "#9CA3AF",
+                          letterSpacing: 0.2,
+                        }}
+                      >
+                        Emotion Scan
+                      </Text>
                     </View>
-                    {/* Label */}
-                    <Text
-                      className="text-xs mt-2.5 font-medium"
-                      style={{
-                        color: "#9CA3AF",
-                        letterSpacing: 0.2,
-                      }}
-                    >
-                      Emotion Scan
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
+                  )}
+                </Pressable>
 
-              {/* Past Loops Button */}
-              <Pressable
-                onPress={handleOpenPastLoops}
-                className="items-center"
-              >
-                {({ pressed }) => (
-                  <View
-                    style={{
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    }}
-                  >
-                    {/* Glass-frost button with soft grey glow */}
+                {/* Past Loops Button */}
+                <Pressable
+                  onPress={handleOpenPastLoops}
+                  className="items-center"
+                >
+                  {({ pressed }) => (
                     <View
-                      className="items-center justify-center rounded-2xl overflow-hidden"
                       style={{
-                        width: 72,
-                        height: 72,
-                        backgroundColor: "rgba(20, 20, 24, 0.6)",
-                        borderWidth: 1,
-                        borderColor: "rgba(156, 163, 175, 0.15)",
-                        shadowColor: "#9CA3AF",
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: pressed ? 0.25 : 0.15,
-                        shadowRadius: pressed ? 12 : 8,
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
                       }}
                     >
-                      <Ionicons
-                        name="time-outline"
-                        size={32}
-                        color={pressed ? "#B4B8C1" : "#9CA3AF"}
-                      />
+                      {/* Glass-frost button with soft grey glow */}
+                      <View
+                        className="items-center justify-center rounded-2xl overflow-hidden"
+                        style={{
+                          width: 72,
+                          height: 72,
+                          backgroundColor: "rgba(20, 20, 24, 0.6)",
+                          borderWidth: 1,
+                          borderColor: "rgba(156, 163, 175, 0.15)",
+                          shadowColor: "#9CA3AF",
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: pressed ? 0.25 : 0.15,
+                          shadowRadius: pressed ? 12 : 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={32}
+                          color={pressed ? "#B4B8C1" : "#9CA3AF"}
+                        />
+                      </View>
+                      {/* Label */}
+                      <Text
+                        className="text-xs mt-2.5 font-medium"
+                        style={{
+                          color: "#9CA3AF",
+                          letterSpacing: 0.2,
+                        }}
+                      >
+                        Past Loops
+                      </Text>
                     </View>
-                    {/* Label */}
-                    <Text
-                      className="text-xs mt-2.5 font-medium"
-                      style={{
-                        color: "#9CA3AF",
-                        letterSpacing: 0.2,
-                      }}
-                    >
-                      Past Loops
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
+                  )}
+                </Pressable>
+              </View>
             </View>
-          </View>
 
-          {/* Input Bar */}
-          <InputBar
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            isRecording={isRecording}
-          />
+            {/* Input Bar */}
+            <InputBar
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder="Type a message..."
+              isRecording={isRecording}
+            />
+          </Animated.View>
 
           {/* Processing Overlay */}
           {isProcessing && (

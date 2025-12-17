@@ -116,6 +116,10 @@ export function ChatScreen({ navigation }: Props) {
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
 
+  // Bottom elements animation values (input bar)
+  const bottomOpacity = useSharedValue(1);
+  const bottomTranslateY = useSharedValue(0);
+
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -145,6 +149,12 @@ export function ChatScreen({ navigation }: Props) {
     transform: [{ translateY: contentTranslateY.value }],
   }));
 
+  // Animated style for bottom elements (input bar)
+  const bottomAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: bottomOpacity.value,
+    transform: [{ translateY: bottomTranslateY.value }],
+  }));
+
   // Navigation helper function for runOnJS
   const navigateToInputScreen = () => {
     navigation.navigate("InputScreen");
@@ -164,6 +174,16 @@ export function ChatScreen({ navigation }: Props) {
         runOnJS(navigateToInputScreen)();
       }
     });
+
+    // Fade out bottom elements - slide down slightly for natural exit
+    bottomOpacity.value = withTiming(0, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
+    bottomTranslateY.value = withTiming(15, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
   };
 
   // Animate content in when screen gains focus
@@ -178,6 +198,19 @@ export function ChatScreen({ navigation }: Props) {
         easing: CONTENT_EASING,
       });
       contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+
+      // Animate bottom elements with staggered effect
+      bottomOpacity.value = 0;
+      bottomTranslateY.value = 20;
+
+      bottomOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      bottomTranslateY.value = withTiming(0, {
         duration: CONTENT_TRANSITION_DURATION,
         easing: CONTENT_EASING,
       });
@@ -1635,18 +1668,20 @@ export function ChatScreen({ navigation }: Props) {
             </ScrollView>
           </Animated.View>
 
-          {/* Input Bar */}
-          <InputBar
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            disabled={isLoading}
-          />
+          {/* Input Bar - Animated for transitions */}
+          <Animated.View style={bottomAnimatedStyle}>
+            <InputBar
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder="Type a message..."
+              disabled={isLoading}
+            />
+          </Animated.View>
 
           {/* History Panel */}
           <LoopHistoryPanel

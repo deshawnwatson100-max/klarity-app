@@ -251,6 +251,12 @@ When you send a message about a relationship situation, Klarity responds with a 
   - No full-screen page swipe or hard cuts
   - Duration: 250ms with ease-in-out cubic bezier
   - Creates calm, lightweight transitions that reinforce Klarity as a stable, grounding environment
+- **NEW: Bottom Elements Animation** - Feature buttons and input bar animate during screen transitions:
+  - Consistent animation timing with content area (250ms duration)
+  - Slide up from below on screen focus (20px translate)
+  - Slide down on exit for natural departure effect (15px translate)
+  - Same iOS-native cubic bezier easing for cohesive feel
+  - Creates polished, unified transition experience
 
 ### Screen 3: Analysis Screen 📊 (Legacy - Replaced by Inline Flow)
 **Note:** This screen is now replaced by the inline chatloop experience. The analysis now appears naturally within the chat conversation instead of as a separate screen.
@@ -972,6 +978,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **What would you like to do next? Card** - Three-option choice card (Add Context / Instant Reply / Choose Direction)
 ✅ **Instant Reply Suggestion** - Quick, balanced response generation without direction selection
 ✅ **Focused Chat Area Transitions** - Only chat content animates, header/input/background stay static
+✅ **Bottom Elements Animation** - Feature buttons and input bar animate smoothly during screen transitions
 ✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
