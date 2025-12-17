@@ -9,16 +9,15 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
-  interpolate,
-  Extrapolate,
+  Easing,
 } from "react-native-reanimated";
 import { useCalendarStore } from "../state/calendarStore";
 import { INTENTIONS, EVENT_TYPES } from "../types/calendar";
@@ -59,10 +58,13 @@ export function CalendarScreen({ navigation }: Props) {
     title: string;
   } | null>(null);
 
-  // Shared values for swipe transition
-  const translateX = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+  // Content area animation values (for focused chat area transition)
+  const contentOpacity = useSharedValue(1);
+  const contentTranslateY = useSharedValue(0);
+
+  // iOS-native easing for content transitions
+  const CONTENT_TRANSITION_DURATION = 250;
+  const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
   const getEntriesForDate = useCalendarStore((s) => s.getEntriesForDate);
   const updateEntry = useCalendarStore((s) => s.updateEntry);
@@ -74,12 +76,52 @@ export function CalendarScreen({ navigation }: Props) {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-  // Reset animation values when screen is focused
-  useEffect(() => {
-    translateX.value = 0;
-    scale.value = 1;
-    opacity.value = 1;
-  }, []);
+  // Animated style for content area
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
+
+  // Navigation helper function for runOnJS
+  const navigateToInputScreen = () => {
+    navigation.navigate("InputScreen");
+  };
+
+  // Animate content out before navigation
+  const animateContentOutAndNavigate = () => {
+    contentOpacity.value = withTiming(0, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
+    contentTranslateY.value = withTiming(-20, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    }, (finished) => {
+      if (finished) {
+        runOnJS(navigateToInputScreen)();
+      }
+    });
+  };
+
+  // Animate content in when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Animate content in from below
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
+
+      contentOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+
+      return () => {};
+    }, [])
+  );
 
   const handlePreviousMonth = () => {
     setCurrentDate(
@@ -303,67 +345,29 @@ export function CalendarScreen({ navigation }: Props) {
     return days;
   };
 
-  // Handler for navigating back to InputScreen (must be wrapped with runOnJS)
+  // Handler for navigating back with animation
   const handleNavigateBack = () => {
-    navigation.navigate("InputScreen");
+    animateContentOutAndNavigate();
   };
 
-  // Swipe gesture to go back to InputScreen
+  // Swipe gesture to go back - triggers content animation, not full-screen swipe
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX(-50) // Only trigger when swiping left with at least 50px
-        .failOffsetX(50) // Fail if swiping right
-        .onUpdate((event) => {
-          // Only allow left swipes (negative translationX)
-          if (event.translationX < 0) {
-            translateX.value = event.translationX;
-            scale.value = interpolate(
-              Math.abs(event.translationX),
-              [0, 150],
-              [1, 0.92],
-              Extrapolate.CLAMP
-            );
-            opacity.value = interpolate(
-              Math.abs(event.translationX),
-              [0, 100],
-              [1, 0.7],
-              Extrapolate.CLAMP
-            );
-          }
-        })
+        .activeOffsetX(-50)
+        .failOffsetX(50)
         .onEnd((event) => {
-          // If user swiped left with sufficient distance and velocity
-          if (event.velocityX < -800 && event.translationX < -120) {
-            translateX.value = withTiming(-400, { duration: 120 }, (finished) => {
-              if (finished) {
-                runOnJS(handleNavigateBack)();
-              }
-            });
-            scale.value = withTiming(0.85, { duration: 120 });
-            opacity.value = withTiming(0, { duration: 120 });
-          } else {
-            // Spring back to original position
-            translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-            scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-            opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
+          // Left swipe - navigate back to InputScreen
+          if (event.velocityX < -500 && event.translationX < -80) {
+            runOnJS(handleNavigateBack)();
           }
         }),
-    [navigation]
+    []
   );
 
-  // Animated style for the swipe transition
+  // Static container style (no full-screen animation - content area animates instead)
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
-    opacity: opacity.value,
-    shadowOpacity: interpolate(
-      Math.abs(translateX.value),
-      [0, 400],
-      [0, 0.3],
-      Extrapolate.CLAMP
-    ),
-    shadowRadius: 20,
-    shadowColor: "#000000",
+    flex: 1,
   }));
 
   return (
@@ -388,7 +392,8 @@ export function CalendarScreen({ navigation }: Props) {
         {/* Floating particles - Layer 2 */}
         <FloatingParticles count={20} />
 
-        <View className="flex-1" style={{ paddingTop: insets.top }}>
+        {/* Content - Animated for transitions */}
+        <Animated.View style={[{ flex: 1, paddingTop: insets.top }, contentAnimatedStyle]}>
       {/* Header */}
       <View className="px-4 py-6 flex-row items-start justify-between">
         <View className="flex-1">
@@ -402,7 +407,7 @@ export function CalendarScreen({ navigation }: Props) {
 
         {/* Home Button */}
         <Pressable
-          onPress={() => navigation.navigate("InputScreen")}
+          onPress={handleNavigateBack}
           className="active:opacity-60 mt-1"
         >
           <Ionicons name="home" size={28} color="#9CA3AF" />
@@ -527,7 +532,7 @@ export function CalendarScreen({ navigation }: Props) {
         }}
         onSave={handleSaveReflection}
       />
-    </View>
+    </Animated.View>
       </Animated.View>
     </GestureDetector>
   );

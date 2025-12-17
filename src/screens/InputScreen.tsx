@@ -97,6 +97,15 @@ export function InputScreen({ navigation }: Props) {
     transform: [{ translateY: contentTranslateY.value }],
   }));
 
+  // Navigation helper functions for runOnJS
+  const navigateToChatScreen = () => {
+    navigation.navigate("ChatScreen");
+  };
+
+  const navigateToCalendarScreen = () => {
+    navigation.navigate("CalendarScreen");
+  };
+
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
     // Fade out and slide up slightly
@@ -109,7 +118,11 @@ export function InputScreen({ navigation }: Props) {
       easing: CONTENT_EASING,
     }, (finished) => {
       if (finished) {
-        runOnJS(() => navigation.navigate(destination))();
+        if (destination === "ChatScreen") {
+          runOnJS(navigateToChatScreen)();
+        } else {
+          runOnJS(navigateToCalendarScreen)();
+        }
       }
     });
   };

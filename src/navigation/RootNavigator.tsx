@@ -99,40 +99,22 @@ export function RootNavigator() {
       <Stack.Screen name="CalendarScreen" component={CalendarScreen}
         options={{
           gestureEnabled: false,
-          cardStyle: { backgroundColor: "#050608" }, // Match the gradient background
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-layouts.screen.width, 0], // Slide from left
-                    }),
-                  },
-                ],
-              },
-              overlayStyle: {
-                opacity: current.progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0], // No overlay - seamless transition
-                }),
-              },
-            };
-          },
+          cardStyle: { backgroundColor: "#050608" },
+          // No page-level animation - content area handles its own animation
+          cardStyleInterpolator: ({ current }) => ({
+            cardStyle: {
+              opacity: 1, // Keep fully visible
+            },
+          }),
           transitionSpec: {
             open: {
-              animation: 'spring',
-              config: {
-                stiffness: 1000,
-                damping: 500,
-                mass: 3,
-                overshootClamping: true,
-                restDisplacementThreshold: 0.01,
-                restSpeedThreshold: 0.01,
-              },
+              animation: "timing",
+              config: { duration: 0 }, // Instant transition
             },
-            close: TransitionSpecs.TransitionIOSSpec,
+            close: {
+              animation: "timing",
+              config: { duration: 0 },
+            },
           },
         }}
       />

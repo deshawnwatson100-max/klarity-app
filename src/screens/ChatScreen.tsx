@@ -145,6 +145,11 @@ export function ChatScreen({ navigation }: Props) {
     transform: [{ translateY: contentTranslateY.value }],
   }));
 
+  // Navigation helper function for runOnJS
+  const navigateToInputScreen = () => {
+    navigation.navigate("InputScreen");
+  };
+
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "InputScreen") => {
     contentOpacity.value = withTiming(0, {
@@ -156,7 +161,7 @@ export function ChatScreen({ navigation }: Props) {
       easing: CONTENT_EASING,
     }, (finished) => {
       if (finished) {
-        runOnJS(() => navigation.navigate(destination))();
+        runOnJS(navigateToInputScreen)();
       }
     });
   };
