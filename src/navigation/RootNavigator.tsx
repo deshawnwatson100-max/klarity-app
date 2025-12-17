@@ -42,9 +42,8 @@ export function RootNavigator() {
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
-        cardStyle: { backgroundColor: "transparent" },
-        cardOverlayEnabled: true,
-        detachPreviousScreen: false, // CRITICAL: Keep both screens mounted
+        cardStyle: { backgroundColor: "#050608" },
+        cardOverlayEnabled: false,
         presentation: "card",
       }}
     >
@@ -54,22 +53,7 @@ export function RootNavigator() {
         options={{
           gestureEnabled: false,
           cardStyle: { backgroundColor: "#050608" },
-          // No page-level animation - content area handles its own animation
-          cardStyleInterpolator: ({ current }) => ({
-            cardStyle: {
-              opacity: 1, // Keep fully visible
-            },
-          }),
-          transitionSpec: {
-            open: {
-              animation: "timing",
-              config: { duration: 0 }, // Instant transition
-            },
-            close: {
-              animation: "timing",
-              config: { duration: 0 },
-            },
-          },
+          cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
         }}
       />
       <Stack.Screen
@@ -78,44 +62,14 @@ export function RootNavigator() {
         options={{
           gestureEnabled: false,
           cardStyle: { backgroundColor: "#050608" },
-          // No page-level animation - content area handles its own animation
-          cardStyleInterpolator: ({ current }) => ({
-            cardStyle: {
-              opacity: 1, // Keep fully visible
-            },
-          }),
-          transitionSpec: {
-            open: {
-              animation: "timing",
-              config: { duration: 0 }, // Instant transition
-            },
-            close: {
-              animation: "timing",
-              config: { duration: 0 },
-            },
-          },
+          cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
         }}
       />
       <Stack.Screen name="CalendarScreen" component={CalendarScreen}
         options={{
           gestureEnabled: false,
           cardStyle: { backgroundColor: "#050608" },
-          // No page-level animation - content area handles its own animation
-          cardStyleInterpolator: ({ current }) => ({
-            cardStyle: {
-              opacity: 1, // Keep fully visible
-            },
-          }),
-          transitionSpec: {
-            open: {
-              animation: "timing",
-              config: { duration: 0 }, // Instant transition
-            },
-            close: {
-              animation: "timing",
-              config: { duration: 0 },
-            },
-          },
+          cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
         }}
       />
       <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />

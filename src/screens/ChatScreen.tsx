@@ -99,6 +99,7 @@ export function ChatScreen({ navigation }: Props) {
   const scrollViewRef = useRef<ScrollView>(null);
   const hasProcessedInitialMessage = useRef(false);
   const processedMessageIds = useRef<Set<string>>(new Set());
+  const isNavigatingAway = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -162,6 +163,9 @@ export function ChatScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "InputScreen") => {
+    // Mark that we're navigating away
+    isNavigatingAway.current = true;
+
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
       easing: CONTENT_EASING,
@@ -189,31 +193,36 @@ export function ChatScreen({ navigation }: Props) {
   // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      // Animate content in from below
-      contentOpacity.value = 0;
-      contentTranslateY.value = 30;
+      // Only animate if we navigated away and are coming back, or if first time
+      if (isNavigatingAway.current) {
+        isNavigatingAway.current = false;
 
-      contentOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      contentTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+        // Animate content in from below
+        contentOpacity.value = 0;
+        contentTranslateY.value = 30;
 
-      // Animate bottom elements with staggered effect
-      bottomOpacity.value = 0;
-      bottomTranslateY.value = 20;
+        contentOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        contentTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
 
-      bottomOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      bottomTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+        // Animate bottom elements
+        bottomOpacity.value = 0;
+        bottomTranslateY.value = 20;
+
+        bottomOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        bottomTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+      }
 
       // When screen comes into focus, check if we need to process the initial message
       const activeLoop = getActiveLoop();

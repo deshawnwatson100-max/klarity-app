@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
@@ -36,6 +36,9 @@ export function InputScreen({ navigation }: Props) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
+
+  // Track if animation is needed (prevent re-running on already visible screen)
+  const isNavigatingAway = useRef(false);
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -78,32 +81,36 @@ export function InputScreen({ navigation }: Props) {
   // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      // Animate content in from below
-      contentOpacity.value = 0;
-      contentTranslateY.value = 30;
+      // Only animate if we were navigating away (coming back to this screen)
+      if (isNavigatingAway.current) {
+        isNavigatingAway.current = false;
 
-      contentOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      contentTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+        // Animate content in from below
+        contentOpacity.value = 0;
+        contentTranslateY.value = 30;
 
-      // Animate bottom elements with slight delay for staggered effect
-      bottomOpacity.value = 0;
-      bottomTranslateY.value = 20;
+        contentOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        contentTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
 
-      // Stagger by 50ms for smooth cascade effect
-      bottomOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      bottomTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+        // Animate bottom elements
+        bottomOpacity.value = 0;
+        bottomTranslateY.value = 20;
+
+        bottomOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        bottomTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+      }
 
       return () => {};
     }, [])
@@ -132,6 +139,9 @@ export function InputScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
+    // Mark that we're navigating away
+    isNavigatingAway.current = true;
+
     // Fade out and slide up slightly - center content
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,

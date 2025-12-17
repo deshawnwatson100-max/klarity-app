@@ -54,6 +54,7 @@ export function CalendarScreen({ navigation }: Props) {
   const [selectedEntries, setSelectedEntries] = useState<any[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [reflectionModalVisible, setReflectionModalVisible] = useState(false);
+  const isNavigatingAway = React.useRef(false);
   const [selectedEntryForReflection, setSelectedEntryForReflection] = useState<{
     id: string;
     title: string;
@@ -90,6 +91,9 @@ export function CalendarScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = () => {
+    // Mark that we're navigating away
+    isNavigatingAway.current = true;
+
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
       easing: CONTENT_EASING,
@@ -107,18 +111,23 @@ export function CalendarScreen({ navigation }: Props) {
   // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      // Animate content in from below
-      contentOpacity.value = 0;
-      contentTranslateY.value = 30;
+      // Only animate if we navigated away and are coming back
+      if (isNavigatingAway.current) {
+        isNavigatingAway.current = false;
 
-      contentOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      contentTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+        // Animate content in from below
+        contentOpacity.value = 0;
+        contentTranslateY.value = 30;
+
+        contentOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        contentTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+      }
 
       return () => {};
     }, [])
