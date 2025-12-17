@@ -182,7 +182,22 @@ export function Header({
 
         {/* Right - New Loop Button */}
         <Pressable onPress={handleNewLoop} className="active:opacity-60">
-          <Ionicons name="add-circle-outline" size={24} color="#9CA3AF" />
+          <View style={{ position: "relative" }}>
+            <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+            <View
+              style={{
+                position: "absolute",
+                top: 4,
+                left: 0,
+                right: 0,
+                bottom: 4,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="add" size={12} color="#9CA3AF" />
+            </View>
+          </View>
         </Pressable>
       </View>
     </View>
