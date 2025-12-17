@@ -13,6 +13,7 @@ interface HeaderProps {
   onBackPress?: () => void;
   isCalendarScreen?: boolean;
   onNavigateHome?: () => void;
+  isAnalyzing?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export function Header({
   onBackPress,
   isCalendarScreen = false,
   onNavigateHome,
+  isAnalyzing = false,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -175,7 +177,7 @@ export function Header({
 
         {/* Center - Klarity AI Orb */}
         <View className="flex-1 items-center">
-          <KlarityOrb size="medium" />
+          <KlarityOrb size="medium" isAnalyzing={isAnalyzing} />
         </View>
 
         {/* Right - New Loop Button */}

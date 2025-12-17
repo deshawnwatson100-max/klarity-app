@@ -8,13 +8,15 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 
 interface KlarityOrbProps {
   size?: "small" | "medium" | "large";
+  isAnalyzing?: boolean;
 }
 
-export function KlarityOrb({ size = "medium" }: KlarityOrbProps) {
+export function KlarityOrb({ size = "medium", isAnalyzing = false }: KlarityOrbProps) {
   const glowOpacity = useSharedValue(0.6);
   const rotation = useSharedValue(0);
 
@@ -28,7 +30,7 @@ export function KlarityOrb({ size = "medium" }: KlarityOrbProps) {
   const { diameter, glowRadius } = sizeConfig[size];
 
   useEffect(() => {
-    // Breathing glow animation (5-second cycle)
+    // Breathing glow animation (5-second cycle) - always active
     glowOpacity.value = withRepeat(
       withSequence(
         withTiming(0.8, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
@@ -37,14 +39,32 @@ export function KlarityOrb({ size = "medium" }: KlarityOrbProps) {
       -1,
       false
     );
-
-    // Slow rotation for depth (12-second cycle)
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 12000, easing: Easing.linear }),
-      -1,
-      false
-    );
   }, []);
+
+  // Rotation animation - only when analyzing
+  useEffect(() => {
+    if (isAnalyzing) {
+      // Start rotation when analyzing (3-second cycle for faster, noticeable spin)
+      rotation.value = withRepeat(
+        withTiming(360, { duration: 3000, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      // Stop rotation and smoothly return to 0
+      cancelAnimation(rotation);
+      // Smoothly animate back to nearest 0 position
+      const currentRotation = rotation.value % 360;
+      if (currentRotation !== 0) {
+        // Animate to 0 or 360 depending on which is closer
+        const targetRotation = currentRotation > 180 ? 360 : 0;
+        rotation.value = withTiming(targetRotation, {
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+        });
+      }
+    }
+  }, [isAnalyzing]);
 
   const glowAnimatedStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,

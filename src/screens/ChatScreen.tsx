@@ -1651,7 +1651,7 @@ export function ChatScreen({ navigation }: Props) {
           className="flex-1"
           keyboardVerticalOffset={0}
         >
-          <Header showBackButton onBackPress={handleNavigateBack} />
+          <Header showBackButton onBackPress={handleNavigateBack} isAnalyzing={isLoading} />
 
           {/* Messages - Animated for transitions */}
           <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
