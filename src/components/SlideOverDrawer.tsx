@@ -25,6 +25,7 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
+import { KlarityOrb } from "./KlarityOrb";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85;
@@ -380,15 +381,8 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             borderBottomColor: "rgba(255, 255, 255, 0.08)",
           }}
         >
-          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
-            Klarity
-          </Text>
-          <Text className="text-sm mt-1" style={{ color: "#6B7280" }}>
-            Find your clarity
-          </Text>
-
           {/* Search Bar */}
-          <View className="flex-row items-center mt-4">
+          <View className="flex-row items-center">
             <View
               className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
               style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
@@ -433,6 +427,14 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
                 </View>
               </View>
             </Pressable>
+          </View>
+
+          {/* Klarity Branding */}
+          <View className="flex-row items-center mt-4">
+            <KlarityOrb size="small" />
+            <Text className="text-lg font-semibold ml-2" style={{ color: "#F9FAFB" }}>
+              Klarity
+            </Text>
           </View>
         </View>
       );
