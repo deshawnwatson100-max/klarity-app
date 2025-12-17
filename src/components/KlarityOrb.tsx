@@ -168,20 +168,6 @@ export function KlarityOrb({ size = "medium", isAnalyzing = false }: KlarityOrbP
             transform: [{ rotate: "-45deg" }],
           }}
         />
-
-        {/* Inner shadow for depth */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: diameter * 0.3,
-            backgroundColor: "rgba(0, 0, 0, 0.15)",
-            borderBottomLeftRadius: diameter / 2,
-            borderBottomRightRadius: diameter / 2,
-          }}
-        />
       </Animated.View>
     </View>
   );
