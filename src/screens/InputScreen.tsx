@@ -4,15 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
-  interpolate,
-  Extrapolate,
+  Easing,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
@@ -38,11 +37,12 @@ export function InputScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
 
-  // Shared values for swipe transition
-  const translateX = useSharedValue(0);
-  const scale = useSharedValue(1);
+  // Content area animation values (for focused chat area transition)
+  const contentOpacity = useSharedValue(1);
+  const contentTranslateY = useSharedValue(0);
+
+  // Track if we can navigate to chat (has messages)
   const canNavigate = useSharedValue(false);
-  const opacity = useSharedValue(1);
 
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
@@ -53,6 +53,10 @@ export function InputScreen({ navigation }: Props) {
 
   // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
+
+  // iOS-native easing for content transitions
+  const CONTENT_TRANSITION_DURATION = 250;
+  const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
   // Update shared value when messages change
   useEffect(() => {
@@ -67,12 +71,48 @@ export function InputScreen({ navigation }: Props) {
     }
   }, []);
 
-  // Reset animation values when screen is focused
-  useEffect(() => {
-    translateX.value = 0;
-    scale.value = 1;
-    opacity.value = 1;
-  }, []);
+  // Animate content in when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Animate content in from below
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
+
+      contentOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+
+      return () => {};
+    }, [])
+  );
+
+  // Animated style for content area (center content only)
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
+
+  // Animate content out before navigation
+  const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
+    // Fade out and slide up slightly
+    contentOpacity.value = withTiming(0, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
+    contentTranslateY.value = withTiming(-20, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    }, (finished) => {
+      if (finished) {
+        runOnJS(() => navigation.navigate(destination))();
+      }
+    });
+  };
 
   const handleSend = () => {
     if (!currentInput.trim() && !selectedImageUri) return;
@@ -94,8 +134,8 @@ export function InputScreen({ navigation }: Props) {
       imageBase64: selectedImageBase64,
     });
 
-    // Navigate to chat screen
-    navigation.navigate("ChatScreen");
+    // Animate content out then navigate to chat screen
+    animateContentOutAndNavigate("ChatScreen");
     setCurrentInput("");
     setSelectedImageUri(undefined);
     setSelectedImageBase64(undefined);
@@ -205,7 +245,7 @@ export function InputScreen({ navigation }: Props) {
         // Navigate to chat screen for AI response
         setIsProcessing(false);
         setProcessingMessage("");
-        navigation.navigate("ChatScreen");
+        animateContentOutAndNavigate("ChatScreen");
       } catch (transcriptionError) {
         console.error("Transcription error:", transcriptionError);
         setProcessingMessage("Unable to transcribe audio. Please check your connection and try again.");
@@ -223,9 +263,9 @@ export function InputScreen({ navigation }: Props) {
     }
   };
 
-  // Handler for navigating to chat screen (must be wrapped with runOnJS)
+  // Handler for navigating to chat screen with animation
   const handleNavigateToChat = () => {
-    navigation.navigate("ChatScreen");
+    animateContentOutAndNavigate("ChatScreen");
   };
 
   // Handler for opening past loops panel (must be wrapped with runOnJS)
@@ -233,100 +273,36 @@ export function InputScreen({ navigation }: Props) {
     setHistoryPanelOpen(true);
   };
 
-  // Handler for navigating to calendar screen (must be wrapped with runOnJS)
+  // Handler for navigating to calendar screen with animation
   const handleNavigateToCalendar = () => {
-    navigation.navigate("CalendarScreen");
+    animateContentOutAndNavigate("CalendarScreen");
   };
 
-  // Swipe gesture handler - handles both left and right swipes
+  // Swipe gesture handler - triggers content animation, not full-screen swipe
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .onUpdate((event) => {
-          // Handle left swipe (to ChatScreen/Past Loops)
-          if (event.translationX < -80) {
-            translateX.value = event.translationX;
-            scale.value = interpolate(
-              Math.abs(event.translationX),
-              [0, 150],
-              [1, 0.92],
-              Extrapolate.CLAMP
-            );
-            opacity.value = interpolate(
-              Math.abs(event.translationX),
-              [0, 100],
-              [1, 0.7],
-              Extrapolate.CLAMP
-            );
-          }
-          // Handle right swipe (to Calendar)
-          else if (event.translationX > 80) {
-            translateX.value = event.translationX;
-            scale.value = interpolate(
-              event.translationX,
-              [0, 150],
-              [1, 0.92],
-              Extrapolate.CLAMP
-            );
-            opacity.value = interpolate(
-              event.translationX,
-              [0, 100],
-              [1, 0.7],
-              Extrapolate.CLAMP
-            );
-          }
-        })
+        .activeOffsetX([-50, 50])
         .onEnd((event) => {
           // Left swipe - navigate to ChatScreen or open Past Loops
-          if (event.velocityX < -800 && event.translationX < -120) {
+          if (event.velocityX < -500 && event.translationX < -80) {
             if (canNavigate.value) {
-              translateX.value = withTiming(-400, { duration: 120 }, (finished) => {
-                if (finished) {
-                  runOnJS(handleNavigateToChat)();
-                }
-              });
-              scale.value = withTiming(0.85, { duration: 120 });
-              opacity.value = withTiming(0, { duration: 120 });
+              runOnJS(handleNavigateToChat)();
             } else {
-              translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-              scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-              opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
               runOnJS(handleOpenPastLoops)();
             }
           }
           // Right swipe - navigate to Calendar
-          else if (event.velocityX > 800 && event.translationX > 120) {
-            translateX.value = withTiming(400, { duration: 120 }, (finished) => {
-              if (finished) {
-                runOnJS(handleNavigateToCalendar)();
-              }
-            });
-            scale.value = withTiming(0.85, { duration: 120 });
-            opacity.value = withTiming(0, { duration: 120 });
-          }
-          // Spring back if gesture didn't meet threshold
-          else {
-            translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-            scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-            opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
+          else if (event.velocityX > 500 && event.translationX > 80) {
+            runOnJS(handleNavigateToCalendar)();
           }
         }),
-    [navigation]
+    []
   );
 
-  // Animated style for the swipe transition
+  // Static container style (no full-screen animation - content area animates instead)
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
-    opacity: opacity.value,
-    // Add shadow during transition for depth effect
-    shadowOpacity: interpolate(
-      Math.abs(translateX.value),
-      [0, 400],
-      [0, 0.3],
-      Extrapolate.CLAMP
-    ),
-    shadowRadius: 20,
-    shadowColor: "#000000",
+    flex: 1,
   }));
 
   return (
@@ -358,8 +334,8 @@ export function InputScreen({ navigation }: Props) {
         >
           <Header />
 
-          {/* Center Content */}
-          <View className="flex-1 items-center justify-center px-6">
+          {/* Center Content - Animated for transitions */}
+          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
             {isRecording ? (
               <View className="items-center justify-center w-full">
                 <Text
@@ -412,7 +388,7 @@ export function InputScreen({ navigation }: Props) {
                 </Text>
               </View>
             )}
-          </View>
+          </Animated.View>
 
           {/* Feature Buttons - Above Input Bar */}
           <View className="px-6 pb-4">
@@ -547,7 +523,7 @@ export function InputScreen({ navigation }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
             onLoopSelected={() => {
               // Navigate to ChatScreen when a loop is selected from InputScreen
-              navigation.navigate("ChatScreen");
+              animateContentOutAndNavigate("ChatScreen");
             }}
           />
         </KeyboardAvoidingView>

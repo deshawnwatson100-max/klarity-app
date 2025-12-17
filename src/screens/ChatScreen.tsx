@@ -14,11 +14,9 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
-  interpolate,
-  Extrapolate,
+  Easing,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
@@ -114,10 +112,13 @@ export function ChatScreen({ navigation }: Props) {
   const [additionalContext, setAdditionalContext] = useState<string>("");
   const [isVoiceMessage, setIsVoiceMessage] = useState(false);
 
-  // Shared values for swipe transition
-  const translateX = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+  // Content area animation values (for focused chat area transition)
+  const contentOpacity = useSharedValue(1);
+  const contentTranslateY = useSharedValue(0);
+
+  // iOS-native easing for content transitions
+  const CONTENT_TRANSITION_DURATION = 250;
+  const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
   // Use loops store
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
@@ -138,16 +139,44 @@ export function ChatScreen({ navigation }: Props) {
     return activeLoop?.messages || [];
   });
 
-  // Reset animation values when screen is focused
-  useEffect(() => {
-    translateX.value = 0;
-    scale.value = 1;
-    opacity.value = 1;
-  }, []);
+  // Animated style for content area (chat messages)
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
 
-  // Reset processing refs when navigating to this screen
+  // Animate content out before navigation
+  const animateContentOutAndNavigate = (destination: "InputScreen") => {
+    contentOpacity.value = withTiming(0, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    });
+    contentTranslateY.value = withTiming(-20, {
+      duration: CONTENT_TRANSITION_DURATION,
+      easing: CONTENT_EASING,
+    }, (finished) => {
+      if (finished) {
+        runOnJS(() => navigation.navigate(destination))();
+      }
+    });
+  };
+
+  // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
+      // Animate content in from below
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
+
+      contentOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+
       // When screen comes into focus, check if we need to process the initial message
       const activeLoop = getActiveLoop();
       if (activeLoop && activeLoop.messages.length === 1 && activeLoop.messages[0].role === "user") {
@@ -1540,70 +1569,30 @@ export function ChatScreen({ navigation }: Props) {
     );
   };
 
-  // Handler for navigating back
+  // Handler for navigating back with animation
   const handleNavigateBack = () => {
-    navigation.navigate("InputScreen");
+    animateContentOutAndNavigate("InputScreen");
   };
 
-  // Swipe gesture to go back
+  // Swipe gesture to go back - triggers content animation, not full-screen swipe
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
         .activeOffsetX(50)
         .failOffsetX(-50)
-        .onUpdate((event) => {
-          if (event.translationX > 0) {
-            translateX.value = event.translationX;
-            scale.value = interpolate(
-              event.translationX,
-              [0, 150],
-              [1, 0.92],
-              Extrapolate.CLAMP
-            );
-            opacity.value = interpolate(
-              event.translationX,
-              [0, 100],
-              [1, 0.7],
-              Extrapolate.CLAMP
-            );
-          }
-        })
         .onEnd((event) => {
-          if (event.velocityX > 500 && event.translationX > 100) {
-            translateX.value = withTiming(400, { duration: 120 }, (finished) => {
-              if (finished) {
-                runOnJS(handleNavigateBack)();
-              }
-            });
-            scale.value = withTiming(0.85, { duration: 120 });
-            opacity.value = withTiming(0, { duration: 120 });
-          } else {
-            translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-            scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-            opacity.value = withSpring(1, { damping: 20, stiffness: 300 });
+          // Right swipe - navigate back to InputScreen
+          if (event.velocityX > 500 && event.translationX > 80) {
+            runOnJS(handleNavigateBack)();
           }
         }),
-    [navigation]
+    []
   );
 
-  // Animated style for swipe transition
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { scale: scale.value },
-      ],
-      opacity: opacity.value,
-      shadowOpacity: interpolate(
-        translateX.value,
-        [0, 400],
-        [0, 0.3],
-        Extrapolate.CLAMP
-      ),
-      shadowRadius: 20,
-      shadowColor: "#000000",
-    };
-  });
+  // Static container style (no full-screen animation - content area animates instead)
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    flex: 1,
+  }));
 
   return (
     <GestureDetector gesture={swipeGesture}>
@@ -1626,18 +1615,20 @@ export function ChatScreen({ navigation }: Props) {
         >
           <Header showBackButton />
 
-          {/* Messages */}
-          <ScrollView
-            ref={scrollViewRef}
-            className="flex-1"
-            contentContainerClassName="px-4 pt-4"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {messages.map(renderMessage)}
+          {/* Messages - Animated for transitions */}
+          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+            <ScrollView
+              ref={scrollViewRef}
+              className="flex-1"
+              contentContainerClassName="px-4 pt-4"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {messages.map(renderMessage)}
 
-            <View style={{ height: 20 }} />
-          </ScrollView>
+              <View style={{ height: 20 }} />
+            </ScrollView>
+          </Animated.View>
 
           {/* Input Bar */}
           <InputBar

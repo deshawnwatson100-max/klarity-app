@@ -53,37 +53,22 @@ export function RootNavigator() {
         component={InputScreen}
         options={{
           gestureEnabled: false,
-          cardStyle: { backgroundColor: "#050608" }, // Match the gradient background
-          // Add parallax effect to InputScreen when ChatScreen slides over it
-          cardStyleInterpolator: ({ current, next, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: next
-                      ? next.progress.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, -layouts.screen.width * 0.3], // Parallax - move 30% left
-                        })
-                      : 0,
-                  },
-                  {
-                    scale: next
-                      ? next.progress.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [1, 0.95], // Slight scale down for depth
-                        })
-                      : 1,
-                  },
-                ],
-                opacity: next
-                  ? next.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 0.7], // Dim when ChatScreen is on top
-                    })
-                  : 1,
-              },
-            };
+          cardStyle: { backgroundColor: "#050608" },
+          // No page-level animation - content area handles its own animation
+          cardStyleInterpolator: ({ current }) => ({
+            cardStyle: {
+              opacity: 1, // Keep fully visible
+            },
+          }),
+          transitionSpec: {
+            open: {
+              animation: "timing",
+              config: { duration: 0 }, // Instant transition
+            },
+            close: {
+              animation: "timing",
+              config: { duration: 0 },
+            },
           },
         }}
       />
@@ -92,40 +77,22 @@ export function RootNavigator() {
         component={ChatScreen}
         options={{
           gestureEnabled: false,
-          cardStyle: { backgroundColor: "transparent" },
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0], // Slide from right
-                    }),
-                  },
-                ],
-              },
-              overlayStyle: {
-                opacity: current.progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.5], // Dark overlay on InputScreen
-                }),
-              },
-            };
-          },
+          cardStyle: { backgroundColor: "#050608" },
+          // No page-level animation - content area handles its own animation
+          cardStyleInterpolator: ({ current }) => ({
+            cardStyle: {
+              opacity: 1, // Keep fully visible
+            },
+          }),
           transitionSpec: {
             open: {
-              animation: 'spring',
-              config: {
-                stiffness: 1000,
-                damping: 500,
-                mass: 3,
-                overshootClamping: true,
-                restDisplacementThreshold: 0.01,
-                restSpeedThreshold: 0.01,
-              },
+              animation: "timing",
+              config: { duration: 0 }, // Instant transition
             },
-            close: TransitionSpecs.TransitionIOSSpec,
+            close: {
+              animation: "timing",
+              config: { duration: 0 },
+            },
           },
         }}
       />

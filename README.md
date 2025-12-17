@@ -245,6 +245,12 @@ When you send a message about a relationship situation, Klarity responds with a 
 - Cards slightly lift on hover and tap
 - Auto-scroll follows conversation naturally
 - Swipe right to return to input screen
+- **NEW: Focused Chat Area Transitions** - Only the chat content area animates during navigation:
+  - Header, input bar, and background remain static and persistent
+  - Chat content slides vertically with subtle fade (iOS-native easing)
+  - No full-screen page swipe or hard cuts
+  - Duration: 250ms with ease-in-out cubic bezier
+  - Creates calm, lightweight transitions that reinforce Klarity as a stable, grounding environment
 
 ### Screen 3: Analysis Screen 📊 (Legacy - Replaced by Inline Flow)
 **Note:** This screen is now replaced by the inline chatloop experience. The analysis now appears naturally within the chat conversation instead of as a separate screen.
@@ -965,7 +971,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Confirmation Questions** - "Is this more aligned with how you're feeling?"
 ✅ **What would you like to do next? Card** - Three-option choice card (Add Context / Instant Reply / Choose Direction)
 ✅ **Instant Reply Suggestion** - Quick, balanced response generation without direction selection
-✅ **Daily Comment Input** - Add personal comments/notes to any calendar day
+✅ **Focused Chat Area Transitions** - Only chat content animates, header/input/background stay static
 ✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
