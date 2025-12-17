@@ -46,6 +46,7 @@ import { BoundaryDetectionCard } from "../components/BoundaryDetectionCard";
 import { BoundaryClaritySummaryBubble } from "../components/BoundaryClaritySummaryBubble";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { useLoopsStore } from "../state/loopsStore";
 import { useCalendarStore } from "../state/calendarStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -111,6 +112,7 @@ export function ChatScreen({ navigation }: Props) {
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [additionalContext, setAdditionalContext] = useState<string>("");
   const [isVoiceMessage, setIsVoiceMessage] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Content area animation values (for focused chat area transition)
   // Start at 0 opacity so animation plays when screen first mounts
@@ -1654,7 +1656,7 @@ export function ChatScreen({ navigation }: Props) {
           className="flex-1"
           keyboardVerticalOffset={0}
         >
-          <Header showBackButton onBackPress={handleNavigateBack} isAnalyzing={isLoading} />
+          <Header showBackButton onBackPress={handleNavigateBack} isAnalyzing={isLoading} onMenuPress={() => setIsDrawerOpen(true)} />
 
           {/* Messages - Animated for transitions */}
           <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
@@ -1692,6 +1694,12 @@ export function ChatScreen({ navigation }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
           />
         </KeyboardAvoidingView>
+
+        {/* Slide Over Drawer */}
+        <SlideOverDrawer
+          visible={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+        />
       </Animated.View>
     </GestureDetector>
   );

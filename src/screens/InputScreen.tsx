@@ -17,6 +17,7 @@ import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -36,6 +37,7 @@ export function InputScreen({ navigation }: Props) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Track if this is the first focus (skip animation on initial app load)
   const isFirstFocus = useRef(true);
@@ -398,7 +400,7 @@ export function InputScreen({ navigation }: Props) {
           className="flex-1"
           keyboardVerticalOffset={0}
         >
-          <Header />
+          <Header onMenuPress={() => setIsDrawerOpen(true)} />
 
           {/* Center Content - Animated for transitions */}
           <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
@@ -458,6 +460,12 @@ export function InputScreen({ navigation }: Props) {
             }}
           />
         </KeyboardAvoidingView>
+
+        {/* Slide Over Drawer */}
+        <SlideOverDrawer
+          visible={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+        />
       </Animated.View>
     </GestureDetector>
   );

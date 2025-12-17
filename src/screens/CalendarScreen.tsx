@@ -28,6 +28,7 @@ import { DailyClaritySummary } from "../components/DailyClaritySummaryCard";
 import { ReflectionModal } from "../components/ReflectionModal";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 
 type Props = StackScreenProps<RootStackParamList, "CalendarScreen">;
 
@@ -54,6 +55,7 @@ export function CalendarScreen({ navigation }: Props) {
   const [selectedEntries, setSelectedEntries] = useState<any[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [reflectionModalVisible, setReflectionModalVisible] = useState(false);
+  const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [selectedEntryForReflection, setSelectedEntryForReflection] = useState<{
     id: string;
     title: string;
@@ -396,7 +398,7 @@ export function CalendarScreen({ navigation }: Props) {
         <FloatingParticles count={20} />
 
         {/* Header - Static, not part of content animation */}
-        <Header isCalendarScreen onNavigateHome={handleNavigateBack} />
+        <Header isCalendarScreen onNavigateHome={handleNavigateBack} onMenuPress={() => setMenuDrawerOpen(true)} />
 
         {/* Content - Animated for transitions */}
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
@@ -529,6 +531,12 @@ export function CalendarScreen({ navigation }: Props) {
         onSave={handleSaveReflection}
       />
     </Animated.View>
+
+        {/* Slide Over Drawer */}
+        <SlideOverDrawer
+          visible={menuDrawerOpen}
+          onClose={() => setMenuDrawerOpen(false)}
+        />
       </Animated.View>
     </GestureDetector>
   );
