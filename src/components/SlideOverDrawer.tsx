@@ -44,7 +44,7 @@ interface MenuItemProps {
 }
 
 // Drawer view states
-type DrawerView = "menu" | "chats";
+// Only menu view now - chats are shown directly
 
 function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemProps) {
   return (
@@ -185,8 +185,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  // View state
-  const [currentView, setCurrentView] = useState<DrawerView>("menu");
+  // State
   const [searchQuery, setSearchQuery] = useState("");
 
   // Store
@@ -219,11 +218,10 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     });
   }, [loops, searchQuery]);
 
-  // Reset view when drawer closes
+  // Reset search when drawer closes
   useEffect(() => {
     if (!visible) {
       setTimeout(() => {
-        setCurrentView("menu");
         setSearchQuery("");
       }, 300);
     }
@@ -258,19 +256,14 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       "hardwareBackPress",
       () => {
         if (visible) {
-          if (currentView !== "menu") {
-            setCurrentView("menu");
-            setSearchQuery("");
-          } else {
-            onClose();
-          }
+          onClose();
           return true;
         }
         return false;
       }
     );
     return () => backHandler.remove();
-  }, [visible, currentView, onClose]);
+  }, [visible, onClose]);
 
   // Close drawer helper
   const closeDrawer = () => {
@@ -332,21 +325,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
-  const handleYourChats = () => {
-    setCurrentView("chats");
-  };
-
   const handleSelectChat = (loopId: string) => {
     closeDrawer();
     setTimeout(() => {
       switchToLoop(loopId);
       navigation.navigate("ChatScreen" as never);
     }, 100);
-  };
-
-  const handleBackToMenu = () => {
-    setCurrentView("menu");
-    setSearchQuery("");
   };
 
   if (!visible && translateX.value === -DRAWER_WIDTH) {
@@ -356,105 +340,79 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Check if we're actively searching
   const isSearching = searchQuery.trim().length > 0;
 
-  // Render header based on current view
+  // Render header
   const renderHeader = () => {
-    if (currentView === "menu") {
-      return (
-        <View
-          style={{
-            paddingTop: insets.top + 16,
-            paddingBottom: 16,
-            paddingHorizontal: 20,
-          }}
-        >
-          {/* Search Bar */}
-          <View className="flex-row items-center">
-            <View
-              className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
-            >
-              <Ionicons name="search" size={18} color="#6B7280" />
-              <TextInput
-                className="flex-1 ml-2 text-base"
-                style={{ color: "#E5E7EB" }}
-                placeholder="Search chats..."
-                placeholderTextColor="#6B7280"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                returnKeyType="search"
-              />
-              {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
-                  <Ionicons name="close-circle" size={18} color="#6B7280" />
-                </Pressable>
-              )}
-            </View>
-
-            {/* New Chat Button */}
-            <Pressable
-              onPress={handleNewChat}
-              className="active:opacity-60 ml-3"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <View style={{ position: "relative" }}>
-                <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 4,
-                    left: 0,
-                    right: 0,
-                    bottom: 4,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="add" size={12} color="#9CA3AF" />
-                </View>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Klarity Branding */}
-          <View className="flex-row items-center mt-4">
-            <KlarityOrb size="small" />
-            <Text className="text-lg font-semibold ml-2" style={{ color: "#F9FAFB" }}>
-              Klarity
-            </Text>
-          </View>
-        </View>
-      );
-    }
-
-    // Chats view header (search view is no longer used separately)
     return (
       <View
         style={{
-          paddingTop: insets.top + 12,
-          paddingBottom: 12,
-          paddingHorizontal: 16,
+          paddingTop: insets.top + 16,
+          paddingBottom: 16,
+          paddingHorizontal: 20,
         }}
       >
+        {/* Search Bar */}
         <View className="flex-row items-center">
+          <View
+            className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
+          >
+            <Ionicons name="search" size={18} color="#6B7280" />
+            <TextInput
+              className="flex-1 ml-2 text-base"
+              style={{ color: "#E5E7EB" }}
+              placeholder="Search chats..."
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
+                <Ionicons name="close-circle" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+          </View>
+
+          {/* New Chat Button */}
           <Pressable
-            onPress={handleBackToMenu}
-            className="active:opacity-60 mr-3"
+            onPress={handleNewChat}
+            className="active:opacity-60 ml-3"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <View style={{ position: "relative" }}>
+              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={12} color="#9CA3AF" />
+              </View>
+            </View>
           </Pressable>
-          <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
-            Your Chats
+        </View>
+
+        {/* Klarity Branding */}
+        <View className="flex-row items-center mt-4">
+          <KlarityOrb size="small" />
+          <Text className="text-lg font-semibold ml-2" style={{ color: "#F9FAFB" }}>
+            Klarity
           </Text>
         </View>
       </View>
     );
   };
 
-  // Render content based on current view
+  // Render content
   const renderContent = () => {
-    // If user is searching in the menu view, show search results
-    if (currentView === "menu" && isSearching) {
+    // If user is searching, show search results
+    if (isSearching) {
       if (filteredLoops.length === 0) {
         return (
           <View className="flex-1 items-center justify-center px-8">
@@ -499,64 +457,38 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       );
     }
 
-    // Default menu view (not searching)
-    if (currentView === "menu") {
-      return (
-        <View style={{ marginTop: 8 }}>
-          <MenuItem
-            icon="calendar-outline"
-            label="Calendar"
-            subtitle="View emotional timeline"
-            onPress={handleCalendar}
-          />
-          <MenuItem
-            icon="chatbubbles-outline"
-            label="Your Chats"
-            subtitle={`${loops.length} conversation${loops.length !== 1 ? "s" : ""}`}
-            onPress={handleYourChats}
-            isLast
-          />
-        </View>
-      );
-    }
-
-    // Chats view - show list of all loops
-    if (loops.length === 0) {
-      return (
-        <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="chatbubbles-outline" size={48} color="#4B5563" />
-          <Text
-            className="text-base font-medium mt-4 text-center"
-            style={{ color: "#9CA3AF" }}
-          >
-            No conversations yet
-          </Text>
-          <Text
-            className="text-sm mt-2 text-center"
-            style={{ color: "#6B7280" }}
-          >
-            Start a new chat to begin
-          </Text>
-        </View>
-      );
-    }
-
+    // Default view (not searching) - show menu and past chats
     return (
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {loops.map((loop, index) => (
-          <ChatListItem
-            key={loop.id}
-            loop={loop}
-            onPress={() => handleSelectChat(loop.id)}
-            isLast={index === loops.length - 1}
-          />
-        ))}
-        <View style={{ height: insets.bottom + 100 }} />
-      </ScrollView>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ marginTop: 8 }}>
+            <MenuItem
+              icon="calendar-outline"
+              label="Calendar"
+              subtitle="View emotional timeline"
+              onPress={handleCalendar}
+              isLast={loops.length === 0}
+            />
+          </View>
+
+          {/* Past Chats - show directly if available */}
+          {loops.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              {loops.map((loop, index) => (
+                <ChatListItem
+                  key={loop.id}
+                  loop={loop}
+                  onPress={() => handleSelectChat(loop.id)}
+                  isLast={index === loops.length - 1}
+                />
+              ))}
+            </View>
+          )}
+          <View style={{ height: insets.bottom + 100 }} />
+        </ScrollView>
     );
   };
 
@@ -615,8 +547,8 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           {/* Dynamic Content */}
           <View style={{ flex: 1 }}>{renderContent()}</View>
 
-          {/* Footer - only show on menu view when not searching */}
-          {currentView === "menu" && !isSearching && (
+          {/* Footer - only show when not searching */}
+          {!isSearching && (
             <View
               style={{
                 position: "absolute",
