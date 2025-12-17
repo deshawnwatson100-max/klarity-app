@@ -394,7 +394,7 @@ export function CalendarScreen({ navigation }: Props) {
         <FloatingParticles count={20} />
 
         {/* Header - Static, not part of content animation */}
-        <Header showBackButton onBackPress={handleNavigateBack} />
+        <Header isCalendarScreen onNavigateHome={handleNavigateBack} />
 
         {/* Content - Animated for transitions */}
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>

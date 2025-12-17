@@ -11,6 +11,8 @@ interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
+  isCalendarScreen?: boolean;
+  onNavigateHome?: () => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface HeaderProps {
  * Premium iOS-style top bar with Klarity AI orb logo.
  *
  * Features:
- * - Left: Menu dropdown (Calendar, Past Loops)
+ * - Left: Menu dropdown (Calendar, Past Loops) or calendar menu (Home, New Chat)
  * - Center: Multicolor glowing orb with breathing animation
  * - Right: New Loop button
  * - Semi-transparent black glass background (18% opacity)
@@ -28,6 +30,8 @@ export function Header({
   title = "Klarity AI 1.0",
   showBackButton = false,
   onBackPress,
+  isCalendarScreen = false,
+  onNavigateHome,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -56,6 +60,108 @@ export function Header({
     toggleHistoryPanel();
   };
 
+  const handleHome = () => {
+    if (onNavigateHome) {
+      onNavigateHome();
+    } else {
+      navigation.navigate("InputScreen" as never);
+    }
+  };
+
+  const handleNewChat = () => {
+    createNewLoop();
+    navigation.navigate("InputScreen" as never);
+  };
+
+  // Render the left side menu based on screen type
+  const renderLeftMenu = () => {
+    if (showBackButton) {
+      return (
+        <Pressable onPress={handleBackPress} className="active:opacity-60">
+          <Ionicons name="chevron-back" size={28} color="#9CA3AF" />
+        </Pressable>
+      );
+    }
+
+    if (isCalendarScreen) {
+      // Calendar screen menu - Home and New Chat options
+      return (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Pressable className="active:opacity-60">
+              <Ionicons name="menu" size={28} color="#9CA3AF" />
+            </Pressable>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Content>
+            <DropdownMenu.Item key="home" onSelect={handleHome}>
+              <DropdownMenu.ItemIcon
+                ios={{
+                  name: "house",
+                  pointSize: 18,
+                }}
+              />
+              <DropdownMenu.ItemTitle>Home</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Item key="new-chat" onSelect={handleNewChat}>
+              <DropdownMenu.ItemIcon
+                ios={{
+                  name: "plus.bubble",
+                  pointSize: 18,
+                }}
+              />
+              <DropdownMenu.ItemTitle>New Chat</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
+              <DropdownMenu.ItemIcon
+                ios={{
+                  name: "clock",
+                  pointSize: 18,
+                }}
+              />
+              <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      );
+    }
+
+    // Default menu - Calendar and Past Loops options
+    return (
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          <Pressable className="active:opacity-60">
+            <Ionicons name="menu" size={28} color="#9CA3AF" />
+          </Pressable>
+        </DropdownMenu.Trigger>
+
+        <DropdownMenu.Content>
+          <DropdownMenu.Item key="calendar" onSelect={handleCalendar}>
+            <DropdownMenu.ItemIcon
+              ios={{
+                name: "calendar",
+                pointSize: 18,
+              }}
+            />
+            <DropdownMenu.ItemTitle>Calendar</DropdownMenu.ItemTitle>
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
+            <DropdownMenu.ItemIcon
+              ios={{
+                name: "clock",
+                pointSize: 18,
+              }}
+            />
+            <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+  };
+
   return (
     <View
       style={{
@@ -64,42 +170,8 @@ export function Header({
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Back Button or Menu Dropdown */}
-        {showBackButton ? (
-          <Pressable onPress={handleBackPress} className="active:opacity-60">
-            <Ionicons name="chevron-back" size={28} color="#9CA3AF" />
-          </Pressable>
-        ) : (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger>
-              <Pressable className="active:opacity-60">
-                <Ionicons name="menu" size={28} color="#9CA3AF" />
-              </Pressable>
-            </DropdownMenu.Trigger>
-
-            <DropdownMenu.Content>
-              <DropdownMenu.Item key="calendar" onSelect={handleCalendar}>
-                <DropdownMenu.ItemIcon
-                  ios={{
-                    name: "calendar",
-                    pointSize: 18,
-                  }}
-                />
-                <DropdownMenu.ItemTitle>Calendar</DropdownMenu.ItemTitle>
-              </DropdownMenu.Item>
-
-              <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
-                <DropdownMenu.ItemIcon
-                  ios={{
-                    name: "clock",
-                    pointSize: 18,
-                  }}
-                />
-                <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
-        )}
+        {/* Left - Menu Dropdown */}
+        {renderLeftMenu()}
 
         {/* Center - Klarity AI Orb */}
         <View className="flex-1 items-center">
