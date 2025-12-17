@@ -518,12 +518,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       return (
         <View style={{ marginTop: 8 }}>
           <MenuItem
-            icon="add-outline"
-            label="New Chat"
-            subtitle="Start a fresh conversation"
-            onPress={handleNewChat}
-          />
-          <MenuItem
             icon="calendar-outline"
             label="Calendar"
             subtitle="View emotional timeline"
