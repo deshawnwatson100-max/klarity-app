@@ -388,25 +388,51 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           </Text>
 
           {/* Search Bar */}
-          <View
-            className="flex-row items-center mt-4 px-3 py-2.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
-          >
-            <Ionicons name="search" size={18} color="#6B7280" />
-            <TextInput
-              className="flex-1 ml-2 text-base"
-              style={{ color: "#E5E7EB" }}
-              placeholder="Search chats..."
-              placeholderTextColor="#6B7280"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
-                <Ionicons name="close-circle" size={18} color="#6B7280" />
-              </Pressable>
-            )}
+          <View className="flex-row items-center mt-4">
+            <View
+              className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
+              style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
+            >
+              <Ionicons name="search" size={18} color="#6B7280" />
+              <TextInput
+                className="flex-1 ml-2 text-base"
+                style={{ color: "#E5E7EB" }}
+                placeholder="Search chats..."
+                placeholderTextColor="#6B7280"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
+                  <Ionicons name="close-circle" size={18} color="#6B7280" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* New Chat Button */}
+            <Pressable
+              onPress={handleNewChat}
+              className="active:opacity-60 ml-3"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <View style={{ position: "relative" }}>
+                <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    left: 0,
+                    right: 0,
+                    bottom: 4,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="add" size={12} color="#9CA3AF" />
+                </View>
+              </View>
+            </Pressable>
           </View>
         </View>
       );
