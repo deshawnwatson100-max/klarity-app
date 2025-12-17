@@ -55,13 +55,7 @@ function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemPr
         backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
       })}
     >
-      <View
-        className="flex-row items-center px-5 py-4"
-        style={{
-          borderBottomWidth: isLast ? 0 : 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.06)",
-        }}
-      >
+      <View className="flex-row items-center px-5 py-4">
         <View
           style={{
             width: 32,
@@ -141,13 +135,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
         backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
       })}
     >
-      <View
-        className="px-5 py-3"
-        style={{
-          borderBottomWidth: isLast ? 0 : 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.06)",
-        }}
-      >
+      <View className="px-5 py-3">
         <View className="flex-row items-center justify-between mb-1">
           <Text
             className="text-sm font-medium flex-1 mr-2"
@@ -377,8 +365,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             paddingTop: insets.top + 16,
             paddingBottom: 16,
             paddingHorizontal: 20,
-            borderBottomWidth: 0.5,
-            borderBottomColor: "rgba(255, 255, 255, 0.08)",
           }}
         >
           {/* Search Bar */}
@@ -447,8 +433,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           paddingTop: insets.top + 12,
           paddingBottom: 12,
           paddingHorizontal: 16,
-          borderBottomWidth: 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.08)",
         }}
       >
         <View className="flex-row items-center">
@@ -616,8 +600,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
               bottom: 0,
               width: DRAWER_WIDTH,
               backgroundColor: "#0A0A0C",
-              borderRightWidth: 0.5,
-              borderRightColor: "rgba(255, 255, 255, 0.1)",
               shadowColor: "#000",
               shadowOffset: { width: 4, height: 0 },
               shadowOpacity: 0.3,
@@ -652,8 +634,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
                   paddingHorizontal: 16,
                   backgroundColor: "rgba(255, 255, 255, 0.03)",
                   borderRadius: 12,
-                  borderWidth: 0.5,
-                  borderColor: "rgba(255, 255, 255, 0.06)",
                 }}
               >
                 <View
