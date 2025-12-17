@@ -43,7 +43,7 @@ interface MenuItemProps {
 }
 
 // Drawer view states
-type DrawerView = "menu" | "search" | "chats";
+type DrawerView = "menu" | "chats";
 
 function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemProps) {
   return (
@@ -336,10 +336,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
-  const handleSearchChats = () => {
-    setCurrentView("search");
-  };
-
   const handleCalendar = () => {
     closeDrawer();
     setTimeout(() => {
@@ -368,6 +364,9 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     return null;
   }
 
+  // Check if we're actively searching
+  const isSearching = searchQuery.trim().length > 0;
+
   // Render header based on current view
   const renderHeader = () => {
     if (currentView === "menu") {
@@ -375,7 +374,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         <View
           style={{
             paddingTop: insets.top + 16,
-            paddingBottom: 20,
+            paddingBottom: 16,
             paddingHorizontal: 20,
             borderBottomWidth: 0.5,
             borderBottomColor: "rgba(255, 255, 255, 0.08)",
@@ -387,11 +386,33 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           <Text className="text-sm mt-1" style={{ color: "#6B7280" }}>
             Find your clarity
           </Text>
+
+          {/* Search Bar */}
+          <View
+            className="flex-row items-center mt-4 px-3 py-2.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
+          >
+            <Ionicons name="search" size={18} color="#6B7280" />
+            <TextInput
+              className="flex-1 ml-2 text-base"
+              style={{ color: "#E5E7EB" }}
+              placeholder="Search chats..."
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
+                <Ionicons name="close-circle" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+          </View>
         </View>
       );
     }
 
-    // Search or Chats view header
+    // Chats view header (search view is no longer used separately)
     return (
       <View
         style={{
@@ -411,39 +432,62 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
           </Pressable>
           <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
-            {currentView === "search" ? "Search Chats" : "Your Chats"}
+            Your Chats
           </Text>
         </View>
-
-        {currentView === "search" && (
-          <View
-            className="flex-row items-center mt-3 px-3 py-2 rounded-lg"
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
-          >
-            <Ionicons name="search" size={18} color="#6B7280" />
-            <TextInput
-              className="flex-1 ml-2 text-base"
-              style={{ color: "#E5E7EB" }}
-              placeholder="Search by keyword, person, or theme..."
-              placeholderTextColor="#6B7280"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={18} color="#6B7280" />
-              </Pressable>
-            )}
-          </View>
-        )}
       </View>
     );
   };
 
   // Render content based on current view
   const renderContent = () => {
+    // If user is searching in the menu view, show search results
+    if (currentView === "menu" && isSearching) {
+      if (filteredLoops.length === 0) {
+        return (
+          <View className="flex-1 items-center justify-center px-8">
+            <Ionicons name="search-outline" size={48} color="#4B5563" />
+            <Text
+              className="text-base font-medium mt-4 text-center"
+              style={{ color: "#9CA3AF" }}
+            >
+              No chats found
+            </Text>
+            <Text
+              className="text-sm mt-2 text-center"
+              style={{ color: "#6B7280" }}
+            >
+              Try different keywords or phrases
+            </Text>
+          </View>
+        );
+      }
+
+      return (
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="px-5 py-3">
+            <Text className="text-xs font-medium" style={{ color: "#6B7280" }}>
+              {filteredLoops.length} result{filteredLoops.length !== 1 ? "s" : ""}
+            </Text>
+          </View>
+          {filteredLoops.map((loop, index) => (
+            <ChatListItem
+              key={loop.id}
+              loop={loop}
+              onPress={() => handleSelectChat(loop.id)}
+              isLast={index === filteredLoops.length - 1}
+            />
+          ))}
+          <View style={{ height: insets.bottom + 100 }} />
+        </ScrollView>
+      );
+    }
+
+    // Default menu view (not searching)
     if (currentView === "menu") {
       return (
         <View style={{ marginTop: 8 }}>
@@ -452,12 +496,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             label="New Chat"
             subtitle="Start a fresh conversation"
             onPress={handleNewChat}
-          />
-          <MenuItem
-            icon="search-outline"
-            label="Search Chats"
-            subtitle="Find past conversations"
-            onPress={handleSearchChats}
           />
           <MenuItem
             icon="calendar-outline"
@@ -476,34 +514,22 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       );
     }
 
-    // Search or Chats view - show list of loops
-    const displayLoops = currentView === "search" ? filteredLoops : loops;
-
-    if (displayLoops.length === 0) {
+    // Chats view - show list of all loops
+    if (loops.length === 0) {
       return (
         <View className="flex-1 items-center justify-center px-8">
-          <Ionicons
-            name={currentView === "search" ? "search-outline" : "chatbubbles-outline"}
-            size={48}
-            color="#4B5563"
-          />
+          <Ionicons name="chatbubbles-outline" size={48} color="#4B5563" />
           <Text
             className="text-base font-medium mt-4 text-center"
             style={{ color: "#9CA3AF" }}
           >
-            {currentView === "search"
-              ? searchQuery
-                ? "No chats found"
-                : "Search your conversations"
-              : "No conversations yet"}
+            No conversations yet
           </Text>
           <Text
             className="text-sm mt-2 text-center"
             style={{ color: "#6B7280" }}
           >
-            {currentView === "search"
-              ? "Try different keywords or phrases"
-              : "Start a new chat to begin"}
+            Start a new chat to begin
           </Text>
         </View>
       );
@@ -515,12 +541,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {displayLoops.map((loop, index) => (
+        {loops.map((loop, index) => (
           <ChatListItem
             key={loop.id}
             loop={loop}
             onPress={() => handleSelectChat(loop.id)}
-            isLast={index === displayLoops.length - 1}
+            isLast={index === loops.length - 1}
           />
         ))}
         <View style={{ height: insets.bottom + 100 }} />
@@ -585,8 +611,8 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           {/* Dynamic Content */}
           <View style={{ flex: 1 }}>{renderContent()}</View>
 
-          {/* Footer - only show on menu view */}
-          {currentView === "menu" && (
+          {/* Footer - only show on menu view when not searching */}
+          {currentView === "menu" && !isSearching && (
             <View
               style={{
                 position: "absolute",
