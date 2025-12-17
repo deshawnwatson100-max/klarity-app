@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
   runOnJS,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
@@ -83,31 +84,40 @@ export function InputScreen({ navigation }: Props) {
     React.useCallback(() => {
       // Skip animation on initial mount, animate on subsequent focuses (returning from other screens)
       if (hasInitialized.current) {
+        // Cancel any running animations first
+        cancelAnimation(contentOpacity);
+        cancelAnimation(contentTranslateY);
+        cancelAnimation(bottomOpacity);
+        cancelAnimation(bottomTranslateY);
+
         // Reset to starting position instantly (invisible, offset)
         contentOpacity.value = 0;
         contentTranslateY.value = 30;
         bottomOpacity.value = 0;
         bottomTranslateY.value = 20;
 
-        // Then animate in
-        contentOpacity.value = withTiming(1, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        contentTranslateY.value = withTiming(0, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
+        // Use requestAnimationFrame equivalent to ensure reset happens before animation
+        setTimeout(() => {
+          // Then animate in
+          contentOpacity.value = withTiming(1, {
+            duration: CONTENT_TRANSITION_DURATION,
+            easing: CONTENT_EASING,
+          });
+          contentTranslateY.value = withTiming(0, {
+            duration: CONTENT_TRANSITION_DURATION,
+            easing: CONTENT_EASING,
+          });
 
-        // Animate bottom elements (input bar)
-        bottomOpacity.value = withTiming(1, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        bottomTranslateY.value = withTiming(0, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
+          // Animate bottom elements (input bar)
+          bottomOpacity.value = withTiming(1, {
+            duration: CONTENT_TRANSITION_DURATION,
+            easing: CONTENT_EASING,
+          });
+          bottomTranslateY.value = withTiming(0, {
+            duration: CONTENT_TRANSITION_DURATION,
+            easing: CONTENT_EASING,
+          });
+        }, 10);
       } else {
         hasInitialized.current = true;
       }
