@@ -4,7 +4,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -38,8 +37,8 @@ export function InputScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
 
-  // Track if this is the initial mount (no animation needed) vs navigation
-  const hasInitialized = useRef(false);
+  // Track if this is the first focus (skip animation on initial app load)
+  const isFirstFocus = useRef(true);
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -79,52 +78,55 @@ export function InputScreen({ navigation }: Props) {
     }
   }, []);
 
-  // Animate content in when screen gains focus
-  useFocusEffect(
-    React.useCallback(() => {
-      // Skip animation on initial mount, animate on subsequent focuses (returning from other screens)
-      if (hasInitialized.current) {
-        // Cancel any running animations first
-        cancelAnimation(contentOpacity);
-        cancelAnimation(contentTranslateY);
-        cancelAnimation(bottomOpacity);
-        cancelAnimation(bottomTranslateY);
+  // Animate content in when screen gains focus using navigation listener
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      console.log("[InputScreen] Focus event - isFirstFocus:", isFirstFocus.current);
 
-        // Reset to starting position instantly (invisible, offset)
-        contentOpacity.value = 0;
-        contentTranslateY.value = 30;
-        bottomOpacity.value = 0;
-        bottomTranslateY.value = 20;
-
-        // Use requestAnimationFrame equivalent to ensure reset happens before animation
-        setTimeout(() => {
-          // Then animate in
-          contentOpacity.value = withTiming(1, {
-            duration: CONTENT_TRANSITION_DURATION,
-            easing: CONTENT_EASING,
-          });
-          contentTranslateY.value = withTiming(0, {
-            duration: CONTENT_TRANSITION_DURATION,
-            easing: CONTENT_EASING,
-          });
-
-          // Animate bottom elements (input bar)
-          bottomOpacity.value = withTiming(1, {
-            duration: CONTENT_TRANSITION_DURATION,
-            easing: CONTENT_EASING,
-          });
-          bottomTranslateY.value = withTiming(0, {
-            duration: CONTENT_TRANSITION_DURATION,
-            easing: CONTENT_EASING,
-          });
-        }, 10);
-      } else {
-        hasInitialized.current = true;
+      // Skip animation on initial app load, animate on subsequent focuses (returning from other screens)
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
       }
 
-      return () => {};
-    }, [])
-  );
+      // Cancel any running animations first
+      cancelAnimation(contentOpacity);
+      cancelAnimation(contentTranslateY);
+      cancelAnimation(bottomOpacity);
+      cancelAnimation(bottomTranslateY);
+
+      // Reset to starting position instantly (invisible, offset)
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
+      bottomOpacity.value = 0;
+      bottomTranslateY.value = 20;
+
+      // Small delay to ensure reset is applied before animation starts
+      setTimeout(() => {
+        // Then animate in
+        contentOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        contentTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+
+        // Animate bottom elements (input bar)
+        bottomOpacity.value = withTiming(1, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+        bottomTranslateY.value = withTiming(0, {
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+        });
+      }, 16); // One frame delay
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // Animated style for content area (center content only)
   const contentAnimatedStyle = useAnimatedStyle(() => ({
