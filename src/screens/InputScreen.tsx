@@ -16,7 +16,6 @@ import Animated, {
 import { Audio } from "expo-av";
 import { InputBar } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
@@ -57,8 +56,6 @@ export function InputScreen({ navigation }: Props) {
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
-  const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
-  const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
   // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
@@ -336,11 +333,6 @@ export function InputScreen({ navigation }: Props) {
     animateContentOutAndNavigate("ChatScreen");
   };
 
-  // Handler for opening past loops panel (must be wrapped with runOnJS)
-  const handleOpenPastLoops = () => {
-    setHistoryPanelOpen(true);
-  };
-
   // Handler for navigating to calendar screen with animation
   const handleNavigateToCalendar = () => {
     animateContentOutAndNavigate("CalendarScreen");
@@ -352,12 +344,10 @@ export function InputScreen({ navigation }: Props) {
       Gesture.Pan()
         .activeOffsetX([-50, 50])
         .onEnd((event) => {
-          // Left swipe - navigate to ChatScreen or open Past Loops
+          // Left swipe - navigate to ChatScreen (only if has messages)
           if (event.velocityX < -500 && event.translationX < -80) {
             if (canNavigate.value) {
               runOnJS(handleNavigateToChat)();
-            } else {
-              runOnJS(handleOpenPastLoops)();
             }
           }
           // Right swipe - navigate to Calendar
@@ -449,16 +439,6 @@ export function InputScreen({ navigation }: Props) {
               </View>
             </View>
           )}
-
-          {/* History Panel */}
-          <LoopHistoryPanel
-            visible={isHistoryPanelOpen}
-            onClose={() => setHistoryPanelOpen(false)}
-            onLoopSelected={() => {
-              // Navigate to ChatScreen when a loop is selected from InputScreen
-              animateContentOutAndNavigate("ChatScreen");
-            }}
-          />
         </KeyboardAvoidingView>
 
         {/* Slide Over Drawer */}
