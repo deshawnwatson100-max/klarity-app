@@ -99,7 +99,6 @@ export function ChatScreen({ navigation }: Props) {
   const scrollViewRef = useRef<ScrollView>(null);
   const hasProcessedInitialMessage = useRef(false);
   const processedMessageIds = useRef<Set<string>>(new Set());
-  const hasInitialized = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -114,12 +113,14 @@ export function ChatScreen({ navigation }: Props) {
   const [isVoiceMessage, setIsVoiceMessage] = useState(false);
 
   // Content area animation values (for focused chat area transition)
-  const contentOpacity = useSharedValue(1);
-  const contentTranslateY = useSharedValue(0);
+  // Start at 0 opacity so animation plays when screen first mounts
+  const contentOpacity = useSharedValue(0);
+  const contentTranslateY = useSharedValue(30);
 
   // Bottom elements animation values (input bar)
-  const bottomOpacity = useSharedValue(1);
-  const bottomTranslateY = useSharedValue(0);
+  // Start at 0 opacity so animation plays when screen first mounts
+  const bottomOpacity = useSharedValue(0);
+  const bottomTranslateY = useSharedValue(20);
 
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
@@ -188,38 +189,34 @@ export function ChatScreen({ navigation }: Props) {
   };
 
   // Animate content in when screen gains focus
+  // ChatScreen is NEVER the initial screen, so always animate on focus
   useFocusEffect(
     React.useCallback(() => {
-      // Skip animation on initial mount, animate on subsequent focuses (arriving from other screens)
-      if (hasInitialized.current) {
-        // Animate content in from below
-        contentOpacity.value = 0;
-        contentTranslateY.value = 30;
+      // Reset to starting position then animate in
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
 
-        contentOpacity.value = withTiming(1, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        contentTranslateY.value = withTiming(0, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
+      contentOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
 
-        // Animate bottom elements
-        bottomOpacity.value = 0;
-        bottomTranslateY.value = 20;
+      // Animate bottom elements
+      bottomOpacity.value = 0;
+      bottomTranslateY.value = 20;
 
-        bottomOpacity.value = withTiming(1, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        bottomTranslateY.value = withTiming(0, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-      } else {
-        hasInitialized.current = true;
-      }
+      bottomOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      bottomTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
 
       // When screen comes into focus, check if we need to process the initial message
       const activeLoop = getActiveLoop();

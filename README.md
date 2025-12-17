@@ -251,6 +251,8 @@ When you send a message about a relationship situation, Klarity responds with a 
   - No full-screen page swipe or hard cuts
   - Duration: 250ms with ease-in-out cubic bezier
   - Creates calm, lightweight transitions that reinforce Klarity as a stable, grounding environment
+  - CalendarScreen and ChatScreen always animate on focus (they are never the initial screen)
+  - InputScreen skips animation only on initial app load, animates on subsequent visits
 - **NEW: Bottom Elements Animation** - Feature buttons and input bar animate during screen transitions:
   - Consistent animation timing with content area (250ms duration)
   - Slide up from below on screen focus (20px translate)

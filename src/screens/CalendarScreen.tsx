@@ -54,15 +54,15 @@ export function CalendarScreen({ navigation }: Props) {
   const [selectedEntries, setSelectedEntries] = useState<any[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [reflectionModalVisible, setReflectionModalVisible] = useState(false);
-  const hasInitialized = React.useRef(false);
   const [selectedEntryForReflection, setSelectedEntryForReflection] = useState<{
     id: string;
     title: string;
   } | null>(null);
 
   // Content area animation values (for focused chat area transition)
-  const contentOpacity = useSharedValue(1);
-  const contentTranslateY = useSharedValue(0);
+  // Start at 0 opacity so animation plays when screen first mounts
+  const contentOpacity = useSharedValue(0);
+  const contentTranslateY = useSharedValue(30);
 
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
@@ -106,25 +106,21 @@ export function CalendarScreen({ navigation }: Props) {
   };
 
   // Animate content in when screen gains focus
+  // CalendarScreen is NEVER the initial screen, so always animate on focus
   useFocusEffect(
     React.useCallback(() => {
-      // Skip animation on initial mount, animate on subsequent focuses (arriving from other screens)
-      if (hasInitialized.current) {
-        // Animate content in from below
-        contentOpacity.value = 0;
-        contentTranslateY.value = 30;
+      // Reset to starting position then animate in
+      contentOpacity.value = 0;
+      contentTranslateY.value = 30;
 
-        contentOpacity.value = withTiming(1, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        contentTranslateY.value = withTiming(0, {
-          duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-      } else {
-        hasInitialized.current = true;
-      }
+      contentOpacity.value = withTiming(1, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
+      contentTranslateY.value = withTiming(0, {
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+      });
 
       return () => {};
     }, [])
