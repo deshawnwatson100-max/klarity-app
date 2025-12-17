@@ -22,6 +22,7 @@ import Animated, {
 import { useCalendarStore } from "../state/calendarStore";
 import { INTENTIONS, EVENT_TYPES } from "../types/calendar";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { Header } from "../components/Header";
 import { DayDetailDrawer } from "../components/DayDetailDrawer";
 import { DailyClaritySummary } from "../components/DailyClaritySummaryCard";
 import { ReflectionModal } from "../components/ReflectionModal";
@@ -392,26 +393,19 @@ export function CalendarScreen({ navigation }: Props) {
         {/* Floating particles - Layer 2 */}
         <FloatingParticles count={20} />
 
-        {/* Content - Animated for transitions */}
-        <Animated.View style={[{ flex: 1, paddingTop: insets.top }, contentAnimatedStyle]}>
-      {/* Header */}
-      <View className="px-4 py-6 flex-row items-start justify-between">
-        <View className="flex-1">
-          <Text className="text-2xl font-bold mb-1" style={{ color: "#F9FAFB" }}>
-            Your Emotional Timeline
-          </Text>
-          <Text className="text-sm" style={{ color: "#E5E7EB" }}>
-            Track your clarity journey
-          </Text>
-        </View>
+        {/* Header - Static, not part of content animation */}
+        <Header showBackButton onBackPress={handleNavigateBack} />
 
-        {/* Home Button */}
-        <Pressable
-          onPress={handleNavigateBack}
-          className="active:opacity-60 mt-1"
-        >
-          <Ionicons name="home" size={28} color="#9CA3AF" />
-        </Pressable>
+        {/* Content - Animated for transitions */}
+        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+      {/* Calendar Title */}
+      <View className="px-4 pt-4 pb-2">
+        <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+          Your Emotional Timeline
+        </Text>
+        <Text className="text-sm mt-1" style={{ color: "#9CA3AF" }}>
+          Track your clarity journey
+        </Text>
       </View>
 
       {/* Month Navigation */}

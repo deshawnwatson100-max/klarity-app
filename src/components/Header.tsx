@@ -64,36 +64,42 @@ export function Header({
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu Dropdown */}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <Pressable className="active:opacity-60">
-              <Ionicons name="menu" size={28} color="#9CA3AF" />
-            </Pressable>
-          </DropdownMenu.Trigger>
+        {/* Left - Back Button or Menu Dropdown */}
+        {showBackButton ? (
+          <Pressable onPress={handleBackPress} className="active:opacity-60">
+            <Ionicons name="chevron-back" size={28} color="#9CA3AF" />
+          </Pressable>
+        ) : (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <Pressable className="active:opacity-60">
+                <Ionicons name="menu" size={28} color="#9CA3AF" />
+              </Pressable>
+            </DropdownMenu.Trigger>
 
-          <DropdownMenu.Content>
-            <DropdownMenu.Item key="calendar" onSelect={handleCalendar}>
-              <DropdownMenu.ItemIcon
-                ios={{
-                  name: "calendar",
-                  pointSize: 18,
-                }}
-              />
-              <DropdownMenu.ItemTitle>Calendar</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item key="calendar" onSelect={handleCalendar}>
+                <DropdownMenu.ItemIcon
+                  ios={{
+                    name: "calendar",
+                    pointSize: 18,
+                  }}
+                />
+                <DropdownMenu.ItemTitle>Calendar</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
 
-            <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
-              <DropdownMenu.ItemIcon
-                ios={{
-                  name: "clock",
-                  pointSize: 18,
-                }}
-              />
-              <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+              <DropdownMenu.Item key="past-loops" onSelect={handlePastLoops}>
+                <DropdownMenu.ItemIcon
+                  ios={{
+                    name: "clock",
+                    pointSize: 18,
+                  }}
+                />
+                <DropdownMenu.ItemTitle>Past Loops</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        )}
 
         {/* Center - Klarity AI Orb */}
         <View className="flex-1 items-center">
