@@ -83,10 +83,13 @@ export function InputScreen({ navigation }: Props) {
     React.useCallback(() => {
       // Skip animation on initial mount, animate on subsequent focuses (returning from other screens)
       if (hasInitialized.current) {
-        // Animate content in from below
+        // Reset to starting position instantly (invisible, offset)
         contentOpacity.value = 0;
         contentTranslateY.value = 30;
+        bottomOpacity.value = 0;
+        bottomTranslateY.value = 20;
 
+        // Then animate in
         contentOpacity.value = withTiming(1, {
           duration: CONTENT_TRANSITION_DURATION,
           easing: CONTENT_EASING,
@@ -96,10 +99,7 @@ export function InputScreen({ navigation }: Props) {
           easing: CONTENT_EASING,
         });
 
-        // Animate bottom elements
-        bottomOpacity.value = 0;
-        bottomTranslateY.value = 20;
-
+        // Animate bottom elements (input bar)
         bottomOpacity.value = withTiming(1, {
           duration: CONTENT_TRANSITION_DURATION,
           easing: CONTENT_EASING,
