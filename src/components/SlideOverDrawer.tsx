@@ -333,6 +333,13 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
+  const handleRelationshipGrowth = () => {
+    closeDrawer();
+    setTimeout(() => {
+      navigation.navigate("RelationshipGrowthScreen" as never);
+    }, 100);
+  };
+
   if (!visible && translateX.value === -DRAWER_WIDTH) {
     return null;
   }
@@ -470,6 +477,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
               label="Calendar"
               subtitle="View emotional timeline"
               onPress={handleCalendar}
+            />
+            <MenuItem
+              icon="heart-outline"
+              label="Relationship Growth"
+              subtitle="Track patterns over time"
+              onPress={handleRelationshipGrowth}
               isLast={loops.length === 0}
             />
           </View>

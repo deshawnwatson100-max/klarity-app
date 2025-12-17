@@ -984,6 +984,42 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
+✅ **Relationship Growth Tracking** - Track patterns with specific people over time for long-term clarity
+
+### NEW: Relationship Growth Tracking Feature
+Track ongoing patterns with specific people (e.g., "Mom," "Coworker," "Ex") to gain long-term clarity without forcing structure or emotional labeling.
+
+#### Detection & Trigger
+- After a chat loop where recurring conflict, emotional distress, or boundary issues with a specific person are detected, a soft optional prompt surfaces
+- The prompt appears naturally after AI responses, not interrupting emotional flow
+- Only shown when boundary concerns are detected
+
+#### User Prompt
+A subtle option card appears:
+- "Would you like to track patterns with this person to gain long-term clarity?"
+- **Track this relationship** button
+- **Not right now** button
+
+#### Tracking Flow
+1. User selects "Track this relationship"
+2. Text input appears: "Name or label (e.g., Mom, Manager, Alex)"
+3. Confirmation: "Got it. I'll group future conversations related to this person together."
+4. Current chat loop is tagged with the selected person
+5. Future related chats can be linked to the same relationship
+
+#### Relationship Growth Screen
+Access via the slide-over drawer menu:
+- Lists all tracked relationships (simple list, no metrics)
+- Tapping a name shows:
+  - All related chat loops
+  - Emotional clarity summaries
+  - Patterns over time (if available)
+
+#### Design Philosophy
+- Never implies the other person is "toxic"
+- Never pressures the user to track
+- Positioned as clarity and self-understanding, not fixing others
+- Maintains calm, neutral, emotionally intelligent language
 
 ## Future Enhancements
 

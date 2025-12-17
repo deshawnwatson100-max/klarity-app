@@ -1,6 +1,16 @@
 import { ChatMessage } from "./chat";
 
 /**
+ * Represents a tracked relationship for long-term clarity
+ */
+export interface TrackedRelationship {
+  id: string;
+  name: string; // User-provided label (e.g., "Mom", "Manager", "Alex")
+  createdAt: string;
+  loopIds: string[]; // IDs of associated chat loops
+}
+
+/**
  * Represents a single conversation loop/session with Klarity AI
  * Each loop maintains its own conversation history and metadata
  */
@@ -12,6 +22,7 @@ export interface KlarityLoop {
   messages: ChatMessage[]; // Full conversation history for this loop
   summary?: string; // Optional emotional clarity summary
   emotionalClarity?: number; // Optional percentage (0-100)
+  relationshipId?: string; // Optional link to a tracked relationship
 }
 
 /**

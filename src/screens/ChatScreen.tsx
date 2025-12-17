@@ -47,6 +47,7 @@ import { BoundaryClaritySummaryBubble } from "../components/BoundaryClaritySumma
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { RelationshipPromptCard } from "../components/RelationshipPromptCard";
 import { useLoopsStore } from "../state/loopsStore";
 import { useCalendarStore } from "../state/calendarStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -113,6 +114,8 @@ export function ChatScreen({ navigation }: Props) {
   const [additionalContext, setAdditionalContext] = useState<string>("");
   const [isVoiceMessage, setIsVoiceMessage] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showRelationshipPrompt, setShowRelationshipPrompt] = useState(false);
+  const [relationshipPromptDismissed, setRelationshipPromptDismissed] = useState(false);
 
   // Content area animation values (for focused chat area transition)
   // Start at 0 opacity so animation plays when screen first mounts
@@ -137,6 +140,12 @@ export function ChatScreen({ navigation }: Props) {
   const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
+
+  // Check if active loop already has a relationship linked
+  const activeLoopRelationshipId = useLoopsStore((s) => {
+    const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
+    return activeLoop?.relationshipId;
+  });
 
   // Calendar store
   const addCalendarEntry = useCalendarStore((s) => s.addEntry);
@@ -371,6 +380,11 @@ export function ChatScreen({ navigation }: Props) {
             boundaryAnalysis: boundaryResult.analysis,
           };
           addMessageToActiveLoop(boundaryMsg);
+
+          // Trigger relationship tracking prompt when boundary concerns detected
+          if (!relationshipPromptDismissed && !activeLoopRelationshipId) {
+            setShowRelationshipPrompt(true);
+          }
         } else {
           // No boundary violations - show Dysfunctional Communication Card as normal
           const analysisMessage: ImageAnalysisMessage = {
@@ -510,6 +524,12 @@ export function ChatScreen({ navigation }: Props) {
         boundaryAnalysis: boundaryResult.analysis,
       };
       addMessageToActiveLoop(boundaryMsg);
+
+      // Trigger relationship tracking prompt when boundary concerns detected
+      // Only if not already dismissed and loop doesn't have a relationship linked
+      if (!relationshipPromptDismissed && !activeLoopRelationshipId) {
+        setShowRelationshipPrompt(true);
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 400));
     }
@@ -1668,6 +1688,23 @@ export function ChatScreen({ navigation }: Props) {
               showsVerticalScrollIndicator={false}
             >
               {messages.map(renderMessage)}
+
+              {/* Relationship Tracking Prompt - shown after AI responses when conflict detected */}
+              {showRelationshipPrompt &&
+               !relationshipPromptDismissed &&
+               !activeLoopRelationshipId &&
+               activeLoopId && (
+                <RelationshipPromptCard
+                  loopId={activeLoopId}
+                  onDismiss={() => {
+                    setShowRelationshipPrompt(false);
+                    setRelationshipPromptDismissed(true);
+                  }}
+                  onTrackingEnabled={() => {
+                    setShowRelationshipPrompt(false);
+                  }}
+                />
+              )}
 
               <View style={{ height: 20 }} />
             </ScrollView>

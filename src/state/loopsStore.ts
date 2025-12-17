@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { KlarityLoop, createNewLoop, generateLoopTitle } from "../types/loop";
+import { KlarityLoop, TrackedRelationship, createNewLoop, generateLoopTitle } from "../types/loop";
 import { ChatMessage, AnalysisMessage } from "../types/chat";
 
 /**
@@ -11,10 +11,12 @@ import { ChatMessage, AnalysisMessage } from "../types/chat";
  * - Persists loops to AsyncStorage so they survive app restarts
  * - Tracks the currently active loop
  * - Provides actions to create, switch, update, and delete loops
+ * - Manages tracked relationships for long-term clarity
  *
  * Storage Strategy:
  * - Only loop metadata and messages are persisted
  * - Active loop ID is persisted to restore the last conversation on app launch
+ * - Tracked relationships are persisted
  *
  * To add new fields to a loop later:
  * 1. Update the KlarityLoop interface in types/loop.ts
@@ -27,10 +29,13 @@ interface LoopsState {
   loops: KlarityLoop[]; // All saved loops
   activeLoopId: string | null; // ID of the currently active loop
   isHistoryPanelOpen: boolean; // Whether the history drawer is open
+  trackedRelationships: TrackedRelationship[]; // Tracked relationships for long-term clarity
 
   // Getters
   getActiveLoop: () => KlarityLoop | null;
   getLoopById: (id: string) => KlarityLoop | undefined;
+  getRelationshipById: (id: string) => TrackedRelationship | undefined;
+  getLoopsForRelationship: (relationshipId: string) => KlarityLoop[];
 
   // Actions - Loop Management
   createNewLoop: () => string; // Returns the new loop ID
@@ -49,6 +54,12 @@ interface LoopsState {
   // Actions - History Panel
   setHistoryPanelOpen: (open: boolean) => void;
   toggleHistoryPanel: () => void;
+
+  // Actions - Relationship Tracking
+  createRelationship: (name: string) => string; // Returns the new relationship ID
+  deleteRelationship: (relationshipId: string) => void;
+  linkLoopToRelationship: (loopId: string, relationshipId: string) => void;
+  unlinkLoopFromRelationship: (loopId: string) => void;
 }
 
 export const useLoopsStore = create<LoopsState>()(
@@ -58,6 +69,7 @@ export const useLoopsStore = create<LoopsState>()(
       loops: [],
       activeLoopId: null,
       isHistoryPanelOpen: false,
+      trackedRelationships: [],
 
       // Getters
       getActiveLoop: () => {
@@ -68,6 +80,15 @@ export const useLoopsStore = create<LoopsState>()(
 
       getLoopById: (id: string) => {
         return get().loops.find((loop) => loop.id === id);
+      },
+
+      getRelationshipById: (id: string) => {
+        return get().trackedRelationships.find((rel) => rel.id === id);
+      },
+
+      getLoopsForRelationship: (relationshipId: string) => {
+        const state = get();
+        return state.loops.filter((loop) => loop.relationshipId === relationshipId);
       },
 
       // Loop Management Actions
@@ -272,14 +293,77 @@ export const useLoopsStore = create<LoopsState>()(
       toggleHistoryPanel: () => {
         set((state) => ({ isHistoryPanelOpen: !state.isHistoryPanelOpen }));
       },
+
+      // Relationship Tracking Actions
+      createRelationship: (name: string) => {
+        const newRelationship: TrackedRelationship = {
+          id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name,
+          createdAt: new Date().toISOString(),
+          loopIds: [],
+        };
+        set((state) => ({
+          trackedRelationships: [...state.trackedRelationships, newRelationship],
+        }));
+        return newRelationship.id;
+      },
+
+      deleteRelationship: (relationshipId: string) => {
+        set((state) => ({
+          trackedRelationships: state.trackedRelationships.filter(
+            (rel) => rel.id !== relationshipId
+          ),
+          // Also unlink any loops from this relationship
+          loops: state.loops.map((loop) =>
+            loop.relationshipId === relationshipId
+              ? { ...loop, relationshipId: undefined }
+              : loop
+          ),
+        }));
+      },
+
+      linkLoopToRelationship: (loopId: string, relationshipId: string) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === loopId
+              ? { ...loop, relationshipId, updatedAt: new Date().toISOString() }
+              : loop
+          ),
+          trackedRelationships: state.trackedRelationships.map((rel) =>
+            rel.id === relationshipId && !rel.loopIds.includes(loopId)
+              ? { ...rel, loopIds: [...rel.loopIds, loopId] }
+              : rel
+          ),
+        }));
+      },
+
+      unlinkLoopFromRelationship: (loopId: string) => {
+        const loop = get().getLoopById(loopId);
+        if (!loop?.relationshipId) return;
+
+        const relationshipId = loop.relationshipId;
+        set((state) => ({
+          loops: state.loops.map((l) =>
+            l.id === loopId
+              ? { ...l, relationshipId: undefined, updatedAt: new Date().toISOString() }
+              : l
+          ),
+          trackedRelationships: state.trackedRelationships.map((rel) =>
+            rel.id === relationshipId
+              ? { ...rel, loopIds: rel.loopIds.filter((id) => id !== loopId) }
+              : rel
+          ),
+        }));
+      },
     }),
     {
       name: "klarity-loops-storage", // Storage key in AsyncStorage
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist loops and activeLoopId, not UI state
+      // Persist loops, activeLoopId, and tracked relationships
       partialize: (state) => ({
         loops: state.loops,
         activeLoopId: state.activeLoopId,
+        trackedRelationships: state.trackedRelationships,
       }),
     }
   )
