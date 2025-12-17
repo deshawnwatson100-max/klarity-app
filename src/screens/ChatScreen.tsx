@@ -99,7 +99,7 @@ export function ChatScreen({ navigation }: Props) {
   const scrollViewRef = useRef<ScrollView>(null);
   const hasProcessedInitialMessage = useRef(false);
   const processedMessageIds = useRef<Set<string>>(new Set());
-  const isNavigatingAway = useRef(false);
+  const hasInitialized = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -163,9 +163,6 @@ export function ChatScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "InputScreen") => {
-    // Mark that we're navigating away
-    isNavigatingAway.current = true;
-
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
       easing: CONTENT_EASING,
@@ -193,10 +190,8 @@ export function ChatScreen({ navigation }: Props) {
   // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      // Only animate if we navigated away and are coming back, or if first time
-      if (isNavigatingAway.current) {
-        isNavigatingAway.current = false;
-
+      // Skip animation on initial mount, animate on subsequent focuses (arriving from other screens)
+      if (hasInitialized.current) {
         // Animate content in from below
         contentOpacity.value = 0;
         contentTranslateY.value = 30;
@@ -222,6 +217,8 @@ export function ChatScreen({ navigation }: Props) {
           duration: CONTENT_TRANSITION_DURATION,
           easing: CONTENT_EASING,
         });
+      } else {
+        hasInitialized.current = true;
       }
 
       // When screen comes into focus, check if we need to process the initial message

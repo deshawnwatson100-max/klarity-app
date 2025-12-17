@@ -37,8 +37,8 @@ export function InputScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
 
-  // Track if animation is needed (prevent re-running on already visible screen)
-  const isNavigatingAway = useRef(false);
+  // Track if this is the initial mount (no animation needed) vs navigation
+  const hasInitialized = useRef(false);
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -81,10 +81,8 @@ export function InputScreen({ navigation }: Props) {
   // Animate content in when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      // Only animate if we were navigating away (coming back to this screen)
-      if (isNavigatingAway.current) {
-        isNavigatingAway.current = false;
-
+      // Skip animation on initial mount, animate on subsequent focuses (returning from other screens)
+      if (hasInitialized.current) {
         // Animate content in from below
         contentOpacity.value = 0;
         contentTranslateY.value = 30;
@@ -110,6 +108,8 @@ export function InputScreen({ navigation }: Props) {
           duration: CONTENT_TRANSITION_DURATION,
           easing: CONTENT_EASING,
         });
+      } else {
+        hasInitialized.current = true;
       }
 
       return () => {};
@@ -139,9 +139,6 @@ export function InputScreen({ navigation }: Props) {
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
-    // Mark that we're navigating away
-    isNavigatingAway.current = true;
-
     // Fade out and slide up slightly - center content
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
