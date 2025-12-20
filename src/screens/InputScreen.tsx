@@ -144,12 +144,8 @@ export function InputScreen({ navigation }: Props) {
     navigation.navigate("ChatScreen");
   };
 
-  const navigateToCalendarScreen = () => {
-    navigation.navigate("CalendarScreen");
-  };
-
   // Animate content out before navigation
-  const animateContentOutAndNavigate = (destination: "ChatScreen" | "CalendarScreen") => {
+  const animateContentOutAndNavigate = () => {
     // Fade out and slide up slightly - center content
     contentOpacity.value = withTiming(0, {
       duration: CONTENT_TRANSITION_DURATION,
@@ -160,11 +156,7 @@ export function InputScreen({ navigation }: Props) {
       easing: CONTENT_EASING,
     }, (finished) => {
       if (finished) {
-        if (destination === "ChatScreen") {
-          runOnJS(navigateToChatScreen)();
-        } else {
-          runOnJS(navigateToCalendarScreen)();
-        }
+        runOnJS(navigateToChatScreen)();
       }
     });
 
@@ -200,7 +192,7 @@ export function InputScreen({ navigation }: Props) {
     });
 
     // Animate content out then navigate to chat screen
-    animateContentOutAndNavigate("ChatScreen");
+    animateContentOutAndNavigate();
     setCurrentInput("");
     setSelectedImageUri(undefined);
     setSelectedImageBase64(undefined);
@@ -310,7 +302,7 @@ export function InputScreen({ navigation }: Props) {
         // Navigate to chat screen for AI response
         setIsProcessing(false);
         setProcessingMessage("");
-        animateContentOutAndNavigate("ChatScreen");
+        animateContentOutAndNavigate();
       } catch (transcriptionError) {
         console.error("Transcription error:", transcriptionError);
         setProcessingMessage("Unable to transcribe audio. Please check your connection and try again.");
@@ -330,12 +322,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Handler for navigating to chat screen with animation
   const handleNavigateToChat = () => {
-    animateContentOutAndNavigate("ChatScreen");
-  };
-
-  // Handler for navigating to calendar screen with animation
-  const handleNavigateToCalendar = () => {
-    animateContentOutAndNavigate("CalendarScreen");
+    animateContentOutAndNavigate();
   };
 
   // Swipe gesture handler - triggers content animation, not full-screen swipe
@@ -349,10 +336,6 @@ export function InputScreen({ navigation }: Props) {
             if (canNavigate.value) {
               runOnJS(handleNavigateToChat)();
             }
-          }
-          // Right swipe - navigate to Calendar
-          else if (event.velocityX > 500 && event.translationX > 80) {
-            runOnJS(handleNavigateToCalendar)();
           }
         }),
     []

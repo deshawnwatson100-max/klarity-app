@@ -10,7 +10,6 @@ interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
-  isCalendarScreen?: boolean;
   onNavigateHome?: () => void;
   isAnalyzing?: boolean;
   onMenuPress?: () => void;
@@ -31,7 +30,6 @@ export function Header({
   title = "Klarity AI 1.0",
   showBackButton = false,
   onBackPress,
-  isCalendarScreen = false,
   onNavigateHome,
   isAnalyzing = false,
   onMenuPress,

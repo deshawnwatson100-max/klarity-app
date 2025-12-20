@@ -1,7 +1,16 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { KlarityLoop, TrackedRelationship, RelationshipType, createNewLoop, generateLoopTitle } from "../types/loop";
+import {
+  KlarityLoop,
+  TrackedRelationship,
+  RelationshipType,
+  createNewLoop,
+  generateLoopTitle,
+  ReplyTimelineEntry,
+  RelationshipInsightSummary,
+  RelationshipTimelineSettings,
+} from "../types/loop";
 import { ChatMessage, AnalysisMessage } from "../types/chat";
 
 /**
@@ -12,11 +21,13 @@ import { ChatMessage, AnalysisMessage } from "../types/chat";
  * - Tracks the currently active loop
  * - Provides actions to create, switch, update, and delete loops
  * - Manages tracked relationships for long-term clarity
+ * - Manages Reply Timeline entries for person-based insights
  *
  * Storage Strategy:
  * - Only loop metadata and messages are persisted
  * - Active loop ID is persisted to restore the last conversation on app launch
  * - Tracked relationships are persisted
+ * - Reply Timeline entries are persisted
  *
  * To add new fields to a loop later:
  * 1. Update the KlarityLoop interface in types/loop.ts
@@ -31,11 +42,20 @@ interface LoopsState {
   isHistoryPanelOpen: boolean; // Whether the history drawer is open
   trackedRelationships: TrackedRelationship[]; // Tracked relationships for long-term clarity
 
+  // Reply Timeline State
+  timelineEntries: ReplyTimelineEntry[]; // All timeline entries across relationships
+  insightSummaries: RelationshipInsightSummary[]; // Adaptive summaries per relationship
+  timelineSettings: RelationshipTimelineSettings[]; // Per-relationship settings
+
   // Getters
   getActiveLoop: () => KlarityLoop | null;
   getLoopById: (id: string) => KlarityLoop | undefined;
   getRelationshipById: (id: string) => TrackedRelationship | undefined;
   getLoopsForRelationship: (relationshipId: string) => KlarityLoop[];
+  getTimelineForRelationship: (relationshipId: string) => ReplyTimelineEntry[];
+  getInsightSummary: (relationshipId: string) => RelationshipInsightSummary | undefined;
+  getTimelineSettings: (relationshipId: string) => RelationshipTimelineSettings | undefined;
+  isLearningPaused: (relationshipId: string) => boolean;
 
   // Actions - Loop Management
   createNewLoop: () => string; // Returns the new loop ID
@@ -60,6 +80,13 @@ interface LoopsState {
   deleteRelationship: (relationshipId: string) => void;
   linkLoopToRelationship: (loopId: string, relationshipId: string) => void;
   unlinkLoopFromRelationship: (loopId: string) => void;
+
+  // Actions - Reply Timeline
+  addTimelineEntry: (entry: Omit<ReplyTimelineEntry, "id" | "createdAt">) => void;
+  clearTimelineForRelationship: (relationshipId: string) => void;
+  updateInsightSummary: (relationshipId: string, summary: string, confidence: number) => void;
+  pauseLearning: (relationshipId: string) => void;
+  resumeLearning: (relationshipId: string) => void;
 }
 
 export const useLoopsStore = create<LoopsState>()(
@@ -70,6 +97,11 @@ export const useLoopsStore = create<LoopsState>()(
       activeLoopId: null,
       isHistoryPanelOpen: false,
       trackedRelationships: [],
+
+      // Reply Timeline Initial State
+      timelineEntries: [],
+      insightSummaries: [],
+      timelineSettings: [],
 
       // Getters
       getActiveLoop: () => {
@@ -89,6 +121,26 @@ export const useLoopsStore = create<LoopsState>()(
       getLoopsForRelationship: (relationshipId: string) => {
         const state = get();
         return state.loops.filter((loop) => loop.relationshipId === relationshipId);
+      },
+
+      getTimelineForRelationship: (relationshipId: string) => {
+        const state = get();
+        return state.timelineEntries
+          .filter((entry) => entry.relationshipId === relationshipId)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      },
+
+      getInsightSummary: (relationshipId: string) => {
+        return get().insightSummaries.find((s) => s.relationshipId === relationshipId);
+      },
+
+      getTimelineSettings: (relationshipId: string) => {
+        return get().timelineSettings.find((s) => s.relationshipId === relationshipId);
+      },
+
+      isLearningPaused: (relationshipId: string) => {
+        const settings = get().timelineSettings.find((s) => s.relationshipId === relationshipId);
+        return settings?.learningPaused ?? false;
       },
 
       // Loop Management Actions
@@ -357,15 +409,114 @@ export const useLoopsStore = create<LoopsState>()(
           ),
         }));
       },
+
+      // Reply Timeline Actions
+      addTimelineEntry: (entry: Omit<ReplyTimelineEntry, "id" | "createdAt">) => {
+        // Check if learning is paused for this relationship
+        const settings = get().timelineSettings.find((s) => s.relationshipId === entry.relationshipId);
+        if (settings?.learningPaused) {
+          console.log("[LoopsStore] Learning paused for relationship, skipping entry");
+          return;
+        }
+
+        const newEntry: ReplyTimelineEntry = {
+          ...entry,
+          id: `timeline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          timelineEntries: [newEntry, ...state.timelineEntries],
+        }));
+      },
+
+      clearTimelineForRelationship: (relationshipId: string) => {
+        set((state) => ({
+          timelineEntries: state.timelineEntries.filter(
+            (entry) => entry.relationshipId !== relationshipId
+          ),
+          // Also clear the insight summary
+          insightSummaries: state.insightSummaries.filter(
+            (s) => s.relationshipId !== relationshipId
+          ),
+        }));
+      },
+
+      updateInsightSummary: (relationshipId: string, summary: string, confidence: number) => {
+        set((state) => {
+          const existingIndex = state.insightSummaries.findIndex(
+            (s) => s.relationshipId === relationshipId
+          );
+
+          const newSummary: RelationshipInsightSummary = {
+            relationshipId,
+            summary,
+            lastUpdated: new Date().toISOString(),
+            confidence,
+          };
+
+          if (existingIndex >= 0) {
+            const updated = [...state.insightSummaries];
+            updated[existingIndex] = newSummary;
+            return { insightSummaries: updated };
+          }
+
+          return { insightSummaries: [...state.insightSummaries, newSummary] };
+        });
+      },
+
+      pauseLearning: (relationshipId: string) => {
+        set((state) => {
+          const existingIndex = state.timelineSettings.findIndex(
+            (s) => s.relationshipId === relationshipId
+          );
+
+          const newSettings: RelationshipTimelineSettings = {
+            relationshipId,
+            learningPaused: true,
+            pausedAt: new Date().toISOString(),
+          };
+
+          if (existingIndex >= 0) {
+            const updated = [...state.timelineSettings];
+            updated[existingIndex] = newSettings;
+            return { timelineSettings: updated };
+          }
+
+          return { timelineSettings: [...state.timelineSettings, newSettings] };
+        });
+      },
+
+      resumeLearning: (relationshipId: string) => {
+        set((state) => {
+          const existingIndex = state.timelineSettings.findIndex(
+            (s) => s.relationshipId === relationshipId
+          );
+
+          if (existingIndex >= 0) {
+            const updated = [...state.timelineSettings];
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              learningPaused: false,
+              pausedAt: undefined,
+            };
+            return { timelineSettings: updated };
+          }
+
+          return state;
+        });
+      },
     }),
     {
       name: "klarity-loops-storage", // Storage key in AsyncStorage
       storage: createJSONStorage(() => AsyncStorage),
-      // Persist loops, activeLoopId, and tracked relationships
+      // Persist loops, activeLoopId, tracked relationships, and timeline data
       partialize: (state) => ({
         loops: state.loops,
         activeLoopId: state.activeLoopId,
         trackedRelationships: state.trackedRelationships,
+        timelineEntries: state.timelineEntries,
+        insightSummaries: state.insightSummaries,
+        timelineSettings: state.timelineSettings,
       }),
     }
   )

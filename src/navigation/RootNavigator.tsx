@@ -2,8 +2,6 @@ import React from "react";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
-import { CalendarScreen } from "../screens/CalendarScreen";
-import { LogDetailScreen } from "../screens/LogDetailScreen";
 import { RelationshipDirectionScreen } from "../screens/RelationshipDirectionScreen";
 import { SuggestionsScreen } from "../screens/SuggestionsScreen";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
@@ -15,13 +13,8 @@ import { RelationshipGrowthScreen } from "../screens/RelationshipGrowthScreen";
 export type RootStackParamList = {
   InputScreen: undefined;
   ChatScreen: undefined;
-  CalendarScreen: undefined;
   EmotionScanScreen: undefined;
   RelationshipGrowthScreen: undefined;
-  LogDetailScreen: {
-    date: string;
-    entryIds: string[];
-  };
   AnalysisScreen: {
     analysis: import("../types/chat").EmotionalAnalysis;
     userMessage: string;
@@ -67,15 +60,6 @@ export function RootNavigator() {
           cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
         }}
       />
-      <Stack.Screen name="CalendarScreen" component={CalendarScreen}
-        options={{
-          gestureEnabled: false,
-          cardStyle: { backgroundColor: "#050608" },
-          cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
-        }}
-      />
-      <Stack.Screen name="LogDetailScreen" component={LogDetailScreen} />
-
       {/* Analysis Screen - iOS horizontal slide from right */}
       <Stack.Screen
         name="AnalysisScreen"

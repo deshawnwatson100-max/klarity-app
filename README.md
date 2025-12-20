@@ -11,7 +11,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Relationship Direction Selector** - Choose your intention and get tailored guidance
 - **Smart response suggestions** with different tones based on your chosen path
 - **Past loops system** - Save and switch between conversation sessions
-- **Emotional Log Calendar** - Track and visualize your emotional journey over time
+- **Reply Timeline** - Per-person timeline of communication insights that feels like memory, not tracking
 - **Beautiful dark UI** with neon accents (blue, orange, yellow, purple)
 - **Premium splash screen** with glowing Klarity AI logo
 - **Secure PIN authentication** - 4-digit PIN to protect your conversations
@@ -53,8 +53,8 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
   - Heavy blur (40px) for elegant, calming effect
   - Feels alive, intelligent, and premium without distraction
 - **Premium Header** - Semi-transparent black glass (18% opacity)
-  - Left: Hamburger menu (Calendar, Past Loops)
-  - Center: Animated Klarity AI logo with ✨
+  - Left: Hamburger menu (Relationships, Past Loops)
+  - Center: Animated Klarity AI logo with sparkle
   - Right: New Loop (+) button
   - Thin icons in warm gray (#CFCFCF)
 - **Single-Color Background** - Deep midnight charcoal gradient (#050505 → #0A0A0A)
@@ -81,7 +81,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Matte Charcoal Input** - Dark #111111 background
 - **Placeholder Text** - "Type a message..." in #A0A0A0
 - **Minimal Icons** - Thin, elegant white/gray
-- **3-bar menu dropdown** (top-left) - Access Calendar and Past Loops
+- **3-bar menu dropdown** (top-left) - Access Relationships and Past Loops
 - **Image upload support** - Add screenshots for analysis
 - **Voice recording** - Tap mic icon to record voice messages
 - Smooth navigation to conversation with text or images
@@ -428,218 +428,42 @@ Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns inc
 
 The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
-### NEW: Enhanced Emotional Log Calendar 🎉🗓️✨
-Track your emotional journey over time with conversation tracking, reflections, and pattern insights.
+### NEW: Reply Timeline Feature
+Per-person timeline of communication insights that feels like memory, not tracking.
 
-#### Calendar Aesthetic (Matching Input Screen)
-The calendar now uses the **same luxurious dark gradient background** as the Input Screen for visual consistency:
+#### How It Works
+- Timeline is created automatically from chat analysis
+- No manual logging required
+- Each entry is a short, human-readable sentence describing:
+  - Boundary attempts and whether they held or softened
+  - What communication style worked best
+  - Repeated friction points
 
-**Background**
-- Deep charcoal gradient foundation (#050608 → #0A0A0C → #050608)
-- Subtle floating particles (20 tiny dots, 1-3px, cool gray/teal tints)
-- Soft flares with whisper-soft cool gray-blue tones (3% opacity)
-- Calm, minimal, emotional, and luxurious vibe
+#### Example Entries
+- "You held your boundary here."
+- "You softened due to guilt."
+- "Being more direct reduced follow-ups."
 
-**Calendar Grid with Frosted Glass Cells**
-- Translucent frosted-glass calendar day cells
-- Semi-transparent backgrounds: `rgba(20, 20, 24, 0.15-0.45)`
-- Soft inner-shadow for depth effect
-- Subtle borders in cool gray (`rgba(156, 163, 175, 0.08)`)
-- Today's date highlighted with stronger border and glow
-- Dates with events have brighter backgrounds
-- Smooth press animation (scale 0.95)
+#### Accessing the Timeline
+- Open the slide-over drawer (swipe from left or tap menu)
+- Tap on any tracked person in the "People" section
+- Timeline drawer slides in from the right
 
-**Gradient-Based Event Dots with Glow**
-- Event type dots now use **LinearGradient** instead of flat colors
-- Three-step gradient per dot (full → CC → 88 opacity)
-- Strong glow effect (shadowRadius: 6, shadowOpacity: 0.9)
-- 5x5px rounded dots beneath dates
-- Event types:
-  - 🟣 **Purple (#A855F7)** - Active conversation loop
-  - 🟡 **Gold (#F59E0B)** - Scheduled high-stakes talk
-  - 🔵 **Blue (#3B82F6)** - Reflection logged
-  - 🟠 **Red-Orange (#F97316)** - Emotional spike day
+#### Timeline Summary
+At the top of the timeline, a single adaptive insight is shown:
+- "With this person, being brief and direct works best."
+- "You often feel drained after explaining yourself here."
+- Updates over time as more insights are gathered
 
-**Legend Pills**
-- Frosted glass pills with gradient event dots
-- Semi-transparent backgrounds matching calendar cells
-- Horizontal scrollable layout
+#### Management Options
+- **Clear history for this person** - Remove all timeline entries
+- **Pause learning for this person** - Stop collecting new insights
 
-#### Calendar Home Screen (Monthly View with Event Types)
-A full-screen monthly calendar showing your emotional timeline with **glowing event type indicators**:
-- **Home button** (top-right) - Quick return to welcome screen
-- **Calm, air-like UI motion** - Slow, soft animations
-- **No hard lines** - Everything blends with soft borders and gradients
-- **Month navigation** with arrow buttons
-- **Legend** showing all intention types with gradient dots
-- **Multiple events per day** - shows unique event types (up to 3 dots + counter)
-- Tap any date to open **Day Detail Drawer**
-
-#### Day Detail Drawer (Slide-Up Bottom Sheet with Blur-Glass)
-When you tap a date with events, a beautiful drawer slides up with **blur-glass background**:
-
-**Background Style**
-- Dark backdrop with gradient overlay (rgba(5, 6, 8, 0.75) → rgba(10, 10, 12, 0.85))
-- Drawer background: `rgba(10, 10, 12, 0.85)` for frosted glass effect
-- Soft borders with cool gray accents (`rgba(156, 163, 175, 0.15)`)
-- Deep shadow for depth (shadowRadius: 24, shadowOpacity: 0.5)
-
-**Header**
-- Soft handle bar in translucent gray
-- Full formatted date (e.g., "Monday, December 10, 2025")
-- Event count indicator
-- Minimal border separator
-
-**Event Cards** (for each event that day)
-- **Frosted glass cards** with semi-transparent backgrounds
-- **Event Type Badge** - Icon + label with colored glow
-  - Icons: chatbubbles (loop), calendar (scheduled), bulb (reflection), pulse (spike)
-- **Status Indicator** - Color-coded pill badge
-  - Green: "Complete"
-  - Amber: "In Progress"
-  - Gray: "Upcoming"
-- **Title** - Auto-generated from chat loop or user-provided
-- **Tag Chips** - Frosted glass tags with soft borders
-- **Intention Indicator** - Small colored dot + label + timestamp
-- **Action Buttons** (frosted glass style):
-  - **"Open Chat Loop"** (blue, rgba(59, 130, 246, 0.15))
-  - **"Add Reflection"** (purple, rgba(168, 85, 247, 0.15))
-  - **Reflection Status** (green, rgba(16, 185, 129, 0.1))
-
-**Daily Comment Input Bar** ✨ NEW
-- Fixed at bottom of drawer
-- Frosted glass input field with placeholder "Add a comment about this day..."
-- Multiline support (up to 80px height)
-- Purple send button that turns green on save
-- Comments are persisted per date
-- Existing comments load automatically when drawer opens
-
-**Interaction**
-- Smooth spring animations with staggered card entrance (50ms delay per card)
-- Tap outside or swipe down to dismiss
-- Scrollable list for days with many events
-- Calm, slow UI pacing
-
-#### Reflection Logging Modal
-After a date passes, add reflections via the drawer's "Add Reflection" button:
-
-**Clarity Score Slider** (1-10)
-- Large color-coded display:
-  - 1-3: Red (Confused)
-  - 4-6: Amber (Unclear)
-  - 7-10: Green (Very Clear)
-- Smooth slider with purple accent
-- Labels: "Confused" ←→ "Very Clear"
-
-**Outcome Summary**
-- Multi-line text input (4 lines)
-- Placeholder: "e.g., We talked it through and agreed to check in weekly..."
-- Dark input with neutral borders
-
-**Actions**
-- Cancel button (neutral gray)
-- Save Reflection button (purple with glow)
-
-**Design**
-- Purple accent throughout
-- Modal with rounded corners and shadow
-- Smooth spring animations
-
-#### Event Metadata Tracking
-Each calendar entry now includes:
-- **Event Type** - active-loop, scheduled-talk, reflection, emotional-spike
-- **Status** - upcoming, in-progress, completed
-- **Title** - Auto from loop or custom
-- **Tags** - Custom categorization (family, romantic, work, etc.)
-- **Clarity Score** - 1-10 rating from reflection
-- **Reflection Notes** - Post-event summary
-- **Loop ID** - Direct link to conversation thread
-
-#### Calendar as Emotional Journal
-The enhanced calendar becomes a comprehensive journal tracking:
-- **Communication patterns** over time
-- **Emotional growth** through clarity scores
-- **Conversation outcomes** via reflections
-- **Relationship trajectories** with linked loops
-- **Pattern recognition** through event type visualization
-
-#### Design Aesthetic
-✨ **Dark luxury mood with glowing event indicators**
-
-#### Log Detail Screen
-When you tap a date, see everything from that day:
-
-**Date Header**
-- Large, elegant date display
-- Color-coded intention badge
-
-**Your Situation Card**
-- Original issue text you shared
-- One-line quick summary highlighting the main issue
-- Example: "⚠️ Main Issue: Feeling overwhelmed by inconsistent communication"
-
-**Klarity Analysis**
-Quick summary with color-coded breakdown:
-- **Tone** (Blue) - Communication tone detected
-- **Pattern** (Purple) - Behavior pattern identified
-- **Emotional Impact** (Orange) - How it affects you
-- **Core Issue** (Yellow) - Root problem
-- Full paragraph analysis with insights
-
-**Your Relationship Intention**
-- Selected path: Improve / Distance / Maintain / Gain Clarity
-- Beautiful color-coded tag matching your choice
-
-**Guidance Provided**
-- Suggested replies (tap to copy)
-- Emotional advice
-- Boundary wording suggestions
-- Safety notes (highlighted in red if critical)
-
-**Your Response**
-- What you actually sent
-- Timestamp
-- View conversation button
-
-**Reflection Notes**
-- Your personal thoughts added later
-- Italic styling with quotes
-- Example: "I felt calmer after this conversation"
-
-#### How Calendar Logging Works
-1. Have a conversation with Klarity AI
-2. Receive emotional analysis and guidance
-3. Choose your relationship intention (modal appears)
-4. Optionally add reflection notes
-5. Entry automatically saved to calendar with:
-   - Full conversation context
-   - Analysis summary
-   - Your chosen intention
-   - Timestamp and date
-   - Optional personal reflection
-
-#### Intention Selection Modal
-Beautiful modal for choosing your path:
-- 4 glowing intention cards with icons and descriptions
-- Smooth two-step flow:
-  1. Select your intention
-  2. Add optional reflection notes
-- Save to calendar or skip reflection
-
-#### Design Aesthetic
-✨ Dark luxury mood with soft neon edges
-✨ Clean SF Pro typography
-✨ Minimal gradients and subtle animations
-✨ Glassy borders with neon glow effects
-✨ Emotional, calm, supportive styling
-✨ Feels like a sanctuary, not a tech dashboard
-
-#### Benefits
-- **Visualize patterns** - See recurring issues over time
-- **Track progress** - Notice improvement in your journey
-- **Gain insights** - Understand your relationship dynamics
-- **Build awareness** - Reflect on your emotional growth
-- **Stay grounded** - Review past guidance when needed
+#### Design Philosophy
+- Feels like memory, not tracking
+- "Klarity remembers what helps you reply better with this person"
+- No scores, no charts, no therapy language
+- No daily tasks or calendar views
 
 ### Past Loops System
 The app supports multiple conversation sessions:
@@ -746,23 +570,22 @@ Each loop stores:
 │   │   ├── InlineContextInput.tsx       # NEW: Text/voice context input component
 │   │   ├── ReflectiveUnderstandingBubble.tsx  # NEW: Two-part empathy + clarity response
 │   │   ├── VoiceEmotionScanBubble.tsx   # NEW: Voice emotion analysis result card
-│   │   ├── FaceScanPromptBubble.tsx     # NEW: Tappable prompt for face scan
-│   │   ├── EmotionalFaceScanBubble.tsx  # NEW: Expandable face scan card with minimize
+│   │   ├── FaceScanPromptBubble.tsx     # Tappable prompt for face scan
+│   │   ├── EmotionalFaceScanBubble.tsx  # Expandable face scan card with minimize
+│   │   ├── PersonTimelineDrawer.tsx # Reply timeline drawer for each person
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
 │   ├── screens/
 │   │   ├── InputScreen.tsx         # Welcome screen with menu access
 │   │   ├── ChatScreen.tsx          # Main chat interface
-│   │   ├── AnalysisScreen.tsx      # NEW: Step 1 - Full analysis display
-│   │   ├── RelationshipDirectionScreen.tsx  # NEW: Step 2 - Direction selector
-│   │   ├── SuggestionsScreen.tsx   # NEW: Step 3 - Tailored guidance
-│   │   ├── CalendarScreen.tsx      # Monthly calendar view
-│   │   └── LogDetailScreen.tsx     # Calendar entry details
+│   │   ├── AnalysisScreen.tsx      # Step 1 - Full analysis display
+│   │   ├── RelationshipDirectionScreen.tsx  # Step 2 - Direction selector
+│   │   ├── SuggestionsScreen.tsx   # Step 3 - Tailored guidance
+│   │   └── RelationshipGrowthScreen.tsx  # Relationship tracking
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
-│   │   ├── loopsStore.ts           # Loops state with persistence
-│   │   └── calendarStore.ts        # Calendar entries with persistence
+│   │   └── loopsStore.ts           # Loops, relationships, and timeline state with persistence
 │   └── types/
 │       ├── chat.ts                 # Chat & message interfaces
 │       ├── loop.ts                 # Loop type definitions
@@ -986,6 +809,9 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
 ✅ **Relationship Growth Tracking** - Track patterns with specific people over time for long-term clarity
 ✅ **Manual Relationship Add** - Proactively add relationships with name, type, and optional context note
+✅ **Reply Timeline** - Per-person timeline of communication insights (auto-generated, no manual logging)
+✅ **Timeline Summary** - Adaptive insight at top of each person's timeline
+✅ **Timeline Management** - Clear history and pause learning options per person
 
 ### NEW: Relationship Growth Tracking Feature
 Track ongoing patterns with specific people (e.g., "Mom," "Coworker," "Ex") to gain long-term clarity without forcing structure or emotional labeling.

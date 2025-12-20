@@ -49,7 +49,6 @@ import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { RelationshipPromptCard } from "../components/RelationshipPromptCard";
 import { useLoopsStore } from "../state/loopsStore";
-import { useCalendarStore } from "../state/calendarStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
   generateEmotionalAnalysis,
@@ -146,9 +145,6 @@ export function ChatScreen({ navigation }: Props) {
     const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
     return activeLoop?.relationshipId;
   });
-
-  // Calendar store
-  const addCalendarEntry = useCalendarStore((s) => s.addEntry);
 
   // Get active loop messages - subscribe to loops array to trigger re-renders
   const messages = useLoopsStore((s) => {
@@ -253,52 +249,6 @@ export function ChatScreen({ navigation }: Props) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages.length]);
-
-  // Helper function to create calendar entry from chat loop data
-  const createCalendarEntry = (
-    userText: string,
-    analysis: EmotionalAnalysis,
-    intention: "improve" | "distance" | "maintain" | "clarity",
-    guidance: string,
-    suggestedReplies: Array<{ id: string; text: string }>
-  ) => {
-    const now = new Date();
-    const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
-
-    // Map intention to calendar intention type
-    const intentionMap: Record<string, "improve" | "distance" | "maintain" | "gain-clarity"> = {
-      improve: "improve",
-      distance: "distance",
-      maintain: "maintain",
-      clarity: "gain-clarity",
-    };
-
-    const calendarEntry = {
-      id: Date.now().toString() + "_calendar",
-      date: dateStr,
-      timestamp: now.getTime(),
-      eventType: "active-loop" as const,
-      status: "in-progress" as const,
-      title: analysis.coreIssue || "Emotional conversation",
-      tags: ["relationship", "communication"],
-      situationText: userText,
-      quickSummary: analysis.summary || "Chat conversation",
-      analysis: {
-        tone: analysis.tone || "Neutral",
-        pattern: analysis.pattern || "Communication",
-        emotionalImpact: analysis.emotionalImpact || "Moderate",
-        coreIssue: analysis.coreIssue || "Relationship discussion",
-        fullAnalysis: analysis.fullAnalysis || analysis.summary || "Emotional conversation",
-      },
-      intention: intentionMap[intention] || "gain-clarity",
-      suggestedReplies: suggestedReplies.map((r) => r.text),
-      emotionalAdvice: guidance,
-      loopId: activeLoopId || undefined,
-    };
-
-    addCalendarEntry(calendarEntry);
-    console.log("[ChatScreen] Created calendar entry for date:", dateStr);
-  };
 
   const processUserMessage = async (userMessage: ChatMessage) => {
     console.log("[ChatScreen] processUserMessage called for:", userMessage.id, "isVoice:", userMessage.isVoiceMessage);
@@ -616,15 +566,6 @@ export function ChatScreen({ navigation }: Props) {
         tone,
       };
       addMessageToActiveLoop(repliesMsg);
-
-      // Create calendar entry now that we have all the information
-      createCalendarEntry(
-        currentUserMessage,
-        currentAnalysis,
-        currentIntention,
-        "", // No guidance message
-        replies
-      );
 
       await new Promise((resolve) => setTimeout(resolve, 400));
 
