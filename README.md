@@ -429,41 +429,64 @@ Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns inc
 The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
 ### NEW: Reply Timeline Feature
-Per-person timeline of communication insights that feels like memory, not tracking.
+Per-person timeline of communication insights that feels like quiet, human-readable memory.
 
-#### How It Works
-- Timeline is created automatically from chat analysis
-- No manual logging required
-- Each entry is a short, human-readable sentence describing:
-  - Boundary attempts and whether they held or softened
-  - What communication style worked best
-  - Repeated friction points
+#### Screen Layout
+- **Header**: Person's name with subtitle "How conversations usually go"
+- **Drag indicator**: Visual cue for swipe-to-close gesture
+- **No back button**: Close via swipe-right gesture or tap backdrop
 
-#### Example Entries
-- "You held your boundary here."
+#### Top Insight Card
+A single adaptive insight summarizing the pattern with this person:
+- "With this person, being brief and direct works best."
+- "You tend to over-explain here and feel drained after."
+- "Clear boundaries usually reduce follow-ups."
+
+Design:
+- Soft card with neutral colors
+- No icons that imply judgment
+- No percentages or metrics
+
+#### Timeline Feed
+Vertical list of short entries, ordered newest to oldest:
+- Each entry is 1 short sentence
+- No exact dates (uses vague time like "recently" or "earlier")
+- Neutral, observational language
+
+Entry examples:
+- "You held your boundary — it landed well."
 - "You softened due to guilt."
-- "Being more direct reduced follow-ups."
+- "Being more direct reduced repeat messages."
+- "This topic tends to escalate."
+
+Design:
+- Clean spacing with subtle dots and connecting lines
+- No checkmarks, scores, or emojis
+- Looks like memory, not analytics
+
+#### Footer Controls
+At the bottom of the drawer with muted styling:
+- **Clear history for this person** - Removes all timeline entries
+- **Pause learning for this person** - Stops collecting new insights
+- Confirmation modal only shown for clear (destructive action)
 
 #### Accessing the Timeline
 - Open the slide-over drawer (swipe from left or tap menu)
 - Tap on any tracked person in the "People" section
 - Timeline drawer slides in from the right
-
-#### Timeline Summary
-At the top of the timeline, a single adaptive insight is shown:
-- "With this person, being brief and direct works best."
-- "You often feel drained after explaining yourself here."
-- Updates over time as more insights are gathered
-
-#### Management Options
-- **Clear history for this person** - Remove all timeline entries
-- **Pause learning for this person** - Stop collecting new insights
+- Close by swiping right or tapping the backdrop
 
 #### Design Philosophy
-- Feels like memory, not tracking
-- "Klarity remembers what helps you reply better with this person"
-- No scores, no charts, no therapy language
-- No daily tasks or calendar views
+The screen should feel: **Quiet, Supportive, Observant**
+
+- Feels like reflection without effort
+- If it feels like tracking, logging, or reviewing performance — it's wrong
+- No charts, graphs, or calendars
+- No gamification or therapy language
+- Timeline entries are generated automatically
+- Only log events that improve future replies
+- Do not show unless accessed intentionally
+- No push notifications from this screen
 
 ### Past Loops System
 The app supports multiple conversation sessions:

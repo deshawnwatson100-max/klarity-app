@@ -7,7 +7,6 @@ import {
   Dimensions,
   BackHandler,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -17,13 +16,12 @@ import Animated, {
   runOnJS,
   Easing,
   FadeIn,
-  FadeOut,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
 import { TrackedRelationship, ReplyTimelineEntry } from "../types/loop";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.92;
 
 interface PersonTimelineDrawerProps {
@@ -32,107 +30,70 @@ interface PersonTimelineDrawerProps {
   onClose: () => void;
 }
 
-// Get icon for insight type
-function getInsightIcon(type: ReplyTimelineEntry["insightType"]): keyof typeof Ionicons.glyphMap {
-  switch (type) {
-    case "boundary-held":
-      return "shield-checkmark-outline";
-    case "boundary-softened":
-      return "heart-outline";
-    case "communication-style":
-      return "chatbubble-outline";
-    case "friction-pattern":
-      return "warning-outline";
-    case "positive-outcome":
-      return "sparkles-outline";
-    default:
-      return "information-circle-outline";
-  }
-}
-
-// Get color for insight type
-function getInsightColor(type: ReplyTimelineEntry["insightType"]): string {
-  switch (type) {
-    case "boundary-held":
-      return "#10B981"; // Green
-    case "boundary-softened":
-      return "#F59E0B"; // Amber
-    case "communication-style":
-      return "#3B82F6"; // Blue
-    case "friction-pattern":
-      return "#EF4444"; // Red
-    case "positive-outcome":
-      return "#8B5CF6"; // Purple
-    default:
-      return "#6B7280"; // Gray
-  }
-}
-
-// Format relative date
-function formatRelativeDate(dateStr: string): string {
+// Format vague relative date - no exact dates, just "recently" or "earlier"
+function formatVagueDate(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) {
-    return "Today";
-  } else if (diffDays === 1) {
-    return "Yesterday";
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
-  } else if (diffDays < 30) {
-    const weeks = Math.floor(diffDays / 7);
-    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  if (diffDays <= 3) {
+    return "recently";
+  } else if (diffDays <= 14) {
+    return "earlier";
   } else {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return "a while back";
   }
 }
 
-function TimelineEntryItem({ entry }: { entry: ReplyTimelineEntry }) {
-  const color = getInsightColor(entry.insightType);
-  const icon = getInsightIcon(entry.insightType);
-
+// Timeline entry component - clean, minimal, no icons or scores
+function TimelineEntryItem({ entry, isFirst }: { entry: ReplyTimelineEntry; isFirst: boolean }) {
   return (
-    <View className="flex-row px-5 py-3">
+    <View className="flex-row px-6 py-2">
       {/* Timeline line and dot */}
-      <View className="items-center mr-4" style={{ width: 24 }}>
+      <View className="items-center mr-4" style={{ width: 12 }}>
         <View
           style={{
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: color,
-            shadowColor: color,
-            shadowOpacity: 0.5,
-            shadowRadius: 4,
-            shadowOffset: { width: 0, height: 0 },
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: "rgba(156, 163, 175, 0.4)",
+            marginTop: 6,
           }}
         />
         <View
           style={{
             flex: 1,
-            width: 2,
-            backgroundColor: "rgba(75, 85, 99, 0.3)",
-            marginTop: 4,
+            width: 1,
+            backgroundColor: "rgba(75, 85, 99, 0.2)",
+            marginTop: 6,
           }}
         />
       </View>
 
-      {/* Content */}
+      {/* Content - just the insight, clean and observational */}
       <View className="flex-1 pb-4">
-        <View className="flex-row items-center mb-1">
-          <Ionicons name={icon} size={14} color={color} />
-          <Text className="text-xs ml-1.5" style={{ color: "#6B7280" }}>
-            {formatRelativeDate(entry.createdAt)}
-          </Text>
-        </View>
         <Text
-          className="text-sm"
-          style={{ color: "#E5E7EB", lineHeight: 20 }}
+          style={{
+            color: "#D1D5DB",
+            fontSize: 15,
+            lineHeight: 22,
+            fontWeight: "400",
+          }}
         >
           {entry.insight}
         </Text>
+        {!isFirst && (
+          <Text
+            style={{
+              color: "#4B5563",
+              fontSize: 12,
+              marginTop: 4,
+            }}
+          >
+            {formatVagueDate(entry.createdAt)}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -146,7 +107,7 @@ export function PersonTimelineDrawer({
   const insets = useSafeAreaInsets();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Store
+  // Store selectors - individual to avoid re-renders
   const getTimelineForRelationship = useLoopsStore((s) => s.getTimelineForRelationship);
   const getInsightSummary = useLoopsStore((s) => s.getInsightSummary);
   const isLearningPaused = useLoopsStore((s) => s.isLearningPaused);
@@ -205,7 +166,7 @@ export function PersonTimelineDrawer({
     return () => backHandler.remove();
   }, [visible, onClose]);
 
-  // Swipe gesture to close
+  // Swipe gesture to close (swipe right to close)
   const swipeGesture = Gesture.Pan()
     .activeOffsetX(20)
     .onUpdate((event) => {
@@ -303,7 +264,7 @@ export function PersonTimelineDrawer({
               width: DRAWER_WIDTH,
               backgroundColor: "#0A0A0C",
               borderLeftWidth: 1,
-              borderLeftColor: "rgba(255, 255, 255, 0.06)",
+              borderLeftColor: "rgba(255, 255, 255, 0.04)",
               shadowColor: "#000",
               shadowOffset: { width: -4, height: 0 },
               shadowOpacity: 0.3,
@@ -313,130 +274,136 @@ export function PersonTimelineDrawer({
             drawerStyle,
           ]}
         >
-          {/* Header */}
+          {/* Header - Minimal, just name and subtitle */}
           <View
             style={{
-              paddingTop: insets.top + 16,
-              paddingBottom: 16,
-              paddingHorizontal: 20,
+              paddingTop: insets.top + 20,
+              paddingBottom: 20,
+              paddingHorizontal: 24,
               borderBottomWidth: 1,
-              borderBottomColor: "rgba(255, 255, 255, 0.06)",
+              borderBottomColor: "rgba(255, 255, 255, 0.04)",
             }}
           >
-            <View className="flex-row items-center justify-between">
-              <Pressable
-                onPress={onClose}
-                className="active:opacity-60"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="chevron-back" size={24} color="#9CA3AF" />
-              </Pressable>
-              <Text
-                className="text-lg font-semibold flex-1 text-center"
-                style={{ color: "#F9FAFB" }}
-              >
-                {relationship?.name || "Timeline"}
-              </Text>
-              <View style={{ width: 24 }} />
-            </View>
+            {/* Drag indicator for swipe-down gesture hint */}
+            <View
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "rgba(156, 163, 175, 0.3)",
+                alignSelf: "center",
+                marginBottom: 20,
+              }}
+            />
+
+            {/* Person's name */}
+            <Text
+              style={{
+                color: "#F9FAFB",
+                fontSize: 22,
+                fontWeight: "600",
+                textAlign: "center",
+              }}
+            >
+              {relationship?.name || "Timeline"}
+            </Text>
 
             {/* Subtitle */}
             <Text
-              className="text-xs text-center mt-1"
-              style={{ color: "#6B7280" }}
+              style={{
+                color: "#6B7280",
+                fontSize: 14,
+                textAlign: "center",
+                marginTop: 4,
+              }}
             >
-              Klarity remembers what helps you reply better
+              How conversations usually go
             </Text>
           </View>
 
-          {/* Adaptive Summary */}
+          {/* Top Insight Card - Soft, neutral, no icons implying judgment */}
           {insightSummary && (
             <Animated.View
               entering={FadeIn.duration(300)}
-              className="mx-5 mt-4 p-4 rounded-2xl"
               style={{
-                backgroundColor: "rgba(139, 92, 246, 0.08)",
+                marginHorizontal: 20,
+                marginTop: 20,
+                padding: 18,
+                borderRadius: 16,
+                backgroundColor: "rgba(255, 255, 255, 0.03)",
                 borderWidth: 1,
-                borderColor: "rgba(139, 92, 246, 0.15)",
+                borderColor: "rgba(255, 255, 255, 0.06)",
               }}
             >
-              <View className="flex-row items-center mb-2">
-                <Ionicons name="bulb-outline" size={16} color="#A78BFA" />
-                <Text
-                  className="text-xs font-medium ml-1.5"
-                  style={{ color: "#A78BFA" }}
-                >
-                  Insight
-                </Text>
-              </View>
               <Text
-                className="text-sm"
-                style={{ color: "#E5E7EB", lineHeight: 20 }}
+                style={{
+                  color: "#E5E7EB",
+                  fontSize: 15,
+                  lineHeight: 23,
+                  fontWeight: "400",
+                }}
               >
                 {insightSummary.summary}
               </Text>
             </Animated.View>
           )}
 
-          {/* Learning Paused Banner */}
+          {/* Learning Paused Banner - subtle */}
           {learningPaused && (
             <View
-              className="mx-5 mt-3 p-3 rounded-xl flex-row items-center"
               style={{
-                backgroundColor: "rgba(251, 191, 36, 0.1)",
+                marginHorizontal: 20,
+                marginTop: 12,
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: "rgba(156, 163, 175, 0.06)",
                 borderWidth: 1,
-                borderColor: "rgba(251, 191, 36, 0.2)",
+                borderColor: "rgba(156, 163, 175, 0.1)",
               }}
             >
-              <Ionicons name="pause-circle-outline" size={18} color="#FBBF24" />
-              <Text className="text-xs ml-2" style={{ color: "#FBBF24" }}>
+              <Text
+                style={{
+                  color: "#9CA3AF",
+                  fontSize: 13,
+                  textAlign: "center",
+                }}
+              >
                 Learning paused for this person
               </Text>
             </View>
           )}
 
-          {/* Timeline */}
+          {/* Timeline Feed */}
           <ScrollView
             className="flex-1"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingTop: 16, paddingBottom: insets.bottom + 120 }}
+            contentContainerStyle={{ paddingTop: 20, paddingBottom: insets.bottom + 100 }}
           >
             {timelineEntries.length === 0 ? (
               <View className="items-center justify-center py-16 px-8">
-                <View
+                <Text
                   style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
-                    backgroundColor: "rgba(107, 114, 128, 0.1)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
+                    color: "#6B7280",
+                    fontSize: 15,
+                    textAlign: "center",
+                    lineHeight: 22,
                   }}
                 >
-                  <Ionicons name="time-outline" size={28} color="#6B7280" />
-                </View>
-                <Text
-                  className="text-base font-medium text-center mb-2"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  No timeline entries yet
-                </Text>
-                <Text
-                  className="text-sm text-center"
-                  style={{ color: "#6B7280", lineHeight: 20 }}
-                >
-                  As you chat about this person, Klarity will automatically learn what communication patterns work best.
+                  Nothing here yet. As you chat, patterns will quietly appear.
                 </Text>
               </View>
             ) : (
-              timelineEntries.map((entry) => (
-                <TimelineEntryItem key={entry.id} entry={entry} />
+              timelineEntries.map((entry, index) => (
+                <TimelineEntryItem
+                  key={entry.id}
+                  entry={entry}
+                  isFirst={index === 0}
+                />
               ))
             )}
           </ScrollView>
 
-          {/* Bottom Actions */}
+          {/* Footer Controls - Low Emphasis, muted styling */}
           <View
             style={{
               position: "absolute",
@@ -445,17 +412,22 @@ export function PersonTimelineDrawer({
               right: 0,
               paddingBottom: insets.bottom + 20,
               paddingTop: 16,
-              paddingHorizontal: 20,
+              paddingHorizontal: 24,
               backgroundColor: "#0A0A0C",
               borderTopWidth: 1,
-              borderTopColor: "rgba(255, 255, 255, 0.06)",
+              borderTopColor: "rgba(255, 255, 255, 0.04)",
             }}
           >
             {showClearConfirm ? (
+              // Confirmation modal for destructive action
               <View>
                 <Text
-                  className="text-sm text-center mb-3"
-                  style={{ color: "#9CA3AF" }}
+                  style={{
+                    color: "#9CA3AF",
+                    fontSize: 14,
+                    textAlign: "center",
+                    marginBottom: 16,
+                  }}
                 >
                   Clear all history for this person?
                 </Text>
@@ -464,12 +436,16 @@ export function PersonTimelineDrawer({
                     onPress={() => setShowClearConfirm(false)}
                     className="flex-1 py-3 rounded-xl active:opacity-70"
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.06)",
+                      backgroundColor: "rgba(255, 255, 255, 0.04)",
                     }}
                   >
                     <Text
-                      className="text-sm font-medium text-center"
-                      style={{ color: "#9CA3AF" }}
+                      style={{
+                        color: "#9CA3AF",
+                        fontSize: 14,
+                        fontWeight: "500",
+                        textAlign: "center",
+                      }}
                     >
                       Cancel
                     </Text>
@@ -478,12 +454,16 @@ export function PersonTimelineDrawer({
                     onPress={handleClearHistory}
                     className="flex-1 py-3 rounded-xl active:opacity-70"
                     style={{
-                      backgroundColor: "rgba(239, 68, 68, 0.15)",
+                      backgroundColor: "rgba(239, 68, 68, 0.1)",
                     }}
                   >
                     <Text
-                      className="text-sm font-medium text-center"
-                      style={{ color: "#EF4444" }}
+                      style={{
+                        color: "#EF4444",
+                        fontSize: 14,
+                        fontWeight: "500",
+                        textAlign: "center",
+                      }}
                     >
                       Clear
                     </Text>
@@ -491,47 +471,34 @@ export function PersonTimelineDrawer({
                 </View>
               </View>
             ) : (
-              <View className="flex-row gap-3">
+              // Default footer - muted text buttons
+              <View className="gap-2">
                 <Pressable
                   onPress={() => setShowClearConfirm(true)}
-                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center active:opacity-70"
-                  style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.08)",
-                  }}
+                  className="py-3 active:opacity-60"
                 >
-                  <Ionicons name="trash-outline" size={16} color="#6B7280" />
                   <Text
-                    className="text-sm font-medium ml-2"
-                    style={{ color: "#6B7280" }}
+                    style={{
+                      color: "#4B5563",
+                      fontSize: 14,
+                      textAlign: "center",
+                    }}
                   >
-                    Clear history
+                    Clear history for this person
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={handleToggleLearning}
-                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center active:opacity-70"
-                  style={{
-                    backgroundColor: learningPaused
-                      ? "rgba(16, 185, 129, 0.1)"
-                      : "rgba(251, 191, 36, 0.1)",
-                    borderWidth: 1,
-                    borderColor: learningPaused
-                      ? "rgba(16, 185, 129, 0.2)"
-                      : "rgba(251, 191, 36, 0.2)",
-                  }}
+                  className="py-3 active:opacity-60"
                 >
-                  <Ionicons
-                    name={learningPaused ? "play-outline" : "pause-outline"}
-                    size={16}
-                    color={learningPaused ? "#10B981" : "#FBBF24"}
-                  />
                   <Text
-                    className="text-sm font-medium ml-2"
-                    style={{ color: learningPaused ? "#10B981" : "#FBBF24" }}
+                    style={{
+                      color: "#4B5563",
+                      fontSize: 14,
+                      textAlign: "center",
+                    }}
                   >
-                    {learningPaused ? "Resume" : "Pause"} learning
+                    {learningPaused ? "Resume learning for this person" : "Pause learning for this person"}
                   </Text>
                 </Pressable>
               </View>
