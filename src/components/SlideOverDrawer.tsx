@@ -19,14 +19,11 @@ import Animated, {
   withSpring,
   runOnJS,
   Easing,
-  FadeIn,
-  FadeOut,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
-import { KlarityLoop, TrackedRelationship } from "../types/loop";
+import { KlarityLoop } from "../types/loop";
 import { KlarityOrb } from "./KlarityOrb";
-import { PersonTimelineDrawer } from "./PersonTimelineDrawer";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85;
@@ -86,91 +83,6 @@ function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemPr
           )}
         </View>
         <Ionicons name="chevron-forward" size={16} color="#4B5563" />
-      </View>
-    </Pressable>
-  );
-}
-
-interface PersonItemProps {
-  relationship: TrackedRelationship;
-  timelineCount: number;
-  onPress: () => void;
-}
-
-function PersonItem({ relationship, timelineCount, onPress }: PersonItemProps) {
-  // Get initials from name
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(" ");
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  // Get color based on relationship type
-  const getTypeColor = (type?: string) => {
-    switch (type) {
-      case "family":
-        return "#F59E0B";
-      case "romantic":
-        return "#EF4444";
-      case "friend":
-        return "#10B981";
-      case "work":
-        return "#3B82F6";
-      default:
-        return "#8B5CF6";
-    }
-  };
-
-  const color = getTypeColor(relationship.relationshipType);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className="active:opacity-60"
-      style={({ pressed }) => ({
-        backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
-      })}
-    >
-      <View className="flex-row items-center px-5 py-3">
-        {/* Avatar */}
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: `${color}20`,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text
-            className="text-sm font-semibold"
-            style={{ color }}
-          >
-            {getInitials(relationship.name)}
-          </Text>
-        </View>
-
-        {/* Name and timeline count */}
-        <View className="ml-3 flex-1">
-          <Text
-            className="text-sm font-medium"
-            style={{ color: "#E5E7EB" }}
-            numberOfLines={1}
-          >
-            {relationship.name}
-          </Text>
-          <Text className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-            {timelineCount > 0
-              ? `${timelineCount} insight${timelineCount !== 1 ? "s" : ""}`
-              : "Tap to view timeline"}
-          </Text>
-        </View>
-
-        {/* Chevron */}
-        <Ionicons name="time-outline" size={18} color="#6B7280" />
       </View>
     </Pressable>
   );
@@ -273,15 +185,11 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRelationship, setSelectedRelationship] = useState<TrackedRelationship | null>(null);
-  const [timelineDrawerVisible, setTimelineDrawerVisible] = useState(false);
 
   // Store
   const loops = useLoopsStore((s) => s.loops);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const switchToLoop = useLoopsStore((s) => s.switchToLoop);
-  const trackedRelationships = useLoopsStore((s) => s.trackedRelationships);
-  const getTimelineForRelationship = useLoopsStore((s) => s.getTimelineForRelationship);
 
   // Animation values
   const translateX = useSharedValue(-DRAWER_WIDTH);
@@ -416,23 +324,11 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
-  const handleRelationshipGrowth = () => {
+  const handleTimeline = () => {
     closeDrawer();
     setTimeout(() => {
-      navigation.navigate("RelationshipGrowthScreen" as never);
+      navigation.navigate("TimelineScreen" as never);
     }, 100);
-  };
-
-  const handleOpenPersonTimeline = (relationship: TrackedRelationship) => {
-    setSelectedRelationship(relationship);
-    setTimelineDrawerVisible(true);
-  };
-
-  const handleCloseTimelineDrawer = () => {
-    setTimelineDrawerVisible(false);
-    setTimeout(() => {
-      setSelectedRelationship(null);
-    }, 300);
   };
 
   if (!visible && translateX.value === -DRAWER_WIDTH) {
@@ -568,35 +464,13 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         >
           <View style={{ marginTop: 8 }}>
             <MenuItem
-              icon="heart-outline"
-              label="Relationship Growth"
-              subtitle="Track patterns over time"
-              onPress={handleRelationshipGrowth}
-              isLast={trackedRelationships.length === 0 && loops.length === 0}
+              icon="time-outline"
+              label="Timeline"
+              subtitle="Patterns across conversations"
+              onPress={handleTimeline}
+              isLast={loops.length === 0}
             />
           </View>
-
-          {/* People with Reply Timelines */}
-          {trackedRelationships.length > 0 && (
-            <View style={{ marginTop: 16 }}>
-              <View className="px-5 pb-2">
-                <Text className="text-xs font-medium" style={{ color: "#6B7280" }}>
-                  PEOPLE
-                </Text>
-              </View>
-              {trackedRelationships.map((relationship) => {
-                const timeline = getTimelineForRelationship(relationship.id);
-                return (
-                  <PersonItem
-                    key={relationship.id}
-                    relationship={relationship}
-                    timelineCount={timeline.length}
-                    onPress={() => handleOpenPersonTimeline(relationship)}
-                  />
-                );
-              })}
-            </View>
-          )}
 
           {/* Past Chats - show directly if available */}
           {loops.length > 0 && (
@@ -725,13 +599,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           )}
         </Animated.View>
       </GestureDetector>
-
-      {/* Person Timeline Drawer */}
-      <PersonTimelineDrawer
-        visible={timelineDrawerVisible}
-        relationship={selectedRelationship}
-        onClose={handleCloseTimelineDrawer}
-      />
     </View>
   );
 }

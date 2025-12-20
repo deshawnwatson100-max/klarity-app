@@ -428,65 +428,70 @@ Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns inc
 
 The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
-### NEW: Reply Timeline Feature
-Per-person timeline of communication insights that feels like quiet, human-readable memory.
+### Timeline Screen
+A unified timeline showing communication patterns across all chat loops, with optional filtering by person.
 
-#### Screen Layout
-- **Header**: Person's name with subtitle "How conversations usually go"
-- **Drag indicator**: Visual cue for swipe-to-close gesture
-- **No back button**: Close via swipe-right gesture or tap backdrop
+#### Purpose
+The Timeline is the user's primary place to review communication patterns over time — without calendars, manual tracking, or emotional logging.
 
-#### Top Insight Card
-A single adaptive insight summarizing the pattern with this person:
-- "With this person, being brief and direct works best."
-- "You tend to over-explain here and feel drained after."
-- "Clear boundaries usually reduce follow-ups."
-
-Design:
-- Soft card with neutral colors
-- No icons that imply judgment
-- No percentages or metrics
-
-#### Timeline Feed
-Vertical list of short entries, ordered newest to oldest:
-- Each entry is 1 short sentence
-- No exact dates (uses vague time like "recently" or "earlier")
-- Neutral, observational language
+#### Default View: All Conversations
+When the Timeline screen opens:
+- Shows a single unified timeline containing entries from all chat loops
+- Entries are ordered newest to oldest
+- No grouping by day, week, or date
 
 Entry examples:
-- "You held your boundary — it landed well."
+- "You held a boundary — it landed well."
 - "You softened due to guilt."
-- "Being more direct reduced repeat messages."
-- "This topic tends to escalate."
+- "Being more direct reduced follow-ups."
+- "This topic escalated."
 
-Design:
-- Clean spacing with subtle dots and connecting lines
-- No checkmarks, scores, or emojis
-- Looks like memory, not analytics
+Each entry:
+- One short sentence
+- Neutral, observational tone
+- No judgment
+- No metrics, scores, or streaks
+
+#### Person Filter (Optional)
+At the top of the screen:
+- Subtle selector showing "All conversations"
+- Tap to open a person picker
+- Select a person to filter the timeline
+- Header updates to show "Timeline · [Person's Name]"
+- Tap "All conversations" to return to full timeline
+
+#### Timeline Entry Rules
+Entries are generated automatically from chat loop activity. Only log moments that help improve future replies:
+- Boundary attempts
+- Boundary outcomes
+- Communication style effectiveness
+- Repeated friction patterns
+
+Do not log raw messages or emotional dumps.
 
 #### Footer Controls
-At the bottom of the drawer with muted styling:
-- **Clear history for this person** - Removes all timeline entries
-- **Pause learning for this person** - Stops collecting new insights
-- Confirmation modal only shown for clear (destructive action)
+At the bottom of the Timeline screen with muted styling:
+- **Clear timeline** - Removes all timeline entries
+- When filtered by person:
+  - **Clear timeline for this person**
+  - **Pause learning for this person**
+- Confirmation modal only shown for destructive actions
 
 #### Accessing the Timeline
 - Open the slide-over drawer (swipe from left or tap menu)
-- Tap on any tracked person in the "People" section
-- Timeline drawer slides in from the right
-- Close by swiping right or tapping the backdrop
+- Tap "Timeline" menu item
+- Screen slides in from the right
 
 #### Design Philosophy
-The screen should feel: **Quiet, Supportive, Observant**
+The Timeline should feel like: **"Klarity remembering what matters — not tracking me."**
 
-- Feels like reflection without effort
-- If it feels like tracking, logging, or reviewing performance — it's wrong
-- No charts, graphs, or calendars
-- No gamification or therapy language
-- Timeline entries are generated automatically
-- Only log events that improve future replies
-- Do not show unless accessed intentionally
-- No push notifications from this screen
+- No calendar
+- No exact dates (uses vague time like "recently" or "earlier")
+- No charts or analytics
+- No therapy language
+- No gamification
+
+**Core Rule**: If the timeline does not clearly help the user reply better in the future, it should not exist. Silence is better than noise.
 
 ### Past Loops System
 The app supports multiple conversation sessions:
@@ -595,7 +600,6 @@ Each loop stores:
 │   │   ├── VoiceEmotionScanBubble.tsx   # NEW: Voice emotion analysis result card
 │   │   ├── FaceScanPromptBubble.tsx     # Tappable prompt for face scan
 │   │   ├── EmotionalFaceScanBubble.tsx  # Expandable face scan card with minimize
-│   │   ├── PersonTimelineDrawer.tsx # Reply timeline drawer for each person
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -605,7 +609,7 @@ Each loop stores:
 │   │   ├── AnalysisScreen.tsx      # Step 1 - Full analysis display
 │   │   ├── RelationshipDirectionScreen.tsx  # Step 2 - Direction selector
 │   │   ├── SuggestionsScreen.tsx   # Step 3 - Tailored guidance
-│   │   └── RelationshipGrowthScreen.tsx  # Relationship tracking
+│   │   └── TimelineScreen.tsx             # Timeline of communication patterns
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
 │   │   └── loopsStore.ts           # Loops, relationships, and timeline state with persistence
@@ -830,61 +834,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
-✅ **Relationship Growth Tracking** - Track patterns with specific people over time for long-term clarity
-✅ **Manual Relationship Add** - Proactively add relationships with name, type, and optional context note
-✅ **Reply Timeline** - Per-person timeline of communication insights (auto-generated, no manual logging)
-✅ **Timeline Summary** - Adaptive insight at top of each person's timeline
+✅ **Timeline Screen** - Unified timeline of communication insights across all conversations with person filtering
 ✅ **Timeline Management** - Clear history and pause learning options per person
-
-### NEW: Relationship Growth Tracking Feature
-Track ongoing patterns with specific people (e.g., "Mom," "Coworker," "Ex") to gain long-term clarity without forcing structure or emotional labeling.
-
-#### Detection & Trigger
-- After a chat loop where recurring conflict, emotional distress, or boundary issues with a specific person are detected, a soft optional prompt surfaces
-- The prompt appears naturally after AI responses, not interrupting emotional flow
-- Only shown when boundary concerns are detected
-
-#### User Prompt
-A subtle option card appears:
-- "Would you like to track patterns with this person to gain long-term clarity?"
-- **Track this relationship** button
-- **Not right now** button
-
-#### Tracking Flow
-1. User selects "Track this relationship"
-2. Text input appears: "Name or label (e.g., Mom, Manager, Alex)"
-3. Confirmation: "Got it. I'll group future conversations related to this person together."
-4. Current chat loop is tagged with the selected person
-5. Future related chats can be linked to the same relationship
-
-#### Relationship Growth Screen
-Access via the slide-over drawer menu:
-- Lists all tracked relationships (simple list, no metrics)
-- **+ Add Relationship button** at top of list with dashed border styling
-- Tapping a name shows:
-  - Relationship type badge (if set)
-  - All related chat loops
-  - Emotional clarity summaries
-  - Optional context note displayed in quotes
-  - Patterns over time (if available)
-
-#### Manual Relationship Add
-Users can proactively add relationships from the Relationship Growth screen:
-- **Location**: Top of relationship list (or center if list is empty)
-- **Trigger**: Tap "+ Add Relationship" button
-- **Modal Design**: Dark luxury bottom sheet with subtle glow
-- **Input Fields**:
-  - **Name/Label** (required): e.g., "Mom," "Manager," "Alex"
-  - **Relationship Type** (optional): Family, Romantic, Friend, Work, Other
-  - **Short Note** (optional): Context like "What usually causes tension here?"
-- **Behavior**: Creates an empty relationship container for future chat loops
-- **Aesthetic**: Dark mode optimized with luxury grey accents and soft purple glow
-
-#### Design Philosophy
-- Never implies the other person is "toxic"
-- Never pressures the user to track
-- Positioned as clarity and self-understanding, not fixing others
-- Maintains calm, neutral, emotionally intelligent language
 
 ## Future Enhancements
 

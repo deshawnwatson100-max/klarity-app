@@ -8,13 +8,13 @@ import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen";
 import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
-import { RelationshipGrowthScreen } from "../screens/RelationshipGrowthScreen";
+import { TimelineScreen } from "../screens/TimelineScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
   ChatScreen: undefined;
   EmotionScanScreen: undefined;
-  RelationshipGrowthScreen: undefined;
+  TimelineScreen: undefined;
   AnalysisScreen: {
     analysis: import("../types/chat").EmotionalAnalysis;
     userMessage: string;
@@ -298,10 +298,10 @@ export function RootNavigator() {
         }}
       />
 
-      {/* Relationship Growth Screen - iOS horizontal slide from right */}
+      {/* Timeline Screen - iOS horizontal slide from right */}
       <Stack.Screen
-        name="RelationshipGrowthScreen"
-        component={RelationshipGrowthScreen}
+        name="TimelineScreen"
+        component={TimelineScreen}
         options={{
           gestureEnabled: true,
           gestureDirection: "horizontal",
