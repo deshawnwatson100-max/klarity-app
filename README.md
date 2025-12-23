@@ -92,151 +92,65 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Maintains professional aesthetic while feeling warm and welcoming
 - All effects are whisper-soft - no loud colors or distracting movement
 
-### Screen 2: Chat Screen with Inline Clarity Analysis 💬✨
-**NEW CHATLOOP DESIGN** - Full emotional analysis flows naturally within the conversation, using chat bubbles and inline cards.
+### Screen 2: Chat Screen with Simplified Clarity Analysis 💬✨
+**STREAMLINED CHAT FLOW** - Fast, calm, and unbiased analysis with a fixed three-step order.
 
 #### Experience Flow
-When you send a message about a relationship situation, Klarity responds with a beautiful step-by-step inline analysis:
+When you send a message (text or image) about a relationship situation, Klarity responds with a clean, fixed-order flow:
 
 1. **Typing Indicator**
    - Three pulsing dots with soft luxury grey glow
-   - Appears in Klarity bubble
    - 1.5 second natural pause
    - **Automatically removed when response is generated**
 
-2. **Emotional Validation Bubble**
-   - Warm, empathetic message acknowledging your feelings
-   - Example: "I can tell this situation weighed on you emotionally — it makes sense you are feeling this way."
-   - Left-aligned with soft lavender neon edge
-   - Smooth fade-in animation
+2. **Dysfunctional Communication Card** (FIRST)
+   - Appears first after analysis
+   - Brief, neutral, emotionally intelligent framing
+   - No advice, no directives
+   - Example: "This conversation shows a pattern where one person's needs may not be fully acknowledged."
+   - Optional pattern labels (e.g., "Deflection", "Dismissiveness")
+   - Clean, minimal card design
 
-3. **Typing Again**
-   - Brief pause while Klarity analyzes
-   - Creates natural conversational rhythm
+3. **Suggested Reply Message Bubble** (SECOND)
+   - Appears immediately after the dysfunctional communication card
+   - Single balanced reply suggestion
+   - Includes guidance note explaining the approach
+   - **Inline modification options:**
+     - Shorten Reply - Make response more concise
+     - Lengthen Reply - Add more detail
+   - "Use this reply" button - Inserts text into input bar
+   - "Use different reply" button - Generates alternative suggestion
 
-4. **Quick Clarity Summary Card**
-   - Special styled bubble with bold color-coded highlights
-   - Sparkle icon header
-   - Four key insights:
-     - **Tone** (Blue accent) - Communication style detected
-     - **Pattern** (Purple accent) - Behavior pattern identified
-     - **Emotional Impact** (Orange accent) - How it affects you
-     - **Core Issue** (Yellow accent) - Root problem
-   - Glowing neon frame with depth effect
+4. **"Need a Different Approach?" Card** (THIRD)
+   - Appears only after the suggested reply
+   - Offers supportive alternatives without judgment
+   - Four options in a 2x2 grid:
+     - **More Direct** - Say it clearly
+     - **More Gentle** - Soften the tone
+     - **More Neutral** - Keep it balanced
+     - **Add Context** - Share more details
+   - Selecting a tone generates a new modulated reply
+   - Add Context opens inline input for additional information
 
-5. **Deep Analysis Bubble**
-   - 2-3 calm sentences with deeper psychological insights
-   - Normal Klarity bubble styling
-   - Soft neon signature glow
-
-6. **Relationship Direction Selector**
-   - Klarity asks: "Before I help you respond, which direction do you want to go with this relationship?"
-   - Four interactive option cards in luxury grey container:
-     - **Improve** (Cool Sky Blue #6BB6FF) - Better communication and connection
-     - **Distance** (Warm Orange #FF9B6B) - Healthy space and protection
-     - **Maintain** (Soft Amber/Gold #FFB84D) - Observe patterns before deciding
-     - **Gain Clarity** (Lavender/Purple #B8A3E8) - Understand feelings better
-   - Each card has soft premium glow and minimal icons
-   - Tap to select, card glows with intention color
-   - Smooth press animation with spring physics
-
-7. **Tone Selection Card** ✨ NEW
-   - Appears after direction selection
-   - Asks: "Choose Your Tone"
-   - Four tone options in minimal luxury grey pills:
-     - **Calm** - Peaceful, measured response
-     - **Direct** - Clear, straightforward communication
-     - **Empathetic** - Understanding, compassionate tone
-     - **Assertive** - Confident, firm boundaries
-   - Sleek dark grey gradient base (#1A1A1A → #2A2A2A)
-   - Soft grey glow and metallic outline on each pill
-   - Selected pill shows checkmark and enhanced glow
-
-8. **Typing Indicator Returns**
-   - After you select tone
-   - Shows Klarity is preparing tailored guidance
-
-9. **Tailored Guidance Bubble**
-   - Personalized mindset message based on your chosen path
-   - Example (Distance): "Okay — to create healthy distance, we will keep things calm, neutral, and emotionally protective."
-   - Bubble glows in your selected intention color
-   - Sets the tone for suggested responses
-
-10. **Suggested Reply Cards**
-   - 1 contextual response option appears as card-style bubble
-   - Each includes:
-     - Message text in bubble format with color-matched glow
-     - "Use this reply" button beneath (glows in intention color)
-     - "Use different reply" button (outlined style) - generates alternative suggestion
-     - Smooth lift animation on tap
-   - Replies are tailored to your chosen direction AND tone
-   - One tap inserts reply into input bar
-   - Tap "Use different reply" to generate another suggestion that appears directly below in the chat
-   - Shorten/Lengthen options hidden until you tap the reply bubble (smooth fade-in animation)
-
-11. **Emotional Face Scan Prompt** ✨ NEW
-   - Appears after tone modulation card in the chat flow
-   - **Tappable Chat Bubble**: "Scan your face for deeper emotional insight?"
-   - Styled as a system message bubble with:
-     - Soft teal glow and frosted glass background
-     - Scan icon in rounded circle
-     - Tap anywhere on the bubble to expand
-   - **On Tap - Expanded Card View**:
-     - Full premium card with soft neon teal/lavender glow
-     - **Minimize Button**: Top-right icon to collapse back to prompt
-     - **Header**: "Emotion Face Scan" centered
-     - **Subtitle**: "Scan your face to understand how you are feeling inside."
-     - **Visual Center**: Animated aura rings with camera icon and waveform bars
-     - **Begin Scan Button**: Soft teal glow with scan icon
-     - **Helper Text**: "Your emotional insights will automatically be logged to your clarity calendar."
-   - Pulsing glow animation creates gentle, alive feeling
-   - Tap "Begin Scan" to open camera for facial emotion analysis
-   - Premium minimal design - futuristic yet welcoming
-   - **Seamless UX**: Question appears naturally in chat, expands on interest
-
-12. **Add More Context Feature** ✨ NEW
-   - "Add More Context" button appears after dysfunctional communication analysis or deep analysis
-   - Tapping opens an inline context input section with two options:
-   - **📄 Text Input** - Expandable text field (up to 500 characters) to type additional details
-   - **🎤 Voice Input** - One-tap recording interface to speak your thoughts
-   - Voice recordings are automatically transcribed using Whisper API
-   - After submission, AI responds with a **two-part reflective understanding**:
-     - **Part 1: Reflective Understanding** - Empathetic reflection acknowledging your feelings (2-3 sentences with warmth and validation)
-     - **Part 2: Situation Clarity** - Neutral objective summary of the conflict and emotional dynamics (1-2 sentences, factual)
-   - Then re-analyzes with enriched information:
-     - Context is added as a user message
-     - Updates deep analysis with additional context
-     - Regenerates tailored guidance based on fuller picture
-     - Provides fresh suggested replies
-     - Asks: "Is this more aligned with how you're feeling?"
-   - Dynamic color theming based on your chosen intention
-   - Smooth animations and visual feedback
-   - Cancel option to dismiss input without submitting
-
-13. **What would you like to do next? Card** ✨ NEW
-   - Appears after deep analysis as a choice card
-   - Three actionable options presented as elegant cards:
-     - **Add More Context** (Purple accent) - Share additional details for better guidance
-     - **Get Instant Reply Suggestion** (Aqua Teal accent) - Receive a quick, balanced response suggestion without choosing a direction
-     - **Choose Relationship Direction** (Blue accent) - Select your intention and get tailored guidance
-   - Each option has icon, title, description, and smooth press animation
-   - **Instant Reply** generates a thoughtful, balanced response immediately using the conversation context
-   - Provides flexibility: quick reply vs. deep intentional guidance
-
-14. **Your Response Bubble**
-    - When you tap "Use this reply", it appears as right-aligned user bubble
-    - Smooth insert animation
-    - Chat auto-scrolls to show your message
+#### What's NOT in this flow
+This simplified flow intentionally excludes:
+- Relationship direction selector
+- Emotion scans / face scans
+- Boundary detection cards
+- Deep analysis bubbles
+- Quick summary cards
+- Emotional validation messages
+- Calendar logging
+- Any additional features before or between the three steps
 
 #### Design Features
-- **Dark luxury background** (#000000 pure black)
-- **Soft neon purples, blues, oranges, yellows** matching intention types
-- **Blurred glow effects** on all bubbles
+- **Fixed order** - Always Dysfunctional Card → Reply → Approach Card
+- **Fast and calm** - Minimal steps, quick to action
+- **Unbiased** - Neutral observations without judgment
+- **Dark luxury background** (#050505)
 - **SF Pro Display font** throughout
-- **Rounded corners everywhere** - no sharp edges
-- **Natural conversational timing** between each element
-- **iOS-style message threading** with bubbles
-- **Safe emotional space aesthetic** - calm and supportive
+- **Rounded corners everywhere**
+- **iOS-style message threading**
 
 #### Motion & Interaction
 - All bubbles fade in with gentle spring animations

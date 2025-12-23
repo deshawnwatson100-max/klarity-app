@@ -23,7 +23,9 @@ export type MessageRole =
   | "context-or-direction-choice"
   | "voice-emotion-scan-result"
   | "boundary-detection"
-  | "boundary-clarity-summary";
+  | "boundary-clarity-summary"
+  | "dysfunctional-communication"
+  | "need-different-approach";
 
 export interface Message {
   id: string;
@@ -226,6 +228,16 @@ export interface BoundaryClaritySummaryMessage extends Message {
   boundaryClarity: BoundaryClarity;
 }
 
+export interface DysfunctionalCommunicationMessage extends Message {
+  role: "dysfunctional-communication";
+  summary: string;
+  patterns?: string[];
+}
+
+export interface NeedDifferentApproachMessage extends Message {
+  role: "need-different-approach";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -250,4 +262,6 @@ export type ChatMessage =
   | ContextOrDirectionChoiceMessage
   | VoiceEmotionScanResultMessage
   | BoundaryDetectionMessage
-  | BoundaryClaritySummaryMessage;
+  | BoundaryClaritySummaryMessage
+  | DysfunctionalCommunicationMessage
+  | NeedDifferentApproachMessage;

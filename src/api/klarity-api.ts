@@ -67,6 +67,139 @@ async function callGPT5Mini(
 }
 
 /**
+ * Generate a brief, neutral dysfunctional communication summary
+ * Used for both text and image analysis in the simplified flow
+ */
+export async function generateDysfunctionalCommunicationSummary(
+  userMessage: string,
+  imageAnalysis?: ImageAnalysis
+): Promise<{ summary: string; patterns?: string[] }> {
+  const systemPrompt = `You are an emotionally intelligent AI assistant. Provide a brief, neutral observation about the communication pattern without giving advice or directives.
+
+Your response should:
+- Be 1-2 sentences maximum
+- Frame the observation neutrally (not accusatory)
+- Focus on the pattern, not the person
+- Avoid judgmental language
+- Not offer solutions or advice
+
+Examples of good responses:
+- "This conversation shows a pattern where one person's needs may not be fully acknowledged."
+- "There seems to be a disconnect between what's being said and what's being heard."
+- "This exchange contains elements that could create confusion or emotional distance."
+
+Respond with valid JSON only:
+{
+  "summary": "string (1-2 neutral sentences)",
+  "patterns": ["string", "string"] (optional, 1-3 short pattern labels like "Deflection", "Dismissiveness")
+}`;
+
+  const userPrompt = imageAnalysis
+    ? `Based on this image analysis: ${imageAnalysis.summary}\n\nProvide a brief, neutral framing.`
+    : `Based on this message: "${userMessage}"\n\nProvide a brief, neutral observation about any communication patterns.`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      1500,
+      true
+    );
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    return {
+      summary: parsed.summary || "This conversation contains patterns worth reflecting on.",
+      patterns: Array.isArray(parsed.patterns) ? parsed.patterns.slice(0, 3) : undefined,
+    };
+  } catch (error) {
+    console.error("Error generating dysfunctional communication summary:", error);
+    return {
+      summary: "This conversation contains communication patterns that may benefit from reflection.",
+    };
+  }
+}
+
+/**
+ * Generate a quick suggested reply without needing intention/tone selection
+ * Used in the simplified flow for immediate reply generation
+ */
+export async function generateQuickSuggestedReply(
+  userMessage: string,
+  analysis?: EmotionalAnalysis
+): Promise<{ id: string; text: string; guidanceNote: string }> {
+  const systemPrompt = `You are Klarity AI. Generate ONE suggested reply that is:
+- Balanced and emotionally intelligent
+- 1-2 sentences long
+- Neither too confrontational nor too passive
+- Appropriate for the situation
+
+Also provide a brief guidance note (1 sentence) explaining the approach.
+
+Respond with valid JSON only:
+{
+  "text": "string (the suggested reply)",
+  "guidanceNote": "string (brief note about this approach)"
+}`;
+
+  const userPrompt = analysis
+    ? `Situation: ${userMessage}\n\nAnalysis detected: Tone: ${analysis.tone}, Pattern: ${analysis.pattern}`
+    : `Situation: ${userMessage}`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      2000,
+      true
+    );
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    return {
+      id: Date.now().toString(),
+      text: parsed.text || "I hear what you're saying. Can we talk about this more?",
+      guidanceNote: parsed.guidanceNote || "A balanced approach that opens dialogue.",
+    };
+  } catch (error) {
+    console.error("Error generating quick suggested reply:", error);
+    return {
+      id: Date.now().toString(),
+      text: "I hear you. Let me think about that and get back to you.",
+      guidanceNote: "This keeps the conversation open while giving you time to process.",
+    };
+  }
+}
+
+/**
  * Generate emotional analysis for user message
  */
 export async function generateEmotionalAnalysis(
