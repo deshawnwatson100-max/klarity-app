@@ -250,13 +250,18 @@ export function DysfunctionalCommunicationCard({
           alignSelf: "flex-start",
           width: "100%",
           marginBottom: 20, // Generous vertical spacing
-          paddingRight: 40,
         },
       ]}
     >
-      {/* Floating text style on pitch black background */}
+      {/* Pitch black card background */}
       <Pressable onPress={handleMinimize}>
-        <View style={{ position: "relative" }}>
+        <View
+          style={{
+            backgroundColor: "#000000",
+            borderRadius: 16,
+            padding: 16,
+          }}
+        >
           {/* Header row */}
           <View className="flex-row items-center mb-2">
             <Ionicons

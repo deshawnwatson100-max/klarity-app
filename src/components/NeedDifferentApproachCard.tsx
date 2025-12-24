@@ -71,55 +71,64 @@ export function NeedDifferentApproachCard({
         animatedStyle,
       ]}
     >
-      {/* Simple text prompt - warm gray */}
-      <Text
+      {/* Pitch black card background */}
+      <View
         style={{
-          fontSize: 14,
-          color: "#9CA3AF",
-          marginBottom: 12,
+          backgroundColor: "#000000",
+          borderRadius: 16,
+          padding: 16,
         }}
       >
-        Need a different approach?
-      </Text>
+        {/* Simple text prompt - warm gray */}
+        <Text
+          style={{
+            fontSize: 14,
+            color: "#9CA3AF",
+            marginBottom: 12,
+          }}
+        >
+          Need a different approach?
+        </Text>
 
-      {/* Inline horizontal options */}
-      <View className="flex-row flex-wrap gap-2">
-        {approaches.map((approach) => {
-          const isSelected = selectedApproach === approach.id;
-          return (
-            <Pressable
-              key={approach.id}
-              onPress={() => handleSelect(approach.id)}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                borderRadius: 20,
-                backgroundColor: isSelected ? "#1F1F22" : "transparent",
-                borderWidth: 1,
-                borderColor: isSelected ? "#5BA89A" : "#374151",
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Ionicons
-                name={approach.icon}
-                size={14}
-                color={isSelected ? "#7DD3C0" : "#6B7280"}
-              />
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: isSelected ? "#EDEDED" : "#9CA3AF",
-                }}
+        {/* Inline horizontal options */}
+        <View className="flex-row flex-wrap gap-2">
+          {approaches.map((approach) => {
+            const isSelected = selectedApproach === approach.id;
+            return (
+              <Pressable
+                key={approach.id}
+                onPress={() => handleSelect(approach.id)}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: 20,
+                  backgroundColor: isSelected ? "#1F1F22" : "transparent",
+                  borderWidth: 1,
+                  borderColor: isSelected ? "#5BA89A" : "#374151",
+                  opacity: pressed ? 0.7 : 1,
+                })}
               >
-                {approach.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+                <Ionicons
+                  name={approach.icon}
+                  size={14}
+                  color={isSelected ? "#7DD3C0" : "#6B7280"}
+                />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: isSelected ? "#EDEDED" : "#9CA3AF",
+                  }}
+                >
+                  {approach.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </Animated.View>
   );
