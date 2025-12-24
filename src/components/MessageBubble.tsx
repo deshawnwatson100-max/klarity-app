@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -97,7 +96,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
     );
   }
 
-  // Assistant messages - soft off-white with subtle gradient accent
+  // Assistant messages - soft off-white on pitch black
   return (
     <Animated.View
       style={animatedStyle}
@@ -120,35 +119,18 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           />
         )}
 
-        {/* Floating text with subtle left-edge glow */}
+        {/* Floating text - clean on pitch black */}
         {hasText && (
-          <View style={{ position: "relative" }}>
-            {/* Subtle gradient left edge accent */}
-            <LinearGradient
-              colors={["rgba(125, 211, 192, 0.12)", "rgba(125, 211, 192, 0)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                borderRadius: 2,
-              }}
-            />
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 24,
-                color: "#EDEDED", // Soft off-white
-                letterSpacing: 0.15,
-                paddingLeft: 12,
-              }}
-            >
-              {content}
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontSize: 15,
+              lineHeight: 24,
+              color: "#EDEDED", // Soft off-white
+              letterSpacing: 0.15,
+            }}
+          >
+            {content}
+          </Text>
         )}
       </View>
     </Animated.View>

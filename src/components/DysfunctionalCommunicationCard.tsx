@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -255,24 +254,9 @@ export function DysfunctionalCommunicationCard({
         },
       ]}
     >
-      {/* Floating text style with soft color wash */}
+      {/* Floating text style on pitch black background */}
       <Pressable onPress={handleMinimize}>
         <View style={{ position: "relative" }}>
-          {/* Soft violet color wash background (5-8% opacity) for clarity moments */}
-          <LinearGradient
-            colors={["rgba(180, 124, 255, 0.06)", "rgba(180, 124, 255, 0)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              position: "absolute",
-              left: -12,
-              top: -8,
-              right: -12,
-              bottom: -8,
-              borderRadius: 12,
-            }}
-          />
-
           {/* Header row */}
           <View className="flex-row items-center mb-2">
             <Ionicons

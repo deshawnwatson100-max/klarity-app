@@ -326,26 +326,10 @@ export function SuggestedReplyCard({
           alignSelf: "flex-start",
           width: "100%",
           marginBottom: 20, // Generous vertical spacing
-          position: "relative",
         },
         animatedStyle,
       ]}
     >
-      {/* Soft teal color wash background (5-8% opacity) */}
-      <LinearGradient
-        colors={["rgba(125, 211, 192, 0.05)", "rgba(125, 211, 192, 0)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          position: "absolute",
-          left: -12,
-          top: -8,
-          right: -12,
-          bottom: -8,
-          borderRadius: 12,
-        }}
-      />
-
       {/* Section header with teal accent */}
       <View className="flex-row items-center mb-3">
         <Ionicons
