@@ -90,7 +90,7 @@ function HarmScoreBar({ score, explanation }: HarmScoreBarProps) {
             letterSpacing: 0.3,
           }}
         >
-          Estimated Emotional Impact
+          How damaging over time
         </Text>
         <Text
           style={{

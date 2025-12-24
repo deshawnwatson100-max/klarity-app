@@ -6,8 +6,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  FadeIn,
-  FadeOut,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
@@ -33,24 +31,16 @@ function ReplyItem({
   reply,
   isMinimized,
   onToggleMinimize,
-  expandedReplyId,
-  onExpandControls,
   loadingAction,
   onModifyLength,
   onSelectReply,
-  onGenerateDifferent,
-  isLatest,
 }: {
   reply: SuggestedReply;
   isMinimized: boolean;
   onToggleMinimize: () => void;
-  expandedReplyId: string | null;
-  onExpandControls: (id: string) => void;
   loadingAction: { replyId: string; action: "shorten" | "lengthen" } | null;
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onSelectReply: (reply: string) => void;
-  onGenerateDifferent?: () => void;
-  isLatest: boolean;
 }) {
   const contentHeight = useSharedValue(isMinimized ? 0 : 1);
 
@@ -156,64 +146,6 @@ function ReplyItem({
               </Text>
             </View>
 
-            {/* Expanded controls */}
-            {onModifyLength && expandedReplyId === reply.id && (
-              <Animated.View
-                entering={FadeIn.duration(200)}
-                exiting={FadeOut.duration(150)}
-                style={{
-                  marginTop: 12,
-                  paddingTop: 12,
-                  borderTopWidth: 1,
-                  borderTopColor: "#1F1F22",
-                }}
-              >
-                <View className="flex-row items-center gap-4">
-                  <Pressable
-                    onPress={() => handleModifyLength(reply.id, "shorten")}
-                    disabled={loadingAction?.replyId === reply.id}
-                    style={({ pressed }) => ({
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      opacity: pressed ? 0.6 : 1,
-                    })}
-                  >
-                    {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
-                      <ActivityIndicator size="small" color="#6B7280" />
-                    ) : (
-                      <>
-                        <Ionicons name="remove-outline" size={14} color="#6B7280" />
-                        <Text style={{ fontSize: 13, color: "#6B7280" }}>Shorter</Text>
-                      </>
-                    )}
-                  </Pressable>
-
-                  <View style={{ width: 1, height: 12, backgroundColor: "#374151" }} />
-
-                  <Pressable
-                    onPress={() => handleModifyLength(reply.id, "lengthen")}
-                    disabled={loadingAction?.replyId === reply.id}
-                    style={({ pressed }) => ({
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      opacity: pressed ? 0.6 : 1,
-                    })}
-                  >
-                    {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
-                      <ActivityIndicator size="small" color="#6B7280" />
-                    ) : (
-                      <>
-                        <Ionicons name="add-outline" size={14} color="#6B7280" />
-                        <Text style={{ fontSize: 13, color: "#6B7280" }}>Longer</Text>
-                      </>
-                    )}
-                  </Pressable>
-                </View>
-              </Animated.View>
-            )}
-
             {/* Action buttons - minimal style */}
             <View className="flex-row items-center gap-3 mt-3">
               <Pressable
@@ -240,35 +172,54 @@ function ReplyItem({
                   Use this reply
                 </Text>
               </Pressable>
+            </View>
 
-              {onGenerateDifferent && isLatest && (
+            {/* Inline modifiers - Shorter / Longer */}
+            {onModifyLength && (
+              <View className="flex-row items-center gap-4 mt-3 pl-1">
                 <Pressable
-                  onPress={onGenerateDifferent}
+                  onPress={() => handleModifyLength(reply.id, "shorten")}
+                  disabled={loadingAction?.replyId === reply.id}
                   style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 6,
-                    paddingVertical: 8,
-                    paddingHorizontal: 14,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: "#374151",
-                    opacity: pressed ? 0.7 : 1,
+                    gap: 4,
+                    opacity: pressed ? 0.6 : 1,
                   })}
                 >
-                  <Ionicons name="refresh-outline" size={14} color="#9CA3AF" />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "500",
-                      color: "#9CA3AF",
-                    }}
-                  >
-                    Different reply
-                  </Text>
+                  {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
+                    <ActivityIndicator size="small" color="#6B7280" />
+                  ) : (
+                    <>
+                      <Ionicons name="remove-outline" size={14} color="#6B7280" />
+                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Shorter</Text>
+                    </>
+                  )}
                 </Pressable>
-              )}
-            </View>
+
+                <View style={{ width: 1, height: 12, backgroundColor: "#374151" }} />
+
+                <Pressable
+                  onPress={() => handleModifyLength(reply.id, "lengthen")}
+                  disabled={loadingAction?.replyId === reply.id}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
+                    <ActivityIndicator size="small" color="#6B7280" />
+                  ) : (
+                    <>
+                      <Ionicons name="add-outline" size={14} color="#6B7280" />
+                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Longer</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
           </Animated.View>
         </>
       )}
@@ -285,7 +236,6 @@ export function SuggestedReplyCard({
 }: SuggestedReplyCardProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
-  const [expandedReplyId, setExpandedReplyId] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [minimizedReplies, setMinimizedReplies] = useState<Set<string>>(new Set());
   const prevRepliesLengthRef = useRef(replies.length);
@@ -323,10 +273,6 @@ export function SuggestedReplyCard({
       }
       return newSet;
     });
-  };
-
-  const handleReplyPress = (replyId: string) => {
-    setExpandedReplyId(expandedReplyId === replyId ? null : replyId);
   };
 
   const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
@@ -377,13 +323,9 @@ export function SuggestedReplyCard({
           reply={reply}
           isMinimized={minimizedReplies.has(reply.id)}
           onToggleMinimize={() => toggleReplyMinimize(reply.id)}
-          expandedReplyId={expandedReplyId}
-          onExpandControls={handleReplyPress}
           loadingAction={loadingAction}
           onModifyLength={onModifyLength ? handleModifyLength : undefined}
           onSelectReply={onSelectReply}
-          onGenerateDifferent={onGenerateDifferent}
-          isLatest={index === replies.length - 1}
         />
       ))}
 

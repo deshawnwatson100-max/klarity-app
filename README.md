@@ -102,81 +102,103 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - All effects are whisper-soft - no loud colors or distracting movement
 
 ### Screen 2: Chat Screen with Simplified Clarity Analysis 💬✨
-**STREAMLINED CHAT FLOW** - Fast, calm, and unbiased analysis with a fixed three-step order.
+**FINAL LOCKED VERSION** - Klarity Chat Loop designed to feel like a calm, intelligent friend helping you think clearly.
 
-**ChatGPT-Style Minimal Layout:**
-- AI responses appear as clean, floating text blocks on the dark background
-- No large card containers for AI messages
-- User messages remain in subtle rounded bubbles (right-aligned)
-- Subtle dividers and spacing separate sections
-- Clean, typography-focused design
+**Overall Style:**
+- ChatGPT-inspired floating text layout (no heavy bubbles)
+- Dark-mode first, minimal UI
+- Subtle motion, soft fades, slight glow only when meaningful
+- Luxury neutral palette (charcoal, deep grey, soft off-white)
+- No harsh dividers, no loud accents
+- Conversational, human tone throughout
 
-#### Experience Flow
-When you send a message (text or image) about a relationship situation, Klarity responds with a clean, fixed-order flow:
+**AI Personality Rules:**
+- Sounds like a thoughtful, emotionally intelligent friend
+- Uses natural language, light warmth, subtle reassurance
+- Never instructs, diagnoses, or controls
+- Avoids therapy-speak
+- Reflects first, suggests second
 
-1. **Typing Indicator**
-   - Three pulsing dots with soft luxury grey glow
-   - 1.5 second natural pause
-   - **Automatically removed when response is generated**
+**Interaction Feel:**
+- Nothing feels mandatory
+- Everything feels optional, supportive, and clear
+- The user always feels understood—not corrected
 
-2. **Communication Pattern** (FIRST)
-   - Floating text block with section header
-   - Brief, neutral, emotionally intelligent framing
-   - No advice, no directives
-   - Example: "This conversation shows a pattern where one person's needs may not be fully acknowledged."
-   - Optional pattern labels as subtle outlined pills
-   - Minimize button to collapse content
-   - **"How this affects me" Expansion**
-     - Inline text link (not a button)
-     - Expands in-place with smooth animation
-     - Shows Personal Impact Breakdown across four dimensions:
-       - **Emotionally** - confusion, self-doubt, anxiety, emotional fatigue
-       - **Mentally** - overthinking, second-guessing, feeling drained
-       - **Relationally** - imbalance, loss of trust, walking on eggshells
-       - **Behaviorally** - people-pleasing, withdrawing, over-explaining
-     - **Harm Impact Score (0-100)** with animated progress bar
-       - Color-coded: Green (low), Yellow (medium), Red (high)
-       - Contextual explanation of what the score means
-     - **Reassurance Line** - Grounding validation like "Your reaction makes sense."
-     - **Agency Reminder** - "This just gives you clarity — what you do with it is completely up to you."
-     - Tone: Thoughtful friend, not therapist or authority
-   - Subtle divider at bottom
+#### Core Chat Loop Order (LOCKED)
 
-3. **Suggested Reply** (SECOND)
-   - Floating text with left border accent
-   - Single balanced reply suggestion
-   - Includes guidance note with bulb icon
-   - Tap reply text to show modification options (Shorter/Longer)
-   - Minimal pill buttons: "Use this reply" and "Different reply"
-   - Subtle divider at bottom
+**1. User Input**
+- Accept text, pasted messages, or image-based messages
+- Flow immediately into analysis without friction
 
-4. **Different Approach Options** (THIRD)
-   - Simple text prompt: "Need a different approach?"
-   - Inline horizontal pill options (wrap on small screens):
-     - **More direct** - Say it clearly
-     - **More gentle** - Soften the tone
-     - **More neutral** - Keep it balanced
-     - **Add context** - Share more details
-   - Subtle divider at bottom
+**2. Communication Pattern Insight (Floating Card)**
+- Starts minimized with pattern preview and "tap to expand"
+- Tap anywhere on card to expand/collapse
+- Lightweight, expandable card that identifies dysfunctional or confusing communication
+- Friendly, plain-language explanation (no clinical phrasing)
+- Bottom action: "How this affects me" link
+
+**3. Expanded Insight (On Tap)**
+When "How this affects me" is tapped:
+- Card smoothly expands inline
+- Shows Personal Impact Breakdown:
+  - **Emotionally** - confusion, self-doubt, stress, pressure
+  - **Mentally** - overthinking, second-guessing, feeling drained
+  - **Relationally** - misalignment, imbalance, erosion of trust
+  - **Behaviorally** - people-pleasing, withdrawing, over-explaining
+- **Harm Impact Score (0-100)** with animated progress bar
+  - Label: "How damaging over time"
+  - Color-coded: Green (low), Yellow (medium), Red (high)
+  - Framed gently, neutral supportive language
+- **Reassurance Line** - Grounding validation
+- **Agency Reminder** - "This just gives you clarity — what you do with it is completely up to you."
+
+**4. Suggested Reply**
+- Appears immediately after insight
+- Displayed as floating response block (not a hard bubble)
+- Tone: grounded, emotionally intelligent, calm
+- Includes guidance note with bulb icon
+- Tap reply text to minimize/expand
+- **Primary button:** "Use this reply"
+- **Inline modifiers (always visible):**
+  - Shorter
+  - Longer
+- Selecting modifiers updates reply in place, smoothly
+- Previous replies auto-minimize when new one is generated
+- Minimized replies show truncated preview with "Tap to expand"
+
+**5. Need a Different Approach?**
+- Soft follow-up option under the reply
+- Simple text prompt: "Need a different approach?"
+- Inline horizontal pill options:
+  - **More direct** - Say it clearly
+  - **More gentle** - Soften the tone
+  - **More neutral** - Keep it balanced
+  - **Add context** - Share more details
+
+#### Optional Depth (AFTER the loop, never before)
+- Discernment (deeper understanding)
+- Add more context (text or voice)
+- Voice emotion analysis (allowed)
+- All appear only if the user chooses to continue
 
 #### What's NOT in this flow
 This simplified flow intentionally excludes:
-- Relationship direction selector
-- Emotion scans / face scans
-- Boundary detection cards
-- Deep analysis bubbles
+- Relationship direction selector (before core loop)
+- Emotion scans / face scans (before core loop)
+- Boundary detection cards (before core loop)
+- Deep analysis bubbles (before core loop)
 - Quick summary cards
 - Emotional validation messages
 - Calendar logging
-- Any additional features before or between the three steps
+- Any additional features before or between the core steps
 
 #### Design Features
 - **ChatGPT-style minimal layout** - Floating text blocks, no heavy card containers
-- **Fixed order** - Always Communication Pattern → Reply → Approach Options
+- **Fixed order** - Always: Communication Pattern → Suggested Reply → Approach Options
 - **Fast and calm** - Minimal steps, quick to action
 - **Unbiased** - Neutral observations without judgment
-- **Dark background** (#050505)
-- **SF Pro Display font** throughout
+- **Dark background** (#050505 → #0A0A0C)
+- **Typography-focused** - Clean, readable text
 - **Subtle dividers** between sections
 - **User bubbles** - Right-aligned with subtle border
 
