@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
   interpolate,
   Extrapolation,
+  Easing,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -156,14 +157,21 @@ export function DysfunctionalCommunicationCard({
     useState<PersonalImpactAnalysis | null>(null);
 
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(10);
+  const translateY = useSharedValue(4); // Subtle 4px drift
   const expandedHeight = useSharedValue(0);
   const expandedOpacity = useSharedValue(0);
   const contentHeight = useSharedValue(0); // Start minimized
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+    // Gentle fade and drift - no bouncing, no elastic motion
+    opacity.value = withTiming(1, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
+    translateY.value = withTiming(0, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
   }, []);
 
   const handleMinimize = () => {
@@ -242,27 +250,42 @@ export function DysfunctionalCommunicationCard({
         {
           alignSelf: "flex-start",
           width: "100%",
-          marginBottom: 16,
+          marginBottom: 20, // Generous vertical spacing
           paddingRight: 40,
         },
       ]}
     >
-      {/* Floating text style - no card container */}
+      {/* Floating text style with soft color wash */}
       <Pressable onPress={handleMinimize}>
-        <View>
+        <View style={{ position: "relative" }}>
+          {/* Soft violet color wash background (5-8% opacity) for clarity moments */}
+          <LinearGradient
+            colors={["rgba(180, 124, 255, 0.06)", "rgba(180, 124, 255, 0)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              position: "absolute",
+              left: -12,
+              top: -8,
+              right: -12,
+              bottom: -8,
+              borderRadius: 12,
+            }}
+          />
+
           {/* Header row */}
           <View className="flex-row items-center mb-2">
             <Ionicons
               name="chatbubbles-outline"
               size={14}
-              color="#6B7280"
+              color="#8B7AA0"
               style={{ marginRight: 6 }}
             />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: "500",
-                color: "#6B7280",
+                color: "#8B7AA0",
                 letterSpacing: 0.3,
                 textTransform: "uppercase",
               }}
@@ -276,7 +299,7 @@ export function DysfunctionalCommunicationCard({
             <Text
               style={{
                 fontSize: 14,
-                color: "#6B7280",
+                color: "#9CA3AF",
                 fontStyle: "italic",
               }}
             >
@@ -286,13 +309,13 @@ export function DysfunctionalCommunicationCard({
 
           {/* Full content */}
           <Animated.View style={contentAnimatedStyle}>
-            {/* Summary text - floating paragraph style */}
+            {/* Summary text - soft off-white floating text */}
             <Text
               style={{
                 fontSize: 15,
-                lineHeight: 23,
-                color: "#E5E7EB",
-                letterSpacing: 0.1,
+                lineHeight: 24,
+                color: "#EDEDED",
+                letterSpacing: 0.15,
               }}
             >
               {summary}

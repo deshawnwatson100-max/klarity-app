@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 
 interface NeedDifferentApproachCardProps {
   onSelectApproach: (approach: "more-direct" | "more-gentle" | "more-neutral" | "add-context") => void;
@@ -11,6 +16,25 @@ export function NeedDifferentApproachCard({
   onSelectApproach,
 }: NeedDifferentApproachCardProps) {
   const [selectedApproach, setSelectedApproach] = useState<string | null>(null);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(4); // Subtle 4px drift
+
+  useEffect(() => {
+    // Gentle fade and drift - no bouncing
+    opacity.value = withTiming(1, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
+    translateY.value = withTiming(0, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const approaches = [
     {
@@ -42,14 +66,16 @@ export function NeedDifferentApproachCard({
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(400).springify()}
-      style={{ marginBottom: 16 }}
+      style={[
+        { marginBottom: 20 }, // Generous vertical spacing
+        animatedStyle,
+      ]}
     >
-      {/* Simple text prompt */}
+      {/* Simple text prompt - warm gray */}
       <Text
         style={{
           fontSize: 14,
-          color: "#6B7280",
+          color: "#9CA3AF",
           marginBottom: 12,
         }}
       >
@@ -73,20 +99,20 @@ export function NeedDifferentApproachCard({
                 borderRadius: 20,
                 backgroundColor: isSelected ? "#1F1F22" : "transparent",
                 borderWidth: 1,
-                borderColor: isSelected ? "#4B5563" : "#374151",
+                borderColor: isSelected ? "#5BA89A" : "#374151",
                 opacity: pressed ? 0.7 : 1,
               })}
             >
               <Ionicons
                 name={approach.icon}
                 size={14}
-                color={isSelected ? "#E5E7EB" : "#6B7280"}
+                color={isSelected ? "#7DD3C0" : "#6B7280"}
               />
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: "500",
-                  color: isSelected ? "#E5E7EB" : "#9CA3AF",
+                  color: isSelected ? "#EDEDED" : "#9CA3AF",
                 }}
               >
                 {approach.label}

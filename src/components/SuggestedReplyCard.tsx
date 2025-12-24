@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   interpolate,
   Extrapolation,
+  Easing,
 } from "react-native-reanimated";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
@@ -70,21 +71,34 @@ function ReplyItem({
     : reply.text;
 
   return (
-    <View style={{ marginBottom: 12 }}>
+    <View style={{ marginBottom: 14 }}>
       {/* Minimized state - tappable to expand */}
       {isMinimized ? (
         <Pressable onPress={onToggleMinimize}>
           <View
             style={{
               paddingLeft: 12,
-              borderLeftWidth: 2,
-              borderLeftColor: "#374151",
+              position: "relative",
             }}
           >
+            {/* Subtle teal left edge glow */}
+            <LinearGradient
+              colors={["rgba(125, 211, 192, 0.15)", "rgba(125, 211, 192, 0)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                borderRadius: 2,
+              }}
+            />
             <Text
               style={{
                 fontSize: 14,
-                color: "#6B7280",
+                color: "#9CA3AF",
                 fontStyle: "italic",
               }}
             >
@@ -93,7 +107,7 @@ function ReplyItem({
             <Text
               style={{
                 fontSize: 12,
-                color: "#4B5563",
+                color: "#6B7280",
                 marginTop: 4,
               }}
             >
@@ -103,21 +117,34 @@ function ReplyItem({
         </Pressable>
       ) : (
         <>
-          {/* Reply text as clean floating paragraph */}
+          {/* Reply text as clean floating paragraph with teal glow */}
           <Pressable onPress={onToggleMinimize}>
             <View
               style={{
                 paddingLeft: 12,
-                borderLeftWidth: 2,
-                borderLeftColor: "#374151",
+                position: "relative",
               }}
             >
+              {/* Soft teal gradient left edge accent */}
+              <LinearGradient
+                colors={["rgba(125, 211, 192, 0.2)", "rgba(125, 211, 192, 0)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  borderRadius: 2,
+                }}
+              />
               <Text
                 style={{
                   fontSize: 15,
-                  lineHeight: 23,
-                  color: "#E5E7EB",
-                  letterSpacing: 0.1,
+                  lineHeight: 24,
+                  color: "#EDEDED", // Soft off-white
+                  letterSpacing: 0.15,
                 }}
               >
                 {reply.text}
@@ -235,14 +262,21 @@ export function SuggestedReplyCard({
   onGenerateDifferent,
 }: SuggestedReplyCardProps) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(10);
+  const translateY = useSharedValue(4); // Subtle 4px drift
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [minimizedReplies, setMinimizedReplies] = useState<Set<string>>(new Set());
   const prevRepliesLengthRef = useRef(replies.length);
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+    // Gentle fade and drift - no bouncing, no elastic motion
+    opacity.value = withTiming(1, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
+    translateY.value = withTiming(0, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
   }, []);
 
   // Auto-minimize older replies when new ones are added
@@ -291,24 +325,40 @@ export function SuggestedReplyCard({
         {
           alignSelf: "flex-start",
           width: "100%",
-          marginBottom: 16,
+          marginBottom: 20, // Generous vertical spacing
+          position: "relative",
         },
         animatedStyle,
       ]}
     >
-      {/* Section header */}
+      {/* Soft teal color wash background (5-8% opacity) */}
+      <LinearGradient
+        colors={["rgba(125, 211, 192, 0.05)", "rgba(125, 211, 192, 0)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          position: "absolute",
+          left: -12,
+          top: -8,
+          right: -12,
+          bottom: -8,
+          borderRadius: 12,
+        }}
+      />
+
+      {/* Section header with teal accent */}
       <View className="flex-row items-center mb-3">
         <Ionicons
           name="chatbubble-ellipses-outline"
           size={14}
-          color="#6B7280"
+          color="#5BA89A"
           style={{ marginRight: 6 }}
         />
         <Text
           style={{
             fontSize: 12,
             fontWeight: "500",
-            color: "#6B7280",
+            color: "#5BA89A",
             letterSpacing: 0.3,
             textTransform: "uppercase",
           }}

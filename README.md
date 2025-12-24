@@ -199,30 +199,42 @@ This simplified flow intentionally excludes:
 - **Unbiased** - Neutral observations without judgment
 - **Dark background** (#050505 → #0A0A0C)
 - **Typography-focused** - Clean, readable text
-- **Subtle dividers** between sections
-- **User bubbles** - Right-aligned with subtle border
+- **Generous vertical spacing** - Reduces overwhelm between messages
+- **User messages** - Warmer white text with faint shadow for separation
+
+#### Engaging Visual Style
+The chat loop uses an emotionally engaging, human, and visually warm design:
+
+**Color System (Controlled, Purposeful):**
+- **Assistant messages:** Soft off-white text (#EDEDED) with subtle gradient left-edge glow
+- **Gradient colors rotate:** Calm teal (#7DD3C0), Soft violet (#B47CFF), Muted lime
+- **Gradients are low-opacity** (5-8%) and never distracting
+- **User messages:** Warmer white (#F5F5F4) with faint shadow, no glow
+- **Insight/clarity moments:** Soft color wash behind text (violet for reflection, teal for calm)
+
+**Section Color Accents:**
+- **Communication Pattern:** Soft violet color wash background, violet header accent (#8B7AA0)
+- **Suggested Reply:** Soft teal color wash background, teal header accent (#5BA89A), teal left-edge glow
+- **Different Approach:** Teal accent on selected pills (#7DD3C0)
 
 #### Motion & Interaction
-- All bubbles fade in with gentle spring animations
+- **Gentle upward drift:** Messages animate with subtle 4px drift (no bouncing, no elastic)
+- **Soft opacity fade:** 350ms duration with quad easing
+- **Transitions feel:** Quiet, intentional, human
 - Typing indicator pulses at 1.5s rhythm
-- Button taps shrink → glow → return
-- Cards slightly lift on hover and tap
+- Button taps use subtle opacity change (0.7)
 - Auto-scroll follows conversation naturally
 - Swipe right to return to input screen
-- **NEW: Focused Chat Area Transitions** - Only the chat content area animates during navigation:
+- **Focused Chat Area Transitions** - Only the chat content area animates during navigation:
   - Header, input bar, and background remain static and persistent
   - Chat content slides vertically with subtle fade (iOS-native easing)
   - No full-screen page swipe or hard cuts
   - Duration: 250ms with ease-in-out cubic bezier
   - Creates calm, lightweight transitions that reinforce Klarity as a stable, grounding environment
-  - CalendarScreen and ChatScreen always animate on focus (they are never the initial screen)
-  - InputScreen skips animation only on initial app load, animates on subsequent visits
-- **NEW: Bottom Elements Animation** - Feature buttons and input bar animate during screen transitions:
+- **Bottom Elements Animation** - Feature buttons and input bar animate during screen transitions:
   - Consistent animation timing with content area (250ms duration)
   - Slide up from below on screen focus (20px translate)
   - Slide down on exit for natural departure effect (15px translate)
-  - Same iOS-native cubic bezier easing for cohesive feel
-  - Creates polished, unified transition experience
 
 ### Screen 3: Analysis Screen 📊 (Legacy - Replaced by Inline Flow)
 **Note:** This screen is now replaced by the inline chatloop experience. The analysis now appears naturally within the chat conversation instead of as a separate screen.

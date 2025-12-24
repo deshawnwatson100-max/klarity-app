@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
 import { View, Text } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
+  Easing,
 } from "react-native-reanimated";
 
 interface MessageBubbleProps {
@@ -18,11 +19,18 @@ interface MessageBubbleProps {
 export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(10);
+  const translateY = useSharedValue(4); // Subtle 4px drift
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-    translateY.value = withSpring(0, { damping: 15 });
+    // Gentle fade and drift - no bouncing, no elastic motion
+    opacity.value = withTiming(1, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
+    translateY.value = withTiming(0, {
+      duration: 350,
+      easing: Easing.out(Easing.quad),
+    });
   }, []);
 
   useEffect(() => {
@@ -38,12 +46,12 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
 
   const hasText = content && content !== "[Image]";
 
-  // User messages
+  // User messages - warmer white with faint shadow
   if (isUser) {
     return (
       <Animated.View
         style={animatedStyle}
-        className="mb-4 items-end"
+        className="mb-5 items-end" // Generous vertical spacing
       >
         <View style={{ maxWidth: "85%" }}>
           {/* Image floats freely - no container */}
@@ -54,7 +62,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
                 width: "100%",
                 aspectRatio: 1320 / 2868,
                 borderRadius: 16,
-                marginBottom: hasText ? 8 : 0,
+                marginBottom: hasText ? 10 : 0,
               }}
               contentFit="contain"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -62,19 +70,23 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
             />
           )}
 
-          {/* Text gets a subtle bubble */}
+          {/* Soft text block with faint shadow */}
           {hasText && (
             <View
-              className="rounded-2xl px-4 py-3"
               style={{
-                backgroundColor: "#1A1A1C",
-                borderWidth: 1,
-                borderColor: "#374151",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
               }}
             >
               <Text
-                className="text-base leading-6"
-                style={{ color: "#F9FAFB" }}
+                style={{
+                  fontSize: 15,
+                  lineHeight: 24,
+                  color: "#F5F5F4", // Warmer white
+                  letterSpacing: 0.2,
+                }}
               >
                 {content}
               </Text>
@@ -85,11 +97,11 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
     );
   }
 
-  // Assistant messages - clean floating text (no bubble)
+  // Assistant messages - soft off-white with subtle gradient accent
   return (
     <Animated.View
       style={animatedStyle}
-      className="mb-4 items-start"
+      className="mb-5 items-start" // Generous vertical spacing
     >
       <View style={{ maxWidth: "90%", paddingRight: 20 }}>
         {/* Image floats freely */}
@@ -100,7 +112,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
               width: "100%",
               aspectRatio: 1320 / 2868,
               borderRadius: 16,
-              marginBottom: hasText ? 8 : 0,
+              marginBottom: hasText ? 10 : 0,
             }}
             contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -108,18 +120,35 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           />
         )}
 
-        {/* Text floats freely */}
+        {/* Floating text with subtle left-edge glow */}
         {hasText && (
-          <Text
-            style={{
-              fontSize: 15,
-              lineHeight: 23,
-              color: "#E5E7EB",
-              letterSpacing: 0.1,
-            }}
-          >
-            {content}
-          </Text>
+          <View style={{ position: "relative" }}>
+            {/* Subtle gradient left edge accent */}
+            <LinearGradient
+              colors={["rgba(125, 211, 192, 0.12)", "rgba(125, 211, 192, 0)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                borderRadius: 2,
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 15,
+                lineHeight: 24,
+                color: "#EDEDED", // Soft off-white
+                letterSpacing: 0.15,
+                paddingLeft: 12,
+              }}
+            >
+              {content}
+            </Text>
+          </View>
         )}
       </View>
     </Animated.View>
