@@ -12,6 +12,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from "react-native-reanimated";
+import { KlarityOrb } from "./KlarityOrb";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -19,19 +20,17 @@ interface SplashScreenProps {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Orb sizes
-const ORB_SIZE_INITIAL = 48; // Starting size - small-medium, not oversized
-const ORB_SIZE_HEADER = 40; // Final size in header
-const GLOW_SIZE_INITIAL = ORB_SIZE_INITIAL * 1.4;
-const GAP = 10; // gap between orb and text
-
 // Animation timing
-const FADE_IN_DURATION = 400; // initial fade in
-const INITIAL_HOLD = 600; // ms before slide starts
-const SLIDE_DURATION = 450; // orb slides left to right
-const ASCEND_DURATION = 550; // orb floats up to header
-const PULSE_DURATION = 250; // final pulse glow
-const SCREEN_FADE_DURATION = 350; // splash fades out
+const FADE_IN_DURATION = 400;
+const INITIAL_HOLD = 600;
+const SLIDE_DURATION = 450;
+const ASCEND_DURATION = 550;
+const PULSE_DURATION = 250;
+const SCREEN_FADE_DURATION = 350;
+
+// Orb wrapper size (matches KlarityOrb small: glowRadius = 40)
+const ORB_WRAPPER_SIZE = 40;
+const ORB_SIZE_HEADER = 40; // medium orb in header
 
 /**
  * SplashScreen Component - Klarity AI
@@ -47,11 +46,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const insets = useSafeAreaInsets();
 
   // Calculate final orb position (header center)
-  const HEADER_CENTER_Y = insets.top + 28; // paddingTop + half of header height
+  const HEADER_CENTER_Y = insets.top + 28;
   const SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;
 
   // Animation values
-  const orbOpacity = useSharedValue(0);
+  const contentOpacity = useSharedValue(0);
   const textOpacity = useSharedValue(0);
   const orbTranslateX = useSharedValue(0);
   const orbTranslateY = useSharedValue(0);
@@ -60,7 +59,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const screenOpacity = useSharedValue(1);
 
   // Layout constants
-  const TEXT_WIDTH = 90; // "Klarity" text approximate width
+  const TEXT_WIDTH = 70;
+  const GAP = 8;
 
   const triggerHaptic = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -72,7 +72,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   useEffect(() => {
     // Phase 1: Fade in orb and text together
-    orbOpacity.value = withTiming(1, {
+    contentOpacity.value = withTiming(1, {
       duration: FADE_IN_DURATION,
       easing: Easing.out(Easing.ease),
     });
@@ -87,10 +87,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
     // Phase 2: After hold, orb slides right over text
     const slideStartTime = FADE_IN_DURATION + INITIAL_HOLD;
-
-    // Calculate slide distance: orb needs to move past the text
-    // Orb center to text center distance + half text width to clear it
-    const slideDistance = GAP + GLOW_SIZE_INITIAL / 2 + TEXT_WIDTH;
+    const slideDistance = GAP + ORB_WRAPPER_SIZE / 2 + TEXT_WIDTH;
 
     orbTranslateX.value = withDelay(
       slideStartTime,
@@ -112,9 +109,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     // Phase 3: Orb ascends to header
     const ascendStartTime = slideStartTime + SLIDE_DURATION;
     const targetY = HEADER_CENTER_Y - SCREEN_CENTER_Y;
-    const targetScale = ORB_SIZE_HEADER / ORB_SIZE_INITIAL;
 
-    // Move to center X and up to header Y
     orbTranslateX.value = withDelay(
       ascendStartTime,
       withTiming(0, {
@@ -131,10 +126,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       })
     );
 
-    // Shrink to header size
+    // Scale up slightly to match header orb (small -> medium)
     orbScale.value = withDelay(
       ascendStartTime,
-      withTiming(targetScale, {
+      withTiming(1.25, {
         duration: ASCEND_DURATION,
         easing: Easing.inOut(Easing.cubic),
       })
@@ -147,7 +142,6 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       triggerHaptic();
     }, arrivalTime);
 
-    // Brief pulse glow
     pulseOpacity.value = withDelay(
       arrivalTime,
       withSequence(
@@ -172,7 +166,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   // Animated styles
   const orbContainerStyle = useAnimatedStyle(() => ({
-    opacity: orbOpacity.value,
+    opacity: contentOpacity.value,
     transform: [
       { translateX: orbTranslateX.value },
       { translateY: orbTranslateY.value },
@@ -190,7 +184,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseOpacity.value,
-    transform: [{ scale: 1.4 }],
+    transform: [{ scale: 1.5 }],
   }));
 
   return (
@@ -208,7 +202,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       <View style={styles.centerContent}>
         {/* Logo row: Orb on left, Text on right */}
         <View style={styles.logoRow}>
-          {/* Animated Orb */}
+          {/* Animated Orb using KlarityOrb component */}
           <Animated.View style={[styles.orbWrapper, orbContainerStyle]}>
             {/* Pulse glow (final placement) */}
             <Animated.View style={[styles.pulseGlow, pulseStyle]}>
@@ -224,45 +218,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               />
             </Animated.View>
 
-            {/* Subtle ambient glow */}
-            <View style={styles.glowOuter}>
-              <LinearGradient
-                colors={[
-                  "rgba(125, 211, 192, 0.1)",
-                  "rgba(184, 163, 232, 0.06)",
-                  "transparent",
-                ]}
-                style={styles.glowGradient}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 1 }}
-              />
-            </View>
-
-            {/* Main orb */}
-            <View style={styles.orb}>
-              <LinearGradient
-                colors={[
-                  "#7DD3C0", // Teal
-                  "#9ECFB8", // Soft mint
-                  "#B8A3E8", // Violet
-                  "#E4B8C8", // Rose
-                  "#7DD3C0", // Teal loop
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                locations={[0, 0.25, 0.5, 0.75, 1]}
-                style={styles.orbGradient}
-              />
-
-              {/* Glass overlay */}
-              <View style={styles.glassOverlay} />
-
-              {/* Highlight */}
-              <View style={styles.highlight} />
-            </View>
+            <KlarityOrb size="small" />
           </Animated.View>
 
-          {/* Klarity text */}
+          {/* Klarity text - matching SlideOverDrawer styling */}
           <Animated.View style={[styles.textWrapper, textStyle]}>
             <Text style={styles.appName}>Klarity</Text>
           </Animated.View>
@@ -275,7 +234,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050608", // Match InputScreen
+    backgroundColor: "#050608",
   },
   centerContent: {
     flex: 1,
@@ -289,74 +248,26 @@ const styles = StyleSheet.create({
   },
   textWrapper: {
     justifyContent: "center",
+    marginLeft: 8,
   },
   orbWrapper: {
-    width: GLOW_SIZE_INITIAL,
-    height: GLOW_SIZE_INITIAL,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: GAP,
   },
   pulseGlow: {
     position: "absolute",
-    width: GLOW_SIZE_INITIAL * 1.6,
-    height: GLOW_SIZE_INITIAL * 1.6,
-    borderRadius: (GLOW_SIZE_INITIAL * 1.6) / 2,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   pulseGradient: {
     width: "100%",
     height: "100%",
-    borderRadius: (GLOW_SIZE_INITIAL * 1.6) / 2,
-  },
-  glowOuter: {
-    position: "absolute",
-    width: GLOW_SIZE_INITIAL,
-    height: GLOW_SIZE_INITIAL,
-    borderRadius: GLOW_SIZE_INITIAL / 2,
-  },
-  glowGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: GLOW_SIZE_INITIAL / 2,
-  },
-  orb: {
-    width: ORB_SIZE_INITIAL,
-    height: ORB_SIZE_INITIAL,
-    borderRadius: ORB_SIZE_INITIAL / 2,
-    overflow: "hidden",
-    shadowColor: "#7DD3C0",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  orbGradient: {
-    width: "100%",
-    height: "100%",
-  },
-  glassOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: ORB_SIZE_INITIAL / 2,
-  },
-  highlight: {
-    position: "absolute",
-    top: ORB_SIZE_INITIAL * 0.14,
-    left: ORB_SIZE_INITIAL * 0.2,
-    width: ORB_SIZE_INITIAL * 0.32,
-    height: ORB_SIZE_INITIAL * 0.18,
-    backgroundColor: "rgba(255, 255, 255, 0.28)",
-    borderRadius: ORB_SIZE_INITIAL,
-    transform: [{ rotate: "-40deg" }],
+    borderRadius: 40,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: "300",
-    color: "#F8F8FA", // Soft white
-    letterSpacing: 1.5,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#F9FAFB",
   },
 });
