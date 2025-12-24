@@ -119,6 +119,23 @@ When you send a message (text or image) about a relationship situation, Klarity 
    - Example: "This conversation shows a pattern where one person's needs may not be fully acknowledged."
    - Optional pattern labels (e.g., "Deflection", "Dismissiveness")
    - Clean, minimal card design
+   - **NEW: "How this affects me" Expansion Button**
+     - Subtle grey button with soft glow on hover/tap
+     - Expands the card in-place (no screen transition)
+     - Shows Personal Impact Breakdown across four dimensions:
+       - **Emotionally** - confusion, self-doubt, anxiety, emotional fatigue
+       - **Mentally** - overthinking, second-guessing, feeling drained
+       - **Relationally** - imbalance, loss of trust, walking on eggshells
+       - **Behaviorally** - people-pleasing, withdrawing, over-explaining
+     - **Harm Impact Score (0-100)** with animated progress bar
+       - Color-coded: Green (low), Yellow (medium), Red (high)
+       - Contextual explanation of what the score means
+     - **Reassurance Line** - Grounding validation like "Your reaction makes sense."
+     - **Agency Reminder** - "This just gives you clarity — what you do with it is completely up to you."
+     - Tone: Thoughtful friend, not therapist or authority
+     - Uses natural language with contractions
+     - Never labels anyone as "toxic" directly
+     - Smooth expand/collapse animation
 
 3. **Suggested Reply Message Bubble** (SECOND)
    - Appears immediately after the dysfunctional communication card
@@ -759,6 +776,9 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
 ✅ **Timeline Screen** - Unified timeline of communication insights across all conversations with person filtering
 ✅ **Timeline Management** - Clear history and pause learning options per person
+✅ **"How this affects me" Card Expansion** - Personal impact analysis with emotional/mental/relational/behavioral breakdown
+✅ **Harm Impact Score** - Animated 0-100 score with color-coded progress bar and contextual explanation
+✅ **Humanized AI Agent** - Thoughtful friend tone with natural language, contractions, and agency-focused framing
 
 ## Future Enhancements
 

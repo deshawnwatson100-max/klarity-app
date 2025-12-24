@@ -1219,6 +1219,121 @@ ${action === "shorten" ? "Shorten" : "Lengthen"} this reply while keeping the sa
 }
 
 /**
+ * Personal Impact Analysis types
+ */
+export interface PersonalImpactAnalysis {
+  emotionalImpact: string;
+  mentalImpact: string;
+  relationalImpact: string;
+  behavioralImpact: string;
+  harmScore: number; // 0-100
+  scoreExplanation: string;
+  reassuranceLine: string;
+}
+
+/**
+ * Generate personal impact analysis for "How this affects me" expansion
+ * Provides humanized, relatable insights about how the communication pattern may affect the user
+ */
+export async function generatePersonalImpactAnalysis(
+  summary: string,
+  patterns?: string[]
+): Promise<PersonalImpactAnalysis> {
+  const systemPrompt = `You are an emotionally intelligent AI that sounds like a thoughtful friend, not a therapist or authority.
+
+Analyze how this communication pattern may affect someone personally. Provide humanized, relatable insights.
+
+TONE RULES - CRITICAL:
+- Use natural language with contractions ("you're," "that's," "it can feel like...")
+- Acknowledge uncertainty
+- Validate without diagnosing
+- Never use clinical terms
+- Never make moral judgments
+- Never use commands ("you should")
+- Avoid overly formal empathy scripts
+
+Example of GOOD voice:
+- "Stuff like this can really mess with your head over time — especially when you're trying to be reasonable and still feel confused."
+
+Example of BAD voice (don't use):
+- "This communication pattern can result in emotional distress."
+
+RESPONSE FORMAT - provide JSON only:
+{
+  "emotionalImpact": "1-2 short sentences about emotional effects (confusion, self-doubt, anxiety, emotional fatigue). Neutral, validating, never accusatory.",
+  "mentalImpact": "1-2 short sentences about mental effects (overthinking, second-guessing, feeling mentally drained). Relatable language.",
+  "relationalImpact": "1-2 short sentences about relationship effects (imbalance, loss of trust, walking on eggshells). Grounded, not absolute.",
+  "behavioralImpact": "1-2 short sentences about behavioral effects (people-pleasing, withdrawing, over-explaining). Human language.",
+  "harmScore": number (0-100, where 0 = no harm, 100 = highly harmful. Reflects potential harm, not certainty. Be honest but not alarmist.),
+  "scoreExplanation": "1 sentence explaining the score contextually. Example: 'This score reflects how this type of communication often affects people over time — not a judgment, just a signal.'",
+  "reassuranceLine": "1 grounding sentence. Examples: 'Your reaction makes sense.' / 'You're not overreacting for noticing this.' / 'It's okay to want clarity here.'"
+}
+
+SAFETY RULES:
+- Never label anyone as "toxic" directly
+- Never imply the user is weak for being affected
+- Always frame as information, not instructions
+- Emphasize user agency`;
+
+  const patternsContext = patterns && patterns.length > 0
+    ? `\nDetected patterns: ${patterns.join(", ")}`
+    : "";
+
+  const userPrompt = `Communication pattern observation: "${summary}"${patternsContext}
+
+Generate a personal impact analysis explaining how this might affect someone. Return valid JSON only.`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      throw new Error("No response from API");
+    }
+
+    const parsed = JSON.parse(responseText);
+
+    // Validate and clamp harm score
+    const harmScore = typeof parsed.harmScore === "number"
+      ? Math.min(100, Math.max(0, Math.round(parsed.harmScore)))
+      : 45;
+
+    return {
+      emotionalImpact: parsed.emotionalImpact || "This kind of exchange can leave you feeling unsure about your own reactions — like you're not quite sure if what you felt was valid.",
+      mentalImpact: parsed.mentalImpact || "You might find yourself replaying the conversation, trying to figure out what went wrong or what you could have said differently.",
+      relationalImpact: parsed.relationalImpact || "Over time, patterns like this can make it harder to feel at ease in the relationship — like you're always bracing for the next confusing moment.",
+      behavioralImpact: parsed.behavioralImpact || "You might start adjusting how you express yourself, being extra careful or holding back to avoid another uncomfortable exchange.",
+      harmScore,
+      scoreExplanation: parsed.scoreExplanation || "This score reflects how this type of communication often affects people over time — not a judgment, just a signal.",
+      reassuranceLine: parsed.reassuranceLine || "Your reaction makes sense.",
+    };
+  } catch (error) {
+    console.error("[generatePersonalImpactAnalysis] Error:", error);
+
+    return {
+      emotionalImpact: "This kind of exchange can leave you feeling unsure about your own reactions — like you're not quite sure if what you felt was valid.",
+      mentalImpact: "You might find yourself replaying the conversation, trying to figure out what went wrong or what you could have said differently.",
+      relationalImpact: "Over time, patterns like this can make it harder to feel at ease in the relationship — like you're always bracing for the next confusing moment.",
+      behavioralImpact: "You might start adjusting how you express yourself, being extra careful or holding back to avoid another uncomfortable exchange.",
+      harmScore: 45,
+      scoreExplanation: "This score reflects how this type of communication often affects people over time — not a judgment, just a signal.",
+      reassuranceLine: "Your reaction makes sense.",
+    };
+  }
+}
+
+/**
  * Detect potential boundary concerns in user-submitted text or conversation
  * Returns boundary analysis only if concerns are detected with reasonable confidence
  * Does NOT trigger for normal conflict, healthy disagreement, or neutral miscommunication
