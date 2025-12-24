@@ -248,10 +248,10 @@ export function DysfunctionalCommunicationCard({
       ]}
     >
       {/* Floating text style - no card container */}
-      <View>
-        {/* Header row with minimize */}
-        <View className="flex-row items-center justify-between mb-2">
-          <View className="flex-row items-center">
+      <Pressable onPress={handleMinimize}>
+        <View>
+          {/* Header row */}
+          <View className="flex-row items-center mb-2">
             <Ionicons
               name="chatbubbles-outline"
               size={14}
@@ -271,22 +271,8 @@ export function DysfunctionalCommunicationCard({
             </Text>
           </View>
 
-          <Pressable
-            onPress={handleMinimize}
-            className="active:opacity-60"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={isMinimized ? "add-circle-outline" : "remove-circle-outline"}
-              size={20}
-              color="#4B5563"
-            />
-          </Pressable>
-        </View>
-
-        {/* Minimized state */}
-        {isMinimized && firstPattern && (
-          <Pressable onPress={handleMinimize}>
+          {/* Minimized state */}
+          {isMinimized && firstPattern && (
             <Text
               style={{
                 fontSize: 14,
@@ -296,180 +282,180 @@ export function DysfunctionalCommunicationCard({
             >
               {firstPattern} detected — tap to expand
             </Text>
-          </Pressable>
-        )}
-
-        {/* Full content */}
-        <Animated.View style={contentAnimatedStyle}>
-          {/* Summary text - floating paragraph style */}
-          <Text
-            style={{
-              fontSize: 15,
-              lineHeight: 23,
-              color: "#E5E7EB",
-              letterSpacing: 0.1,
-            }}
-          >
-            {summary}
-          </Text>
-
-          {/* Pattern labels */}
-          {patterns && patterns.length > 0 && (
-            <View className="flex-row flex-wrap gap-2 mt-3">
-              {patterns.map((pattern, index) => (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor: "transparent",
-                    borderRadius: 12,
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderWidth: 1,
-                    borderColor: "#374151",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: "#9CA3AF",
-                      fontWeight: "500",
-                    }}
-                  >
-                    {pattern}
-                  </Text>
-                </View>
-              ))}
-            </View>
           )}
 
-          {/* "How this affects me" link */}
-          <Pressable
-            onPress={handleExpand}
-            style={({ pressed }) => ({
-              marginTop: 12,
-              opacity: pressed ? 0.6 : 1,
-            })}
-          >
-            <View className="flex-row items-center">
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "500",
-                  color: "#6B7280",
-                  letterSpacing: 0.1,
-                }}
-              >
-                {isExpanded ? "Show less" : "How this affects me"}
-              </Text>
-              <Ionicons
-                name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={16}
-                color="#6B7280"
-                style={{ marginLeft: 4 }}
-              />
-            </View>
-          </Pressable>
+          {/* Full content */}
+          <Animated.View style={contentAnimatedStyle}>
+            {/* Summary text - floating paragraph style */}
+            <Text
+              style={{
+                fontSize: 15,
+                lineHeight: 23,
+                color: "#E5E7EB",
+                letterSpacing: 0.1,
+              }}
+            >
+              {summary}
+            </Text>
 
-          {/* Expanded Content */}
-          <Animated.View
-            style={[expandedContainerStyle, { overflow: "hidden" }]}
-          >
-            {isLoading ? (
-              <View className="items-center justify-center py-6">
-                <ActivityIndicator size="small" color="#6B7280" />
+            {/* Pattern labels */}
+            {patterns && patterns.length > 0 && (
+              <View className="flex-row flex-wrap gap-2 mt-3">
+                {patterns.map((pattern, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      backgroundColor: "transparent",
+                      borderRadius: 12,
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderWidth: 1,
+                      borderColor: "#374151",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#9CA3AF",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {pattern}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* "How this affects me" link */}
+            <Pressable
+              onPress={handleExpand}
+              style={({ pressed }) => ({
+                marginTop: 12,
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <View className="flex-row items-center">
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: 14,
+                    fontWeight: "500",
                     color: "#6B7280",
-                    marginTop: 8,
+                    letterSpacing: 0.1,
                   }}
                 >
-                  Analyzing impact...
+                  {isExpanded ? "Show less" : "How this affects me"}
                 </Text>
+                <Ionicons
+                  name={isExpanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color="#6B7280"
+                  style={{ marginLeft: 4 }}
+                />
               </View>
-            ) : (
-              impactAnalysis && (
-                <View>
-                  {/* Subtle divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: "#1F1F22",
-                      marginBottom: 16,
-                    }}
-                  />
+            </Pressable>
 
-                  <ImpactSection
-                    icon="heart-outline"
-                    label="Emotionally"
-                    content={impactAnalysis.emotionalImpact}
-                  />
-
-                  <ImpactSection
-                    icon="bulb-outline"
-                    label="Mentally"
-                    content={impactAnalysis.mentalImpact}
-                  />
-
-                  <ImpactSection
-                    icon="people-outline"
-                    label="Relationally"
-                    content={impactAnalysis.relationalImpact}
-                  />
-
-                  <ImpactSection
-                    icon="body-outline"
-                    label="Behaviorally"
-                    content={impactAnalysis.behavioralImpact}
-                  />
-
-                  <HarmScoreBar
-                    score={impactAnalysis.harmScore}
-                    explanation={impactAnalysis.scoreExplanation}
-                  />
-
-                  {/* Reassurance */}
+            {/* Expanded Content */}
+            <Animated.View
+              style={[expandedContainerStyle, { overflow: "hidden" }]}
+            >
+              {isLoading ? (
+                <View className="items-center justify-center py-6">
+                  <ActivityIndicator size="small" color="#6B7280" />
                   <Text
                     style={{
-                      fontSize: 14,
-                      lineHeight: 20,
-                      color: "#9CA3AF",
+                      fontSize: 13,
+                      color: "#6B7280",
                       marginTop: 8,
-                      paddingLeft: 12,
-                      borderLeftWidth: 2,
-                      borderLeftColor: "#374151",
                     }}
                   >
-                    {impactAnalysis.reassuranceLine}
-                  </Text>
-
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      lineHeight: 17,
-                      color: "#4B5563",
-                      marginTop: 12,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    This just gives you clarity — what you do with it is
-                    completely up to you.
+                    Analyzing impact...
                   </Text>
                 </View>
-              )
-            )}
-          </Animated.View>
-        </Animated.View>
+              ) : (
+                impactAnalysis && (
+                  <View>
+                    {/* Subtle divider */}
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: "#1F1F22",
+                        marginBottom: 16,
+                      }}
+                    />
 
-        {/* Subtle bottom divider */}
-        <View
-          style={{
-            height: 1,
-            backgroundColor: "#1F1F22",
-            marginTop: 16,
-          }}
-        />
-      </View>
+                    <ImpactSection
+                      icon="heart-outline"
+                      label="Emotionally"
+                      content={impactAnalysis.emotionalImpact}
+                    />
+
+                    <ImpactSection
+                      icon="bulb-outline"
+                      label="Mentally"
+                      content={impactAnalysis.mentalImpact}
+                    />
+
+                    <ImpactSection
+                      icon="people-outline"
+                      label="Relationally"
+                      content={impactAnalysis.relationalImpact}
+                    />
+
+                    <ImpactSection
+                      icon="body-outline"
+                      label="Behaviorally"
+                      content={impactAnalysis.behavioralImpact}
+                    />
+
+                    <HarmScoreBar
+                      score={impactAnalysis.harmScore}
+                      explanation={impactAnalysis.scoreExplanation}
+                    />
+
+                    {/* Reassurance */}
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 20,
+                        color: "#9CA3AF",
+                        marginTop: 8,
+                        paddingLeft: 12,
+                        borderLeftWidth: 2,
+                        borderLeftColor: "#374151",
+                      }}
+                    >
+                      {impactAnalysis.reassuranceLine}
+                    </Text>
+
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 17,
+                        color: "#4B5563",
+                        marginTop: 12,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      This just gives you clarity — what you do with it is
+                      completely up to you.
+                    </Text>
+                  </View>
+                )
+              )}
+            </Animated.View>
+          </Animated.View>
+
+          {/* Subtle bottom divider */}
+          <View
+            style={{
+              height: 1,
+              backgroundColor: "#1F1F22",
+              marginTop: 16,
+            }}
+          />
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }
