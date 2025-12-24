@@ -195,10 +195,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <Animated.View style={[styles.container, screenStyle]}>
-      {/* Black background */}
+      {/* Background matching InputScreen */}
       <View style={StyleSheet.absoluteFill}>
         <LinearGradient
-          colors={["#000000", "#050505", "#000000"]}
+          colors={["#050608", "#0A0A0C", "#050608"]}
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -275,7 +275,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#050608", // Match InputScreen
   },
   centerContent: {
     flex: 1,
