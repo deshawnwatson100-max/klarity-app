@@ -36,9 +36,13 @@ export default function App() {
     setAppState("unlocked");
   };
 
-  // Show splash screen
+  // Show splash screen (wrapped in SafeAreaProvider for insets calculation)
   if (appState === "splash") {
-    return <SplashScreen onFinish={handleSplashFinish} />;
+    return (
+      <SafeAreaProvider>
+        <SplashScreen onFinish={handleSplashFinish} />
+      </SafeAreaProvider>
+    );
   }
 
   // Main app

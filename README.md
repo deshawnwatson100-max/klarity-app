@@ -19,19 +19,20 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ## Security Features
 
 ### Splash Screen
-- **Minimal luxury launch experience** with multicolor Klarity orb
-- **Deep charcoal background** (#0A0A0C) for calm, grounded feel
+- **Klarna-inspired premium launch transition** with animated orb journey
+- **Deep charcoal background** (#050608) for calm, grounded feel
 - **Glass-like multicolor orb** with soft internal colors (teal, violet, rose)
-- **Soft ambient glow** - no harsh edges, premium luxury light
-- **"Klarity" text** in soft off-white with medium weight, spaced for calm presence
-- **Synchronized haptic** - single light vibration when orb reaches full opacity
+- **"Klarity" text** in soft off-white, light weight, elegant spacing
 - **Animation sequence:**
-  1. Orb fade-in (600ms, ease-out)
-  2. Haptic at full opacity
-  3. Text reveal with upward motion (400ms, 150ms delay)
-  4. Hold for 500ms
-  5. Smooth crossfade transition to input screen
-- **Emotional intent:** "You are safe here. This is a place for clarity, not chaos."
+  1. Orb and "Klarity" text fade in centered together (400ms)
+  2. Hold for 600ms
+  3. Orb slides right, passing over text (text fades out softly)
+  4. Orb ascends to header position with smooth ease-in-out curve
+  5. Orb shrinks slightly to match header size
+  6. Light haptic + subtle pulse glow on final placement
+  7. Input screen fades in beneath the orb
+- **Style notes:** No bounce, no dramatic scaling, no harsh highlights
+- **Emotional intent:** Motion feels intentional, grounded, and emotionally safe
 
 ### PIN Authentication
 - **First-time PIN setup** - Create 4-digit PIN on first launch
