@@ -36,31 +36,25 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
     transform: [{ translateY: translateY.value }],
   }));
 
-  // User messages get a subtle rounded bubble
+  const hasText = content && content !== "[Image]";
+
+  // User messages
   if (isUser) {
     return (
       <Animated.View
         style={animatedStyle}
         className="mb-4 items-end"
       >
-        <View
-          className={`${imageUrl ? "max-w-[85%]" : "max-w-[80%]"} rounded-2xl ${
-            imageUrl ? "p-2" : "px-4 py-3"
-          }`}
-          style={{
-            backgroundColor: "#1A1A1C",
-            borderWidth: 1,
-            borderColor: "#374151",
-          }}
-        >
+        <View style={{ maxWidth: "85%" }}>
+          {/* Image floats freely - no container */}
           {imageUrl && (
             <Image
               source={imageUrl}
               style={{
                 width: "100%",
                 aspectRatio: 1320 / 2868,
-                borderRadius: 12,
-                marginBottom: content && content !== "[Image]" ? 8 : 0,
+                borderRadius: 16,
+                marginBottom: hasText ? 8 : 0,
               }}
               contentFit="contain"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -68,8 +62,16 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
             />
           )}
 
-          {content && content !== "[Image]" && (
-            <View className={imageUrl ? "px-2 pb-1" : ""}>
+          {/* Text gets a subtle bubble */}
+          {hasText && (
+            <View
+              className="rounded-2xl px-4 py-3"
+              style={{
+                backgroundColor: "#1A1A1C",
+                borderWidth: 1,
+                borderColor: "#374151",
+              }}
+            >
               <Text
                 className="text-base leading-6"
                 style={{ color: "#F9FAFB" }}
@@ -83,21 +85,22 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
     );
   }
 
-  // Assistant messages are clean floating text (no bubble)
+  // Assistant messages - clean floating text (no bubble)
   return (
     <Animated.View
       style={animatedStyle}
       className="mb-4 items-start"
     >
       <View style={{ maxWidth: "90%", paddingRight: 20 }}>
+        {/* Image floats freely */}
         {imageUrl && (
           <Image
             source={imageUrl}
             style={{
               width: "100%",
               aspectRatio: 1320 / 2868,
-              borderRadius: 12,
-              marginBottom: content && content !== "[Image]" ? 8 : 0,
+              borderRadius: 16,
+              marginBottom: hasText ? 8 : 0,
             }}
             contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -105,7 +108,8 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           />
         )}
 
-        {content && content !== "[Image]" && (
+        {/* Text floats freely */}
+        {hasText && (
           <Text
             style={{
               fontSize: 15,
