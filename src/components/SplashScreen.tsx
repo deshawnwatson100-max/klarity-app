@@ -1,8 +1,7 @@
 import React, { useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,18 +16,14 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
 // Smooth easing curves
 const EASE_OUT_SMOOTH = Easing.bezier(0.25, 0.46, 0.45, 0.94);
 const EASE_IN_OUT_SMOOTH = Easing.bezier(0.42, 0, 0.58, 1);
-const EASE_OUT_EXPO = Easing.bezier(0.19, 1, 0.22, 1);
 
 // Animation timing - slower for smoothness
 const FADE_IN_DURATION = 600;
 const INITIAL_HOLD = 800;
 const SLIDE_DURATION = 700;
-const ASCEND_DURATION = 900;
 const SCREEN_FADE_DURATION = 500;
 
 // Orb wrapper size (matches KlarityOrb small: glowRadius = 40)
@@ -45,17 +40,9 @@ const ORB_WRAPPER_SIZE = 40;
  * 5. Splash fades out, input screen appears beneath
  */
 export function SplashScreen({ onFinish }: SplashScreenProps) {
-  const insets = useSafeAreaInsets();
-
-  // Calculate final orb position (header center)
-  const HEADER_CENTER_Y = insets.top + 28;
-  const SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;
-
   // Animation values
   const contentOpacity = useSharedValue(0);
   const orbTranslateX = useSharedValue(0);
-  const orbTranslateY = useSharedValue(0);
-  const orbScale = useSharedValue(1);
   const screenOpacity = useSharedValue(1);
 
   // Layout constants
@@ -89,45 +76,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       })
     );
 
-    // Phase 3: Orb ascends smoothly to header
-    const ascendStartTime = slideStartTime + SLIDE_DURATION;
-    const targetY = HEADER_CENTER_Y - SCREEN_CENTER_Y;
-
-    // Smooth diagonal movement back to center and up
-    orbTranslateX.value = withDelay(
-      ascendStartTime,
-      withTiming(0, {
-        duration: ASCEND_DURATION,
-        easing: EASE_OUT_EXPO,
-      })
-    );
-
-    orbTranslateY.value = withDelay(
-      ascendStartTime,
-      withTiming(targetY, {
-        duration: ASCEND_DURATION,
-        easing: EASE_OUT_EXPO,
-      })
-    );
-
-    // Scale up smoothly to match header orb (small -> medium)
-    orbScale.value = withDelay(
-      ascendStartTime,
-      withTiming(1.25, {
-        duration: ASCEND_DURATION,
-        easing: EASE_OUT_EXPO,
-      })
-    );
-
-    // Phase 4: Haptic on arrival
-    const arrivalTime = ascendStartTime + ASCEND_DURATION;
+    // Phase 3: Haptic after slide completes
+    const arrivalTime = slideStartTime + SLIDE_DURATION;
 
     setTimeout(() => {
       triggerHaptic();
     }, arrivalTime);
 
-    // Phase 5: Smooth fade out splash
-    const fadeOutTime = arrivalTime + 100;
+    // Phase 4: Smooth fade out splash
+    const fadeOutTime = arrivalTime + 200;
 
     screenOpacity.value = withDelay(
       fadeOutTime,
@@ -145,8 +102,6 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     opacity: contentOpacity.value,
     transform: [
       { translateX: orbTranslateX.value },
-      { translateY: orbTranslateY.value },
-      { scale: orbScale.value },
     ],
   }));
 
