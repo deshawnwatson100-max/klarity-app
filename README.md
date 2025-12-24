@@ -104,6 +104,13 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 ### Screen 2: Chat Screen with Simplified Clarity Analysis 💬✨
 **STREAMLINED CHAT FLOW** - Fast, calm, and unbiased analysis with a fixed three-step order.
 
+**ChatGPT-Style Minimal Layout:**
+- AI responses appear as clean, floating text blocks on the dark background
+- No large card containers for AI messages
+- User messages remain in subtle rounded bubbles (right-aligned)
+- Subtle dividers and spacing separate sections
+- Clean, typography-focused design
+
 #### Experience Flow
 When you send a message (text or image) about a relationship situation, Klarity responds with a clean, fixed-order flow:
 
@@ -112,16 +119,16 @@ When you send a message (text or image) about a relationship situation, Klarity 
    - 1.5 second natural pause
    - **Automatically removed when response is generated**
 
-2. **Dysfunctional Communication Card** (FIRST)
-   - Appears first after analysis
+2. **Communication Pattern** (FIRST)
+   - Floating text block with section header
    - Brief, neutral, emotionally intelligent framing
    - No advice, no directives
    - Example: "This conversation shows a pattern where one person's needs may not be fully acknowledged."
-   - Optional pattern labels (e.g., "Deflection", "Dismissiveness")
-   - Clean, minimal card design
-   - **NEW: "How this affects me" Expansion Button**
-     - Subtle grey button with soft glow on hover/tap
-     - Expands the card in-place (no screen transition)
+   - Optional pattern labels as subtle outlined pills
+   - Minimize button to collapse content
+   - **"How this affects me" Expansion**
+     - Inline text link (not a button)
+     - Expands in-place with smooth animation
      - Shows Personal Impact Breakdown across four dimensions:
        - **Emotionally** - confusion, self-doubt, anxiety, emotional fatigue
        - **Mentally** - overthinking, second-guessing, feeling drained
@@ -133,30 +140,24 @@ When you send a message (text or image) about a relationship situation, Klarity 
      - **Reassurance Line** - Grounding validation like "Your reaction makes sense."
      - **Agency Reminder** - "This just gives you clarity — what you do with it is completely up to you."
      - Tone: Thoughtful friend, not therapist or authority
-     - Uses natural language with contractions
-     - Never labels anyone as "toxic" directly
-     - Smooth expand/collapse animation
+   - Subtle divider at bottom
 
-3. **Suggested Reply Message Bubble** (SECOND)
-   - Appears immediately after the dysfunctional communication card
+3. **Suggested Reply** (SECOND)
+   - Floating text with left border accent
    - Single balanced reply suggestion
-   - Includes guidance note explaining the approach
-   - **Inline modification options:**
-     - Shorten Reply - Make response more concise
-     - Lengthen Reply - Add more detail
-   - "Use this reply" button - Inserts text into input bar
-   - "Use different reply" button - Generates alternative suggestion
+   - Includes guidance note with bulb icon
+   - Tap reply text to show modification options (Shorter/Longer)
+   - Minimal pill buttons: "Use this reply" and "Different reply"
+   - Subtle divider at bottom
 
-4. **"Need a Different Approach?" Card** (THIRD)
-   - Appears only after the suggested reply
-   - Offers supportive alternatives without judgment
-   - Four options in a 2x2 grid:
-     - **More Direct** - Say it clearly
-     - **More Gentle** - Soften the tone
-     - **More Neutral** - Keep it balanced
-     - **Add Context** - Share more details
-   - Selecting a tone generates a new modulated reply
-   - Add Context opens inline input for additional information
+4. **Different Approach Options** (THIRD)
+   - Simple text prompt: "Need a different approach?"
+   - Inline horizontal pill options (wrap on small screens):
+     - **More direct** - Say it clearly
+     - **More gentle** - Soften the tone
+     - **More neutral** - Keep it balanced
+     - **Add context** - Share more details
+   - Subtle divider at bottom
 
 #### What's NOT in this flow
 This simplified flow intentionally excludes:
@@ -170,13 +171,14 @@ This simplified flow intentionally excludes:
 - Any additional features before or between the three steps
 
 #### Design Features
-- **Fixed order** - Always Dysfunctional Card → Reply → Approach Card
+- **ChatGPT-style minimal layout** - Floating text blocks, no heavy card containers
+- **Fixed order** - Always Communication Pattern → Reply → Approach Options
 - **Fast and calm** - Minimal steps, quick to action
 - **Unbiased** - Neutral observations without judgment
-- **Dark luxury background** (#050505)
+- **Dark background** (#050505)
 - **SF Pro Display font** throughout
-- **Rounded corners everywhere**
-- **iOS-style message threading**
+- **Subtle dividers** between sections
+- **User bubbles** - Right-aligned with subtle border
 
 #### Motion & Interaction
 - All bubbles fade in with gentle spring animations
@@ -779,6 +781,8 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **"How this affects me" Card Expansion** - Personal impact analysis with emotional/mental/relational/behavioral breakdown
 ✅ **Harm Impact Score** - Animated 0-100 score with color-coded progress bar and contextual explanation
 ✅ **Humanized AI Agent** - Thoughtful friend tone with natural language, contractions, and agency-focused framing
+✅ **ChatGPT-Style Minimal Layout** - Floating text blocks for AI responses, no heavy card containers
+✅ **Clean Message UI** - User messages in subtle bubbles, assistant messages as floating paragraphs
 
 ## Future Enhancements
 

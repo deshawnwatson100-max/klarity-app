@@ -26,13 +26,6 @@ interface SuggestedReplyCardProps {
   onGenerateDifferent?: () => void;
 }
 
-const intentionColors: Record<IntentionType, string> = {
-  improve: "#6BB6FF", // Cool Sky Blue
-  distance: "#FF9B6B", // Warm Orange
-  maintain: "#FFB84D", // Soft Amber/Gold
-  clarity: "#B8A3E8", // Lavender/Soft Purple
-};
-
 export function SuggestedReplyCard({
   replies,
   intention,
@@ -54,8 +47,6 @@ export function SuggestedReplyCard({
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
-
-  const color = intentionColors[intention];
 
   const handlePress = (replyText: string) => {
     onSelectReply(replyText);
@@ -86,243 +77,195 @@ export function SuggestedReplyCard({
         animatedStyle,
       ]}
     >
-      <View className="gap-3">
-        {replies.map((reply, index) => (
-          <View key={reply.id} style={{ marginBottom: 16 }}>
-            {/* Reply bubble with glow */}
+      {/* Section header */}
+      <View className="flex-row items-center mb-3">
+        <Ionicons
+          name="chatbubble-ellipses-outline"
+          size={14}
+          color="#6B7280"
+          style={{ marginRight: 6 }}
+        />
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "500",
+            color: "#6B7280",
+            letterSpacing: 0.3,
+            textTransform: "uppercase",
+          }}
+        >
+          Suggested Reply
+        </Text>
+      </View>
+
+      {replies.map((reply) => (
+        <View key={reply.id} style={{ marginBottom: 12 }}>
+          {/* Reply text as clean floating paragraph */}
+          <Pressable onPress={() => handleReplyPress(reply.id)}>
             <View
               style={{
-                maxWidth: "85%",
-                alignSelf: "flex-start",
+                paddingLeft: 12,
+                borderLeftWidth: 2,
+                borderLeftColor: "#374151",
               }}
             >
-              <Pressable onPress={() => handleReplyPress(reply.id)}>
-                <View
-                  className="rounded-3xl overflow-hidden"
-                  style={{
-                    backgroundColor: "#050608",
-                    borderWidth: 1.5,
-                    borderColor: `${color}40`,
-                    shadowColor: color,
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 12,
-                  }}
-                >
-                  {/* Reply text */}
-                  <View className="px-5 py-4">
-                    <Text
-                      className="text-base leading-6"
-                      style={{ fontFamily: "SF Pro Display", color: "#E5E7EB" }}
-                    >
-                      {reply.text}
-                    </Text>
-                  </View>
-
-                  {/* Guidance Note */}
-                  <View
-                    className="px-4 py-2.5"
-                    style={{
-                      backgroundColor: "rgba(0, 0, 0, 0.2)",
-                      borderTopWidth: 0.5,
-                      borderTopColor: "rgba(156, 163, 175, 0.1)",
-                    }}
-                  >
-                    <View className="flex-row items-start gap-2">
-                      <Ionicons
-                        name="bulb-outline"
-                        size={14}
-                        color="#9CA3AF"
-                        style={{ marginTop: 2 }}
-                      />
-                      <Text
-                        className="text-xs leading-relaxed flex-1"
-                        style={{
-                          color: "#9CA3AF",
-                          letterSpacing: 0.1,
-                          lineHeight: 16,
-                        }}
-                      >
-                        {reply.guidanceNote}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Adjustment controls inside bubble - Only show when expanded */}
-                  {onModifyLength && expandedReplyId === reply.id && (
-                    <Animated.View
-                      entering={FadeIn.duration(200)}
-                      exiting={FadeOut.duration(150)}
-                      style={{
-                        borderTopWidth: 1,
-                        borderTopColor: `${color}15`,
-                        paddingHorizontal: 20,
-                        paddingVertical: 12,
-                        backgroundColor: "rgba(0, 0, 0, 0.3)",
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 12,
-                        }}
-                      >
-                        {/* Shorten button */}
-                        <Pressable
-                          onPress={() => handleModifyLength(reply.id, "shorten")}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          disabled={loadingAction?.replyId === reply.id}
-                          style={({ pressed }) => ({
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 6,
-                            paddingVertical: 4,
-                            paddingHorizontal: 8,
-                            opacity: pressed ? 0.6 : 1,
-                          })}
-                        >
-                          {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
-                            <ActivityIndicator size="small" color={color} />
-                          ) : (
-                            <>
-                              <Ionicons
-                                name="remove-circle-outline"
-                                size={16}
-                                color={color}
-                              />
-                              <Text
-                                style={{
-                                  fontFamily: "SF Pro Display",
-                                  fontSize: 13,
-                                  fontWeight: "500",
-                                  color: color,
-                                }}
-                              >
-                                Shorten Reply
-                              </Text>
-                            </>
-                          )}
-                        </Pressable>
-
-                        {/* Divider */}
-                        <View
-                          style={{
-                            width: 1,
-                            height: 14,
-                            backgroundColor: `${color}30`,
-                          }}
-                        />
-
-                        {/* Lengthen button */}
-                        <Pressable
-                          onPress={() => handleModifyLength(reply.id, "lengthen")}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          disabled={loadingAction?.replyId === reply.id}
-                          style={({ pressed }) => ({
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 6,
-                            paddingVertical: 4,
-                            paddingHorizontal: 8,
-                            opacity: pressed ? 0.6 : 1,
-                          })}
-                        >
-                          {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
-                            <ActivityIndicator size="small" color={color} />
-                          ) : (
-                            <>
-                              <Ionicons
-                                name="add-circle-outline"
-                                size={16}
-                                color={color}
-                              />
-                              <Text
-                                style={{
-                                  fontFamily: "SF Pro Display",
-                                  fontSize: 13,
-                                  fontWeight: "500",
-                                  color: color,
-                                }}
-                              >
-                                Lengthen Reply
-                              </Text>
-                            </>
-                          )}
-                        </Pressable>
-                      </View>
-                    </Animated.View>
-                  )}
-                </View>
-              </Pressable>
-
-              {/* Use button and Generate Different button below bubble */}
-              <View
+              <Text
                 style={{
-                  marginTop: 8,
-                  flexDirection: "row",
-                  gap: 8,
+                  fontSize: 15,
+                  lineHeight: 23,
+                  color: "#E5E7EB",
+                  letterSpacing: 0.1,
                 }}
               >
+                {reply.text}
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Guidance Note - subtle */}
+          <View className="flex-row items-start mt-2 pl-3">
+            <Ionicons
+              name="bulb-outline"
+              size={12}
+              color="#4B5563"
+              style={{ marginTop: 2, marginRight: 6 }}
+            />
+            <Text
+              style={{
+                fontSize: 13,
+                lineHeight: 18,
+                color: "#6B7280",
+                flex: 1,
+              }}
+            >
+              {reply.guidanceNote}
+            </Text>
+          </View>
+
+          {/* Expanded controls */}
+          {onModifyLength && expandedReplyId === reply.id && (
+            <Animated.View
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(150)}
+              style={{
+                marginTop: 12,
+                paddingTop: 12,
+                borderTopWidth: 1,
+                borderTopColor: "#1F1F22",
+              }}
+            >
+              <View className="flex-row items-center gap-4">
                 <Pressable
-                  onPress={() => handlePress(reply.text)}
-                  className="active:opacity-70"
-                  style={{
-                    backgroundColor: color,
-                    borderRadius: 20,
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    shadowColor: color,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.5,
-                    shadowRadius: 10,
-                  }}
+                  onPress={() => handleModifyLength(reply.id, "shorten")}
+                  disabled={loadingAction?.replyId === reply.id}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: pressed ? 0.6 : 1,
+                  })}
                 >
-                  <Text
-                    className="font-semibold text-sm"
-                    style={{
-                      fontFamily: "SF Pro Display",
-                      color: "#000000",
-                    }}
-                  >
-                    Use this reply
-                  </Text>
+                  {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
+                    <ActivityIndicator size="small" color="#6B7280" />
+                  ) : (
+                    <>
+                      <Ionicons name="remove-outline" size={14} color="#6B7280" />
+                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Shorter</Text>
+                    </>
+                  )}
                 </Pressable>
 
-                {onGenerateDifferent && (
-                  <Pressable
-                    onPress={onGenerateDifferent}
-                    className="active:opacity-70"
-                    style={{
-                      backgroundColor: "transparent",
-                      borderWidth: 1.5,
-                      borderColor: color,
-                      borderRadius: 20,
-                      paddingHorizontal: 20,
-                      paddingVertical: 10,
-                      shadowColor: color,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
-                    }}
-                  >
-                    <Text
-                      className="font-semibold text-sm"
-                      style={{
-                        fontFamily: "SF Pro Display",
-                        color: color,
-                      }}
-                    >
-                      Use different reply
-                    </Text>
-                  </Pressable>
-                )}
+                <View style={{ width: 1, height: 12, backgroundColor: "#374151" }} />
+
+                <Pressable
+                  onPress={() => handleModifyLength(reply.id, "lengthen")}
+                  disabled={loadingAction?.replyId === reply.id}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
+                    <ActivityIndicator size="small" color="#6B7280" />
+                  ) : (
+                    <>
+                      <Ionicons name="add-outline" size={14} color="#6B7280" />
+                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Longer</Text>
+                    </>
+                  )}
+                </Pressable>
               </View>
-            </View>
+            </Animated.View>
+          )}
+
+          {/* Action buttons - minimal style */}
+          <View className="flex-row items-center gap-3 mt-3">
+            <Pressable
+              onPress={() => handlePress(reply.text)}
+              style={({ pressed }) => ({
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                paddingVertical: 8,
+                paddingHorizontal: 14,
+                borderRadius: 20,
+                backgroundColor: "#1F1F22",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Ionicons name="copy-outline" size={14} color="#E5E7EB" />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "500",
+                  color: "#E5E7EB",
+                }}
+              >
+                Use this reply
+              </Text>
+            </Pressable>
+
+            {onGenerateDifferent && (
+              <Pressable
+                onPress={onGenerateDifferent}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: "#374151",
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Ionicons name="refresh-outline" size={14} color="#9CA3AF" />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                  }}
+                >
+                  Different reply
+                </Text>
+              </Pressable>
+            )}
           </View>
-        ))}
-      </View>
+        </View>
+      ))}
+
+      {/* Subtle bottom divider */}
+      <View
+        style={{
+          height: 1,
+          backgroundColor: "#1F1F22",
+          marginTop: 8,
+        }}
+      />
     </Animated.View>
   );
 }
