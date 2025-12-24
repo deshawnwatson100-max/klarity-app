@@ -176,6 +176,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const textStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
+    marginLeft: 8,
   }));
 
   const screenStyle = useAnimatedStyle(() => ({
@@ -222,7 +223,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           </Animated.View>
 
           {/* Klarity text - matching SlideOverDrawer styling */}
-          <Animated.View style={[styles.textWrapper, textStyle]}>
+          <Animated.View style={textStyle}>
             <Text style={styles.appName}>Klarity</Text>
           </Animated.View>
         </View>
@@ -245,10 +246,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-  },
-  textWrapper: {
-    justifyContent: "center",
-    marginLeft: 8,
   },
   orbWrapper: {
     alignItems: "center",
