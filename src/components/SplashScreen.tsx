@@ -8,7 +8,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
-  withSequence,
   Easing,
   runOnJS,
 } from "react-native-reanimated";
@@ -18,7 +17,7 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // Smooth easing curves
 const EASE_OUT_SMOOTH = Easing.bezier(0.25, 0.46, 0.45, 0.94);
@@ -30,7 +29,6 @@ const FADE_IN_DURATION = 600;
 const INITIAL_HOLD = 800;
 const SLIDE_DURATION = 700;
 const ASCEND_DURATION = 900;
-const PULSE_DURATION = 350;
 const SCREEN_FADE_DURATION = 500;
 
 // Orb wrapper size (matches KlarityOrb small: glowRadius = 40)
@@ -41,9 +39,9 @@ const ORB_WRAPPER_SIZE = 40;
  *
  * Klarna-inspired premium splash transition with ultra-smooth animations:
  * 1. Initial State: Orb (left) + "Klarity" text (right) centered together
- * 2. Orb slides left → right, passing over text (text fades)
+ * 2. Orb slides left → right, passing over text
  * 3. Orb ascends to header position
- * 4. Haptic + subtle pulse on final placement
+ * 4. Haptic on final placement
  * 5. Splash fades out, input screen appears beneath
  */
 export function SplashScreen({ onFinish }: SplashScreenProps) {
@@ -55,11 +53,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   // Animation values
   const contentOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
   const orbTranslateX = useSharedValue(0);
   const orbTranslateY = useSharedValue(0);
   const orbScale = useSharedValue(1);
-  const pulseOpacity = useSharedValue(0);
   const screenOpacity = useSharedValue(1);
 
   // Layout constants
@@ -81,14 +77,6 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       easing: EASE_OUT_SMOOTH,
     });
 
-    textOpacity.value = withDelay(
-      100,
-      withTiming(1, {
-        duration: FADE_IN_DURATION - 100,
-        easing: EASE_OUT_SMOOTH,
-      })
-    );
-
     // Phase 2: After hold, orb slides smoothly right over text
     const slideStartTime = FADE_IN_DURATION + INITIAL_HOLD;
     const slideDistance = GAP + ORB_WRAPPER_SIZE / 2 + TEXT_WIDTH;
@@ -98,15 +86,6 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       withTiming(slideDistance, {
         duration: SLIDE_DURATION,
         easing: EASE_IN_OUT_SMOOTH,
-      })
-    );
-
-    // Text fades smoothly as orb passes over it
-    textOpacity.value = withDelay(
-      slideStartTime + 150,
-      withTiming(0, {
-        duration: 450,
-        easing: EASE_OUT_SMOOTH,
       })
     );
 
@@ -140,24 +119,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       })
     );
 
-    // Phase 4: Haptic and gentle pulse on arrival
+    // Phase 4: Haptic on arrival
     const arrivalTime = ascendStartTime + ASCEND_DURATION;
 
     setTimeout(() => {
       triggerHaptic();
     }, arrivalTime);
 
-    // Very subtle pulse glow
-    pulseOpacity.value = withDelay(
-      arrivalTime,
-      withSequence(
-        withTiming(0.4, { duration: 200, easing: EASE_OUT_SMOOTH }),
-        withTiming(0, { duration: 300, easing: EASE_IN_OUT_SMOOTH })
-      )
-    );
-
     // Phase 5: Smooth fade out splash
-    const fadeOutTime = arrivalTime + PULSE_DURATION;
+    const fadeOutTime = arrivalTime + 100;
 
     screenOpacity.value = withDelay(
       fadeOutTime,
@@ -180,17 +150,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     ],
   }));
 
-  const textAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-  }));
-
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
-  }));
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseOpacity.value,
-    transform: [{ scale: 1.5 }],
   }));
 
   return (
@@ -210,27 +171,13 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         <View style={styles.logoRow}>
           {/* Animated Orb using KlarityOrb component */}
           <Animated.View style={[styles.orbWrapper, orbContainerStyle]}>
-            {/* Pulse glow (final placement) */}
-            <Animated.View style={[styles.pulseGlow, pulseStyle]}>
-              <LinearGradient
-                colors={[
-                  "rgba(125, 211, 192, 0.3)",
-                  "rgba(184, 163, 232, 0.2)",
-                  "transparent",
-                ]}
-                style={styles.pulseGradient}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 1 }}
-              />
-            </Animated.View>
-
             <KlarityOrb size="small" />
           </Animated.View>
 
           {/* Klarity text - matching SlideOverDrawer styling */}
-          <Animated.View style={[styles.textWrapper, textAnimatedStyle]}>
+          <View style={styles.textWrapper}>
             <Text style={styles.appName}>Klarity</Text>
-          </Animated.View>
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -258,17 +205,6 @@ const styles = StyleSheet.create({
   orbWrapper: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  pulseGlow: {
-    position: "absolute",
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  pulseGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 40,
   },
   appName: {
     fontSize: 18,
