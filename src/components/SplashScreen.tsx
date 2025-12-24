@@ -18,36 +18,25 @@ interface SplashScreenProps {
 
 // Smooth easing curves
 const EASE_OUT_SMOOTH = Easing.bezier(0.25, 0.46, 0.45, 0.94);
-const EASE_IN_OUT_SMOOTH = Easing.bezier(0.42, 0, 0.58, 1);
 
-// Animation timing - slower for smoothness
+// Animation timing
 const FADE_IN_DURATION = 600;
-const INITIAL_HOLD = 800;
-const SLIDE_DURATION = 700;
+const HOLD_DURATION = 1000;
 const SCREEN_FADE_DURATION = 500;
-
-// Orb wrapper size (matches KlarityOrb small: glowRadius = 40)
-const ORB_WRAPPER_SIZE = 40;
 
 /**
  * SplashScreen Component - Klarity AI
  *
- * Klarna-inspired premium splash transition with ultra-smooth animations:
- * 1. Initial State: Orb (left) + "Klarity" text (right) centered together
- * 2. Orb slides left → right, passing over text
- * 3. Orb ascends to header position
- * 4. Haptic on final placement
- * 5. Splash fades out, input screen appears beneath
+ * Simple, calm splash transition:
+ * 1. Orb + "Klarity" text fade in centered together
+ * 2. Hold
+ * 3. Haptic
+ * 4. Splash fades out, input screen appears
  */
 export function SplashScreen({ onFinish }: SplashScreenProps) {
   // Animation values
   const contentOpacity = useSharedValue(0);
-  const orbTranslateX = useSharedValue(0);
   const screenOpacity = useSharedValue(1);
-
-  // Layout constants
-  const TEXT_WIDTH = 70;
-  const GAP = 8;
 
   const triggerHaptic = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -64,27 +53,14 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       easing: EASE_OUT_SMOOTH,
     });
 
-    // Phase 2: After hold, orb slides smoothly right over text
-    const slideStartTime = FADE_IN_DURATION + INITIAL_HOLD;
-    const slideDistance = GAP + ORB_WRAPPER_SIZE / 2 + TEXT_WIDTH;
-
-    orbTranslateX.value = withDelay(
-      slideStartTime,
-      withTiming(slideDistance, {
-        duration: SLIDE_DURATION,
-        easing: EASE_IN_OUT_SMOOTH,
-      })
-    );
-
-    // Phase 3: Haptic after slide completes
-    const arrivalTime = slideStartTime + SLIDE_DURATION;
-
+    // Phase 2: Haptic after hold
+    const hapticTime = FADE_IN_DURATION + HOLD_DURATION;
     setTimeout(() => {
       triggerHaptic();
-    }, arrivalTime);
+    }, hapticTime);
 
-    // Phase 4: Smooth fade out splash
-    const fadeOutTime = arrivalTime + 200;
+    // Phase 3: Smooth fade out splash
+    const fadeOutTime = hapticTime + 100;
 
     screenOpacity.value = withDelay(
       fadeOutTime,
@@ -98,11 +74,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   }, []);
 
   // Animated styles
-  const orbContainerStyle = useAnimatedStyle(() => ({
+  const contentStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
-    transform: [
-      { translateX: orbTranslateX.value },
-    ],
   }));
 
   const screenStyle = useAnimatedStyle(() => ({
@@ -123,17 +96,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       {/* Centered content */}
       <View style={styles.centerContent}>
         {/* Logo row: Orb on left, Text on right */}
-        <View style={styles.logoRow}>
-          {/* Animated Orb using KlarityOrb component */}
-          <Animated.View style={[styles.orbWrapper, orbContainerStyle]}>
+        <Animated.View style={[styles.logoRow, contentStyle]}>
+          <View style={styles.orbWrapper}>
             <KlarityOrb size="small" />
-          </Animated.View>
+          </View>
 
-          {/* Klarity text - matching SlideOverDrawer styling */}
           <View style={styles.textWrapper}>
             <Text style={styles.appName}>Klarity</Text>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Animated.View>
   );
