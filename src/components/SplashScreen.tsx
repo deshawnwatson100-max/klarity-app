@@ -50,8 +50,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;
 
   // Animation values
-  const contentOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
+  const contentOpacity = useSharedValue(1); // Start visible for debugging
+  const textOpacity = useSharedValue(1); // Start visible for debugging
   const orbTranslateX = useSharedValue(0);
   const orbTranslateY = useSharedValue(0);
   const orbScale = useSharedValue(1);
@@ -177,6 +177,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const textStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
     marginLeft: 8,
+    zIndex: 10,
   }));
 
   const screenStyle = useAnimatedStyle(() => ({
@@ -223,9 +224,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           </Animated.View>
 
           {/* Klarity text - matching SlideOverDrawer styling */}
-          <Animated.View style={textStyle}>
+          <View style={{ marginLeft: 8 }}>
             <Text style={styles.appName}>Klarity</Text>
-          </Animated.View>
+          </View>
         </View>
       </View>
     </Animated.View>
