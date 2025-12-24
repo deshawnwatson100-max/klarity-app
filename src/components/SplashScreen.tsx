@@ -20,25 +20,29 @@ interface SplashScreenProps {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Animation timing
-const FADE_IN_DURATION = 400;
-const INITIAL_HOLD = 600;
-const SLIDE_DURATION = 450;
-const ASCEND_DURATION = 550;
-const PULSE_DURATION = 250;
-const SCREEN_FADE_DURATION = 350;
+// Smooth easing curves
+const EASE_OUT_SMOOTH = Easing.bezier(0.25, 0.46, 0.45, 0.94);
+const EASE_IN_OUT_SMOOTH = Easing.bezier(0.42, 0, 0.58, 1);
+const EASE_OUT_EXPO = Easing.bezier(0.19, 1, 0.22, 1);
+
+// Animation timing - slower for smoothness
+const FADE_IN_DURATION = 600;
+const INITIAL_HOLD = 800;
+const SLIDE_DURATION = 700;
+const ASCEND_DURATION = 900;
+const PULSE_DURATION = 350;
+const SCREEN_FADE_DURATION = 500;
 
 // Orb wrapper size (matches KlarityOrb small: glowRadius = 40)
 const ORB_WRAPPER_SIZE = 40;
-const ORB_SIZE_HEADER = 40; // medium orb in header
 
 /**
  * SplashScreen Component - Klarity AI
  *
- * Klarna-inspired premium splash transition:
+ * Klarna-inspired premium splash transition with ultra-smooth animations:
  * 1. Initial State: Orb (left) + "Klarity" text (right) centered together
  * 2. Orb slides left → right, passing over text (text fades)
- * 3. Orb ascends to header position (shrinks slightly)
+ * 3. Orb ascends to header position
  * 4. Haptic + subtle pulse on final placement
  * 5. Splash fades out, input screen appears beneath
  */
@@ -50,8 +54,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;
 
   // Animation values
-  const contentOpacity = useSharedValue(1); // Start visible for debugging
-  const textOpacity = useSharedValue(1); // Start visible for debugging
+  const contentOpacity = useSharedValue(0);
+  const textOpacity = useSharedValue(0);
   const orbTranslateX = useSharedValue(0);
   const orbTranslateY = useSharedValue(0);
   const orbScale = useSharedValue(1);
@@ -71,21 +75,21 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   }, [onFinish]);
 
   useEffect(() => {
-    // Phase 1: Fade in orb and text together
+    // Phase 1: Smooth fade in orb and text together
     contentOpacity.value = withTiming(1, {
       duration: FADE_IN_DURATION,
-      easing: Easing.out(Easing.ease),
+      easing: EASE_OUT_SMOOTH,
     });
 
     textOpacity.value = withDelay(
-      50,
+      100,
       withTiming(1, {
-        duration: FADE_IN_DURATION - 50,
-        easing: Easing.out(Easing.ease),
+        duration: FADE_IN_DURATION - 100,
+        easing: EASE_OUT_SMOOTH,
       })
     );
 
-    // Phase 2: After hold, orb slides right over text
+    // Phase 2: After hold, orb slides smoothly right over text
     const slideStartTime = FADE_IN_DURATION + INITIAL_HOLD;
     const slideDistance = GAP + ORB_WRAPPER_SIZE / 2 + TEXT_WIDTH;
 
@@ -93,28 +97,29 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       slideStartTime,
       withTiming(slideDistance, {
         duration: SLIDE_DURATION,
-        easing: Easing.inOut(Easing.ease),
+        easing: EASE_IN_OUT_SMOOTH,
       })
     );
 
-    // Text fades as orb passes over it
+    // Text fades smoothly as orb passes over it
     textOpacity.value = withDelay(
-      slideStartTime + 100,
+      slideStartTime + 150,
       withTiming(0, {
-        duration: 280,
-        easing: Easing.out(Easing.ease),
+        duration: 450,
+        easing: EASE_OUT_SMOOTH,
       })
     );
 
-    // Phase 3: Orb ascends to header
+    // Phase 3: Orb ascends smoothly to header
     const ascendStartTime = slideStartTime + SLIDE_DURATION;
     const targetY = HEADER_CENTER_Y - SCREEN_CENTER_Y;
 
+    // Smooth diagonal movement back to center and up
     orbTranslateX.value = withDelay(
       ascendStartTime,
       withTiming(0, {
         duration: ASCEND_DURATION,
-        easing: Easing.inOut(Easing.cubic),
+        easing: EASE_OUT_EXPO,
       })
     );
 
@@ -122,42 +127,43 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       ascendStartTime,
       withTiming(targetY, {
         duration: ASCEND_DURATION,
-        easing: Easing.inOut(Easing.cubic),
+        easing: EASE_OUT_EXPO,
       })
     );
 
-    // Scale up slightly to match header orb (small -> medium)
+    // Scale up smoothly to match header orb (small -> medium)
     orbScale.value = withDelay(
       ascendStartTime,
       withTiming(1.25, {
         duration: ASCEND_DURATION,
-        easing: Easing.inOut(Easing.cubic),
+        easing: EASE_OUT_EXPO,
       })
     );
 
-    // Phase 4: Haptic and pulse on arrival
+    // Phase 4: Haptic and gentle pulse on arrival
     const arrivalTime = ascendStartTime + ASCEND_DURATION;
 
     setTimeout(() => {
       triggerHaptic();
     }, arrivalTime);
 
+    // Very subtle pulse glow
     pulseOpacity.value = withDelay(
       arrivalTime,
       withSequence(
-        withTiming(0.5, { duration: 120, easing: Easing.out(Easing.ease) }),
-        withTiming(0, { duration: 180, easing: Easing.in(Easing.ease) })
+        withTiming(0.4, { duration: 200, easing: EASE_OUT_SMOOTH }),
+        withTiming(0, { duration: 300, easing: EASE_IN_OUT_SMOOTH })
       )
     );
 
-    // Phase 5: Fade out splash
+    // Phase 5: Smooth fade out splash
     const fadeOutTime = arrivalTime + PULSE_DURATION;
 
     screenOpacity.value = withDelay(
       fadeOutTime,
       withTiming(0, {
         duration: SCREEN_FADE_DURATION,
-        easing: Easing.out(Easing.ease),
+        easing: EASE_OUT_SMOOTH,
       }, () => {
         runOnJS(finishSplash)();
       })
@@ -174,10 +180,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     ],
   }));
 
-  const textStyle = useAnimatedStyle(() => ({
+  const textAnimatedStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
-    marginLeft: 8,
-    zIndex: 10,
   }));
 
   const screenStyle = useAnimatedStyle(() => ({
@@ -210,8 +214,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             <Animated.View style={[styles.pulseGlow, pulseStyle]}>
               <LinearGradient
                 colors={[
-                  "rgba(125, 211, 192, 0.35)",
-                  "rgba(184, 163, 232, 0.25)",
+                  "rgba(125, 211, 192, 0.3)",
+                  "rgba(184, 163, 232, 0.2)",
                   "transparent",
                 ]}
                 style={styles.pulseGradient}
@@ -224,9 +228,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           </Animated.View>
 
           {/* Klarity text - matching SlideOverDrawer styling */}
-          <View style={{ marginLeft: 8 }}>
+          <Animated.View style={[styles.textWrapper, textAnimatedStyle]}>
             <Text style={styles.appName}>Klarity</Text>
-          </View>
+          </Animated.View>
         </View>
       </View>
     </Animated.View>
@@ -247,6 +251,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  textWrapper: {
+    marginLeft: 8,
   },
   orbWrapper: {
     alignItems: "center",
