@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -263,9 +263,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           </Animated.View>
 
           {/* Klarity text */}
-          <Animated.Text style={[styles.appName, textStyle]}>
-            Klarity
-          </Animated.Text>
+          <Animated.View style={[styles.textWrapper, textStyle]}>
+            <Text style={styles.appName}>Klarity</Text>
+          </Animated.View>
         </View>
       </View>
     </Animated.View>
@@ -285,6 +285,9 @@ const styles = StyleSheet.create({
   logoRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  textWrapper: {
     justifyContent: "center",
   },
   orbWrapper: {
