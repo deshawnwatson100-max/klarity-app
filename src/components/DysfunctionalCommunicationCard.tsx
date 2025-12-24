@@ -149,7 +149,7 @@ export function DysfunctionalCommunicationCard({
   summary,
   patterns,
 }: DysfunctionalCommunicationCardProps) {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true); // Start minimized
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [impactAnalysis, setImpactAnalysis] =
@@ -159,7 +159,7 @@ export function DysfunctionalCommunicationCard({
   const translateY = useSharedValue(10);
   const expandedHeight = useSharedValue(0);
   const expandedOpacity = useSharedValue(0);
-  const contentHeight = useSharedValue(1);
+  const contentHeight = useSharedValue(0); // Start minimized
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 400 });
