@@ -121,15 +121,6 @@ export function NeedDifferentApproachCard({
           );
         })}
       </View>
-
-      {/* Subtle bottom divider */}
-      <View
-        style={{
-          height: 1,
-          backgroundColor: "#1F1F22",
-          marginTop: 16,
-        }}
-      />
     </Animated.View>
   );
 }

@@ -378,15 +378,6 @@ export function SuggestedReplyCard({
           onSelectReply={onSelectReply}
         />
       ))}
-
-      {/* Subtle bottom divider */}
-      <View
-        style={{
-          height: 1,
-          backgroundColor: "#1F1F22",
-          marginTop: 8,
-        }}
-      />
     </Animated.View>
   );
 }

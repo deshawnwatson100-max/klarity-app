@@ -398,15 +398,6 @@ export function DysfunctionalCommunicationCard({
               ) : (
                 impactAnalysis && (
                   <View>
-                    {/* Subtle divider */}
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: "#1F1F22",
-                        marginBottom: 16,
-                      }}
-                    />
-
                     <ImpactSection
                       icon="heart-outline"
                       label="Emotionally"
@@ -468,15 +459,6 @@ export function DysfunctionalCommunicationCard({
               )}
             </Animated.View>
           </Animated.View>
-
-          {/* Subtle bottom divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: "#1F1F22",
-              marginTop: 16,
-            }}
-          />
         </View>
       </Pressable>
     </Animated.View>
