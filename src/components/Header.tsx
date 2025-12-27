@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
-import { KlarityOrb } from "./KlarityOrb";
 
 interface HeaderProps {
   title?: string;
@@ -18,11 +17,10 @@ interface HeaderProps {
 /**
  * Header Component
  *
- * Premium iOS-style top bar with Klarity AI orb logo.
+ * Premium iOS-style top bar.
  *
  * Features:
- * - Left: Menu button that opens slide-over drawer
- * - Center: Multicolor glowing orb with breathing animation
+ * - Left: Menu button with "Klarity" text
  * - Right: New Loop button
  * - Semi-transparent black glass background (18% opacity)
  */
@@ -84,12 +82,20 @@ export function Header({
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu Button */}
-        {renderLeftMenu()}
-
-        {/* Center - Klarity AI Orb */}
-        <View className="flex-1 items-center">
-          <KlarityOrb size="medium" isAnalyzing={isAnalyzing} />
+        {/* Left - Menu Button and Klarity text */}
+        <View className="flex-row items-center">
+          {renderLeftMenu()}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "600",
+              color: "#EDEDED",
+              marginLeft: 12,
+              letterSpacing: 0.5,
+            }}
+          >
+            Klarity
+          </Text>
         </View>
 
         {/* Right - New Loop Button */}
