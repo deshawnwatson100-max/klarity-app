@@ -15,7 +15,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
-import { InputBar, InputMode } from "../components/InputBar";
+import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
@@ -45,6 +45,8 @@ export function InputScreen({ navigation }: Props) {
   // Track current input mode for navigation (needs ref for runOnJS)
   const inputModeRef = useRef<InputMode>(inputMode);
   inputModeRef.current = inputMode;
+  // Ref for input bar to focus programmatically
+  const inputBarRef = useRef<InputBarRef>(null);
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -86,6 +88,11 @@ export function InputScreen({ navigation }: Props) {
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
       console.log("[InputScreen] Focus event - isFirstFocus:", isFirstFocus.current);
+
+      // Focus the input bar when screen gains focus
+      setTimeout(() => {
+        inputBarRef.current?.focus();
+      }, 100);
 
       // Skip animation on initial app load, animate on subsequent focuses (returning from other screens)
       if (isFirstFocus.current) {
@@ -410,6 +417,7 @@ export function InputScreen({ navigation }: Props) {
           <Animated.View style={bottomAnimatedStyle}>
             {/* Input Bar */}
             <InputBar
+              ref={inputBarRef}
               value={currentInput}
               onChangeText={setCurrentInput}
               onSend={handleSend}
@@ -420,6 +428,7 @@ export function InputScreen({ navigation }: Props) {
               placeholder="Type a message..."
               isRecording={isRecording}
               inputMode={inputMode}
+              autoFocus
             />
           </Animated.View>
 

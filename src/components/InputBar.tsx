@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
 import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +6,10 @@ import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 
 export type InputMode = "understand" | "rewrite";
+
+export interface InputBarRef {
+  focus: () => void;
+}
 
 interface InputBarProps {
   value: string;
@@ -20,9 +24,10 @@ interface InputBarProps {
   onClearImage?: () => void;
   isRecording?: boolean;
   inputMode?: InputMode;
+  autoFocus?: boolean;
 }
 
-export function InputBar({
+export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
   value,
   onChangeText,
   onSend,
@@ -35,9 +40,17 @@ export function InputBar({
   onClearImage,
   isRecording = false,
   inputMode = "understand",
-}: InputBarProps) {
+  autoFocus = false,
+}, ref) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   const handleSend = () => {
     if ((value.trim() || selectedImageUri) && !disabled) {
@@ -151,6 +164,7 @@ export function InputBar({
             }}
           >
             <TextInput
+              ref={inputRef}
               value={value}
               onChangeText={onChangeText}
               onFocus={() => setIsFocused(true)}
@@ -162,6 +176,7 @@ export function InputBar({
               returnKeyType="send"
               multiline
               maxLength={1000}
+              autoFocus={autoFocus}
               style={{
                 color: "#F9FAFB",
                 fontSize: 16,
@@ -201,4 +216,4 @@ export function InputBar({
       </View>
     </View>
   );
-}
+});
