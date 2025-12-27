@@ -6,43 +6,6 @@ import { ChatMessage } from "./chat";
 export type RelationshipType = "family" | "romantic" | "friend" | "work" | "other";
 
 /**
- * Reply Timeline Entry - Auto-generated insights about interactions with a person
- * These entries are created automatically from chat analysis, no manual logging required
- */
-export interface ReplyTimelineEntry {
-  id: string;
-  relationshipId: string; // Link to the tracked relationship
-  loopId: string; // Link to the chat loop that generated this entry
-  createdAt: string; // ISO date string
-  insight: string; // Human-readable insight sentence
-  insightType: "boundary-held" | "boundary-softened" | "communication-style" | "friction-pattern" | "positive-outcome";
-  metadata?: {
-    boundaryType?: string; // e.g., "time", "emotional", "physical"
-    communicationStyle?: string; // e.g., "direct", "indirect", "brief"
-    emotionTrigger?: string; // e.g., "guilt", "pressure", "conflict"
-  };
-}
-
-/**
- * Adaptive summary for a relationship - updates over time
- */
-export interface RelationshipInsightSummary {
-  relationshipId: string;
-  summary: string; // e.g., "With this person, being brief and direct works best."
-  lastUpdated: string; // ISO date string
-  confidence: number; // 0-100, how confident the AI is in this insight
-}
-
-/**
- * Settings for relationship timeline learning
- */
-export interface RelationshipTimelineSettings {
-  relationshipId: string;
-  learningPaused: boolean; // If true, no new entries are created
-  pausedAt?: string; // ISO date string when paused
-}
-
-/**
  * Represents a tracked relationship for long-term clarity
  */
 export interface TrackedRelationship {

@@ -324,12 +324,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
-  const handleTimeline = () => {
-    closeDrawer();
-    setTimeout(() => {
-      navigation.navigate("TimelineScreen" as never);
-    }, 100);
-  };
 
   if (!visible && translateX.value === -DRAWER_WIDTH) {
     return null;
@@ -462,16 +456,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={{ marginTop: 8 }}>
-            <MenuItem
-              icon="time-outline"
-              label="Timeline"
-              subtitle="Patterns across conversations"
-              onPress={handleTimeline}
-              isLast={loops.length === 0}
-            />
-          </View>
-
           {/* Past Chats - show directly if available */}
           {loops.length > 0 && (
             <View style={{ marginTop: 16 }}>

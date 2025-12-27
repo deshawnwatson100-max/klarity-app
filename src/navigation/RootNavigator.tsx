@@ -8,13 +8,11 @@ import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen";
 import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
-import { TimelineScreen } from "../screens/TimelineScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
   ChatScreen: { inputMode?: "understand" | "rewrite" } | undefined;
   EmotionScanScreen: undefined;
-  TimelineScreen: undefined;
   AnalysisScreen: {
     analysis: import("../types/chat").EmotionalAnalysis;
     userMessage: string;
@@ -298,50 +296,6 @@ export function RootNavigator() {
         }}
       />
 
-      {/* Timeline Screen - iOS horizontal slide from right */}
-      <Stack.Screen
-        name="TimelineScreen"
-        component={TimelineScreen}
-        options={{
-          gestureEnabled: true,
-          gestureDirection: "horizontal",
-          cardStyle: { backgroundColor: "#050505" },
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-              overlayStyle: {
-                opacity: current.progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.5],
-                }),
-              },
-            };
-          },
-          transitionSpec: {
-            open: {
-              animation: "spring",
-              config: {
-                stiffness: 1000,
-                damping: 500,
-                mass: 3,
-                overshootClamping: true,
-                restDisplacementThreshold: 0.01,
-                restSpeedThreshold: 0.01,
-              },
-            },
-            close: TransitionSpecs.TransitionIOSSpec,
-          },
-        }}
-      />
     </Stack.Navigator>
   );
 }

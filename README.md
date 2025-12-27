@@ -11,7 +11,6 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Relationship Direction Selector** - Choose your intention and get tailored guidance
 - **Smart response suggestions** with different tones based on your chosen path
 - **Past loops system** - Save and switch between conversation sessions
-- **Reply Timeline** - Per-person timeline of communication insights that feels like memory, not tracking
 - **Beautiful dark UI** with neon accents (blue, orange, yellow, purple)
 - **Premium splash screen** with glowing Klarity AI logo
 - **Secure PIN authentication** - 4-digit PIN to protect your conversations
@@ -417,71 +416,6 @@ Klarity AI uses GPT-4o Vision to detect dysfunctional communication patterns inc
 
 The analysis appears inline in the conversation thread with the same calm lime + dark aesthetic.
 
-### Timeline Screen
-A unified timeline showing communication patterns across all chat loops, with optional filtering by person.
-
-#### Purpose
-The Timeline is the user's primary place to review communication patterns over time — without calendars, manual tracking, or emotional logging.
-
-#### Default View: All Conversations
-When the Timeline screen opens:
-- Shows a single unified timeline containing entries from all chat loops
-- Entries are ordered newest to oldest
-- No grouping by day, week, or date
-
-Entry examples:
-- "You held a boundary — it landed well."
-- "You softened due to guilt."
-- "Being more direct reduced follow-ups."
-- "This topic escalated."
-
-Each entry:
-- One short sentence
-- Neutral, observational tone
-- No judgment
-- No metrics, scores, or streaks
-
-#### Person Filter (Optional)
-At the top of the screen:
-- Subtle selector showing "All conversations"
-- Tap to open a person picker
-- Select a person to filter the timeline
-- Header updates to show "Timeline · [Person's Name]"
-- Tap "All conversations" to return to full timeline
-
-#### Timeline Entry Rules
-Entries are generated automatically from chat loop activity. Only log moments that help improve future replies:
-- Boundary attempts
-- Boundary outcomes
-- Communication style effectiveness
-- Repeated friction patterns
-
-Do not log raw messages or emotional dumps.
-
-#### Footer Controls
-At the bottom of the Timeline screen with muted styling:
-- **Clear timeline** - Removes all timeline entries
-- When filtered by person:
-  - **Clear timeline for this person**
-  - **Pause learning for this person**
-- Confirmation modal only shown for destructive actions
-
-#### Accessing the Timeline
-- Open the slide-over drawer (swipe from left or tap menu)
-- Tap "Timeline" menu item
-- Screen slides in from the right
-
-#### Design Philosophy
-The Timeline should feel like: **"Klarity remembering what matters — not tracking me."**
-
-- No calendar
-- No exact dates (uses vague time like "recently" or "earlier")
-- No charts or analytics
-- No therapy language
-- No gamification
-
-**Core Rule**: If the timeline does not clearly help the user reply better in the future, it should not exist. Silence is better than noise.
-
 ### Past Loops System
 The app supports multiple conversation sessions:
 
@@ -598,10 +532,9 @@ Each loop stores:
 │   │   ├── AnalysisScreen.tsx      # Step 1 - Full analysis display
 │   │   ├── RelationshipDirectionScreen.tsx  # Step 2 - Direction selector
 │   │   ├── SuggestionsScreen.tsx   # Step 3 - Tailored guidance
-│   │   └── TimelineScreen.tsx             # Timeline of communication patterns
 │   ├── state/
 │   │   ├── chatStore.ts            # Legacy chat state (deprecated)
-│   │   └── loopsStore.ts           # Loops, relationships, and timeline state with persistence
+│   │   └── loopsStore.ts           # Loops and relationships state with persistence
 │   └── types/
 │       ├── chat.ts                 # Chat & message interfaces
 │       ├── loop.ts                 # Loop type definitions
@@ -823,8 +756,6 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Boundary Detection Card** - Detects potential boundary violations with calm, neutral insights
 ✅ **Understand My Boundaries Better Flow** - Educational boundary clarity summary with three-part breakdown
 ✅ **Boundary Clarity Summary Bubble** - Shows what boundary was crossed, how it impacts you, and how it affects the relationship
-✅ **Timeline Screen** - Unified timeline of communication insights across all conversations with person filtering
-✅ **Timeline Management** - Clear history and pause learning options per person
 ✅ **"How this affects me" Card Expansion** - Personal impact analysis with emotional/mental/relational/behavioral breakdown
 ✅ **Harm Impact Score** - Animated 0-100 score with color-coded progress bar and contextual explanation
 ✅ **Humanized AI Agent** - Thoughtful friend tone with natural language, contractions, and agency-focused framing
