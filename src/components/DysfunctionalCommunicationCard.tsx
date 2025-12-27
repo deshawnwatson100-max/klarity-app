@@ -268,14 +268,14 @@ export function DysfunctionalCommunicationCard({
             <Ionicons
               name="chatbubbles-outline"
               size={14}
-              color="#8B7AA0"
+              color="#3B82F6"
               style={{ marginRight: 6 }}
             />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: "500",
-                color: "#8B7AA0",
+                color: "#3B82F6",
                 letterSpacing: 0.3,
                 textTransform: "uppercase",
               }}
