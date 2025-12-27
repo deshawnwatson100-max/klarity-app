@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +21,7 @@ import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
+import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -433,18 +434,7 @@ export function InputScreen({ navigation }: Props) {
           </Animated.View>
 
           {/* Processing Overlay */}
-          {isProcessing && (
-            <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
-              <View className="bg-neutral-900 rounded-2xl p-6 items-center">
-                <ActivityIndicator size="large" color="#B4FF39" />
-                {processingMessage && (
-                  <Text className="text-white text-base mt-4 text-center">
-                    {processingMessage}
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
+          {isProcessing && <VoiceProcessingIndicator />}
         </KeyboardAvoidingView>
 
         {/* Slide Over Drawer */}
