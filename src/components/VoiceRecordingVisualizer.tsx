@@ -59,7 +59,7 @@ function AnimatedBar({ isRecording, index }: { isRecording: boolean; index: numb
   return (
     <Animated.View
       style={animatedStyle}
-      className="w-[3px] bg-lime-400 rounded-full"
+      className="w-[3px] bg-blue-500 rounded-full"
     />
   );
 }
