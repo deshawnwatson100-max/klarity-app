@@ -280,7 +280,7 @@ export function DysfunctionalCommunicationCard({
                 textTransform: "uppercase",
               }}
             >
-              Communication Pattern
+              COMMUNICATION SUMMARY
             </Text>
           </View>
 
