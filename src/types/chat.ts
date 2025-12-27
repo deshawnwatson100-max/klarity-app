@@ -234,10 +234,6 @@ export interface DysfunctionalCommunicationMessage extends Message {
   patterns?: string[];
 }
 
-export interface NeedDifferentApproachMessage extends Message {
-  role: "need-different-approach";
-}
-
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -263,5 +259,4 @@ export type ChatMessage =
   | VoiceEmotionScanResultMessage
   | BoundaryDetectionMessage
   | BoundaryClaritySummaryMessage
-  | DysfunctionalCommunicationMessage
-  | NeedDifferentApproachMessage;
+  | DysfunctionalCommunicationMessage;

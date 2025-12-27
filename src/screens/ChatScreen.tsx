@@ -25,7 +25,6 @@ import { DysfunctionalCommunicationCard } from "../components/DysfunctionalCommu
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { TypingIndicator } from "../components/TypingIndicator";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
-import { NeedDifferentApproachCard } from "../components/NeedDifferentApproachCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -47,7 +46,6 @@ import {
   SuggestedReplyCardMessage,
   InlineContextInputMessage,
   DysfunctionalCommunicationMessage,
-  NeedDifferentApproachMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -270,17 +268,6 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(replyMsg);
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
-      // STEP 3: Show "Need a Different Approach?" Card
-      const approachMsg: NeedDifferentApproachMessage = {
-        id: Date.now().toString() + "_approach",
-        role: "need-different-approach",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(approachMsg);
-
     } catch (error) {
       console.error("Error processing message:", error);
       addMessageToActiveLoop({
@@ -365,67 +352,6 @@ export function ChatScreen({ navigation }: Props) {
       insertMessageAfter(currentMessageId, newReplyMsg);
     } catch (error) {
       console.error("Error generating different reply:", error);
-      removeMessageFromActiveLoop(typingMsg.id);
-    }
-  };
-
-  const handleDifferentApproach = async (
-    approach: "more-direct" | "more-gentle" | "more-neutral" | "add-context"
-  ) => {
-    if (approach === "add-context") {
-      // Show inline context input
-      setIsAwaitingContext(true);
-      const inlineInputMsg: InlineContextInputMessage = {
-        id: Date.now().toString() + "_inline_context",
-        role: "inline-context-input",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(inlineInputMsg);
-      return;
-    }
-
-    // Generate modulated reply based on approach
-    if (!currentAnalysis || !currentUserMessage) return;
-
-    const toneMap: Record<string, "direct" | "gentle" | "neutral"> = {
-      "more-direct": "direct",
-      "more-gentle": "gentle",
-      "more-neutral": "neutral",
-    };
-
-    const tone = toneMap[approach];
-    if (!tone) return;
-
-    const typingMsg: TypingMessage = {
-      id: Date.now().toString() + "_typing_approach",
-      role: "typing",
-      content: "",
-      timestamp: Date.now(),
-    };
-    addMessageToActiveLoop(typingMsg);
-
-    try {
-      const modulatedReplies = await generateModulatedReplies(
-        currentUserMessage,
-        "maintain",
-        currentAnalysis,
-        tone
-      );
-
-      removeMessageFromActiveLoop(typingMsg.id);
-
-      const replyMsg: SuggestedReplyCardMessage = {
-        id: Date.now().toString() + "_modulated",
-        role: "suggested-reply-card",
-        content: "",
-        timestamp: Date.now(),
-        replies: modulatedReplies,
-        intention: "maintain",
-      };
-      addMessageToActiveLoop(replyMsg);
-    } catch (error) {
-      console.error("Error generating modulated reply:", error);
       removeMessageFromActiveLoop(typingMsg.id);
     }
   };
@@ -535,17 +461,6 @@ export function ChatScreen({ navigation }: Props) {
         intention: "maintain",
       };
       addMessageToActiveLoop(replyMsg);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // Show approach card again
-      const approachMsg: NeedDifferentApproachMessage = {
-        id: Date.now().toString() + "_approach_updated",
-        role: "need-different-approach",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(approachMsg);
     } catch (error) {
       console.error("Error re-analyzing:", error);
       removeMessageFromActiveLoop(typingMsg.id);
@@ -636,15 +551,6 @@ export function ChatScreen({ navigation }: Props) {
           onSelectReply={handleSelectReply}
           onModifyLength={handleModifyReplyLength}
           onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
-        />
-      );
-    }
-
-    if (message.role === "need-different-approach") {
-      return (
-        <NeedDifferentApproachCard
-          key={message.id}
-          onSelectApproach={handleDifferentApproach}
         />
       );
     }
