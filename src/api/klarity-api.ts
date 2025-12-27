@@ -2229,3 +2229,87 @@ Rewrite this to be clearer, more emotionally intelligent, and better at setting 
   }
 }
 
+/**
+ * Add emojis to a reply text intelligently
+ * Analyzes the tone and content of the reply to place appropriate emojis naturally
+ * Returns the reply with emojis integrated (not just appended)
+ */
+export async function addEmojisToReply(replyText: string): Promise<string> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are an expert at adding emojis to text messages naturally and appropriately.
+
+Your job is to take a reply message and add emojis that:
+1. Match the emotional tone and intent of the message
+2. Feel natural and conversational — like how a real person would text
+3. Are placed appropriately within the text or at the end
+4. Enhance the message without overwhelming it
+
+## RULES
+
+### Emoji Quantity
+- For short messages (1 sentence): 1-2 emojis max
+- For medium messages (2-3 sentences): 2-3 emojis max
+- Never overdo it — less is more
+- Some messages work better with NO emojis at end, just integrated ones
+
+### Emoji Placement
+- Can be at the end of the full message
+- Can be at the end of a specific sentence for emphasis
+- Can replace words naturally (e.g., "love" could have ❤️ after it)
+- Should feel organic, not forced
+
+### Tone Matching
+- Warm/friendly messages: 😊 🥰 💕 ✨
+- Understanding/supportive: 💙 🙏 💪
+- Lighthearted: 😂 😅 🤗
+- Thoughtful/reflective: 💭 🤔 ✨
+- Appreciative: 🙏 💕 ❤️
+- Boundaries/firm but kind: Keep minimal or use softening ones like 💙
+
+### DO NOTs
+- Don't add emojis that change the meaning
+- Don't add too many (looks immature or insincere)
+- Don't use emojis that conflict with the tone (no 😂 in serious messages)
+- Don't use emojis that could be misread as passive-aggressive
+- Don't add emojis to every sentence
+
+Return ONLY the modified text with emojis added. Nothing else.`;
+
+  const userPrompt = `Add appropriate emojis to this reply:
+
+"${replyText}"
+
+Return only the text with emojis naturally integrated.`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 500,
+      temperature: 0.7,
+    });
+
+    const result = completion.choices[0]?.message?.content?.trim();
+
+    if (!result) {
+      console.warn("[addEmojisToReply] No result, returning original");
+      return replyText;
+    }
+
+    // Remove any quotes if the model wrapped the response
+    const cleanedResult = result.replace(/^["']|["']$/g, "");
+
+    console.log("[addEmojisToReply] Original:", replyText);
+    console.log("[addEmojisToReply] With emojis:", cleanedResult);
+
+    return cleanedResult;
+  } catch (error) {
+    console.error("[addEmojisToReply] Error:", error);
+    return replyText;
+  }
+}
+

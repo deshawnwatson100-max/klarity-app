@@ -44,6 +44,7 @@ import {
   detectRedFlags,
   generateRewriteReply,
   analyzeImageContinuation,
+  addEmojisToReply,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -401,7 +402,7 @@ export function ChatScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleAddEmojiToReply = (replyId: string, emoji: string) => {
+  const handleAddEmojiToReply = async (replyId: string) => {
     const replyCardMsg = messages.find(
       (m) => m.role === "suggested-reply-card" &&
         (m as SuggestedReplyCardMessage).replies.some((r) => r.id === replyId)
@@ -412,17 +413,24 @@ export function ChatScreen({ navigation, route }: Props) {
     const reply = replyCardMsg.replies.find((r) => r.id === replyId);
     if (!reply) return;
 
-    // Append emoji to the reply text
-    const updatedReplies = replyCardMsg.replies.map((r) =>
-      r.id === replyId ? { ...r, text: r.text + " " + emoji } : r
-    );
+    try {
+      // Use AI to intelligently add emojis to the reply
+      const textWithEmojis = await addEmojisToReply(reply.text);
 
-    const updatedMsg = {
-      ...replyCardMsg,
-      replies: updatedReplies,
-    };
+      // Update the reply with emojis
+      const updatedReplies = replyCardMsg.replies.map((r) =>
+        r.id === replyId ? { ...r, text: textWithEmojis } : r
+      );
 
-    updateMessageInActiveLoop(replyCardMsg.id, updatedMsg);
+      const updatedMsg = {
+        ...replyCardMsg,
+        replies: updatedReplies,
+      };
+
+      updateMessageInActiveLoop(replyCardMsg.id, updatedMsg);
+    } catch (error) {
+      console.error("Error adding emojis to reply:", error);
+    }
   };
 
   const handleContextSubmit = async (contextInput: string, isVoice: boolean) => {
