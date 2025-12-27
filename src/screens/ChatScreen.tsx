@@ -22,6 +22,7 @@ import { Header } from "../components/Header";
 import { InputBar } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { DysfunctionalCommunicationCard } from "../components/DysfunctionalCommunicationCard";
+import { RedFlagsCard } from "../components/RedFlagsCard";
 import { LoopHistoryPanel } from "../components/LoopHistoryPanel";
 import { TypingIndicator } from "../components/TypingIndicator";
 import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
@@ -38,6 +39,7 @@ import {
   modifyReplyLength,
   analyzeImageToxicity,
   generateEmotionalAnalysis,
+  detectRedFlags,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -46,6 +48,7 @@ import {
   SuggestedReplyCardMessage,
   InlineContextInputMessage,
   DysfunctionalCommunicationMessage,
+  RedFlagsMessage,
   EmotionalAnalysis,
 } from "../types/chat";
 
@@ -239,7 +242,26 @@ export function ChatScreen({ navigation }: Props) {
       };
       addMessageToActiveLoop(dysfunctionalMsg);
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // STEP 1.5: Detect and show Red Flags (if any)
+      const redFlagsResult = await detectRedFlags(
+        userMessage.content,
+        dysfunctionalSummary.patterns
+      );
+
+      if (redFlagsResult.detected && redFlagsResult.flags.length > 0) {
+        const redFlagsMsg: RedFlagsMessage = {
+          id: Date.now().toString() + "_redflags",
+          role: "red-flags",
+          content: "",
+          timestamp: Date.now(),
+          introText: redFlagsResult.introText,
+          flags: redFlagsResult.flags,
+        };
+        addMessageToActiveLoop(redFlagsMsg);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
 
       // Show typing for reply generation
       const typingMsg2: TypingMessage = {
@@ -537,6 +559,17 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           summary={msg.summary}
           patterns={msg.patterns}
+        />
+      );
+    }
+
+    if (message.role === "red-flags") {
+      const msg = message as RedFlagsMessage;
+      return (
+        <RedFlagsCard
+          key={message.id}
+          introText={msg.introText}
+          flags={msg.flags}
         />
       );
     }

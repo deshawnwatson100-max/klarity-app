@@ -1540,3 +1540,121 @@ Generate a boundary clarity summary to help the user understand their boundaries
     };
   }
 }
+
+/**
+ * Red Flags Analysis types
+ */
+export interface RedFlagsAnalysis {
+  detected: boolean;
+  introText: string;
+  flags: { text: string }[];
+}
+
+/**
+ * Detect potential red flags in communication
+ * Returns red flags only when clear or potential signals are detected
+ * Tone is calm, neutral, non-judgmental — like a thoughtful friend pointing something out
+ */
+export async function detectRedFlags(
+  userMessage: string,
+  patterns?: string[]
+): Promise<RedFlagsAnalysis> {
+  const systemPrompt = `You are an emotionally intelligent AI that helps people notice communication patterns. Your tone is calm, neutral, and supportive — like a thoughtful friend pointing something out, not a warning system.
+
+TASK: Analyze the provided text for potential red flags in communication. Only surface flags when there are CLEAR or POTENTIAL signals worth noticing.
+
+WHAT COUNTS AS A RED FLAG:
+- Dismissing or invalidating feelings
+- Shifting blame or refusing accountability
+- Inconsistency between words and actions
+- Pressure tactics or guilt-tripping
+- Withholding information or stonewalling
+- Patterns of deflection or avoidance
+- One-sided expectations or emotional labor
+- Subtle put-downs or condescension
+- Love-bombing followed by withdrawal
+- Making someone question their reality
+
+DO NOT FLAG:
+- Normal disagreements
+- Simple misunderstandings
+- One-time frustrations
+- Healthy boundary-setting by either party
+- Direct but respectful communication
+
+TONE RULES - CRITICAL:
+- Never tell the user what to do
+- Never label the other person as "toxic," "abusive," or "bad"
+- Avoid triggering or alarming language
+- Frame flags as patterns or signals, not diagnoses
+- Use neutral, observational language
+- No absolutes (never say "always" or "never" about someone)
+- Keep it calm and grounded
+
+RESPONSE FORMAT - provide JSON only:
+{
+  "detected": boolean (true if at least one clear or potential red flag exists),
+  "introText": "A short, calm intro sentence (1 sentence). Example: 'Here are a few things worth noticing — not conclusions, just signals.'",
+  "flags": [
+    { "text": "Neutral description of the pattern or signal (1-2 sentences max)" }
+  ] (2-4 items max, only include if detected is true)
+}
+
+If no red flags detected, return:
+{
+  "detected": false,
+  "introText": "",
+  "flags": []
+}`;
+
+  const patternsContext = patterns && patterns.length > 0
+    ? `\nDetected communication patterns: ${patterns.join(", ")}`
+    : "";
+
+  const userPrompt = `Analyze this message for potential red flags:
+
+"${userMessage}"${patternsContext}
+
+Return valid JSON only.`;
+
+  try {
+    const client = getOpenAIClient();
+
+    const completion = await client.chat.completions.create({
+      model: "o4-mini-2025-04-16",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
+      console.log("[detectRedFlags] No response from API");
+      return { detected: false, introText: "", flags: [] };
+    }
+
+    const parsed = JSON.parse(responseText);
+
+    if (parsed.detected === true && Array.isArray(parsed.flags) && parsed.flags.length > 0) {
+      console.log("[detectRedFlags] Red flags detected:", parsed.flags.length);
+      return {
+        detected: true,
+        introText: parsed.introText || "Here are a few things worth noticing — not conclusions, just signals.",
+        flags: parsed.flags.slice(0, 4).map((f: any) => ({
+          text: typeof f.text === "string" ? f.text : String(f),
+        })),
+      };
+    }
+
+    console.log("[detectRedFlags] No red flags detected");
+    return { detected: false, introText: "", flags: [] };
+  } catch (error) {
+    console.error("[detectRedFlags] Error:", error);
+    return { detected: false, introText: "", flags: [] };
+  }
+}
+

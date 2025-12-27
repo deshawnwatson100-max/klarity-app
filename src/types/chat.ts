@@ -25,7 +25,7 @@ export type MessageRole =
   | "boundary-detection"
   | "boundary-clarity-summary"
   | "dysfunctional-communication"
-  | "need-different-approach";
+  | "red-flags";
 
 export interface Message {
   id: string;
@@ -234,6 +234,12 @@ export interface DysfunctionalCommunicationMessage extends Message {
   patterns?: string[];
 }
 
+export interface RedFlagsMessage extends Message {
+  role: "red-flags";
+  introText: string;
+  flags: { text: string }[];
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -259,4 +265,5 @@ export type ChatMessage =
   | VoiceEmotionScanResultMessage
   | BoundaryDetectionMessage
   | BoundaryClaritySummaryMessage
-  | DysfunctionalCommunicationMessage;
+  | DysfunctionalCommunicationMessage
+  | RedFlagsMessage;
