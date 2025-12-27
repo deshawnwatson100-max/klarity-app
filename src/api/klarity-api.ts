@@ -1758,3 +1758,186 @@ Return valid JSON only.`;
   }
 }
 
+/**
+ * Clarification Analysis types
+ */
+export interface ClarificationAnalysis {
+  needsClarification: boolean;
+  clarificationQuestion: string;
+  clarificationType: "moment" | "person" | "goal" | "thread" | "emotional" | null;
+}
+
+/**
+ * Klarity Clarification Mode
+ * Checks if user input needs clarification before generating replies
+ * Helps users slow down, focus, and get specific — gently
+ */
+export async function checkNeedsClarification(
+  userMessage: string
+): Promise<ClarificationAnalysis> {
+  const systemPrompt = `You are Klarity in Clarification Mode.
+
+Your job is to determine if the user's input is clear enough to generate a helpful reply suggestion, or if clarification is needed first.
+
+## WHAT MAKES INPUT CLEAR?
+At least ONE of these should be identifiable:
+- What happened (the specific moment or exchange)
+- Who it's with (the person involved)
+- What outcome the user wants
+
+## WHAT MAKES INPUT UNCLEAR?
+- Purely emotional venting with no specific situation
+- Multiple tangled situations without focus
+- Missing context about what was said or done
+- No clear person or relationship identified
+- Rambling without a specific moment to address
+
+## IF CLARIFICATION IS NEEDED
+Ask ONE focused question. Choose the most helpful:
+
+1. Focus the Moment: "What actually happened in the moment you want help with?"
+2. Identify the Person: "Who is this with, and what did they say or do?"
+3. Define the Goal: "What outcome are you hoping for here?"
+4. Separate Threads: "Which part of this do you want to handle first?"
+5. Purely Emotional: "That's understandable. What's the last thing that was said or done?"
+
+## VOICE REQUIREMENTS
+- Calm, grounded, human
+- Reassuring but not emotional
+- Efficient and respectful
+- Plain, everyday language
+- Short responses
+- One question only
+
+## GENTLE FRAMING
+Use phrases like:
+- "Let's slow this down for a second."
+- "I want to make sure I understand."
+- "We can take this one step at a time."
+
+## DO NOTs
+- Do NOT give advice or reply suggestions
+- Do NOT label emotions or behavior
+- Do NOT diagnose or therapize
+- Do NOT ask multiple questions
+- Do NOT rephrase the situation for the user
+
+Respond with valid JSON only:
+{
+  "needsClarification": boolean (true if input is unclear),
+  "clarificationQuestion": "string (the ONE question to ask, or empty if clear)",
+  "clarificationType": "moment" | "person" | "goal" | "thread" | "emotional" | null
+}`;
+
+  const userPrompt = `Evaluate if this input needs clarification before I can help with a reply:
+
+"${userMessage}"
+
+Return valid JSON only.`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      1000,
+      true
+    );
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    return {
+      needsClarification: parsed.needsClarification === true,
+      clarificationQuestion: parsed.clarificationQuestion || "",
+      clarificationType: parsed.clarificationType || null,
+    };
+  } catch (error) {
+    console.error("[checkNeedsClarification] Error:", error);
+    // Default to not needing clarification on error
+    return {
+      needsClarification: false,
+      clarificationQuestion: "",
+      clarificationType: null,
+    };
+  }
+}
+
+/**
+ * Generate a clarification response for the user
+ * Used when input is unclear and we need more information
+ */
+export async function generateClarificationResponse(
+  userMessage: string,
+  attemptCount: number = 1
+): Promise<string> {
+  // After 2-3 attempts, offer structure instead of questions
+  if (attemptCount >= 3) {
+    return "If it helps, you can answer just one:\n• What was said\n• What you want to say back\n• Or what outcome you want";
+  }
+
+  const systemPrompt = `You are Klarity in Clarification Mode.
+
+Your job is to help the user clarify their situation. Their input is unclear, incomplete, or emotionally overloaded.
+
+## VOICE
+- Calm, grounded, human
+- Reassuring but not emotional
+- Efficient and respectful
+- You sound like someone helping organize thoughts, not process feelings
+
+## RESPONSE FORMAT
+1. Light acknowledgment (1 short sentence)
+2. ONE focused question
+
+## QUESTION OPTIONS (pick ONE)
+- "What actually happened in the moment you want help with?"
+- "Who is this with, and what did they say or do?"
+- "What outcome are you hoping for here?"
+- "Which part of this do you want to handle first?"
+
+For purely emotional input with no situation:
+- "That's understandable. What's the last thing that was said or done?"
+
+## DO NOTs
+- Do NOT give advice
+- Do NOT label emotions
+- Do NOT ask multiple questions
+- Do NOT rephrase their situation
+- Do NOT push forward prematurely
+
+Keep the response SHORT (2-3 sentences max).`;
+
+  const userPrompt = `The user said: "${userMessage}"
+
+Generate a brief, gentle clarification response. Keep it short.`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      500,
+      false
+    );
+
+    return response.trim() || "I want to make sure I understand. What actually happened in the moment you want help with?";
+  } catch (error) {
+    console.error("[generateClarificationResponse] Error:", error);
+    return "I want to make sure I understand. What actually happened in the moment you want help with?";
+  }
+}
+
