@@ -101,8 +101,8 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Maintains professional aesthetic while feeling warm and welcoming
 - All effects are whisper-soft - no loud colors or distracting movement
 
-### Screen 2: Chat Screen with Simplified Clarity Analysis 💬✨
-**FINAL LOCKED VERSION** - Klarity Chat Loop designed to feel like a calm, intelligent friend helping you think clearly.
+### Screen 2: Chat Screen with Understand Mode Analysis 💬✨
+**FINAL LOCKED VERSION** - Klarity Chat Loop designed to help users see social situations clearly and navigate them effectively.
 
 **Overall Style:**
 - ChatGPT-inspired floating text layout (no heavy bubbles)
@@ -110,19 +110,43 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Subtle motion, soft fades, slight glow only when meaningful
 - Luxury neutral palette (charcoal, deep grey, soft off-white)
 - No harsh dividers, no loud accents
-- Conversational, human tone throughout
+- Observational, human tone throughout
 
-**AI Personality Rules:**
-- Sounds like a thoughtful, emotionally intelligent friend
-- Uses natural language, light warmth, subtle reassurance
-- Never instructs, diagnoses, or controls
-- Avoids therapy-speak
-- Reflects first, suggests second
+**AI Personality Rules (Understand Mode):**
+- Sounds like someone who understands people and environments well
+- Uses plain, everyday language
+- Never diagnoses, labels, or judges
+- Avoids therapy-speak ("toxic," "narcissistic," "trauma")
+- Identifies patterns first, offers navigation advice second
 
 **Interaction Feel:**
 - Nothing feels mandatory
-- Everything feels optional, supportive, and clear
-- The user always feels understood—not corrected
+- Everything feels optional, clear, and practical
+- The user always feels capable—not corrected
+
+#### Understand Mode Philosophy
+
+The Understand tab answers one core question: **"What is actually going on here?"**
+
+It helps users:
+- Name unspoken social dynamics
+- See the situation more objectively
+- Stop misattributing intent to themselves
+- Decide how to move, not what to feel
+
+**It IS:**
+- Social situation decoding
+- Context clarification
+- Power & incentive awareness
+- Pattern identification (competition, hierarchy, avoidance, signaling)
+- Practical navigation guidance
+
+**It is NOT:**
+- Therapy
+- Moral judgment
+- Emotional validation loops
+- Relationship fixing
+- Telling the user who is "wrong"
 
 #### Core Chat Loop Order (LOCKED)
 
@@ -130,33 +154,17 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - Accept text, pasted messages, or image-based messages
 - Flow immediately into analysis without friction
 
-**2. Communication Pattern Insight (Floating Card)**
-- Starts minimized with pattern preview and "tap to expand"
-- Tap anywhere on card to expand/collapse
-- Lightweight, expandable card that identifies dysfunctional or confusing communication
-- Friendly, plain-language explanation (no clinical phrasing)
-- Bottom action: "How this affects me" link
+**2. Situation Analysis Card (Floating Card)**
+- Identifies the situation type in neutral language
+- Explains the dynamics at play simply
+- Uses phrases like "This sounds like...", "What may be happening here is..."
+- No labels like "toxic" or "manipulative"
 
-**3. Expanded Insight (On Tap)**
-When "How this affects me" is tapped:
-- Card smoothly expands inline
-- Shows Personal Impact Breakdown:
-  - **Emotionally** - confusion, self-doubt, stress, pressure
-  - **Mentally** - overthinking, second-guessing, feeling drained
-  - **Relationally** - misalignment, imbalance, erosion of trust
-  - **Behaviorally** - people-pleasing, withdrawing, over-explaining
-- **Harm Impact Score (0-100)** with animated progress bar
-  - Label: "How damaging over time"
-  - Color-coded: Green (low), Yellow (medium), Red (high)
-  - Framed gently, neutral supportive language
-- **Reassurance Line** - Grounding validation
-- **Agency Reminder** - "This just gives you clarity — what you do with it is completely up to you."
-
-**4. Suggested Reply**
-- Appears immediately after insight
+**3. Suggested Reply with Navigation Advice**
+- Appears immediately after situation analysis
 - Displayed as floating response block (not a hard bubble)
-- Tone: grounded, emotionally intelligent, calm
-- Includes guidance note with bulb icon
+- Tone: calm, clear, practical
+- Includes navigation guidance note (not emotional advice)
 - Tap reply text to minimize/expand
 - **Primary button:** "Use this reply"
 - **Inline modifiers (always visible):**
@@ -166,7 +174,12 @@ When "How this affects me" is tapped:
 - Previous replies auto-minimize when new one is generated
 - Minimized replies show truncated preview with "Tap to expand"
 
-**5. Need a Different Approach?**
+**Navigation Guidance Note Examples:**
+- "In situations like this, keeping communication brief and factual works best."
+- "Matching the level of directness in the room can reduce friction."
+- "Clarity and boundaries tend to work better than openness here."
+
+**4. Need a Different Approach?**
 - Soft follow-up option under the reply
 - Simple text prompt: "Need a different approach?"
 - Inline horizontal pill options:
