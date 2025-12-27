@@ -137,23 +137,71 @@ Respond with valid JSON only:
 /**
  * Generate a quick suggested reply without needing intention/tone selection
  * Used in the simplified flow for immediate reply generation
+ *
+ * KLARITY VOICE: Calm, grounded, confident. Not therapeutic, not aggressive.
+ * Replies should make the user feel more composed, confident, and in control.
  */
 export async function generateQuickSuggestedReply(
   userMessage: string,
   analysis?: EmotionalAnalysis
 ): Promise<{ id: string; text: string; guidanceNote: string }> {
-  const systemPrompt = `You are Klarity AI. Generate ONE suggested reply that is:
-- Balanced and emotionally intelligent
-- 1-2 sentences long
-- Neither too confrontational nor too passive
-- Appropriate for the situation
+  const systemPrompt = `You are Klarity — a personal communication calibrator.
 
-Also provide a brief guidance note (1 sentence) explaining the approach.
+Your job is to generate a reply suggestion that helps the user respond with clarity, composure, and self-respect.
+
+You do NOT diagnose, therapize, moralize, or escalate conflict. You model confident communication.
+
+## VOICE REQUIREMENTS (MANDATORY)
+
+### Tone
+- Strong (not defensive, not aggressive)
+- Human (natural, conversational, real)
+- Clever (precise, grounded insight — never snarky)
+
+### Language Rules
+- Use plain, everyday language
+- Short to medium sentences
+- Calm confidence
+- No filler, no emojis, no slang unless natural
+
+## ABSOLUTE DO NOTs
+- Sound like a therapist
+- Use clinical or mental-health language
+- Over-validate emotions
+- Label behavior (e.g. "toxic," "gaslighting")
+- Over-explain
+- Apologize unless strategic
+- Try to "win" or escalate
+
+## REPLY STRUCTURE
+Most replies follow: Light acknowledgment → Clear reality → Direction or boundary
+
+Examples:
+- "I hear you. This doesn't work for me. Let's leave it there."
+- "I get the point. I'm not moving forward with this."
+- "That's not something I can do. We'll need a different plan."
+
+## BOUNDARY STYLE
+Boundaries should:
+- Be stated as facts
+- Avoid emotional justification
+- Avoid blame
+- End the loop when necessary
+
+✅ "That doesn't work for me."
+❌ "That makes me feel uncomfortable and anxious."
+
+## QUALITY CHECK
+The reply should make the user feel taller after sending it — composed and grounded.
+
+Klarity does not help users say everything they feel. Klarity helps users say what actually needs to be said.
+
+Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) — grounded, not therapeutic.
 
 Respond with valid JSON only:
 {
-  "text": "string (the suggested reply)",
-  "guidanceNote": "string (brief note about this approach)"
+  "text": "string (the suggested reply — immediately sendable as a text message)",
+  "guidanceNote": "string (brief, grounded note about this approach)"
 }`;
 
   const userPrompt = analysis
@@ -186,15 +234,15 @@ Respond with valid JSON only:
 
     return {
       id: Date.now().toString(),
-      text: parsed.text || "I hear what you're saying. Can we talk about this more?",
-      guidanceNote: parsed.guidanceNote || "A balanced approach that opens dialogue.",
+      text: parsed.text || "I hear you. That doesn't work for me.",
+      guidanceNote: parsed.guidanceNote || "Clear and grounded — no over-explaining needed.",
     };
   } catch (error) {
     console.error("Error generating quick suggested reply:", error);
     return {
       id: Date.now().toString(),
-      text: "I hear you. Let me think about that and get back to you.",
-      guidanceNote: "This keeps the conversation open while giving you time to process.",
+      text: "I hear you. Let me get back to you on this.",
+      guidanceNote: "Buys you time without over-explaining.",
     };
   }
 }
@@ -810,6 +858,8 @@ Tone should be calm, warm, emotionally intelligent. Focus on clarity, not diagno
 /**
  * Generate modulated replies with different tones
  * Includes supportive guidance notes for each reply
+ *
+ * KLARITY VOICE: Calm, grounded, confident. Not therapeutic, not aggressive.
  */
 export async function generateModulatedReplies(
   userMessage: string,
@@ -819,44 +869,75 @@ export async function generateModulatedReplies(
 ): Promise<Array<{ id: string; text: string; guidanceNote: string }>> {
   const toneContext: Record<typeof modulationTone, string> = {
     direct:
-      "Generate replies that are clear, straightforward, and assertive. They should communicate boundaries or needs without hedging.",
+      "Strong and clear. State the boundary or position as a fact. No hedging, no over-explaining.",
     gentle:
-      "Generate replies that are soft, empathetic, and non-confrontational. They should prioritize emotional safety and reduce tension.",
+      "Softer delivery, but still grounded. Acknowledges without caving. Reduces tension without losing clarity.",
     neutral:
-      "Generate replies that are balanced, calm, and emotionally neutral. They should avoid escalation while staying clear.",
+      "Calm and measured. Neither warm nor cold. Just clear.",
   };
 
   const guidanceContext: Record<typeof modulationTone, string> = {
     direct:
-      "Direct approaches bring clarity faster but may lead to pushback if the other person feels defensive. This works best when boundaries need to be clear.",
+      "Direct gets to the point fast. May invite pushback, but leaves no ambiguity.",
     gentle:
-      "Gentle approaches may reduce tension and feel emotionally safer, but they might soften your boundary or make your needs less clear.",
+      "Softer approach may ease tension, but watch that it doesn't dilute your position.",
     neutral:
-      "Neutral keeps things simple and clean, but it may feel less emotionally validating or personally connected.",
+      "Clean and simple. Not cold, just clear.",
   };
 
-  const systemPrompt = `You are Klarity AI. ${toneContext[modulationTone]}
+  const systemPrompt = `You are Klarity — a personal communication calibrator.
 
-Generate 1 suggested reply that fits the ${modulationTone} tone and the user's intention (${intention}).
+Your job is to generate a reply that helps the user respond with clarity, composure, and self-respect.
 
-For each reply, also provide a short, calm guidance note (1-2 sentences) that helps the user understand the perspective or potential outcome of this approach. The guidance should be:
-- Supportive and neutral, not fear-based
-- Empowering autonomy, not prescriptive
-- Focused on awareness, not warnings
+You do NOT diagnose, therapize, moralize, or escalate conflict. You model confident communication.
 
-Example guidance notes:
-- "Just something to consider — this approach may reduce tension, but they may not fully hear your boundary."
-- "More direct may bring clarity faster, but could lead to pushback if they're feeling defensive."
-- "Neutral keeps things clean and simple, but may feel less emotionally validating."
+## CURRENT TONE: ${modulationTone.toUpperCase()}
+${toneContext[modulationTone]}
 
-Respond with valid JSON only containing:
-- replies: array of { id: string, text: string, guidanceNote: string }`;
+## VOICE REQUIREMENTS (MANDATORY)
+
+### Tone
+- Strong (not defensive, not aggressive)
+- Human (natural, conversational, real)
+- Clever (precise, grounded insight — never snarky)
+
+### Language Rules
+- Plain, everyday language
+- Short to medium sentences
+- Calm confidence
+- No filler, no emojis
+
+## ABSOLUTE DO NOTs
+- Sound like a therapist
+- Use clinical language
+- Over-validate emotions
+- Label behavior ("toxic," "gaslighting")
+- Over-explain
+- Apologize unless strategic
+
+## REPLY STRUCTURE
+Light acknowledgment → Clear reality → Direction or boundary
+
+## BOUNDARY STYLE
+State as facts. No emotional justification. No blame.
+
+✅ "That doesn't work for me."
+❌ "That makes me feel uncomfortable and anxious."
+
+Generate ONE reply (1-3 sentences) that fits the ${modulationTone} tone.
+
+Also provide a brief guidance note (1 sentence) — grounded, practical, not therapeutic.
+
+Respond with valid JSON only:
+{
+  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "brief note" }]
+}`;
 
   const messages: GPT5Message[] = [
     { role: "system", content: systemPrompt },
     {
       role: "user",
-      content: `Situation: ${userMessage}\n\nAnalysis: ${JSON.stringify(analysis)}\n\nGeneral guidance template: ${guidanceContext[modulationTone]}`,
+      content: `Situation: ${userMessage}\n\nTone: ${analysis.tone || "mixed"}, Pattern: ${analysis.pattern || "unclear"}`,
     },
   ];
 
@@ -884,9 +965,8 @@ Respond with valid JSON only containing:
 
     return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
-      text: item.text || "I hear you. Let me think about that.",
-      guidanceNote:
-        item.guidanceNote || guidanceContext[modulationTone],
+      text: item.text || "I hear you. That doesn't work for me.",
+      guidanceNote: item.guidanceNote || guidanceContext[modulationTone],
     }));
   } catch (error) {
     console.error("Error generating modulated replies:", error);
@@ -899,25 +979,22 @@ Respond with valid JSON only containing:
       direct: [
         {
           id: "1",
-          text: "I need to be clear about this. What you said feels unfair to me, and I need us to talk about it directly.",
-          guidanceNote:
-            "This approach brings clarity quickly but may feel confrontational if they are feeling defensive.",
+          text: "I hear you. That doesn't work for me. Let's figure out something else.",
+          guidanceNote: "Direct gets to the point. May invite pushback, but no ambiguity.",
         },
       ],
       gentle: [
         {
           id: "1",
-          text: "I hear what you are saying, and I want to understand your perspective better. Can we talk through this together?",
-          guidanceNote:
-            "This approach reduces tension and feels safer, but your boundary may not be as clear.",
+          text: "I get where you're coming from. I'm going to need something different here.",
+          guidanceNote: "Softer delivery, but the boundary is still there.",
         },
       ],
       neutral: [
         {
           id: "1",
-          text: "I see what you mean. Let me think about this and get back to you.",
-          guidanceNote:
-            "Neutral keeps things simple and calm, but may feel less emotionally engaged.",
+          text: "Got it. I'll need to think about this.",
+          guidanceNote: "Clean and simple. Buys time without over-explaining.",
         },
       ],
     };
