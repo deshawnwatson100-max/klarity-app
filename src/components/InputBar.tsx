@@ -81,7 +81,7 @@ export function InputBar({
       className="px-4 py-3"
       style={{
         paddingBottom: Math.max(insets.bottom, 12),
-        backgroundColor: "transparent",
+        backgroundColor: "#111111",
       }}
     >
       {/* Mode Toggle */}

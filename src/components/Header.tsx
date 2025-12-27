@@ -80,7 +80,7 @@ export function Header({
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: "rgba(0, 0, 0, 0.18)",
+        backgroundColor: "#111111",
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
