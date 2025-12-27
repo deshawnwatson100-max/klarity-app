@@ -26,7 +26,8 @@ export type MessageRole =
   | "boundary-clarity-summary"
   | "dysfunctional-communication"
   | "red-flags"
-  | "rewrite-reply-card";
+  | "rewrite-reply-card"
+  | "image-continuation";
 
 export interface Message {
   id: string;
@@ -247,6 +248,13 @@ export interface RewriteReplyCardMessage extends Message {
   originalIntent: string;
 }
 
+export interface ImageContinuationMessage extends Message {
+  role: "image-continuation";
+  continuationSummary: string;
+  whatChanged: string;
+  approachShift?: string;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -274,4 +282,5 @@ export type ChatMessage =
   | BoundaryClaritySummaryMessage
   | DysfunctionalCommunicationMessage
   | RedFlagsMessage
-  | RewriteReplyCardMessage;
+  | RewriteReplyCardMessage
+  | ImageContinuationMessage;

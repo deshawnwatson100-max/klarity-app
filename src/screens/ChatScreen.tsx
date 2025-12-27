@@ -31,6 +31,7 @@ import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
+import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
@@ -42,6 +43,7 @@ import {
   generateEmotionalAnalysis,
   detectRedFlags,
   generateRewriteReply,
+  analyzeImageContinuation,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -53,6 +55,7 @@ import {
   RedFlagsMessage,
   EmotionalAnalysis,
   RewriteReplyCardMessage,
+  ImageContinuationMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -71,6 +74,14 @@ export function ChatScreen({ navigation }: Props) {
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+
+  // Track conversation context for mid-loop image continuation
+  const [conversationContext, setConversationContext] = useState<{
+    originalMessage: string;
+    previousSummary: string;
+    previousPatterns?: string[];
+    previousReply?: string;
+  } | null>(null);
 
   // Content area animation values
   const contentOpacity = useSharedValue(0);
@@ -293,6 +304,14 @@ export function ChatScreen({ navigation }: Props) {
         intention: "maintain", // Default neutral intention
       };
       addMessageToActiveLoop(replyMsg);
+
+      // Save conversation context for potential mid-loop image continuation
+      setConversationContext({
+        originalMessage: userMessage.content,
+        previousSummary: dysfunctionalSummary.summary,
+        previousPatterns: dysfunctionalSummary.patterns,
+        previousReply: suggestedReply.text,
+      });
 
     } catch (error) {
       console.error("Error processing message:", error);
@@ -536,6 +555,28 @@ export function ChatScreen({ navigation }: Props) {
       return;
     }
 
+    // Check if this is a mid-loop image (user adding a new image to existing conversation)
+    const isMidLoopImage = selectedImageBase64 && conversationContext !== null && messages.length > 1;
+
+    if (isMidLoopImage) {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content: currentInput || "[New Screenshot]",
+        timestamp: Date.now(),
+        imageUrl: selectedImageUri,
+        imageBase64: selectedImageBase64,
+      };
+
+      addMessageToActiveLoop(userMessage);
+      setCurrentInput("");
+      setSelectedImageUri(undefined);
+      setSelectedImageBase64(undefined);
+
+      await processImageContinuation(userMessage);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -590,6 +631,78 @@ export function ChatScreen({ navigation }: Props) {
         id: Date.now().toString(),
         role: "assistant",
         content: "I encountered an error polishing your reply. Please try again.",
+        timestamp: Date.now(),
+      });
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  // Process additional image mid-loop as a continuation
+  const processImageContinuation = async (userMessage: ChatMessage) => {
+    if (!conversationContext || !userMessage.imageBase64) return;
+
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    try {
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(typingMsg);
+
+      // Analyze image as continuation
+      const result = await analyzeImageContinuation(
+        userMessage.imageBase64,
+        conversationContext
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add continuation card showing what changed
+      const continuationMsg: ImageContinuationMessage = {
+        id: Date.now().toString() + "_continuation",
+        role: "image-continuation",
+        content: "",
+        timestamp: Date.now(),
+        continuationSummary: result.continuationSummary,
+        whatChanged: result.whatChanged,
+        approachShift: result.approachShift,
+      };
+      addMessageToActiveLoop(continuationMsg);
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Add updated suggested reply
+      const replyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_reply",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: [result.updatedReply],
+        intention: "maintain",
+      };
+      addMessageToActiveLoop(replyMsg);
+
+      // Update conversation context with new info
+      setConversationContext({
+        ...conversationContext,
+        previousSummary: result.continuationSummary,
+        previousReply: result.updatedReply.text,
+      });
+
+    } catch (error) {
+      console.error("Error processing image continuation:", error);
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "I encountered an error analyzing this new message. Please try again.",
         timestamp: Date.now(),
       });
     } finally {
@@ -675,6 +788,18 @@ export function ChatScreen({ navigation }: Props) {
           rewrittenReply={msg.rewrittenReply}
           originalIntent={msg.originalIntent}
           onUseReply={handleUseRewrittenReply}
+        />
+      );
+    }
+
+    if (message.role === "image-continuation") {
+      const msg = message as ImageContinuationMessage;
+      return (
+        <ImageContinuationCard
+          key={message.id}
+          continuationSummary={msg.continuationSummary}
+          whatChanged={msg.whatChanged}
+          approachShift={msg.approachShift}
         />
       );
     }

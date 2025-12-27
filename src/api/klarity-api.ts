@@ -1942,6 +1942,152 @@ Generate a brief, gentle clarification response. Keep it short.`;
 }
 
 /**
+ * Analyze an additional image mid-loop as a continuation of the existing conversation
+ * Treats the new image in context of everything already discussed
+ */
+export async function analyzeImageContinuation(
+  imageBase64: string,
+  conversationContext: {
+    originalMessage: string;
+    previousSummary: string;
+    previousPatterns?: string[];
+    previousReply?: string;
+  }
+): Promise<{
+  continuationSummary: string;
+  whatChanged: string;
+  updatedReply: { id: string; text: string; guidanceNote: string };
+  approachShift?: string;
+}> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are Klarity — a personal communication calibrator analyzing a NEW message screenshot that continues an existing conversation the user is already discussing.
+
+## CONTEXT
+The user has already shared a situation with you. Now they are adding a NEW screenshot showing an additional message in the same conversation. Your job is to:
+
+1. Analyze the new message IN CONTEXT of everything already discussed
+2. Briefly acknowledge what has changed or escalated (if anything)
+3. Generate ONE updated reply suggestion that:
+   - Aligns with the previously suggested approach
+   - Mirrors the tone of the ongoing conversation
+   - Is emotionally intelligent, respectful, and grounded
+
+## IMPORTANT
+- Do NOT re-explain the full situation
+- Do NOT start from scratch
+- Keep the response concise, calm, and practical
+- Assume the user wants to keep momentum, not start over
+- If the new message contradicts or complicates the prior approach, gently adjust and explain the shift in ONE short sentence
+
+## VOICE REQUIREMENTS
+- Calm and confident
+- Human and natural
+- Clear, not sharp
+- Plain, everyday language
+
+Respond with valid JSON only:
+{
+  "continuationSummary": "1-2 sentences briefly summarizing what the new message adds to the situation",
+  "whatChanged": "1 sentence noting any escalation, de-escalation, or shift in dynamic (or 'The conversation continues along the same lines' if no major change)",
+  "updatedReply": {
+    "id": "string",
+    "text": "the updated suggested reply (1-3 sentences) — ready to send as-is",
+    "guidanceNote": "brief, grounded note about this approach"
+  },
+  "approachShift": "optional — only include if the new message requires adjusting the previous approach, explain in 1 sentence"
+}`;
+
+  const userPrompt = `## EXISTING CONTEXT
+Original situation: ${conversationContext.originalMessage}
+
+Previous analysis summary: ${conversationContext.previousSummary}
+${conversationContext.previousPatterns ? `Previous patterns detected: ${conversationContext.previousPatterns.join(", ")}` : ""}
+${conversationContext.previousReply ? `Previous suggested reply: "${conversationContext.previousReply}"` : ""}
+
+## NEW IMAGE
+Analyze this new screenshot as a CONTINUATION of the above conversation. Do not restart the analysis — build on what we already know.`;
+
+  try {
+    console.log("[analyzeImageContinuation] Starting continuation analysis");
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high",
+              },
+            },
+            {
+              type: "text",
+              text: userPrompt,
+            },
+          ],
+        },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 1,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      throw new Error("Empty response from API");
+    }
+
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    console.log("[analyzeImageContinuation] Analysis complete");
+
+    return {
+      continuationSummary: parsed.continuationSummary || "The conversation continues with a new message.",
+      whatChanged: parsed.whatChanged || "The conversation continues along the same lines.",
+      updatedReply: {
+        id: Date.now().toString(),
+        text: parsed.updatedReply?.text || "I hear you. Let me think about how to respond to this.",
+        guidanceNote: parsed.updatedReply?.guidanceNote || "Stay grounded and respond when you are ready.",
+      },
+      approachShift: parsed.approachShift,
+    };
+  } catch (error: any) {
+    console.error("[analyzeImageContinuation] Error:", error?.message || error);
+
+    return {
+      continuationSummary: "A new message has been added to the conversation.",
+      whatChanged: "The conversation continues.",
+      updatedReply: {
+        id: Date.now().toString(),
+        text: "I hear you. Let me take a moment to process this before responding.",
+        guidanceNote: "Take your time — a thoughtful response is more valuable than a quick one.",
+      },
+    };
+  }
+}
+
+/**
  * Generate a polished rewrite of the user's intended reply
  * Preserves the user's intent but improves clarity, boundaries, and emotional intelligence
  * Used in Rewrite mode - skips analysis, just provides one polished reply

@@ -818,6 +818,32 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **ChatGPT-Style Minimal Layout** - Floating text blocks for AI responses, no heavy card containers
 ✅ **Clean Message UI** - User messages in subtle bubbles, assistant messages as floating paragraphs
 ✅ **Rewrite Mode** - Toggle between Understand and Rewrite modes in the input bar
+✅ **Mid-Loop Image Continuation** - Add new screenshots during a chat loop without resetting analysis
+
+### NEW: Mid-Loop Image Continuation Feature
+When you add a new image during an active chat loop, Klarity treats it as a continuation of the same conversation rather than starting fresh.
+
+#### How it Works
+1. Start a conversation with an initial message or image
+2. Klarity analyzes and provides suggested replies
+3. If the other person sends another message, take a new screenshot
+4. Add the new screenshot to the same chat loop
+5. Klarity analyzes it **in context** of everything already discussed
+
+#### What You Get
+- **Continuation Summary** - Brief 1-2 sentence summary of what the new message adds
+- **What Changed** - Notes any escalation, de-escalation, or shift in dynamic
+- **Updated Reply Suggestion** - One new reply that:
+  - Aligns with the previously suggested approach
+  - Mirrors the tone of the ongoing conversation
+  - Is emotionally intelligent, respectful, and grounded
+- **Approach Shift** (if needed) - If the new message contradicts or complicates the prior approach, explains the adjustment in one short sentence
+
+#### Benefits
+- No need to re-explain the full situation
+- Keeps conversation momentum
+- Maintains consistency with previous suggestions
+- Adjusts gracefully when dynamics shift
 
 ### NEW: Rewrite Mode Feature
 A second input mode that lets you polish your own replies with AI assistance.
