@@ -2,10 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSequence,
   interpolate,
   Extrapolation,
   Easing,
@@ -27,6 +29,80 @@ interface SuggestedReplyCardProps {
   onGenerateDifferent?: () => void;
 }
 
+// Icon button with tap feedback
+function IconButton({
+  icon,
+  activeIcon,
+  onPress,
+  isLoading,
+  showSuccess,
+  color = "#6B7280",
+  activeColor = "#7DD3C0",
+  size = 18,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  activeIcon?: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  isLoading?: boolean;
+  showSuccess?: boolean;
+  color?: string;
+  activeColor?: string;
+  size?: number;
+}) {
+  const scale = useSharedValue(1);
+  const [isActive, setIsActive] = useState(false);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    scale.value = withSequence(
+      withTiming(0.8, { duration: 80 }),
+      withTiming(1.1, { duration: 80 }),
+      withTiming(1, { duration: 80 })
+    );
+    setIsActive(true);
+    onPress();
+
+    // Reset active state after animation (unless showSuccess keeps it)
+    if (!showSuccess) {
+      setTimeout(() => setIsActive(false), 300);
+    }
+  };
+
+  const displayIcon = showSuccess && activeIcon ? activeIcon : icon;
+  const displayColor = isActive || showSuccess ? activeColor : color;
+
+  if (isLoading) {
+    return (
+      <View style={{ width: size + 16, height: size + 16, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="small" color={color} />
+      </View>
+    );
+  }
+
+  return (
+    <Pressable onPress={handlePress}>
+      <Animated.View
+        style={[
+          {
+            width: size + 16,
+            height: size + 16,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: (size + 16) / 2,
+          },
+          animatedStyle,
+        ]}
+      >
+        <Ionicons name={displayIcon} size={size} color={displayColor} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 // Individual reply item component with its own animation state
 function ReplyItem({
   reply,
@@ -35,6 +111,7 @@ function ReplyItem({
   loadingAction,
   onModifyLength,
   onSelectReply,
+  onGenerateDifferent,
 }: {
   reply: SuggestedReply;
   isMinimized: boolean;
@@ -42,8 +119,11 @@ function ReplyItem({
   loadingAction: { replyId: string; action: "shorten" | "lengthen" } | null;
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onSelectReply: (reply: string) => void;
+  onGenerateDifferent?: () => void;
 }) {
   const contentHeight = useSharedValue(isMinimized ? 0 : 1);
+  const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
 
   useEffect(() => {
     contentHeight.value = withTiming(isMinimized ? 0 : 1, { duration: 300 });
@@ -60,9 +140,19 @@ function ReplyItem({
     overflow: "hidden" as const,
   }));
 
-  const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
-    if (!onModifyLength) return;
-    await onModifyLength(replyId, action);
+  const handleCopy = () => {
+    onSelectReply(reply.text);
+    setCopied(true);
+    // Reset after 2 seconds
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLike = () => {
+    setLiked(liked === "like" ? null : "like");
+  };
+
+  const handleDislike = () => {
+    setLiked(liked === "dislike" ? null : "dislike");
   };
 
   // Truncate text for minimized preview
@@ -173,80 +263,117 @@ function ReplyItem({
               </Text>
             </View>
 
-            {/* Action buttons - minimal style */}
-            <View className="flex-row items-center gap-3 mt-3">
-              <Pressable
-                onPress={() => onSelectReply(reply.text)}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  borderRadius: 20,
-                  backgroundColor: "#1F1F22",
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <Ionicons name="copy-outline" size={14} color="#E5E7EB" />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "500",
-                    color: "#E5E7EB",
-                  }}
-                >
-                  Use this reply
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Inline modifiers - Shorter / Longer */}
-            {onModifyLength && (
-              <View className="flex-row items-center gap-4 mt-3 pl-1">
+            {/* Action buttons row */}
+            <View className="flex-row items-center justify-between mt-3">
+              {/* Primary action buttons */}
+              <View className="flex-row items-center gap-2">
+                {/* Use this reply button with checkmark transition */}
                 <Pressable
-                  onPress={() => handleModifyLength(reply.id, "shorten")}
-                  disabled={loadingAction?.replyId === reply.id}
+                  onPress={handleCopy}
                   style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 4,
-                    opacity: pressed ? 0.6 : 1,
+                    gap: 6,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 20,
+                    backgroundColor: copied ? "#1a2f2a" : "#1F1F22",
+                    borderWidth: 1,
+                    borderColor: copied ? "#5BA89A" : "transparent",
+                    opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  {loadingAction?.replyId === reply.id && loadingAction?.action === "shorten" ? (
-                    <ActivityIndicator size="small" color="#6B7280" />
-                  ) : (
-                    <>
-                      <Ionicons name="remove-outline" size={14} color="#6B7280" />
-                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Shorter</Text>
-                    </>
-                  )}
+                  <Ionicons
+                    name={copied ? "checkmark" : "copy-outline"}
+                    size={14}
+                    color={copied ? "#7DD3C0" : "#E5E7EB"}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "500",
+                      color: copied ? "#7DD3C0" : "#E5E7EB",
+                    }}
+                  >
+                    {copied ? "Copied" : "Use this reply"}
+                  </Text>
                 </Pressable>
 
-                <View style={{ width: 1, height: 12, backgroundColor: "#374151" }} />
-
-                <Pressable
-                  onPress={() => handleModifyLength(reply.id, "lengthen")}
-                  disabled={loadingAction?.replyId === reply.id}
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: pressed ? 0.6 : 1,
-                  })}
-                >
-                  {loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen" ? (
-                    <ActivityIndicator size="small" color="#6B7280" />
-                  ) : (
-                    <>
-                      <Ionicons name="add-outline" size={14} color="#6B7280" />
-                      <Text style={{ fontSize: 13, color: "#6B7280" }}>Longer</Text>
-                    </>
-                  )}
-                </Pressable>
+                {/* Use a different reply button */}
+                {onGenerateDifferent && (
+                  <Pressable
+                    onPress={onGenerateDifferent}
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      backgroundColor: "transparent",
+                      borderWidth: 1,
+                      borderColor: "#374151",
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Ionicons name="refresh-outline" size={14} color="#9CA3AF" />
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: "#9CA3AF",
+                      }}
+                    >
+                      Different reply
+                    </Text>
+                  </Pressable>
+                )}
               </View>
-            )}
+
+              {/* Icon buttons row */}
+              <View className="flex-row items-center">
+                {/* Shorter button */}
+                {onModifyLength && (
+                  <IconButton
+                    icon="remove-outline"
+                    onPress={() => onModifyLength(reply.id, "shorten")}
+                    isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "shorten"}
+                    size={16}
+                  />
+                )}
+
+                {/* Longer button */}
+                {onModifyLength && (
+                  <IconButton
+                    icon="add-outline"
+                    onPress={() => onModifyLength(reply.id, "lengthen")}
+                    isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen"}
+                    size={16}
+                  />
+                )}
+
+                {/* Divider */}
+                <View style={{ width: 1, height: 16, backgroundColor: "#374151", marginHorizontal: 4 }} />
+
+                {/* Like button */}
+                <IconButton
+                  icon={liked === "like" ? "thumbs-up" : "thumbs-up-outline"}
+                  onPress={handleLike}
+                  showSuccess={liked === "like"}
+                  activeColor="#4ADE80"
+                  size={16}
+                />
+
+                {/* Dislike button */}
+                <IconButton
+                  icon={liked === "dislike" ? "thumbs-down" : "thumbs-down-outline"}
+                  onPress={handleDislike}
+                  showSuccess={liked === "dislike"}
+                  activeColor="#F87171"
+                  size={16}
+                />
+              </View>
+            </View>
           </Animated.View>
         </>
       )}
@@ -359,7 +486,7 @@ export function SuggestedReplyCard({
           </Text>
         </View>
 
-        {replies.map((reply, index) => (
+        {replies.map((reply) => (
           <ReplyItem
             key={reply.id}
             reply={reply}
@@ -368,6 +495,7 @@ export function SuggestedReplyCard({
             loadingAction={loadingAction}
             onModifyLength={onModifyLength ? handleModifyLength : undefined}
             onSelectReply={onSelectReply}
+            onGenerateDifferent={onGenerateDifferent}
           />
         ))}
       </View>
