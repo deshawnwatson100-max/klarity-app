@@ -27,6 +27,7 @@ interface SuggestedReplyCardProps {
   onSelectReply: (reply: string) => void;
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onGenerateDifferent?: () => void;
+  onAddEmoji?: (replyId: string, emoji: string) => void;
 }
 
 // Icon button with tap feedback
@@ -103,6 +104,13 @@ function IconButton({
   );
 }
 
+// Common emojis for quick access
+const QUICK_EMOJIS = [
+  "😊", "😂", "❤️", "🙏", "👍", "😅", "🥰", "😘",
+  "🤔", "😢", "😤", "🙄", "😌", "💕", "✨", "🔥",
+  "💯", "🎉", "👏", "🤗", "😭", "💪", "🤣", "😍",
+];
+
 // Individual reply item component with its own animation state
 function ReplyItem({
   reply,
@@ -112,6 +120,7 @@ function ReplyItem({
   onModifyLength,
   onSelectReply,
   onGenerateDifferent,
+  onAddEmoji,
 }: {
   reply: SuggestedReply;
   isMinimized: boolean;
@@ -120,10 +129,12 @@ function ReplyItem({
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onSelectReply: (reply: string) => void;
   onGenerateDifferent?: () => void;
+  onAddEmoji?: (replyId: string, emoji: string) => void;
 }) {
   const contentHeight = useSharedValue(isMinimized ? 0 : 1);
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     contentHeight.value = withTiming(isMinimized ? 0 : 1, { duration: 300 });
@@ -153,6 +164,17 @@ function ReplyItem({
 
   const handleDislike = () => {
     setLiked(liked === "dislike" ? null : "dislike");
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onAddEmoji?.(reply.id, emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const toggleEmojiPicker = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowEmojiPicker(!showEmojiPicker);
   };
 
   // Truncate text for minimized preview
@@ -332,6 +354,16 @@ function ReplyItem({
 
               {/* Icon buttons row */}
               <View className="flex-row items-center">
+                {/* Emoji button */}
+                <IconButton
+                  icon="happy-outline"
+                  onPress={toggleEmojiPicker}
+                  showSuccess={showEmojiPicker}
+                  color="#E5E7EB"
+                  activeColor="#7DD3C0"
+                  size={16}
+                />
+
                 {/* Shorter button */}
                 {onModifyLength && (
                   <IconButton
@@ -380,6 +412,46 @@ function ReplyItem({
                 />
               </View>
             </View>
+
+            {/* Emoji Picker Popup */}
+            {showEmojiPicker && (
+              <View
+                style={{
+                  marginTop: 8,
+                  backgroundColor: "#1F1F22",
+                  borderRadius: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: "#374151",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 4,
+                    justifyContent: "center",
+                  }}
+                >
+                  {QUICK_EMOJIS.map((emoji, index) => (
+                    <Pressable
+                      key={index}
+                      onPress={() => handleEmojiSelect(emoji)}
+                      style={({ pressed }) => ({
+                        width: 36,
+                        height: 36,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 8,
+                        backgroundColor: pressed ? "rgba(125, 211, 192, 0.15)" : "transparent",
+                      })}
+                    >
+                      <Text style={{ fontSize: 20 }}>{emoji}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
           </Animated.View>
         </>
       )}
@@ -393,6 +465,7 @@ export function SuggestedReplyCard({
   onSelectReply,
   onModifyLength,
   onGenerateDifferent,
+  onAddEmoji,
 }: SuggestedReplyCardProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
@@ -502,6 +575,7 @@ export function SuggestedReplyCard({
             onModifyLength={onModifyLength ? handleModifyLength : undefined}
             onSelectReply={onSelectReply}
             onGenerateDifferent={onGenerateDifferent}
+            onAddEmoji={onAddEmoji}
           />
         ))}
       </View>

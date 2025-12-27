@@ -401,6 +401,30 @@ export function ChatScreen({ navigation, route }: Props) {
     }
   };
 
+  const handleAddEmojiToReply = (replyId: string, emoji: string) => {
+    const replyCardMsg = messages.find(
+      (m) => m.role === "suggested-reply-card" &&
+        (m as SuggestedReplyCardMessage).replies.some((r) => r.id === replyId)
+    ) as SuggestedReplyCardMessage | undefined;
+
+    if (!replyCardMsg) return;
+
+    const reply = replyCardMsg.replies.find((r) => r.id === replyId);
+    if (!reply) return;
+
+    // Append emoji to the reply text
+    const updatedReplies = replyCardMsg.replies.map((r) =>
+      r.id === replyId ? { ...r, text: r.text + " " + emoji } : r
+    );
+
+    const updatedMsg = {
+      ...replyCardMsg,
+      replies: updatedReplies,
+    };
+
+    updateMessageInActiveLoop(replyCardMsg.id, updatedMsg);
+  };
+
   const handleContextSubmit = async (contextInput: string, isVoice: boolean) => {
     // Remove the inline input
     const inlineInputMsg = messages.find((m) => m.role === "inline-context-input");
@@ -766,6 +790,7 @@ export function ChatScreen({ navigation, route }: Props) {
           onSelectReply={handleSelectReply}
           onModifyLength={handleModifyReplyLength}
           onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
+          onAddEmoji={handleAddEmojiToReply}
         />
       );
     }
