@@ -5,112 +5,114 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  withDelay,
-  withSequence,
   Easing,
 } from "react-native-reanimated";
 
 export function TypingIndicator() {
-  const segment1 = useSharedValue(0);
-  const segment2 = useSharedValue(0);
-  const segment3 = useSharedValue(0);
+  const rotation = useSharedValue(0);
+  const pulse = useSharedValue(0);
 
   useEffect(() => {
-    const duration = 800;
-    const easing = Easing.bezier(0.4, 0.0, 0.2, 1);
-
-    segment1.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration, easing }),
-        withTiming(0, { duration, easing })
-      ),
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 3000, easing: Easing.linear }),
       -1,
       false
     );
 
-    segment2.value = withDelay(
-      200,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration, easing }),
-          withTiming(0, { duration, easing })
-        ),
-        -1,
-        false
-      )
-    );
-
-    segment3.value = withDelay(
-      400,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration, easing }),
-          withTiming(0, { duration, easing })
-        ),
-        -1,
-        false
-      )
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
     );
   }, []);
 
-  const segment1Style = useAnimatedStyle(() => ({
-    opacity: 0.2 + segment1.value * 0.6,
-    transform: [{ scaleX: 0.6 + segment1.value * 0.4 }],
+  const containerStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const segment2Style = useAnimatedStyle(() => ({
-    opacity: 0.2 + segment2.value * 0.7,
-    transform: [{ scaleX: 0.6 + segment2.value * 0.4 }],
+  const arc1Style = useAnimatedStyle(() => ({
+    opacity: 0.3 + pulse.value * 0.5,
   }));
 
-  const segment3Style = useAnimatedStyle(() => ({
-    opacity: 0.2 + segment3.value * 0.6,
-    transform: [{ scaleX: 0.6 + segment3.value * 0.4 }],
+  const arc2Style = useAnimatedStyle(() => ({
+    opacity: 0.2 + pulse.value * 0.4,
+  }));
+
+  const arc3Style = useAnimatedStyle(() => ({
+    opacity: 0.15 + pulse.value * 0.25,
   }));
 
   return (
     <View className="self-start mb-4 ml-4">
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 2,
-        }}
+      <Animated.View
+        style={[
+          {
+            width: 28,
+            height: 28,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          containerStyle,
+        ]}
       >
+        {/* Outer arc */}
         <Animated.View
           style={[
             {
+              position: "absolute",
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              borderWidth: 1.5,
+              borderColor: "transparent",
+              borderTopColor: "#E5E7EB",
+              borderRightColor: "#9CA3AF",
+            },
+            arc1Style,
+          ]}
+        />
+        {/* Middle arc */}
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              borderWidth: 1.5,
+              borderColor: "transparent",
+              borderTopColor: "#D1D5DB",
+              borderLeftColor: "#6B7280",
+            },
+            arc2Style,
+          ]}
+        />
+        {/* Inner arc */}
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
               width: 12,
-              height: 2,
-              borderRadius: 1,
-              backgroundColor: "#9CA3AF",
+              height: 12,
+              borderRadius: 6,
+              borderWidth: 1.5,
+              borderColor: "transparent",
+              borderBottomColor: "#9CA3AF",
             },
-            segment1Style,
+            arc3Style,
           ]}
         />
-        <Animated.View
-          style={[
-            {
-              width: 16,
-              height: 2,
-              borderRadius: 1,
-              backgroundColor: "#D1D5DB",
-            },
-            segment2Style,
-          ]}
+        {/* Center point */}
+        <View
+          style={{
+            width: 3,
+            height: 3,
+            borderRadius: 1.5,
+            backgroundColor: "#6B7280",
+            opacity: 0.6,
+          }}
         />
-        <Animated.View
-          style={[
-            {
-              width: 10,
-              height: 2,
-              borderRadius: 1,
-              backgroundColor: "#9CA3AF",
-            },
-            segment3Style,
-          ]}
-        />
-      </View>
+      </Animated.View>
     </View>
   );
 }
