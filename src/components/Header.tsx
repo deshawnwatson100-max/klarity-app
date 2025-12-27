@@ -5,7 +5,6 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
-import { KlarityOrb } from "./KlarityOrb";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -115,12 +114,6 @@ export function Header({
           </Text>
         </View>
 
-        {/* Center - Klarity Orb (only when analyzing) */}
-        {isAnalyzing && (
-          <View className="absolute left-0 right-0 items-center" pointerEvents="none">
-            <KlarityOrb size="medium" isAnalyzing={isAnalyzing} />
-          </View>
-        )}
 
         {/* Right - Mode Toggle + New Loop Button */}
         <View className="flex-row items-center">
