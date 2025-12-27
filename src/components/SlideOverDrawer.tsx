@@ -567,8 +567,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
                   alignItems: "center",
                   paddingVertical: 12,
                   paddingHorizontal: 16,
-                  backgroundColor: "rgba(255, 255, 255, 0.03)",
-                  borderRadius: 12,
+                  backgroundColor: "transparent",
                 }}
               >
                 <View

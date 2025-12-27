@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -75,18 +74,6 @@ export function InputBar({
         backgroundColor: "transparent",
       }}
     >
-      {/* Subtle top shadow for depth */}
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.05)",
-        }}
-      />
-
       {/* Image Preview */}
       {selectedImageUri && (
         <View className="mb-3">
@@ -116,7 +103,7 @@ export function InputBar({
           <Ionicons name="image-outline" size={28} color="#9CA3AF" />
         </Pressable>
 
-        {/* Input Field with Minimal Gradient Border */}
+        {/* Input Field */}
         <View className="flex-1 relative">
           {/* Outer glow - only visible when focused */}
           {isFocused && (
@@ -137,65 +124,36 @@ export function InputBar({
             />
           )}
 
-          {/* Very thin gradient border */}
+          {/* Inner input with charcoal background */}
           <View
             style={{
+              backgroundColor: "#050608",
               borderRadius: 28,
-              padding: 0.5,
-              overflow: "hidden",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              minHeight: 44,
+              maxHeight: 100,
+              justifyContent: "center",
             }}
           >
-            <LinearGradient
-              colors={
-                isFocused
-                  ? [
-                      "rgba(156, 163, 175, 0.3)",
-                      "rgba(156, 163, 175, 0.2)",
-                    ]
-                  : [
-                      "rgba(156, 163, 175, 0.15)",
-                      "rgba(156, 163, 175, 0.08)",
-                    ]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <TextInput
+              value={value}
+              onChangeText={onChangeText}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={placeholder}
+              placeholderTextColor="#6B7280"
+              editable={!disabled}
+              onSubmitEditing={handleSend}
+              returnKeyType="send"
+              multiline
+              maxLength={1000}
               style={{
-                borderRadius: 28,
-                padding: 0.5,
+                color: "#F9FAFB",
+                fontSize: 16,
+                lineHeight: 20,
               }}
-            >
-              {/* Inner input with charcoal background */}
-              <View
-                style={{
-                  backgroundColor: "#050608",
-                  borderRadius: 27.5,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  minHeight: 44,
-                  maxHeight: 100,
-                  justifyContent: "center",
-                }}
-              >
-                <TextInput
-                  value={value}
-                  onChangeText={onChangeText}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder={placeholder}
-                  placeholderTextColor="#6B7280"
-                  editable={!disabled}
-                  onSubmitEditing={handleSend}
-                  returnKeyType="send"
-                  multiline
-                  maxLength={1000}
-                  style={{
-                    color: "#F9FAFB",
-                    fontSize: 16,
-                    lineHeight: 20,
-                  }}
-                />
-              </View>
-            </LinearGradient>
+            />
           </View>
         </View>
 
