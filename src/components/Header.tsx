@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityOrb } from "./KlarityOrb";
 
@@ -46,11 +47,13 @@ export function Header({
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
 
   const handleNewLoop = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     createNewLoop();
     navigation.navigate("InputScreen" as never);
   };
 
   const handleBackPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (onBackPress) {
       onBackPress();
     } else {
@@ -59,9 +62,15 @@ export function Header({
   };
 
   const handleMenuPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (onMenuPress) {
       onMenuPress();
     }
+  };
+
+  const handleModeChange = (mode: InputMode) => {
+    Haptics.selectionAsync();
+    onModeChange?.(mode);
   };
 
   // Render the left side menu based on screen type
@@ -127,7 +136,7 @@ export function Header({
               }}
             >
               <Pressable
-                onPress={() => onModeChange("understand")}
+                onPress={() => handleModeChange("understand")}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 5,
@@ -146,7 +155,7 @@ export function Header({
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => onModeChange("rewrite")}
+                onPress={() => handleModeChange("rewrite")}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 5,

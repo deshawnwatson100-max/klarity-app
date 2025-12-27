@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, Modal, ScrollView, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { IntentionType, INTENTIONS } from "../types/calendar";
 
 interface IntentionSelectionModalProps {
@@ -19,12 +20,14 @@ export function IntentionSelectionModal({
   const [reflectionNotes, setReflectionNotes] = useState("");
 
   const handleIntentionPress = (intention: IntentionType) => {
+    Haptics.selectionAsync();
     setSelectedIntention(intention);
     setShowReflection(true);
   };
 
   const handleContinue = () => {
     if (selectedIntention) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSelectIntention(selectedIntention, reflectionNotes || undefined);
       // Reset state
       setSelectedIntention(null);
@@ -36,6 +39,7 @@ export function IntentionSelectionModal({
 
   const handleSkipReflection = () => {
     if (selectedIntention) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onSelectIntention(selectedIntention, undefined);
       // Reset state
       setSelectedIntention(null);
@@ -46,6 +50,7 @@ export function IntentionSelectionModal({
   };
 
   const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowReflection(false);
     setReflectionNotes("");
   };

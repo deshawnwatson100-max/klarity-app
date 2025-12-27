@@ -10,6 +10,7 @@ import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -849,6 +850,7 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   const handleNavigateBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     animateContentOutAndNavigate("InputScreen");
   };
 

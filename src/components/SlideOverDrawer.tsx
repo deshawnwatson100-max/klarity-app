@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -308,6 +309,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
 
   // Menu handlers
   const handleNewChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     closeDrawer();
     // Create new loop and navigate to input
     setTimeout(() => {
@@ -317,6 +319,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   };
 
   const handleSelectChat = (loopId: string) => {
+    Haptics.selectionAsync();
     closeDrawer();
     setTimeout(() => {
       switchToLoop(loopId);

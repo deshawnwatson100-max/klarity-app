@@ -5,6 +5,7 @@ import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -178,6 +179,8 @@ export function InputScreen({ navigation }: Props) {
   const handleSend = () => {
     if (!currentInput.trim() && !selectedImageUri) return;
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     // Ensure we have an active loop
     let activeLoop = getActiveLoop();
     if (!activeLoop) {
@@ -213,6 +216,7 @@ export function InputScreen({ navigation }: Props) {
   };
 
   const handleVoicePress = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (isRecording) {
       // Stop recording
       await stopRecording();
@@ -326,6 +330,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Handler for navigating to chat screen with animation
   const handleNavigateToChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     animateContentOutAndNavigate();
   };
 

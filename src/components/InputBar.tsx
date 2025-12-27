@@ -3,6 +3,7 @@ import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from "expo-haptics";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -40,12 +41,14 @@ export function InputBar({
 
   const handleSend = () => {
     if ((value.trim() || selectedImageUri) && !disabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSend();
       Keyboard.dismiss();
     }
   };
 
   const handlePickImage = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -92,7 +95,10 @@ export function InputBar({
               resizeMode="cover"
             />
             <Pressable
-              onPress={onClearImage}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onClearImage?.();
+              }}
               className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
             >
               <Ionicons name="close" size={16} color="white" />
@@ -176,7 +182,10 @@ export function InputBar({
           </Pressable>
         ) : (
           <Pressable
-            onPress={onVoicePress}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onVoicePress?.();
+            }}
             disabled={disabled}
             className="active:opacity-60"
           >

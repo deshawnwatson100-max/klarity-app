@@ -146,6 +146,7 @@ function ReplyItem({
   }));
 
   const handleCopy = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectReply(reply.text);
     setCopied(true);
     // Reset after 2 seconds
@@ -153,10 +154,12 @@ function ReplyItem({
   };
 
   const handleLike = () => {
+    Haptics.selectionAsync();
     setLiked(liked === "like" ? null : "like");
   };
 
   const handleDislike = () => {
+    Haptics.selectionAsync();
     setLiked(liked === "dislike" ? null : "dislike");
   };
 
@@ -174,7 +177,10 @@ function ReplyItem({
     <View style={{ marginBottom: 14 }}>
       {/* Minimized state - tappable to expand */}
       {isMinimized ? (
-        <Pressable onPress={onToggleMinimize}>
+        <Pressable onPress={() => {
+          Haptics.selectionAsync();
+          onToggleMinimize();
+        }}>
           <View
             style={{
               paddingLeft: 12,
@@ -218,7 +224,10 @@ function ReplyItem({
       ) : (
         <>
           {/* Reply text as clean floating paragraph with teal glow */}
-          <Pressable onPress={onToggleMinimize}>
+          <Pressable onPress={() => {
+            Haptics.selectionAsync();
+            onToggleMinimize();
+          }}>
             <View
               style={{
                 paddingLeft: 12,
