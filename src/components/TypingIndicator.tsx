@@ -7,64 +7,61 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
+  interpolateColor,
   Easing,
 } from "react-native-reanimated";
 
 export function TypingIndicator() {
-  const dot1Opacity = useSharedValue(0.3);
-  const dot2Opacity = useSharedValue(0.3);
-  const dot3Opacity = useSharedValue(0.3);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    const duration = 400;
-    const easing = Easing.bezier(0.4, 0.0, 0.2, 1);
-
-    // Staggered pulse animation for each dot
-    dot1Opacity.value = withRepeat(
+    progress.value = withRepeat(
       withSequence(
-        withTiming(1, { duration, easing }),
-        withTiming(0.3, { duration, easing })
+        withTiming(1, { duration: 1200, easing: Easing.bezier(0.4, 0.0, 0.2, 1) }),
+        withTiming(0, { duration: 1200, easing: Easing.bezier(0.4, 0.0, 0.2, 1) })
       ),
       -1,
       false
     );
-
-    dot2Opacity.value = withDelay(
-      150,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration, easing }),
-          withTiming(0.3, { duration, easing })
-        ),
-        -1,
-        false
-      )
-    );
-
-    dot3Opacity.value = withDelay(
-      300,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration, easing }),
-          withTiming(0.3, { duration, easing })
-        ),
-        -1,
-        false
-      )
-    );
   }, []);
 
-  const dot1Style = useAnimatedStyle(() => ({
-    opacity: dot1Opacity.value,
-  }));
+  const bar1Style = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      progress.value,
+      [0, 0.5, 1],
+      ["#6366F1", "#8B5CF6", "#6366F1"]
+    );
+    return {
+      backgroundColor,
+      opacity: 0.4 + progress.value * 0.6,
+    };
+  });
 
-  const dot2Style = useAnimatedStyle(() => ({
-    opacity: dot2Opacity.value,
-  }));
+  const bar2Style = useAnimatedStyle(() => {
+    const delayed = (progress.value + 0.33) % 1;
+    const backgroundColor = interpolateColor(
+      delayed,
+      [0, 0.5, 1],
+      ["#8B5CF6", "#EC4899", "#8B5CF6"]
+    );
+    return {
+      backgroundColor,
+      opacity: 0.4 + delayed * 0.6,
+    };
+  });
 
-  const dot3Style = useAnimatedStyle(() => ({
-    opacity: dot3Opacity.value,
-  }));
+  const bar3Style = useAnimatedStyle(() => {
+    const delayed = (progress.value + 0.66) % 1;
+    const backgroundColor = interpolateColor(
+      delayed,
+      [0, 0.5, 1],
+      ["#EC4899", "#6366F1", "#EC4899"]
+    );
+    return {
+      backgroundColor,
+      opacity: 0.4 + delayed * 0.6,
+    };
+  });
 
   return (
     <View className="self-start mb-4 ml-4">
@@ -72,44 +69,37 @@ export function TypingIndicator() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-          paddingHorizontal: 14,
-          paddingVertical: 10,
-          borderRadius: 16,
-          gap: 6,
+          gap: 3,
         }}
       >
         <Animated.View
           style={[
             {
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: "#6B7280",
+              width: 4,
+              height: 16,
+              borderRadius: 2,
             },
-            dot1Style,
+            bar1Style,
           ]}
         />
         <Animated.View
           style={[
             {
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: "#6B7280",
+              width: 4,
+              height: 16,
+              borderRadius: 2,
             },
-            dot2Style,
+            bar2Style,
           ]}
         />
         <Animated.View
           style={[
             {
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: "#6B7280",
+              width: 4,
+              height: 16,
+              borderRadius: 2,
             },
-            dot3Style,
+            bar3Style,
           ]}
         />
       </View>
