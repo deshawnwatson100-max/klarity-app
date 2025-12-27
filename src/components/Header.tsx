@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
+import { KlarityOrb } from "./KlarityOrb";
 
 interface HeaderProps {
   title?: string;
@@ -21,6 +22,7 @@ interface HeaderProps {
  *
  * Features:
  * - Left: Menu button with "Klarity" text
+ * - Center: Animated orb appears only during analysis
  * - Right: New Loop button
  * - Semi-transparent black glass background (18% opacity)
  */
@@ -97,6 +99,13 @@ export function Header({
             Klarity
           </Text>
         </View>
+
+        {/* Center - Klarity Orb (only when analyzing) */}
+        {isAnalyzing && (
+          <View className="absolute left-0 right-0 items-center" pointerEvents="none">
+            <KlarityOrb size="medium" isAnalyzing={isAnalyzing} />
+          </View>
+        )}
 
         {/* Right - New Loop Button */}
         <Pressable onPress={handleNewLoop} className="active:opacity-60">
