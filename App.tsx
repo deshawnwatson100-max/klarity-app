@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import { SplashScreen } from "./src/components/SplashScreen";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -27,25 +25,7 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 
 */
 
-type AppState = "splash" | "unlocked";
-
 export default function App() {
-  const [appState, setAppState] = useState<AppState>("splash");
-
-  const handleSplashFinish = () => {
-    setAppState("unlocked");
-  };
-
-  // Show splash screen (wrapped in SafeAreaProvider for insets calculation)
-  if (appState === "splash") {
-    return (
-      <SafeAreaProvider>
-        <SplashScreen onFinish={handleSplashFinish} />
-      </SafeAreaProvider>
-    );
-  }
-
-  // Main app
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
