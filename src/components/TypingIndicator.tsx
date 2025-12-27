@@ -1,72 +1,60 @@
-import React, { useEffect } from "react";
-import { View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
   withTiming,
   Easing,
 } from "react-native-reanimated";
 
+const thinkingWords = [
+  "Thinking...",
+  "Processing...",
+  "Analyzing...",
+  "Reflecting...",
+  "Understanding...",
+];
+
 export function TypingIndicator() {
-  const rotation = useSharedValue(0);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const opacity = useSharedValue(1);
 
   useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 2500, easing: Easing.linear }),
-      -1,
-      false
-    );
+    const interval = setInterval(() => {
+      opacity.value = withTiming(0, {
+        duration: 300,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+      });
+
+      setTimeout(() => {
+        setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
+        opacity.value = withTiming(1, {
+          duration: 300,
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        });
+      }, 300);
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const orbitStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
+  const textAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
   }));
 
   return (
-    <View className="self-start mb-4 ml-4">
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {/* Orbit track */}
-        <View
+    <View className="self-start mb-4 px-4">
+      <Animated.View style={textAnimatedStyle}>
+        <Text
           style={{
-            position: "absolute",
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "rgba(156, 163, 175, 0.15)",
+            fontSize: 15,
+            color: "#9CA3AF",
+            fontWeight: "400",
           }}
-        />
-        {/* Rotating container */}
-        <Animated.View
-          style={[
-            {
-              width: 24,
-              height: 24,
-              alignItems: "center",
-              justifyContent: "flex-start",
-            },
-            orbitStyle,
-          ]}
         >
-          {/* Ball */}
-          <View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: "#9CA3AF",
-            }}
-          />
-        </Animated.View>
-      </View>
+          {thinkingWords[currentWordIndex]}
+        </Text>
+      </Animated.View>
     </View>
   );
 }
