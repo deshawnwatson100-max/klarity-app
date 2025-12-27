@@ -124,10 +124,10 @@ export function InputBar({
             />
           )}
 
-          {/* Inner input with charcoal background */}
+          {/* Inner input with pitch black background */}
           <View
             style={{
-              backgroundColor: "#050608",
+              backgroundColor: "#000000",
               borderRadius: 28,
               paddingHorizontal: 16,
               paddingVertical: 12,
