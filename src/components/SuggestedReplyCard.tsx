@@ -316,12 +316,12 @@ function ReplyItem({
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons name="refresh-outline" size={14} color="#9CA3AF" />
+                    <Ionicons name="refresh-outline" size={14} color="#E5E7EB" />
                     <Text
                       style={{
                         fontSize: 13,
                         fontWeight: "500",
-                        color: "#9CA3AF",
+                        color: "#E5E7EB",
                       }}
                     >
                       Different reply
@@ -338,6 +338,8 @@ function ReplyItem({
                     icon="remove-outline"
                     onPress={() => onModifyLength(reply.id, "shorten")}
                     isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "shorten"}
+                    color="#E5E7EB"
+                    activeColor="#7DD3C0"
                     size={16}
                   />
                 )}
@@ -348,6 +350,8 @@ function ReplyItem({
                     icon="add-outline"
                     onPress={() => onModifyLength(reply.id, "lengthen")}
                     isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen"}
+                    color="#E5E7EB"
+                    activeColor="#7DD3C0"
                     size={16}
                   />
                 )}
@@ -360,7 +364,8 @@ function ReplyItem({
                   icon={liked === "like" ? "thumbs-up" : "thumbs-up-outline"}
                   onPress={handleLike}
                   showSuccess={liked === "like"}
-                  activeColor="#4ADE80"
+                  color="#E5E7EB"
+                  activeColor="#7DD3C0"
                   size={16}
                 />
 
@@ -369,7 +374,8 @@ function ReplyItem({
                   icon={liked === "dislike" ? "thumbs-down" : "thumbs-down-outline"}
                   onPress={handleDislike}
                   showSuccess={liked === "dislike"}
-                  activeColor="#F87171"
+                  color="#E5E7EB"
+                  activeColor="#7DD3C0"
                   size={16}
                 />
               </View>
