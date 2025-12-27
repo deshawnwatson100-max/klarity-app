@@ -14,7 +14,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
-import { InputBar } from "../components/InputBar";
+import { InputBar, InputMode } from "../components/InputBar";
 import { Header } from "../components/Header";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
@@ -37,9 +37,13 @@ export function InputScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>("understand");
 
   // Track if this is the first focus (skip animation on initial app load)
   const isFirstFocus = useRef(true);
+  // Track current input mode for navigation (needs ref for runOnJS)
+  const inputModeRef = useRef<InputMode>(inputMode);
+  inputModeRef.current = inputMode;
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -141,7 +145,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions for runOnJS
   const navigateToChatScreen = () => {
-    navigation.navigate("ChatScreen");
+    navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
   // Animate content out before navigation
@@ -373,7 +377,11 @@ export function InputScreen({ navigation }: Props) {
           className="flex-1"
           keyboardVerticalOffset={0}
         >
-          <Header onMenuPress={() => setIsDrawerOpen(true)} />
+          <Header
+            onMenuPress={() => setIsDrawerOpen(true)}
+            inputMode={inputMode}
+            onModeChange={setInputMode}
+          />
 
           {/* Center Content - Animated for transitions */}
           <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
@@ -406,6 +414,7 @@ export function InputScreen({ navigation }: Props) {
               selectedImageUri={selectedImageUri}
               placeholder="Type a message..."
               isRecording={isRecording}
+              inputMode={inputMode}
             />
           </Animated.View>
 

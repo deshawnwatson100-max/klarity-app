@@ -60,7 +60,7 @@ import {
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
 
-export function ChatScreen({ navigation }: Props) {
+export function ChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const processedMessageIds = useRef<Set<string>>(new Set());
@@ -73,7 +73,7 @@ export function ChatScreen({ navigation }: Props) {
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>("understand");
+  const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{

@@ -12,7 +12,7 @@ import { TimelineScreen } from "../screens/TimelineScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
-  ChatScreen: undefined;
+  ChatScreen: { inputMode?: "understand" | "rewrite" } | undefined;
   EmotionScanScreen: undefined;
   TimelineScreen: undefined;
   AnalysisScreen: {
