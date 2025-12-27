@@ -25,7 +25,8 @@ export type MessageRole =
   | "boundary-detection"
   | "boundary-clarity-summary"
   | "dysfunctional-communication"
-  | "red-flags";
+  | "red-flags"
+  | "rewrite-reply-card";
 
 export interface Message {
   id: string;
@@ -240,6 +241,12 @@ export interface RedFlagsMessage extends Message {
   flags: { text: string }[];
 }
 
+export interface RewriteReplyCardMessage extends Message {
+  role: "rewrite-reply-card";
+  rewrittenReply: string;
+  originalIntent: string;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -266,4 +273,5 @@ export type ChatMessage =
   | BoundaryDetectionMessage
   | BoundaryClaritySummaryMessage
   | DysfunctionalCommunicationMessage
-  | RedFlagsMessage;
+  | RedFlagsMessage
+  | RewriteReplyCardMessage;

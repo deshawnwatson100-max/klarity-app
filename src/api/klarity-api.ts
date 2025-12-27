@@ -1941,3 +1941,107 @@ Generate a brief, gentle clarification response. Keep it short.`;
   }
 }
 
+/**
+ * Generate a polished rewrite of the user's intended reply
+ * Preserves the user's intent but improves clarity, boundaries, and emotional intelligence
+ * Used in Rewrite mode - skips analysis, just provides one polished reply
+ */
+export async function generateRewriteReply(
+  userIntendedReply: string
+): Promise<{ rewrittenReply: string; originalIntent: string }> {
+  const systemPrompt = `You are Klarity — a personal communication calibrator.
+
+Your job is to REWRITE the user's intended reply to make it clearer, more emotionally intelligent, and better at setting boundaries — while preserving their original intent.
+
+## PRIMARY OBJECTIVE
+Take what the user wants to say and make it sound like the most composed, emotionally steady version of themselves.
+
+The rewritten reply should:
+- Preserve the user's original intent and message
+- Improve clarity and reduce ambiguity
+- Strengthen boundaries where appropriate
+- Add emotional intelligence without being therapy-speak
+- Reduce potential friction while maintaining honesty
+- Sound natural and human, not robotic
+
+## VOICE REQUIREMENTS (MANDATORY)
+
+### Tone
+- Calm and confident
+- Human and natural
+- Clear, not sharp
+- Firm, but easy to receive
+
+Think: quiet confidence, not dominance.
+
+### Language Guidelines
+- Plain, everyday language
+- Short to medium sentences
+- Gentle clarity over bluntness
+- Warm neutrality (never cold)
+- Soft openings are allowed if they help delivery
+
+## ABSOLUTE DO NOTs
+- Do NOT change the core message or what the user wants to communicate
+- Do NOT add new topics or subjects
+- Do NOT make assumptions about what they should say
+- Sound clinical or therapeutic
+- Label behavior (e.g. "toxic," "manipulative")
+- Over-explain or justify excessively
+- Use sarcasm or sharp phrasing
+- Apologize reflexively when user did not
+
+## QUALITY CHECK
+The rewritten reply should:
+1. Still communicate what the user wanted to say
+2. Feel calm, respectful, and confident if received
+3. Be kind without being passive
+4. Set boundaries clearly when the user was attempting to
+
+Respond with valid JSON only:
+{
+  "rewrittenReply": "string (the polished reply — ready to send as-is, 1-4 sentences)",
+  "originalIntent": "string (1 sentence summary of what the user was trying to communicate)"
+}`;
+
+  const userPrompt = `The user wants to reply with: "${userIntendedReply}"
+
+Rewrite this to be clearer, more emotionally intelligent, and better at setting boundaries — while preserving their intent.`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      1500,
+      true
+    );
+
+    let jsonStr = response.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    return {
+      rewrittenReply: parsed.rewrittenReply || userIntendedReply,
+      originalIntent: parsed.originalIntent || "Express your thoughts clearly",
+    };
+  } catch (error) {
+    console.error("[generateRewriteReply] Error:", error);
+    return {
+      rewrittenReply: userIntendedReply,
+      originalIntent: "Express your thoughts clearly",
+    };
+  }
+}
+

@@ -817,6 +817,36 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Humanized AI Agent** - Thoughtful friend tone with natural language, contractions, and agency-focused framing
 ✅ **ChatGPT-Style Minimal Layout** - Floating text blocks for AI responses, no heavy card containers
 ✅ **Clean Message UI** - User messages in subtle bubbles, assistant messages as floating paragraphs
+✅ **Rewrite Mode** - Toggle between Understand and Rewrite modes in the input bar
+
+### NEW: Rewrite Mode Feature
+A second input mode that lets you polish your own replies with AI assistance.
+
+#### How it Works
+1. In the chat screen, find the **Understand | Rewrite** toggle above the input bar
+2. **Understand mode** (default) - Analyzes incoming messages/situations as normal
+3. **Rewrite mode** - Type how you want to reply, and AI polishes it
+
+#### Rewrite Mode Behavior
+- Placeholder changes to "Type how you want to reply..."
+- On send, AI returns **exactly 1 polished reply** that:
+  - Preserves your original intent
+  - Improves clarity and reduces ambiguity
+  - Strengthens boundaries where appropriate
+  - Adds emotional intelligence without being therapy-speak
+  - Sounds natural and human, not robotic
+- Displayed as a single assistant bubble with:
+  - The polished reply text
+  - A note explaining your original intent
+  - **"Use this reply"** button to copy it to the input bar
+  - Copy icon to copy to clipboard
+- **No communication pattern analysis or red flags** - just the polished reply
+
+#### When to Use Rewrite Mode
+- You know what you want to say but want it to sound better
+- You want to set a boundary but need help with the wording
+- You want to respond calmly but your draft feels too reactive
+- You want clarity without the full analysis
 
 ## Future Enhancements
 

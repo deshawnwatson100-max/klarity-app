@@ -19,7 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
-import { InputBar } from "../components/InputBar";
+import { InputBar, InputMode } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { DysfunctionalCommunicationCard } from "../components/DysfunctionalCommunicationCard";
 import { RedFlagsCard } from "../components/RedFlagsCard";
@@ -30,6 +30,7 @@ import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
@@ -40,6 +41,7 @@ import {
   analyzeImageToxicity,
   generateEmotionalAnalysis,
   detectRedFlags,
+  generateRewriteReply,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -50,6 +52,7 @@ import {
   DysfunctionalCommunicationMessage,
   RedFlagsMessage,
   EmotionalAnalysis,
+  RewriteReplyCardMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -67,6 +70,7 @@ export function ChatScreen({ navigation }: Props) {
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>("understand");
 
   // Content area animation values
   const contentOpacity = useSharedValue(0);
@@ -516,6 +520,22 @@ export function ChatScreen({ navigation }: Props) {
       return;
     }
 
+    // Handle Rewrite mode
+    if (inputMode === "rewrite") {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content: currentInput,
+        timestamp: Date.now(),
+      };
+
+      addMessageToActiveLoop(userMessage);
+      setCurrentInput("");
+
+      await processRewriteMessage(userMessage);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -531,6 +551,55 @@ export function ChatScreen({ navigation }: Props) {
     setSelectedImageBase64(undefined);
 
     await processUserMessage(userMessage);
+  };
+
+  // Process message in Rewrite mode - skip analysis, just polish the reply
+  const processRewriteMessage = async (userMessage: ChatMessage) => {
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    try {
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(typingMsg);
+
+      // Generate polished rewrite
+      const result = await generateRewriteReply(userMessage.content);
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add rewrite reply card
+      const rewriteMsg: RewriteReplyCardMessage = {
+        id: Date.now().toString() + "_rewrite",
+        role: "rewrite-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        rewrittenReply: result.rewrittenReply,
+        originalIntent: result.originalIntent,
+      };
+      addMessageToActiveLoop(rewriteMsg);
+    } catch (error) {
+      console.error("Error processing rewrite:", error);
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "I encountered an error polishing your reply. Please try again.",
+        timestamp: Date.now(),
+      });
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUseRewrittenReply = (reply: string) => {
+    setCurrentInput(reply);
   };
 
   const handleImageSelected = (uri: string, base64: string) => {
@@ -594,6 +663,18 @@ export function ChatScreen({ navigation }: Props) {
           key={message.id}
           onSubmit={handleContextSubmit}
           onCancel={handleContextCancel}
+        />
+      );
+    }
+
+    if (message.role === "rewrite-reply-card") {
+      const msg = message as RewriteReplyCardMessage;
+      return (
+        <RewriteReplyCard
+          key={message.id}
+          rewrittenReply={msg.rewrittenReply}
+          originalIntent={msg.originalIntent}
+          onUseReply={handleUseRewrittenReply}
         />
       );
     }
@@ -678,6 +759,8 @@ export function ChatScreen({ navigation }: Props) {
               selectedImageUri={selectedImageUri}
               placeholder="Type a message..."
               disabled={isLoading}
+              inputMode={inputMode}
+              onModeChange={setInputMode}
             />
           </Animated.View>
 
