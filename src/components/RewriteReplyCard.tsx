@@ -71,8 +71,6 @@ export function RewriteReplyCard({
           backgroundColor: "#1A1A1C",
           borderRadius: 16,
           padding: 16,
-          borderWidth: 1,
-          borderColor: "#2A2A2C",
         }}
       >
         {/* Header */}
