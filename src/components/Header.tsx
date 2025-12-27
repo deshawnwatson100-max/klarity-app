@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityOrb } from "./KlarityOrb";
 
+export type InputMode = "understand" | "rewrite";
+
 interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
@@ -13,6 +15,8 @@ interface HeaderProps {
   onNavigateHome?: () => void;
   isAnalyzing?: boolean;
   onMenuPress?: () => void;
+  inputMode?: InputMode;
+  onModeChange?: (mode: InputMode) => void;
 }
 
 /**
@@ -33,6 +37,8 @@ export function Header({
   onNavigateHome,
   isAnalyzing = false,
   onMenuPress,
+  inputMode,
+  onModeChange,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -107,25 +113,80 @@ export function Header({
           </View>
         )}
 
-        {/* Right - New Loop Button */}
-        <Pressable onPress={handleNewLoop} className="active:opacity-60">
-          <View style={{ position: "relative" }}>
-            <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+        {/* Right - Mode Toggle + New Loop Button */}
+        <View className="flex-row items-center">
+          {/* Mode Toggle (only when onModeChange is provided) */}
+          {onModeChange && inputMode && (
             <View
               style={{
-                position: "absolute",
-                top: 4,
-                left: 0,
-                right: 0,
-                bottom: 4,
-                alignItems: "center",
-                justifyContent: "center",
+                flexDirection: "row",
+                backgroundColor: "#1A1A1C",
+                borderRadius: 14,
+                padding: 2,
+                marginRight: 12,
               }}
             >
-              <Ionicons name="add" size={12} color="#9CA3AF" />
+              <Pressable
+                onPress={() => onModeChange("understand")}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 12,
+                  backgroundColor: inputMode === "understand" ? "#2A2A2C" : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    color: inputMode === "understand" ? "#F9FAFB" : "#6B7280",
+                    fontSize: 11,
+                    fontWeight: inputMode === "understand" ? "600" : "400",
+                  }}
+                >
+                  Understand
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => onModeChange("rewrite")}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 12,
+                  backgroundColor: inputMode === "rewrite" ? "#2A2A2C" : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    color: inputMode === "rewrite" ? "#F9FAFB" : "#6B7280",
+                    fontSize: 11,
+                    fontWeight: inputMode === "rewrite" ? "600" : "400",
+                  }}
+                >
+                  Rewrite
+                </Text>
+              </Pressable>
             </View>
-          </View>
-        </Pressable>
+          )}
+
+          {/* New Loop Button */}
+          <Pressable onPress={handleNewLoop} className="active:opacity-60">
+            <View style={{ position: "relative" }}>
+              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={12} color="#9CA3AF" />
+              </View>
+            </View>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

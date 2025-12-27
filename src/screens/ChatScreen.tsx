@@ -858,6 +858,8 @@ export function ChatScreen({ navigation }: Props) {
             onBackPress={handleNavigateBack}
             isAnalyzing={isLoading}
             onMenuPress={() => setIsDrawerOpen(true)}
+            inputMode={inputMode}
+            onModeChange={setInputMode}
           />
 
           <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
@@ -885,7 +887,6 @@ export function ChatScreen({ navigation }: Props) {
               placeholder="Type a message..."
               disabled={isLoading}
               inputMode={inputMode}
-              onModeChange={setInputMode}
             />
           </Animated.View>
 

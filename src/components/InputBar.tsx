@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Pressable, Keyboard, Image, Text } from "react-native";
+import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -19,7 +19,6 @@ interface InputBarProps {
   onClearImage?: () => void;
   isRecording?: boolean;
   inputMode?: InputMode;
-  onModeChange?: (mode: InputMode) => void;
 }
 
 export function InputBar({
@@ -35,7 +34,6 @@ export function InputBar({
   onClearImage,
   isRecording = false,
   inputMode = "understand",
-  onModeChange,
 }: InputBarProps) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
@@ -84,59 +82,6 @@ export function InputBar({
         backgroundColor: "#111111",
       }}
     >
-      {/* Mode Toggle */}
-      {onModeChange && (
-        <View className="flex-row items-center justify-center mb-3">
-          <View
-            style={{
-              flexDirection: "row",
-              backgroundColor: "#1A1A1C",
-              borderRadius: 20,
-              padding: 3,
-            }}
-          >
-            <Pressable
-              onPress={() => onModeChange("understand")}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 17,
-                backgroundColor: inputMode === "understand" ? "#2A2A2C" : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color: inputMode === "understand" ? "#F9FAFB" : "#6B7280",
-                  fontSize: 13,
-                  fontWeight: inputMode === "understand" ? "600" : "400",
-                }}
-              >
-                Understand
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => onModeChange("rewrite")}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 17,
-                backgroundColor: inputMode === "rewrite" ? "#2A2A2C" : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color: inputMode === "rewrite" ? "#F9FAFB" : "#6B7280",
-                  fontSize: 13,
-                  fontWeight: inputMode === "rewrite" ? "600" : "400",
-                }}
-              >
-                Rewrite
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* Image Preview */}
       {selectedImageUri && (
         <View className="mb-3">
