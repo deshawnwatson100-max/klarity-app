@@ -1226,7 +1226,7 @@ export interface PersonalImpactAnalysis {
   mentalImpact: string;
   relationalImpact: string;
   behavioralImpact: string;
-  harmScore: number; // 0-100
+  communicationScore: number; // 0-100, higher = healthier communication
   scoreExplanation: string;
   reassuranceLine: string;
 }
@@ -1264,8 +1264,8 @@ RESPONSE FORMAT - provide JSON only:
   "mentalImpact": "1-2 short sentences about mental effects (overthinking, second-guessing, feeling mentally drained). Relatable language.",
   "relationalImpact": "1-2 short sentences about relationship effects (imbalance, loss of trust, walking on eggshells). Grounded, not absolute.",
   "behavioralImpact": "1-2 short sentences about behavioral effects (people-pleasing, withdrawing, over-explaining). Human language.",
-  "harmScore": number (0-100, where 0 = no harm, 100 = highly harmful. Reflects potential harm, not certainty. Be honest but not alarmist.),
-  "scoreExplanation": "1 sentence explaining the score contextually. Example: 'This score reflects how this type of communication often affects people over time — not a judgment, just a signal.'",
+  "communicationScore": number (0-100, where 0 = very unhealthy communication, 100 = very healthy communication. Reflects the health of the communication the user is receiving. Be honest but not alarmist.),
+  "scoreExplanation": "1 sentence explaining the score contextually. Example: 'This score reflects how healthy this type of communication tends to be — not a judgment, just a signal.'",
   "reassuranceLine": "1 grounding sentence. Examples: 'Your reaction makes sense.' / 'You're not overreacting for noticing this.' / 'It's okay to want clarity here.'"
 }
 
@@ -1304,18 +1304,18 @@ Generate a personal impact analysis explaining how this might affect someone. Re
 
     const parsed = JSON.parse(responseText);
 
-    // Validate and clamp harm score
-    const harmScore = typeof parsed.harmScore === "number"
-      ? Math.min(100, Math.max(0, Math.round(parsed.harmScore)))
-      : 45;
+    // Validate and clamp communication score
+    const communicationScore = typeof parsed.communicationScore === "number"
+      ? Math.min(100, Math.max(0, Math.round(parsed.communicationScore)))
+      : 55;
 
     return {
       emotionalImpact: parsed.emotionalImpact || "This kind of exchange can leave you feeling unsure about your own reactions — like you're not quite sure if what you felt was valid.",
       mentalImpact: parsed.mentalImpact || "You might find yourself replaying the conversation, trying to figure out what went wrong or what you could have said differently.",
       relationalImpact: parsed.relationalImpact || "Over time, patterns like this can make it harder to feel at ease in the relationship — like you're always bracing for the next confusing moment.",
       behavioralImpact: parsed.behavioralImpact || "You might start adjusting how you express yourself, being extra careful or holding back to avoid another uncomfortable exchange.",
-      harmScore,
-      scoreExplanation: parsed.scoreExplanation || "This score reflects how this type of communication often affects people over time — not a judgment, just a signal.",
+      communicationScore,
+      scoreExplanation: parsed.scoreExplanation || "This score reflects how healthy this type of communication tends to be — not a judgment, just a signal.",
       reassuranceLine: parsed.reassuranceLine || "Your reaction makes sense.",
     };
   } catch (error) {
@@ -1326,8 +1326,8 @@ Generate a personal impact analysis explaining how this might affect someone. Re
       mentalImpact: "You might find yourself replaying the conversation, trying to figure out what went wrong or what you could have said differently.",
       relationalImpact: "Over time, patterns like this can make it harder to feel at ease in the relationship — like you're always bracing for the next confusing moment.",
       behavioralImpact: "You might start adjusting how you express yourself, being extra careful or holding back to avoid another uncomfortable exchange.",
-      harmScore: 45,
-      scoreExplanation: "This score reflects how this type of communication often affects people over time — not a judgment, just a signal.",
+      communicationScore: 55,
+      scoreExplanation: "This score reflects how healthy this type of communication tends to be — not a judgment, just a signal.",
       reassuranceLine: "Your reaction makes sense.",
     };
   }

@@ -57,12 +57,12 @@ function ImpactSection({ icon, label, content }: ImpactSectionProps) {
   );
 }
 
-interface HarmScoreBarProps {
+interface CommunicationScoreBarProps {
   score: number;
   explanation: string;
 }
 
-function HarmScoreBar({ score, explanation }: HarmScoreBarProps) {
+function CommunicationScoreBar({ score, explanation }: CommunicationScoreBarProps) {
   const progressWidth = useSharedValue(0);
 
   useEffect(() => {
@@ -73,10 +73,11 @@ function HarmScoreBar({ score, explanation }: HarmScoreBarProps) {
     width: `${progressWidth.value}%`,
   }));
 
+  // Higher score = better communication (green), lower = worse (red)
   const getScoreColor = () => {
-    if (score < 30) return "#4ADE80";
-    if (score < 60) return "#FBBF24";
-    return "#F87171";
+    if (score >= 70) return "#4ADE80"; // Good - green
+    if (score >= 40) return "#FBBF24"; // Moderate - yellow
+    return "#F87171"; // Poor - red
   };
 
   return (
@@ -90,7 +91,7 @@ function HarmScoreBar({ score, explanation }: HarmScoreBarProps) {
             letterSpacing: 0.3,
           }}
         >
-          How damaging over time
+          Communication Health
         </Text>
         <Text
           style={{
@@ -124,9 +125,9 @@ function HarmScoreBar({ score, explanation }: HarmScoreBarProps) {
       </View>
 
       <View className="flex-row justify-between mt-1">
-        <Text style={{ fontSize: 10, color: "#4B5563" }}>0 — No harm</Text>
+        <Text style={{ fontSize: 10, color: "#4B5563" }}>0 — Unhealthy</Text>
         <Text style={{ fontSize: 10, color: "#4B5563" }}>
-          100 — Highly harmful
+          100 — Healthy
         </Text>
       </View>
 
@@ -411,8 +412,8 @@ export function DysfunctionalCommunicationCard({
                       content={impactAnalysis.behavioralImpact}
                     />
 
-                    <HarmScoreBar
-                      score={impactAnalysis.harmScore}
+                    <CommunicationScoreBar
+                      score={impactAnalysis.communicationScore}
                       explanation={impactAnalysis.scoreExplanation}
                     />
 
