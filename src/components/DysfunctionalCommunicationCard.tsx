@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,141 +9,10 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  generatePersonalImpactAnalysis,
-  PersonalImpactAnalysis,
-} from "../api/klarity-api";
 
 interface DysfunctionalCommunicationCardProps {
   summary: string;
   patterns?: string[];
-}
-
-interface ImpactSectionProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  content: string;
-}
-
-function ImpactSection({ icon, label, content }: ImpactSectionProps) {
-  return (
-    <View className="mb-4">
-      <View className="flex-row items-center mb-1.5">
-        <Ionicons name={icon} size={14} color="#6B7280" />
-        <Text
-          style={{
-            fontSize: 11,
-            fontWeight: "600",
-            color: "#6B7280",
-            marginLeft: 6,
-            letterSpacing: 0.5,
-            textTransform: "uppercase",
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-      <Text
-        style={{
-          fontSize: 14,
-          lineHeight: 20,
-          color: "#D1D5DB",
-          letterSpacing: 0.1,
-        }}
-      >
-        {content}
-      </Text>
-    </View>
-  );
-}
-
-interface CommunicationScoreBarProps {
-  score: number;
-  explanation: string;
-}
-
-function CommunicationScoreBar({ score, explanation }: CommunicationScoreBarProps) {
-  const progressWidth = useSharedValue(0);
-
-  useEffect(() => {
-    progressWidth.value = withTiming(score, { duration: 800 });
-  }, [score]);
-
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value}%`,
-  }));
-
-  // Higher score = better communication (green), lower = worse (red)
-  const getScoreColor = () => {
-    if (score >= 70) return "#4ADE80"; // Good - green
-    if (score >= 40) return "#FBBF24"; // Moderate - yellow
-    return "#F87171"; // Poor - red
-  };
-
-  return (
-    <View className="mb-4 mt-2">
-      <View className="flex-row items-center justify-between mb-2">
-        <Text
-          style={{
-            fontSize: 12,
-            fontWeight: "600",
-            color: "#6B7280",
-            letterSpacing: 0.3,
-          }}
-        >
-          Communication Health
-        </Text>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "700",
-            color: getScoreColor(),
-          }}
-        >
-          {score}
-        </Text>
-      </View>
-
-      <View
-        style={{
-          height: 4,
-          backgroundColor: "#1F1F22",
-          borderRadius: 2,
-          overflow: "hidden",
-        }}
-      >
-        <Animated.View
-          style={[
-            progressStyle,
-            {
-              height: "100%",
-              backgroundColor: getScoreColor(),
-              borderRadius: 2,
-            },
-          ]}
-        />
-      </View>
-
-      <View className="flex-row justify-between mt-1">
-        <Text style={{ fontSize: 10, color: "#4B5563" }}>0 — Unhealthy</Text>
-        <Text style={{ fontSize: 10, color: "#4B5563" }}>
-          100 — Healthy
-        </Text>
-      </View>
-
-      <Text
-        style={{
-          fontSize: 12,
-          lineHeight: 17,
-          color: "#6B7280",
-          marginTop: 8,
-          fontStyle: "italic",
-        }}
-      >
-        {explanation}
-      </Text>
-    </View>
-  );
 }
 
 export function DysfunctionalCommunicationCard({
@@ -151,15 +20,9 @@ export function DysfunctionalCommunicationCard({
   patterns,
 }: DysfunctionalCommunicationCardProps) {
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [impactAnalysis, setImpactAnalysis] =
-    useState<PersonalImpactAnalysis | null>(null);
 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
-  const expandedHeight = useSharedValue(0);
-  const expandedOpacity = useSharedValue(0);
   const contentHeight = useSharedValue(0); // Start minimized
 
   useEffect(() => {
@@ -180,37 +43,7 @@ export function DysfunctionalCommunicationCard({
       setIsMinimized(false);
     } else {
       contentHeight.value = withTiming(0, { duration: 300 });
-      if (isExpanded) {
-        expandedOpacity.value = withTiming(0, { duration: 200 });
-        expandedHeight.value = withTiming(0, { duration: 300 });
-        setIsExpanded(false);
-      }
       setIsMinimized(true);
-    }
-  };
-
-  const handleExpand = async () => {
-    if (isMinimized) return;
-
-    if (isExpanded) {
-      expandedOpacity.value = withTiming(0, { duration: 200 });
-      expandedHeight.value = withTiming(0, { duration: 300 });
-      setIsExpanded(false);
-      return;
-    }
-
-    setIsExpanded(true);
-    setIsLoading(true);
-    expandedHeight.value = withTiming(1, { duration: 300 });
-
-    try {
-      const analysis = await generatePersonalImpactAnalysis(summary, patterns);
-      setImpactAnalysis(analysis);
-    } catch (error) {
-      console.error("Error loading impact analysis:", error);
-    } finally {
-      setIsLoading(false);
-      expandedOpacity.value = withTiming(1, { duration: 250 });
     }
   };
 
@@ -228,17 +61,6 @@ export function DysfunctionalCommunicationCard({
     ),
     opacity: contentHeight.value,
     overflow: "hidden" as const,
-  }));
-
-  const expandedContainerStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(
-      expandedHeight.value,
-      [0, 1],
-      [0, 600],
-      Extrapolation.CLAMP
-    ),
-    opacity: expandedOpacity.value,
-    marginTop: interpolate(expandedHeight.value, [0, 1], [0, 16]),
   }));
 
   const firstPattern = patterns && patterns.length > 0 ? patterns[0] : null;
@@ -339,115 +161,6 @@ export function DysfunctionalCommunicationCard({
                 ))}
               </View>
             )}
-
-            {/* "How this affects me" link */}
-            <Pressable
-              onPress={handleExpand}
-              style={({ pressed }) => ({
-                marginTop: 12,
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <View className="flex-row items-center">
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "500",
-                    color: "#6B7280",
-                    letterSpacing: 0.1,
-                  }}
-                >
-                  {isExpanded ? "Show less" : "How this affects me"}
-                </Text>
-                <Ionicons
-                  name={isExpanded ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color="#6B7280"
-                  style={{ marginLeft: 4 }}
-                />
-              </View>
-            </Pressable>
-
-            {/* Expanded Content */}
-            <Animated.View
-              style={[expandedContainerStyle, { overflow: "hidden" }]}
-            >
-              {isLoading ? (
-                <View className="items-center justify-center py-6">
-                  <ActivityIndicator size="small" color="#6B7280" />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: "#6B7280",
-                      marginTop: 8,
-                    }}
-                  >
-                    Analyzing impact...
-                  </Text>
-                </View>
-              ) : (
-                impactAnalysis && (
-                  <View>
-                    <ImpactSection
-                      icon="heart-outline"
-                      label="Emotionally"
-                      content={impactAnalysis.emotionalImpact}
-                    />
-
-                    <ImpactSection
-                      icon="bulb-outline"
-                      label="Mentally"
-                      content={impactAnalysis.mentalImpact}
-                    />
-
-                    <ImpactSection
-                      icon="people-outline"
-                      label="Relationally"
-                      content={impactAnalysis.relationalImpact}
-                    />
-
-                    <ImpactSection
-                      icon="body-outline"
-                      label="Behaviorally"
-                      content={impactAnalysis.behavioralImpact}
-                    />
-
-                    <CommunicationScoreBar
-                      score={impactAnalysis.communicationScore}
-                      explanation={impactAnalysis.scoreExplanation}
-                    />
-
-                    {/* Reassurance */}
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        lineHeight: 20,
-                        color: "#9CA3AF",
-                        marginTop: 8,
-                        paddingLeft: 12,
-                        borderLeftWidth: 2,
-                        borderLeftColor: "#374151",
-                      }}
-                    >
-                      {impactAnalysis.reassuranceLine}
-                    </Text>
-
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        lineHeight: 17,
-                        color: "#4B5563",
-                        marginTop: 12,
-                        fontStyle: "italic",
-                      }}
-                    >
-                      This just gives you clarity — what you do with it is
-                      completely up to you.
-                    </Text>
-                  </View>
-                )
-              )}
-            </Animated.View>
           </Animated.View>
         </View>
       </Pressable>
