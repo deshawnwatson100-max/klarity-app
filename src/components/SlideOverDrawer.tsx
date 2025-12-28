@@ -111,9 +111,9 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
       const hasImage = !!(firstMessage as any).imageUrl || !!(firstMessage as any).imageBase64;
       const content = firstMessage.content;
 
-      // If it's just "[Image]" placeholder and has an actual image, show a nicer preview
+      // If it's just "[Image]" placeholder and has an actual image, return null to show icon instead
       if (content === "[Image]" && hasImage) {
-        return "📷 Image conversation";
+        return null; // Will show image icon instead
       }
 
       // Remove [Image] from content if there's other text
@@ -126,7 +126,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
 
       // Fallback if only [Image] with no actual image data
       if (hasImage) {
-        return "📷 Image conversation";
+        return null; // Will show image icon instead
       }
 
       return firstMessage.content.length > 60
@@ -134,6 +134,16 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
         : firstMessage.content;
     }
     return "No messages yet";
+  };
+
+  // Check if first message has an image
+  const hasImageAttachment = () => {
+    const userMessages = loop.messages.filter((m) => m.role === "user");
+    if (userMessages.length > 0) {
+      const firstMessage = userMessages[0];
+      return !!(firstMessage as any).imageUrl || !!(firstMessage as any).imageBase64;
+    }
+    return false;
   };
 
   // Format date relative
@@ -153,6 +163,9 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
       return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
   };
+
+  const preview = getPreview();
+  const showImageIcon = preview === null && hasImageAttachment();
 
   return (
     <Pressable
@@ -175,13 +188,25 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
             {formatDate(loop.updatedAt)}
           </Text>
         </View>
-        <Text
-          className="text-xs"
-          style={{ color: "#9CA3AF" }}
-          numberOfLines={2}
-        >
-          {getPreview()}
-        </Text>
+        {showImageIcon ? (
+          <View className="flex-row items-center">
+            <Ionicons name="image-outline" size={14} color="#9CA3AF" />
+            <Text
+              className="text-xs ml-1"
+              style={{ color: "#9CA3AF" }}
+            >
+              Image conversation
+            </Text>
+          </View>
+        ) : (
+          <Text
+            className="text-xs"
+            style={{ color: "#9CA3AF" }}
+            numberOfLines={2}
+          >
+            {preview}
+          </Text>
+        )}
         {loop.emotionalClarity !== undefined && (
           <View className="flex-row items-center mt-2">
             <View

@@ -2338,24 +2338,29 @@ export async function generateConversationTitle(
   const systemPrompt = `You generate very short, descriptive titles for conversations about interpersonal communication.
 
 The title should follow this format:
-"[Person/Role] - [Brief topic]"
+"[Actual Name] - [Brief topic]"
 
-Examples:
-- "Mom - Holiday plans"
-- "Boss - Project feedback"
-- "Ex - Getting closure"
-- "Friend - Feeling distant"
-- "Coworker - Credit for work"
-- "Partner - Communication"
-- "Landlord - Rent increase"
+CRITICAL RULES FOR NAMES:
+- If you see a screenshot of a text/messaging app, EXTRACT THE ACTUAL CONTACT NAME shown at the top of the conversation (e.g., "Sarah", "Mike", "Dad", "Jessica 💕")
+- Include any emojis that appear next to the contact name in the screenshot
+- NEVER use generic terms like "Partner", "Friend", "Coworker" if you can see an actual name
+- Only use relationship labels if no name is visible
+
+Examples of GOOD titles (when name is visible):
+- "Sarah - Weekend plans"
+- "Mike 💪 - Gym schedule"
+- "Dad - Car repair"
+- "Jessica 💕 - Date night"
+
+Examples of titles when NO name visible:
+- "They - Rent discussion"
+- "Group chat - Party"
 
 Rules:
-- Maximum 30 characters total
+- Maximum 35 characters total
 - NEVER include brackets, parentheses, or technical terms like [Image], (image), etc.
-- If analyzing a screenshot of a text conversation, identify who the user is talking to (look for contact names, relationship hints) and what the conversation is about
-- Focus on the relationship and core issue
-- Keep it simple, neutral, and human-readable
-- If unclear who they're talking about, use "They" or describe the situation
+- ALWAYS prioritize the actual contact name from the screenshot over generic relationship labels
+- Keep it simple and human-readable
 
 Return ONLY the title, nothing else.`;
 
