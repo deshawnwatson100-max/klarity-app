@@ -91,7 +91,6 @@ export function TypewriterText({
   return (
     <Animated.Text style={[style, animatedStyle]}>
       {displayedText}
-      {!isComplete && <Text style={{ opacity: 0.4 }}> ▍</Text>}
     </Animated.Text>
   );
 }
