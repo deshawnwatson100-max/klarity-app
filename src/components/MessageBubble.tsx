@@ -61,17 +61,26 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         {/* Image aligned to the right */}
         {imageUrl && (
           <View style={{ width: "100%", alignItems: "flex-end", marginBottom: hasText ? 12 : 0 }}>
-            <Image
-              source={{ uri: imageUrl }}
+            <View
               style={{
                 width: imageWidth,
                 height: imageHeight,
                 borderRadius: 16,
+                overflow: "hidden",
+                backgroundColor: "#1A1A1C",
               }}
-              contentFit="contain"
-              placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
-              transition={200}
-            />
+            >
+              <Image
+                source={{ uri: imageUrl }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+                contentFit="contain"
+                placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
+                transition={200}
+              />
+            </View>
           </View>
         )}
 
@@ -113,17 +122,26 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       {/* Image aligned to the right */}
       {imageUrl && (
         <View style={{ width: "100%", alignItems: "flex-end", marginBottom: hasText ? 12 : 0 }}>
-          <Image
-            source={{ uri: imageUrl }}
+          <View
             style={{
               width: imageWidth,
               height: imageHeight,
               borderRadius: 16,
+              overflow: "hidden",
+              backgroundColor: "#1A1A1C",
             }}
-            contentFit="contain"
-            placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
-            transition={200}
-          />
+          >
+            <Image
+              source={{ uri: imageUrl }}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+              contentFit="contain"
+              placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
+              transition={200}
+            />
+          </View>
         </View>
       )}
 
