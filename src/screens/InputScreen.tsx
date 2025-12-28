@@ -19,7 +19,7 @@ import Animated, {
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH, MAIN_CONTENT_SCALE, MAIN_CONTENT_BORDER_RADIUS } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -360,14 +360,11 @@ export function InputScreen({ navigation }: Props) {
     []
   );
 
-  // ChatGPT-style drawer push effect - main content transforms when drawer opens
+  // ChatGPT-style drawer push effect - main content slides over when drawer opens
   const mainContentPushStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: interpolate(drawerProgress.value, [0, 1], [0, DRAWER_WIDTH], Extrapolation.CLAMP) },
-      { scale: interpolate(drawerProgress.value, [0, 1], [1, MAIN_CONTENT_SCALE], Extrapolation.CLAMP) },
     ],
-    borderRadius: interpolate(drawerProgress.value, [0, 1], [0, MAIN_CONTENT_BORDER_RADIUS], Extrapolation.CLAMP),
-    overflow: "hidden" as const,
   }));
 
   return (
