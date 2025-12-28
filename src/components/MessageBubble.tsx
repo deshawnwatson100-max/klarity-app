@@ -48,8 +48,8 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
   const hasText = content && content !== "[Image]";
 
   // Smaller image dimensions for chat screenshots
-  const imageWidth = SCREEN_WIDTH * 0.65; // 65% of screen width
-  const imageHeight = imageWidth * 1.6; // Tall aspect ratio for chat screenshots
+  const imageWidth = SCREEN_WIDTH * 0.55; // 55% of screen width
+  const imageHeight = imageWidth * 1.8; // Tall aspect ratio for chat screenshots
 
   // User messages - warmer white with faint shadow
   if (isUser) {
@@ -58,18 +58,17 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         style={animatedStyle}
         className="mb-5"
       >
-        {/* Full-width image at top */}
+        {/* Image aligned to the left */}
         {imageUrl && (
-          <View style={{ width: "100%", marginBottom: hasText ? 12 : 0 }}>
+          <View style={{ width: "100%", alignItems: "flex-start", marginBottom: hasText ? 12 : 0 }}>
             <Image
               source={{ uri: imageUrl }}
               style={{
                 width: imageWidth,
                 height: imageHeight,
                 borderRadius: 16,
-                alignSelf: "center",
               }}
-              contentFit="cover"
+              contentFit="contain"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
               transition={200}
             />
@@ -111,18 +110,17 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       style={animatedStyle}
       className="mb-5"
     >
-      {/* Full-width image at top */}
+      {/* Image aligned to the left */}
       {imageUrl && (
-        <View style={{ width: "100%", marginBottom: hasText ? 12 : 0 }}>
+        <View style={{ width: "100%", alignItems: "flex-start", marginBottom: hasText ? 12 : 0 }}>
           <Image
             source={{ uri: imageUrl }}
             style={{
               width: imageWidth,
               height: imageHeight,
               borderRadius: 16,
-              alignSelf: "center",
             }}
-            contentFit="cover"
+            contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
             transition={200}
           />
