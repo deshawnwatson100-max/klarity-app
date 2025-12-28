@@ -144,7 +144,7 @@ export function Header({
                     fontWeight: inputMode === "rewrite" ? "600" : "400",
                   }}
                 >
-                  Rewrite
+                  Reply
                 </Text>
               </Pressable>
               <Pressable
@@ -163,7 +163,7 @@ export function Header({
                     fontWeight: inputMode === "understand" ? "600" : "400",
                   }}
                 >
-                  Understand
+                  Decode
                 </Text>
               </Pressable>
             </View>
