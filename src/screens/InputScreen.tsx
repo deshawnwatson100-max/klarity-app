@@ -59,9 +59,6 @@ export function InputScreen({ navigation }: Props) {
   const bottomOpacity = useSharedValue(1);
   const bottomTranslateY = useSharedValue(0);
 
-  // Track if we can navigate to chat (has messages)
-  const canNavigate = useSharedValue(false);
-
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
@@ -73,11 +70,6 @@ export function InputScreen({ navigation }: Props) {
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
-
-  // Update shared value when messages change
-  useEffect(() => {
-    canNavigate.value = !!(activeLoop && activeLoop.messages.length > 0);
-  }, [activeLoop?.messages.length]);
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -344,17 +336,22 @@ export function InputScreen({ navigation }: Props) {
     animateContentOutAndNavigate();
   };
 
-  // Swipe gesture handler - triggers content animation, not full-screen swipe
+  // Open drawer handler for swipe gesture
+  const handleOpenDrawer = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsDrawerOpen(true);
+  };
+
+  // Swipe right opens drawer
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX([-50, 50])
+        .activeOffsetX(50)
+        .failOffsetX(-50)
         .onEnd((event) => {
-          // Left swipe - navigate to ChatScreen (only if has messages)
-          if (event.velocityX < -500 && event.translationX < -80) {
-            if (canNavigate.value) {
-              runOnJS(handleNavigateToChat)();
-            }
+          // Right swipe - open drawer
+          if (event.velocityX > 500 && event.translationX > 80) {
+            runOnJS(handleOpenDrawer)();
           }
         }),
     []

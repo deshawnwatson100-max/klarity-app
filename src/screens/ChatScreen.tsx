@@ -946,6 +946,13 @@ export function ChatScreen({ navigation, route }: Props) {
     animateContentOutAndNavigate("InputScreen");
   };
 
+  // Open drawer handler for swipe gesture
+  const handleOpenDrawer = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsDrawerOpen(true);
+  };
+
+  // Swipe right opens drawer instead of navigating back
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
@@ -953,7 +960,7 @@ export function ChatScreen({ navigation, route }: Props) {
         .failOffsetX(-50)
         .onEnd((event) => {
           if (event.velocityX > 500 && event.translationX > 80) {
-            runOnJS(handleNavigateBack)();
+            runOnJS(handleOpenDrawer)();
           }
         }),
     []
