@@ -287,6 +287,7 @@ function ReplyItem({
               />
               {hasAnimatedText && !hasAnimatedGuidance ? (
                 <TypewriterText
+                  key={`guidance-${reply.id}`}
                   text={reply.guidanceNote}
                   style={{
                     fontSize: 13,

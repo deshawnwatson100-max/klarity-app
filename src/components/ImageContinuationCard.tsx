@@ -113,6 +113,7 @@ export function ImageContinuationCard({
             />
             {hasAnimatedSummary && !hasAnimatedChanged ? (
               <TypewriterText
+                key="whatChanged"
                 text={whatChanged}
                 style={{
                   color: "#A5B4FC",
@@ -159,6 +160,7 @@ export function ImageContinuationCard({
               />
               {hasAnimatedChanged && !hasAnimatedShift ? (
                 <TypewriterText
+                  key="approachShift"
                   text={approachShift}
                   style={{
                     color: "#FCD34D",

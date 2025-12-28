@@ -28,7 +28,7 @@ export function TypewriterText({
 }: TypewriterTextProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(startDelay === 0);
   const opacity = useSharedValue(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,10 +40,12 @@ export function TypewriterText({
       easing: Easing.out(Easing.quad),
     });
 
-    // Start delay before typing begins
-    timeoutRef.current = setTimeout(() => {
-      setHasStarted(true);
-    }, startDelay);
+    // Start delay before typing begins (only if delay > 0)
+    if (startDelay > 0) {
+      timeoutRef.current = setTimeout(() => {
+        setHasStarted(true);
+      }, startDelay);
+    }
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);

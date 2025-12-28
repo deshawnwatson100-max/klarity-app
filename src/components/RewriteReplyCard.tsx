@@ -148,6 +148,7 @@ export function RewriteReplyCard({
           </Text>
           {hasAnimatedReply && !hasAnimatedIntent ? (
             <TypewriterText
+              key="originalIntent"
               text={originalIntent}
               style={{
                 color: "#9CA3AF",
