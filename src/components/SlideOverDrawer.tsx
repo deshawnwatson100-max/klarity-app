@@ -20,13 +20,18 @@ import Animated, {
   withSpring,
   runOnJS,
   Easing,
+  interpolate,
+  Extrapolation,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.85;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.80;
+const MAIN_CONTENT_TRANSLATE = DRAWER_WIDTH;
+const MAIN_CONTENT_SCALE = 0.88;
+const MAIN_CONTENT_BORDER_RADIUS = 20;
 
 interface SlideOverDrawerProps {
   visible: boolean;
@@ -179,6 +184,9 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
+// Export animated values for parent components to use
+export const drawerProgress = { value: 0 };
+
 export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -191,13 +199,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const switchToLoop = useLoopsStore((s) => s.switchToLoop);
 
-  // Animation values
-  const translateX = useSharedValue(-DRAWER_WIDTH);
-  const backdropOpacity = useSharedValue(0);
+  // Animation values - progress goes from 0 (closed) to 1 (open)
+  const progress = useSharedValue(0);
 
-  // Animation config
-  const ANIMATION_DURATION = 280;
-  const EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+  // Animation config - ChatGPT-style smooth easing
+  const ANIMATION_DURATION = 350;
+  const EASING = Easing.bezier(0.32, 0.72, 0, 1);
 
   // Filter loops based on search query
   const filteredLoops = useMemo(() => {
@@ -228,20 +235,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Handle visibility changes
   useEffect(() => {
     if (visible) {
-      translateX.value = withTiming(0, {
-        duration: ANIMATION_DURATION,
-        easing: EASING,
-      });
-      backdropOpacity.value = withTiming(1, {
+      progress.value = withTiming(1, {
         duration: ANIMATION_DURATION,
         easing: EASING,
       });
     } else {
-      translateX.value = withTiming(-DRAWER_WIDTH, {
-        duration: ANIMATION_DURATION,
-        easing: EASING,
-      });
-      backdropOpacity.value = withTiming(0, {
+      progress.value = withTiming(0, {
         duration: ANIMATION_DURATION,
         easing: EASING,
       });
@@ -274,36 +273,47 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     .activeOffsetX(-20)
     .onUpdate((event) => {
       if (event.translationX < 0) {
-        translateX.value = Math.max(event.translationX, -DRAWER_WIDTH);
+        // Map translation to progress (0 to 1)
+        const newProgress = 1 + (event.translationX / DRAWER_WIDTH);
+        progress.value = Math.max(0, Math.min(1, newProgress));
       }
     })
     .onEnd((event) => {
       if (event.translationX < -80 || event.velocityX < -500) {
-        translateX.value = withTiming(-DRAWER_WIDTH, {
-          duration: 200,
-          easing: EASING,
-        });
-        backdropOpacity.value = withTiming(0, {
-          duration: 200,
+        progress.value = withTiming(0, {
+          duration: 250,
           easing: EASING,
         });
         runOnJS(closeDrawer)();
       } else {
-        translateX.value = withSpring(0, {
+        progress.value = withSpring(1, {
           damping: 20,
           stiffness: 300,
         });
       }
     });
 
-  // Animated styles
+  // Animated styles - Drawer slides in from left
   const drawerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
+    transform: [
+      { translateX: interpolate(progress.value, [0, 1], [-DRAWER_WIDTH, 0], Extrapolation.CLAMP) },
+    ],
   }));
 
+  // Backdrop style
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-    pointerEvents: backdropOpacity.value > 0 ? "auto" : "none",
+    opacity: interpolate(progress.value, [0, 1], [0, 1], Extrapolation.CLAMP),
+    pointerEvents: progress.value > 0 ? "auto" : "none",
+  }));
+
+  // Main content overlay style (the scaled/translated content effect)
+  const mainContentStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(progress.value, [0, 1], [0, MAIN_CONTENT_TRANSLATE], Extrapolation.CLAMP) },
+      { scale: interpolate(progress.value, [0, 1], [1, MAIN_CONTENT_SCALE], Extrapolation.CLAMP) },
+    ],
+    borderRadius: interpolate(progress.value, [0, 1], [0, MAIN_CONTENT_BORDER_RADIUS], Extrapolation.CLAMP),
+    overflow: "hidden" as const,
   }));
 
   // Menu handlers
@@ -327,7 +337,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   };
 
 
-  if (!visible && translateX.value === -DRAWER_WIDTH) {
+  if (!visible && progress.value === 0) {
     return null;
   }
 
@@ -344,11 +354,18 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           paddingHorizontal: 20,
         }}
       >
+        {/* Klarity Branding */}
+        <View className="flex-row items-center mb-4">
+          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+            Klarity
+          </Text>
+        </View>
+
         {/* Search Bar */}
         <View className="flex-row items-center">
           <View
             className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.06)" }}
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
           >
             <Ionicons name="search" size={18} color="#6B7280" />
             <TextInput
@@ -373,30 +390,19 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             className="active:opacity-60 ml-3"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <View style={{ position: "relative" }}>
-              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
-              <View
-                style={{
-                  position: "absolute",
-                  top: 4,
-                  left: 0,
-                  right: 0,
-                  bottom: 4,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="add" size={12} color="#9CA3AF" />
-              </View>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="add" size={22} color="#E5E7EB" />
             </View>
           </Pressable>
-        </View>
-
-        {/* Klarity Branding */}
-        <View className="flex-row items-center mt-4">
-          <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
-            Klarity
-          </Text>
         </View>
       </View>
     );
@@ -459,10 +465,10 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         >
           {/* Past Chats - show directly if available */}
           {loops.length > 0 && (
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: 8 }}>
               <View className="px-5 pb-2">
-                <Text className="text-xs font-medium" style={{ color: "#6B7280" }}>
-                  PAST CHATS
+                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
+                  Recent
                 </Text>
               </View>
               {loops.map((loop, index) => (
@@ -492,7 +498,19 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       }}
       pointerEvents={visible ? "auto" : "none"}
     >
-      {/* Backdrop */}
+      {/* Dark background layer */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "#000000",
+        }}
+      />
+
+      {/* Backdrop - tappable area to close */}
       <Animated.View
         style={[
           {
@@ -501,7 +519,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backgroundColor: "transparent",
           },
           backdropStyle,
         ]}
@@ -519,12 +537,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
               left: 0,
               bottom: 0,
               width: DRAWER_WIDTH,
-              backgroundColor: "#0A0A0C",
-              shadowColor: "#000",
-              shadowOffset: { width: 4, height: 0 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 10,
+              backgroundColor: "#171717",
             },
             drawerStyle,
           ]}
@@ -546,43 +559,73 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
                 paddingHorizontal: 20,
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  backgroundColor: "transparent",
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
+                className="active:opacity-70"
               >
                 <View
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: "rgba(167, 139, 250, 0.15)",
+                    flexDirection: "row",
                     alignItems: "center",
-                    justifyContent: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    borderRadius: 12,
                   }}
                 >
-                  <Ionicons name="person-outline" size={18} color="#A78BFA" />
-                </View>
-                <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text
-                    className="text-sm font-medium"
-                    style={{ color: "#E5E7EB" }}
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: "rgba(167, 139, 250, 0.2)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    Personal
-                  </Text>
-                  <Text className="text-xs" style={{ color: "#6B7280" }}>
-                    Free Plan
-                  </Text>
+                    <Ionicons name="person" size={18} color="#A78BFA" />
+                  </View>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text
+                      className="text-sm font-medium"
+                      style={{ color: "#E5E7EB" }}
+                    >
+                      Personal
+                    </Text>
+                    <Text className="text-xs" style={{ color: "#6B7280" }}>
+                      Free Plan
+                    </Text>
+                  </View>
+                  <Ionicons name="ellipsis-horizontal" size={18} color="#6B7280" />
                 </View>
-              </View>
+              </Pressable>
             </View>
           )}
         </Animated.View>
       </GestureDetector>
+
+      {/* Main content overlay effect - this creates the ChatGPT-style push effect */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: SCREEN_WIDTH,
+            backgroundColor: "#0A0A0C",
+            shadowColor: "#000",
+            shadowOffset: { width: -8, height: 0 },
+            shadowOpacity: 0.4,
+            shadowRadius: 16,
+            elevation: 20,
+          },
+          mainContentStyle,
+        ]}
+        pointerEvents="none"
+      />
     </View>
   );
 }
