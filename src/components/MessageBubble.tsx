@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import Animated, {
   useAnimatedStyle,
@@ -7,6 +7,8 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -45,34 +47,41 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
 
   const hasText = content && content !== "[Image]";
 
+  // Full width image dimensions (with padding)
+  const imageWidth = SCREEN_WIDTH - 32; // 16px padding on each side
+  const imageHeight = imageWidth * 1.8; // Tall aspect ratio for chat screenshots
+
   // User messages - warmer white with faint shadow
   if (isUser) {
     return (
       <Animated.View
         style={animatedStyle}
-        className="mb-5 items-end" // Generous vertical spacing
+        className="mb-5"
       >
-        <View style={{ maxWidth: "85%" }}>
-          {/* Image floats freely - no container */}
-          {imageUrl && (
+        {/* Full-width image at top */}
+        {imageUrl && (
+          <View style={{ width: "100%", marginBottom: hasText ? 12 : 0 }}>
             <Image
               source={{ uri: imageUrl }}
               style={{
-                width: 250,
-                height: 350,
+                width: imageWidth,
+                height: imageHeight,
                 borderRadius: 16,
-                marginBottom: hasText ? 10 : 0,
+                alignSelf: "center",
               }}
               contentFit="cover"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
               transition={200}
             />
-          )}
+          </View>
+        )}
 
-          {/* Soft text block with faint shadow */}
-          {hasText && (
+        {/* Text aligned to the right */}
+        {hasText && (
+          <View style={{ alignItems: "flex-end" }}>
             <View
               style={{
+                maxWidth: "85%",
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.15,
@@ -90,8 +99,8 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
                 {content}
               </Text>
             </View>
-          )}
-        </View>
+          </View>
+        )}
       </Animated.View>
     );
   }
@@ -100,27 +109,29 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
   return (
     <Animated.View
       style={animatedStyle}
-      className="mb-5 items-start" // Generous vertical spacing
+      className="mb-5"
     >
-      <View style={{ maxWidth: "90%", paddingRight: 20 }}>
-        {/* Image floats freely */}
-        {imageUrl && (
+      {/* Full-width image at top */}
+      {imageUrl && (
+        <View style={{ width: "100%", marginBottom: hasText ? 12 : 0 }}>
           <Image
             source={{ uri: imageUrl }}
             style={{
-              width: 250,
-              height: 350,
+              width: imageWidth,
+              height: imageHeight,
               borderRadius: 16,
-              marginBottom: hasText ? 10 : 0,
+              alignSelf: "center",
             }}
             contentFit="cover"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
             transition={200}
           />
-        )}
+        </View>
+      )}
 
-        {/* Floating text - clean on pitch black */}
-        {hasText && (
+      {/* Text aligned to the left */}
+      {hasText && (
+        <View style={{ maxWidth: "90%", paddingRight: 20 }}>
           <Text
             style={{
               fontSize: 15,
@@ -131,8 +142,8 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           >
             {content}
           </Text>
-        )}
-      </View>
+        </View>
+      )}
     </Animated.View>
   );
 }
