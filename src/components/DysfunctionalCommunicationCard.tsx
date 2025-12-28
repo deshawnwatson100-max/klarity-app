@@ -137,7 +137,7 @@ export function DysfunctionalCommunicationCard({
                   lineHeight: 26,
                   color: "#ECECF1",
                 }}
-                speed={45}
+                speed={120}
                 onComplete={() => setHasAnimated(true)}
               />
             ) : hasAnimated ? (
