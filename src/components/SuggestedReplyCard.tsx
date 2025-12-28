@@ -259,7 +259,7 @@ function ReplyItem({
                     lineHeight: 24,
                     color: "#EDEDED",
                   }}
-                  speed={120}
+                  speed={85}
                   onComplete={() => setHasAnimatedText(true)}
                 />
               ) : (
@@ -295,7 +295,7 @@ function ReplyItem({
                     color: "#6B7280",
                     flex: 1,
                   }}
-                  speed={100}
+                  speed={70}
                   onComplete={() => setHasAnimatedGuidance(true)}
                 />
               ) : hasAnimatedGuidance ? (

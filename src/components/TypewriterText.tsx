@@ -22,7 +22,7 @@ interface TypewriterTextProps {
 export function TypewriterText({
   text,
   style,
-  speed = 120,
+  speed = 85,
   onComplete,
   startDelay = 0,
 }: TypewriterTextProps) {

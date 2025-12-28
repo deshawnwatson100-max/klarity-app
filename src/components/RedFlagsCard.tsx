@@ -138,7 +138,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                   marginTop: 12,
                   fontStyle: "italic",
                 }}
-                speed={120}
+                speed={85}
                 onComplete={() => {
                   setHasAnimatedIntro(true);
                   setAnimatedFlagIndex(0);
@@ -185,7 +185,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                         color: "#D1D5DB",
                         flex: 1,
                       }}
-                      speed={100}
+                      speed={70}
                       onComplete={() => setAnimatedFlagIndex(index + 1)}
                     />
                   ) : animatedFlagIndex > index ? (
