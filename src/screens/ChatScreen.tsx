@@ -58,6 +58,7 @@ import {
   EmotionalAnalysis,
   RewriteReplyCardMessage,
   ImageContinuationMessage,
+  MessageMode,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -97,17 +98,39 @@ export function ChatScreen({ navigation, route }: Props) {
   // Use loops store
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
-  const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+  const addMessageToActiveLoopRaw = useLoopsStore((s) => s.addMessageToActiveLoop);
   const insertMessageAfter = useLoopsStore((s) => s.insertMessageAfter);
   const removeMessageFromActiveLoop = useLoopsStore((s) => s.removeMessageFromActiveLoop);
   const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
-  const messages = useLoopsStore((s) => {
+  // Track current mode in a ref for use in callbacks
+  const inputModeRef = useRef<InputMode>(inputMode);
+  inputModeRef.current = inputMode;
+
+  // Helper to add message with current mode
+  const addMessageToActiveLoop = (message: ChatMessage) => {
+    addMessageToActiveLoopRaw({
+      ...message,
+      mode: inputModeRef.current as MessageMode,
+    });
+  };
+
+  const allMessages = useLoopsStore((s) => {
     const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
     return activeLoop?.messages || [];
   });
+
+  // Filter messages by active mode - only show messages for the current mode
+  const messages = useMemo(() => {
+    return allMessages.filter((msg) => {
+      // Messages without a mode are shown in both (legacy support)
+      if (!msg.mode) return true;
+      // Map internal mode names: "rewrite" = Reply, "understand" = Decode
+      return msg.mode === inputMode;
+    });
+  }, [allMessages, inputMode]);
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,

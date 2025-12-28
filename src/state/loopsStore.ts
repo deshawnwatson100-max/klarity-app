@@ -8,7 +8,11 @@ import {
   createNewLoop,
   generateLoopTitle,
 } from "../types/loop";
-import { ChatMessage, AnalysisMessage } from "../types/chat";
+import {
+  ChatMessage,
+  AnalysisMessage,
+  MessageMode,
+} from "../types/chat";
 
 /**
  * Loops Store
@@ -42,6 +46,7 @@ interface LoopsState {
   getLoopById: (id: string) => KlarityLoop | undefined;
   getRelationshipById: (id: string) => TrackedRelationship | undefined;
   getLoopsForRelationship: (relationshipId: string) => KlarityLoop[];
+  getActiveLoopMessagesByMode: (mode: MessageMode) => ChatMessage[];
 
   // Actions - Loop Management
   createNewLoop: () => string; // Returns the new loop ID
@@ -95,6 +100,13 @@ export const useLoopsStore = create<LoopsState>()(
       getLoopsForRelationship: (relationshipId: string) => {
         const state = get();
         return state.loops.filter((loop) => loop.relationshipId === relationshipId);
+      },
+
+      getActiveLoopMessagesByMode: (mode: MessageMode) => {
+        const state = get();
+        const activeLoop = state.loops.find((loop) => loop.id === state.activeLoopId);
+        if (!activeLoop) return [];
+        return activeLoop.messages.filter((msg) => msg.mode === mode || msg.mode === undefined);
       },
 
       // Loop Management Actions

@@ -29,6 +29,8 @@ export type MessageRole =
   | "rewrite-reply-card"
   | "image-continuation";
 
+export type MessageMode = "rewrite" | "understand";
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -37,6 +39,7 @@ export interface Message {
   imageUrl?: string; // Optional image attachment
   imageBase64?: string; // Base64 encoded image for API calls
   isVoiceMessage?: boolean; // Marks if this message came from voice recording
+  mode?: MessageMode; // The mode this message belongs to (Reply or Decode)
 }
 
 export interface EmotionalAnalysis {
