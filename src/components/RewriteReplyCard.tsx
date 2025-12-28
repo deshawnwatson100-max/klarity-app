@@ -111,7 +111,7 @@ export function RewriteReplyCard({
               lineHeight: 22,
               marginBottom: 12,
             }}
-            speed={8}
+            speed={25}
             onComplete={() => setHasAnimatedReply(true)}
           />
         ) : (
@@ -146,7 +146,7 @@ export function RewriteReplyCard({
           >
             Your intent:
           </Text>
-          {!hasAnimatedIntent ? (
+          {hasAnimatedReply && !hasAnimatedIntent ? (
             <TypewriterText
               text={originalIntent}
               style={{
@@ -154,10 +154,10 @@ export function RewriteReplyCard({
                 fontSize: 13,
                 lineHeight: 18,
               }}
-              speed={6}
+              speed={20}
               onComplete={() => setHasAnimatedIntent(true)}
             />
-          ) : (
+          ) : hasAnimatedIntent ? (
             <Text
               style={{
                 color: "#9CA3AF",
@@ -167,7 +167,7 @@ export function RewriteReplyCard({
             >
               {originalIntent}
             </Text>
-          )}
+          ) : null}
         </View>
 
         {/* Use This Reply Button */}

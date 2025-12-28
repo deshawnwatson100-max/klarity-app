@@ -259,7 +259,7 @@ function ReplyItem({
                     lineHeight: 24,
                     color: "#EDEDED",
                   }}
-                  speed={8}
+                  speed={25}
                   onComplete={() => setHasAnimatedText(true)}
                 />
               ) : (
@@ -285,7 +285,7 @@ function ReplyItem({
                 color="#4B5563"
                 style={{ marginTop: 2, marginRight: 6 }}
               />
-              {!hasAnimatedGuidance ? (
+              {hasAnimatedText && !hasAnimatedGuidance ? (
                 <TypewriterText
                   text={reply.guidanceNote}
                   style={{
@@ -294,10 +294,10 @@ function ReplyItem({
                     color: "#6B7280",
                     flex: 1,
                   }}
-                  speed={6}
+                  speed={20}
                   onComplete={() => setHasAnimatedGuidance(true)}
                 />
-              ) : (
+              ) : hasAnimatedGuidance ? (
                 <Text
                   style={{
                     fontSize: 13,
@@ -308,7 +308,7 @@ function ReplyItem({
                 >
                   {reply.guidanceNote}
                 </Text>
-              )}
+              ) : null}
             </View>
 
             {/* Action buttons row */}

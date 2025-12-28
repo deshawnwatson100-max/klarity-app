@@ -77,7 +77,7 @@ export function ImageContinuationCard({
                 lineHeight: 22,
                 marginBottom: 12,
               }}
-              speed={8}
+              speed={25}
               onComplete={() => setHasAnimatedSummary(true)}
             />
           ) : (
@@ -111,7 +111,7 @@ export function ImageContinuationCard({
               color="#A5B4FC"
               style={{ marginRight: 8, marginTop: 2 }}
             />
-            {!hasAnimatedChanged ? (
+            {hasAnimatedSummary && !hasAnimatedChanged ? (
               <TypewriterText
                 text={whatChanged}
                 style={{
@@ -120,10 +120,10 @@ export function ImageContinuationCard({
                   lineHeight: 19,
                   flex: 1,
                 }}
-                speed={8}
+                speed={20}
                 onComplete={() => setHasAnimatedChanged(true)}
               />
-            ) : (
+            ) : hasAnimatedChanged ? (
               <Text
                 style={{
                   color: "#A5B4FC",
@@ -134,7 +134,7 @@ export function ImageContinuationCard({
               >
                 {whatChanged}
               </Text>
-            )}
+            ) : null}
           </View>
         </Animated.View>
 
@@ -157,7 +157,7 @@ export function ImageContinuationCard({
                 color="#FCD34D"
                 style={{ marginRight: 8, marginTop: 2 }}
               />
-              {!hasAnimatedShift ? (
+              {hasAnimatedChanged && !hasAnimatedShift ? (
                 <TypewriterText
                   text={approachShift}
                   style={{
@@ -166,10 +166,10 @@ export function ImageContinuationCard({
                     lineHeight: 19,
                     flex: 1,
                   }}
-                  speed={8}
+                  speed={20}
                   onComplete={() => setHasAnimatedShift(true)}
                 />
-              ) : (
+              ) : hasAnimatedShift ? (
                 <Text
                   style={{
                     color: "#FCD34D",
@@ -180,7 +180,7 @@ export function ImageContinuationCard({
                 >
                   {approachShift}
                 </Text>
-              )}
+              ) : null}
             </View>
           </Animated.View>
         )}
