@@ -28,6 +28,7 @@ import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
 import { getOpenAITextResponse } from "../api/chat-service";
+import { MessageMode } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "InputScreen">;
 
@@ -190,7 +191,7 @@ export function InputScreen({ navigation }: Props) {
       activeLoop = getActiveLoop();
     }
 
-    // Add user message to active loop
+    // Add user message to active loop with mode
     addMessageToActiveLoop({
       id: Date.now().toString(),
       role: "user",
@@ -198,6 +199,7 @@ export function InputScreen({ navigation }: Props) {
       timestamp: Date.now(),
       imageUrl: selectedImageUri,
       imageBase64: selectedImageBase64,
+      mode: inputMode === "rewrite" ? "rewrite" : "understand",
     });
 
     // Animate content out then navigate to chat screen
@@ -307,6 +309,7 @@ export function InputScreen({ navigation }: Props) {
           content: transcription,
           timestamp: Date.now(),
           isVoiceMessage: true, // Mark as voice message for emotion analysis
+          mode: inputMode === "rewrite" ? "rewrite" : "understand",
         });
 
         // Navigate to chat screen for AI response
