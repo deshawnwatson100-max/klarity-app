@@ -286,18 +286,19 @@ function ReplyItem({
                 style={{ marginTop: 2, marginRight: 6 }}
               />
               {hasAnimatedText && !hasAnimatedGuidance ? (
-                <TypewriterText
-                  key={`guidance-${reply.id}`}
-                  text={reply.guidanceNote}
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 18,
-                    color: "#6B7280",
-                    flex: 1,
-                  }}
-                  speed={70}
-                  onComplete={() => setHasAnimatedGuidance(true)}
-                />
+                <View style={{ flex: 1 }}>
+                  <TypewriterText
+                    key={`guidance-${reply.id}`}
+                    text={reply.guidanceNote}
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 18,
+                      color: "#6B7280",
+                    }}
+                    speed={70}
+                    onComplete={() => setHasAnimatedGuidance(true)}
+                  />
+                </View>
               ) : hasAnimatedGuidance ? (
                 <Text
                   style={{

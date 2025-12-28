@@ -112,18 +112,19 @@ export function ImageContinuationCard({
               style={{ marginRight: 8, marginTop: 2 }}
             />
             {hasAnimatedSummary && !hasAnimatedChanged ? (
-              <TypewriterText
-                key="whatChanged"
-                text={whatChanged}
-                style={{
-                  color: "#A5B4FC",
-                  fontSize: 13,
-                  lineHeight: 19,
-                  flex: 1,
-                }}
-                speed={70}
-                onComplete={() => setHasAnimatedChanged(true)}
-              />
+              <View style={{ flex: 1 }}>
+                <TypewriterText
+                  key="whatChanged"
+                  text={whatChanged}
+                  style={{
+                    color: "#A5B4FC",
+                    fontSize: 13,
+                    lineHeight: 19,
+                  }}
+                  speed={70}
+                  onComplete={() => setHasAnimatedChanged(true)}
+                />
+              </View>
             ) : hasAnimatedChanged ? (
               <Text
                 style={{
@@ -159,18 +160,19 @@ export function ImageContinuationCard({
                 style={{ marginRight: 8, marginTop: 2 }}
               />
               {hasAnimatedChanged && !hasAnimatedShift ? (
-                <TypewriterText
-                  key="approachShift"
-                  text={approachShift}
-                  style={{
-                    color: "#FCD34D",
-                    fontSize: 13,
-                    lineHeight: 19,
-                    flex: 1,
-                  }}
-                  speed={70}
-                  onComplete={() => setHasAnimatedShift(true)}
-                />
+                <View style={{ flex: 1 }}>
+                  <TypewriterText
+                    key="approachShift"
+                    text={approachShift}
+                    style={{
+                      color: "#FCD34D",
+                      fontSize: 13,
+                      lineHeight: 19,
+                    }}
+                    speed={70}
+                    onComplete={() => setHasAnimatedShift(true)}
+                  />
+                </View>
               ) : hasAnimatedShift ? (
                 <Text
                   style={{

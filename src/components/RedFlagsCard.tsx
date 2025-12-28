@@ -177,17 +177,18 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                     }}
                   />
                   {animatedFlagIndex === index ? (
-                    <TypewriterText
-                      text={flag.text}
-                      style={{
-                        fontSize: 14,
-                        lineHeight: 21,
-                        color: "#D1D5DB",
-                        flex: 1,
-                      }}
-                      speed={70}
-                      onComplete={() => setAnimatedFlagIndex(index + 1)}
-                    />
+                    <View style={{ flex: 1 }}>
+                      <TypewriterText
+                        text={flag.text}
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 21,
+                          color: "#D1D5DB",
+                        }}
+                        speed={70}
+                        onComplete={() => setAnimatedFlagIndex(index + 1)}
+                      />
+                    </View>
                   ) : animatedFlagIndex > index ? (
                     <Text
                       style={{
