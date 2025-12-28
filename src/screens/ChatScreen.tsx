@@ -75,7 +75,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
+  const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "rewrite");
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
