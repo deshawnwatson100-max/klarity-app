@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,11 +13,13 @@ import Animated, {
   runOnJS,
   Easing,
   cancelAnimation,
+  interpolate,
+  Extrapolation,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH, MAIN_CONTENT_SCALE, MAIN_CONTENT_BORDER_RADIUS } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -358,26 +360,33 @@ export function InputScreen({ navigation }: Props) {
     []
   );
 
-  // Static container style (no full-screen animation - content area animates instead)
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    flex: 1,
+  // ChatGPT-style drawer push effect - main content transforms when drawer opens
+  const mainContentPushStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(drawerProgress.value, [0, 1], [0, DRAWER_WIDTH], Extrapolation.CLAMP) },
+      { scale: interpolate(drawerProgress.value, [0, 1], [1, MAIN_CONTENT_SCALE], Extrapolation.CLAMP) },
+    ],
+    borderRadius: interpolate(drawerProgress.value, [0, 1], [0, MAIN_CONTENT_BORDER_RADIUS], Extrapolation.CLAMP),
+    overflow: "hidden" as const,
   }));
 
   return (
-    <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        {/* Deep charcoal background - minimal and calming */}
-        <LinearGradient
-          colors={["#050608", "#0A0A0C", "#050608"]}
-          locations={[0, 0.5, 1]}
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-          }}
-        />
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
+      {/* Main content with ChatGPT-style push effect */}
+      <GestureDetector gesture={swipeGesture}>
+        <Animated.View style={[{ flex: 1 }, mainContentPushStyle]}>
+          {/* Deep charcoal background - minimal and calming */}
+          <LinearGradient
+            colors={["#050608", "#0A0A0C", "#050608"]}
+            locations={[0, 0.5, 1]}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+            }}
+          />
 
         {/* Soft flares - monochromatic minimal glow - Layer 1 */}
         <SoftFlares />
@@ -436,13 +445,14 @@ export function InputScreen({ navigation }: Props) {
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
         </KeyboardAvoidingView>
-
-        {/* Slide Over Drawer */}
-        <SlideOverDrawer
-          visible={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-        />
       </Animated.View>
     </GestureDetector>
+
+    {/* Slide Over Drawer - outside main content so it's not affected by transform */}
+    <SlideOverDrawer
+      visible={isDrawerOpen}
+      onClose={() => setIsDrawerOpen(false)}
+    />
+  </View>
   );
 }

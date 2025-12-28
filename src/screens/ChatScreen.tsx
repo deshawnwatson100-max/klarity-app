@@ -18,6 +18,8 @@ import Animated, {
   withTiming,
   runOnJS,
   Easing,
+  interpolate,
+  Extrapolation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
@@ -31,7 +33,7 @@ import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
-import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH, MAIN_CONTENT_SCALE, MAIN_CONTENT_BORDER_RADIUS } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
@@ -957,35 +959,43 @@ export function ChatScreen({ navigation, route }: Props) {
     []
   );
 
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    flex: 1,
+  // ChatGPT-style drawer push effect - main content transforms when drawer opens
+  const mainContentPushStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(drawerProgress.value, [0, 1], [0, DRAWER_WIDTH], Extrapolation.CLAMP) },
+      { scale: interpolate(drawerProgress.value, [0, 1], [1, MAIN_CONTENT_SCALE], Extrapolation.CLAMP) },
+    ],
+    borderRadius: interpolate(drawerProgress.value, [0, 1], [0, MAIN_CONTENT_BORDER_RADIUS], Extrapolation.CLAMP),
+    overflow: "hidden" as const,
   }));
 
   return (
-    <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
-        <LinearGradient
-          colors={["#050608", "#0A0A0C", "#050608"]}
-          locations={[0, 0.5, 1]}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        />
-
-        <SoftFlares />
-        <FloatingParticles count={20} />
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-          keyboardVerticalOffset={0}
-        >
-          <Header
-            showBackButton
-            onBackPress={handleNavigateBack}
-            isAnalyzing={isLoading}
-            onMenuPress={() => setIsDrawerOpen(true)}
-            inputMode={inputMode}
-            onModeChange={handleModeChangeWithAnimation}
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
+      {/* Main content with ChatGPT-style push effect */}
+      <GestureDetector gesture={swipeGesture}>
+        <Animated.View style={[{ flex: 1 }, mainContentPushStyle]}>
+          <LinearGradient
+            colors={["#050608", "#0A0A0C", "#050608"]}
+            locations={[0, 0.5, 1]}
+            style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
           />
+
+          <SoftFlares />
+          <FloatingParticles count={20} />
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1"
+            keyboardVerticalOffset={0}
+          >
+            <Header
+              showBackButton
+              onBackPress={handleNavigateBack}
+              isAnalyzing={isLoading}
+              onMenuPress={() => setIsDrawerOpen(true)}
+              inputMode={inputMode}
+              onModeChange={handleModeChangeWithAnimation}
+            />
 
           <Animated.View style={[{ flex: 1, overflow: "hidden" }, contentAnimatedStyle]}>
             {/* Container for both chat loops */}
@@ -1080,12 +1090,14 @@ export function ChatScreen({ navigation, route }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
           />
         </KeyboardAvoidingView>
-
-        <SlideOverDrawer
-          visible={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-        />
       </Animated.View>
     </GestureDetector>
+
+    {/* Slide Over Drawer - outside main content so it's not affected by transform */}
+    <SlideOverDrawer
+      visible={isDrawerOpen}
+      onClose={() => setIsDrawerOpen(false)}
+    />
+  </View>
   );
 }

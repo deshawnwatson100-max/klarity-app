@@ -28,7 +28,12 @@ import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.80;
+
+// Constants for the ChatGPT-style effect (exported for parent use)
+export const DRAWER_WIDTH = SCREEN_WIDTH * 0.80;
+export const MAIN_CONTENT_TRANSLATE = DRAWER_WIDTH;
+export const MAIN_CONTENT_SCALE = 0.88;
+export const MAIN_CONTENT_BORDER_RADIUS = 20;
 
 interface SlideOverDrawerProps {
   visible: boolean;
@@ -181,8 +186,10 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
-// Export animated values for parent components to use
-export const drawerProgress = { value: 0 };
+// Shared animated value for parent components to sync with drawer animation
+import { makeMutable } from "react-native-reanimated";
+
+export const drawerProgress = makeMutable(0);
 
 export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
@@ -196,9 +203,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const loops = useLoopsStore((s) => s.loops);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const switchToLoop = useLoopsStore((s) => s.switchToLoop);
-
-  // Animation values - progress goes from 0 (closed) to 1 (open)
-  const progress = useSharedValue(0);
 
   // Animation config - ChatGPT-style smooth easing
   const ANIMATION_DURATION = 300;
@@ -234,12 +238,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
-      progress.value = withTiming(1, {
+      drawerProgress.value = withTiming(1, {
         duration: ANIMATION_DURATION,
         easing: EASING,
       });
     } else {
-      progress.value = withTiming(0, {
+      drawerProgress.value = withTiming(0, {
         duration: ANIMATION_DURATION,
         easing: EASING,
       }, (finished) => {
@@ -276,20 +280,20 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     .activeOffsetX(-20)
     .onUpdate((event) => {
       if (event.translationX < 0) {
-        // Map translation to progress (0 to 1)
+        // Map translation to drawerProgress (0 to 1)
         const newProgress = 1 + (event.translationX / DRAWER_WIDTH);
-        progress.value = Math.max(0, Math.min(1, newProgress));
+        drawerProgress.value = Math.max(0, Math.min(1, newProgress));
       }
     })
     .onEnd((event) => {
       if (event.translationX < -80 || event.velocityX < -500) {
-        progress.value = withTiming(0, {
+        drawerProgress.value = withTiming(0, {
           duration: 250,
           easing: EASING,
         });
         runOnJS(closeDrawer)();
       } else {
-        progress.value = withSpring(1, {
+        drawerProgress.value = withSpring(1, {
           damping: 20,
           stiffness: 300,
         });
@@ -299,13 +303,13 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Animated styles - Drawer slides in from left
   const drawerStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: interpolate(progress.value, [0, 1], [-DRAWER_WIDTH, 0], Extrapolation.CLAMP) },
+      { translateX: interpolate(drawerProgress.value, [0, 1], [-DRAWER_WIDTH, 0], Extrapolation.CLAMP) },
     ],
   }));
 
   // Backdrop style - controls both opacity and pointer events
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: drawerProgress.value,
   }));
 
   // Menu handlers
