@@ -67,7 +67,6 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
                 height: imageHeight,
                 borderRadius: 16,
                 overflow: "hidden",
-                backgroundColor: "#1A1A1C",
               }}
             >
               <Image
@@ -76,7 +75,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
                   width: "100%",
                   height: "100%",
                 }}
-                contentFit="contain"
+                contentFit="cover"
                 placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
                 transition={200}
               />
