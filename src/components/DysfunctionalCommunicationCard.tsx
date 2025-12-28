@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { TypewriterText } from "./TypewriterText";
 
 interface DysfunctionalCommunicationCardProps {
   summary: string;
@@ -20,6 +21,7 @@ export function DysfunctionalCommunicationCard({
   patterns,
 }: DysfunctionalCommunicationCardProps) {
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
@@ -121,17 +123,29 @@ export function DysfunctionalCommunicationCard({
 
           {/* Full content */}
           <Animated.View style={contentAnimatedStyle}>
-            {/* Summary text - soft off-white floating text */}
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 24,
-                color: "#EDEDED",
-                letterSpacing: 0.15,
-              }}
-            >
-              {summary}
-            </Text>
+            {/* Summary text - ChatGPT style typewriter animation */}
+            {!hasAnimated ? (
+              <TypewriterText
+                text={summary}
+                style={{
+                  fontSize: 15,
+                  lineHeight: 26,
+                  color: "#ECECF1",
+                }}
+                speed={8}
+                onComplete={() => setHasAnimated(true)}
+              />
+            ) : (
+              <Text
+                style={{
+                  fontSize: 15,
+                  lineHeight: 26,
+                  color: "#ECECF1",
+                }}
+              >
+                {summary}
+              </Text>
+            )}
 
             {/* Pattern labels */}
             {patterns && patterns.length > 0 && (
@@ -150,9 +164,9 @@ export function DysfunctionalCommunicationCard({
                   >
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: 13,
                         color: "#9CA3AF",
-                        fontWeight: "500",
+                        fontWeight: "400",
                       }}
                     >
                       {pattern}

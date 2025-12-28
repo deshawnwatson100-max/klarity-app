@@ -12,6 +12,7 @@ import Animated, {
   Extrapolation,
   Easing,
 } from "react-native-reanimated";
+import { TypewriterText } from "./TypewriterText";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
@@ -129,6 +130,8 @@ function ReplyItem({
   const contentHeight = useSharedValue(isMinimized ? 0 : 1);
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
+  const [hasAnimatedText, setHasAnimatedText] = useState(false);
+  const [hasAnimatedGuidance, setHasAnimatedGuidance] = useState(false);
 
   useEffect(() => {
     contentHeight.value = withTiming(isMinimized ? 0 : 1, { duration: 300 });
@@ -248,16 +251,28 @@ function ReplyItem({
                   borderRadius: 2,
                 }}
               />
-              <Text
-                style={{
-                  fontSize: 15,
-                  lineHeight: 24,
-                  color: "#EDEDED", // Soft off-white
-                  letterSpacing: 0.15,
-                }}
-              >
-                {reply.text}
-              </Text>
+              {!hasAnimatedText ? (
+                <TypewriterText
+                  text={reply.text}
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 24,
+                    color: "#EDEDED",
+                  }}
+                  speed={8}
+                  onComplete={() => setHasAnimatedText(true)}
+                />
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 24,
+                    color: "#EDEDED",
+                  }}
+                >
+                  {reply.text}
+                </Text>
+              )}
             </View>
           </Pressable>
 
@@ -270,16 +285,30 @@ function ReplyItem({
                 color="#4B5563"
                 style={{ marginTop: 2, marginRight: 6 }}
               />
-              <Text
-                style={{
-                  fontSize: 13,
-                  lineHeight: 18,
-                  color: "#6B7280",
-                  flex: 1,
-                }}
-              >
-                {reply.guidanceNote}
-              </Text>
+              {!hasAnimatedGuidance ? (
+                <TypewriterText
+                  text={reply.guidanceNote}
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 18,
+                    color: "#6B7280",
+                    flex: 1,
+                  }}
+                  speed={6}
+                  onComplete={() => setHasAnimatedGuidance(true)}
+                />
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 18,
+                    color: "#6B7280",
+                    flex: 1,
+                  }}
+                >
+                  {reply.guidanceNote}
+                </Text>
+              )}
             </View>
 
             {/* Action buttons row */}

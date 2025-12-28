@@ -10,6 +10,7 @@ import Animated, {
   withSequence,
   Easing,
 } from "react-native-reanimated";
+import { TypewriterText } from "./TypewriterText";
 
 interface RewriteReplyCardProps {
   rewrittenReply: string;
@@ -23,6 +24,8 @@ export function RewriteReplyCard({
   onUseReply,
 }: RewriteReplyCardProps) {
   const [copied, setCopied] = React.useState(false);
+  const [hasAnimatedReply, setHasAnimatedReply] = React.useState(false);
+  const [hasAnimatedIntent, setHasAnimatedIntent] = React.useState(false);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
@@ -99,16 +102,30 @@ export function RewriteReplyCard({
         </View>
 
         {/* Rewritten Reply */}
-        <Text
-          style={{
-            color: "#EDEDED",
-            fontSize: 15,
-            lineHeight: 22,
-            marginBottom: 12,
-          }}
-        >
-          {rewrittenReply}
-        </Text>
+        {!hasAnimatedReply ? (
+          <TypewriterText
+            text={rewrittenReply}
+            style={{
+              color: "#EDEDED",
+              fontSize: 15,
+              lineHeight: 22,
+              marginBottom: 12,
+            }}
+            speed={8}
+            onComplete={() => setHasAnimatedReply(true)}
+          />
+        ) : (
+          <Text
+            style={{
+              color: "#EDEDED",
+              fontSize: 15,
+              lineHeight: 22,
+              marginBottom: 12,
+            }}
+          >
+            {rewrittenReply}
+          </Text>
+        )}
 
         {/* Original Intent Note */}
         <View
@@ -129,15 +146,28 @@ export function RewriteReplyCard({
           >
             Your intent:
           </Text>
-          <Text
-            style={{
-              color: "#9CA3AF",
-              fontSize: 13,
-              lineHeight: 18,
-            }}
-          >
-            {originalIntent}
-          </Text>
+          {!hasAnimatedIntent ? (
+            <TypewriterText
+              text={originalIntent}
+              style={{
+                color: "#9CA3AF",
+                fontSize: 13,
+                lineHeight: 18,
+              }}
+              speed={6}
+              onComplete={() => setHasAnimatedIntent(true)}
+            />
+          ) : (
+            <Text
+              style={{
+                color: "#9CA3AF",
+                fontSize: 13,
+                lineHeight: 18,
+              }}
+            >
+              {originalIntent}
+            </Text>
+          )}
         </View>
 
         {/* Use This Reply Button */}

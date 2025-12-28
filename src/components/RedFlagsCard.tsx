@@ -9,6 +9,7 @@ import Animated, {
   Extrapolation,
   Easing,
 } from "react-native-reanimated";
+import { TypewriterText } from "./TypewriterText";
 
 interface RedFlag {
   text: string;
@@ -25,6 +26,8 @@ const MUTED_RED_SOFT = "rgba(184, 107, 107, 0.6)";
 
 export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hasAnimatedIntro, setHasAnimatedIntro] = useState(false);
+  const [animatedFlagIndex, setAnimatedFlagIndex] = useState(-1);
 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4);
@@ -125,17 +128,35 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
           {/* Expandable content */}
           <Animated.View style={contentAnimatedStyle}>
             {/* Intro text */}
-            <Text
-              style={{
-                fontSize: 14,
-                lineHeight: 21,
-                color: "#9CA3AF",
-                marginTop: 12,
-                fontStyle: "italic",
-              }}
-            >
-              {introText}
-            </Text>
+            {!hasAnimatedIntro ? (
+              <TypewriterText
+                text={introText}
+                style={{
+                  fontSize: 14,
+                  lineHeight: 21,
+                  color: "#9CA3AF",
+                  marginTop: 12,
+                  fontStyle: "italic",
+                }}
+                speed={8}
+                onComplete={() => {
+                  setHasAnimatedIntro(true);
+                  setAnimatedFlagIndex(0);
+                }}
+              />
+            ) : (
+              <Text
+                style={{
+                  fontSize: 14,
+                  lineHeight: 21,
+                  color: "#9CA3AF",
+                  marginTop: 12,
+                  fontStyle: "italic",
+                }}
+              >
+                {introText}
+              </Text>
+            )}
 
             {/* Flags list */}
             <View style={{ marginTop: 12 }}>
@@ -155,16 +176,30 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                       marginRight: 10,
                     }}
                   />
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      lineHeight: 21,
-                      color: "#D1D5DB",
-                      flex: 1,
-                    }}
-                  >
-                    {flag.text}
-                  </Text>
+                  {animatedFlagIndex === index ? (
+                    <TypewriterText
+                      text={flag.text}
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 21,
+                        color: "#D1D5DB",
+                        flex: 1,
+                      }}
+                      speed={8}
+                      onComplete={() => setAnimatedFlagIndex(index + 1)}
+                    />
+                  ) : animatedFlagIndex > index ? (
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 21,
+                        color: "#D1D5DB",
+                        flex: 1,
+                      }}
+                    >
+                      {flag.text}
+                    </Text>
+                  ) : null}
                 </View>
               ))}
             </View>

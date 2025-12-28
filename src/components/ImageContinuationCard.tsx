@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { TypewriterText } from "./TypewriterText";
 
 interface ImageContinuationCardProps {
   continuationSummary: string;
@@ -20,6 +21,10 @@ export function ImageContinuationCard({
   whatChanged,
   approachShift,
 }: ImageContinuationCardProps) {
+  const [hasAnimatedSummary, setHasAnimatedSummary] = useState(false);
+  const [hasAnimatedChanged, setHasAnimatedChanged] = useState(false);
+  const [hasAnimatedShift, setHasAnimatedShift] = useState(false);
+
   return (
     <Animated.View
       entering={FadeInDown.duration(400).springify()}
@@ -63,16 +68,30 @@ export function ImageContinuationCard({
 
         {/* Continuation Summary */}
         <Animated.View entering={FadeIn.delay(100).duration(300)}>
-          <Text
-            style={{
-              color: "#D1D5DB",
-              fontSize: 15,
-              lineHeight: 22,
-              marginBottom: 12,
-            }}
-          >
-            {continuationSummary}
-          </Text>
+          {!hasAnimatedSummary ? (
+            <TypewriterText
+              text={continuationSummary}
+              style={{
+                color: "#D1D5DB",
+                fontSize: 15,
+                lineHeight: 22,
+                marginBottom: 12,
+              }}
+              speed={8}
+              onComplete={() => setHasAnimatedSummary(true)}
+            />
+          ) : (
+            <Text
+              style={{
+                color: "#D1D5DB",
+                fontSize: 15,
+                lineHeight: 22,
+                marginBottom: 12,
+              }}
+            >
+              {continuationSummary}
+            </Text>
+          )}
         </Animated.View>
 
         {/* What Changed */}
@@ -92,16 +111,30 @@ export function ImageContinuationCard({
               color="#A5B4FC"
               style={{ marginRight: 8, marginTop: 2 }}
             />
-            <Text
-              style={{
-                color: "#A5B4FC",
-                fontSize: 13,
-                lineHeight: 19,
-                flex: 1,
-              }}
-            >
-              {whatChanged}
-            </Text>
+            {!hasAnimatedChanged ? (
+              <TypewriterText
+                text={whatChanged}
+                style={{
+                  color: "#A5B4FC",
+                  fontSize: 13,
+                  lineHeight: 19,
+                  flex: 1,
+                }}
+                speed={8}
+                onComplete={() => setHasAnimatedChanged(true)}
+              />
+            ) : (
+              <Text
+                style={{
+                  color: "#A5B4FC",
+                  fontSize: 13,
+                  lineHeight: 19,
+                  flex: 1,
+                }}
+              >
+                {whatChanged}
+              </Text>
+            )}
           </View>
         </Animated.View>
 
@@ -124,16 +157,30 @@ export function ImageContinuationCard({
                 color="#FCD34D"
                 style={{ marginRight: 8, marginTop: 2 }}
               />
-              <Text
-                style={{
-                  color: "#FCD34D",
-                  fontSize: 13,
-                  lineHeight: 19,
-                  flex: 1,
-                }}
-              >
-                {approachShift}
-              </Text>
+              {!hasAnimatedShift ? (
+                <TypewriterText
+                  text={approachShift}
+                  style={{
+                    color: "#FCD34D",
+                    fontSize: 13,
+                    lineHeight: 19,
+                    flex: 1,
+                  }}
+                  speed={8}
+                  onComplete={() => setHasAnimatedShift(true)}
+                />
+              ) : (
+                <Text
+                  style={{
+                    color: "#FCD34D",
+                    fontSize: 13,
+                    lineHeight: 19,
+                    flex: 1,
+                  }}
+                >
+                  {approachShift}
+                </Text>
+              )}
             </View>
           </Animated.View>
         )}
