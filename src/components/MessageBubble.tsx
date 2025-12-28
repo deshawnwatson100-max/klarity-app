@@ -66,7 +66,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
               style={{
                 width: imageWidth,
                 height: imageHeight,
-                borderRadius: 20,
+                borderRadius: 16,
               }}
               contentFit="contain"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -118,7 +118,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
             style={{
               width: imageWidth,
               height: imageHeight,
-              borderRadius: 20,
+              borderRadius: 16,
             }}
             contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
