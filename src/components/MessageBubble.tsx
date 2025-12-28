@@ -56,14 +56,14 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           {/* Image floats freely - no container */}
           {imageUrl && (
             <Image
-              source={imageUrl}
+              source={{ uri: imageUrl }}
               style={{
-                width: "100%",
-                aspectRatio: 1320 / 2868,
+                width: 250,
+                height: 350,
                 borderRadius: 16,
                 marginBottom: hasText ? 10 : 0,
               }}
-              contentFit="contain"
+              contentFit="cover"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
               transition={200}
             />
@@ -106,14 +106,14 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         {/* Image floats freely */}
         {imageUrl && (
           <Image
-            source={imageUrl}
+            source={{ uri: imageUrl }}
             style={{
-              width: "100%",
-              aspectRatio: 1320 / 2868,
+              width: 250,
+              height: 350,
               borderRadius: 16,
               marginBottom: hasText ? 10 : 0,
             }}
-            contentFit="contain"
+            contentFit="cover"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
             transition={200}
           />
