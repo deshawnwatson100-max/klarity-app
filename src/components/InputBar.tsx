@@ -1,4 +1,4 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, useLayoutEffect } from "react";
 import { View, TextInput, Pressable, Keyboard, Image, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 
 export type InputMode = "understand" | "rewrite";
@@ -33,8 +34,6 @@ interface InputBarProps {
   autoFocus?: boolean;
 }
 
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
   value,
   onChangeText,
@@ -57,13 +56,29 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const isFirstRender = useRef(true);
   const prevMode = useRef(inputMode);
 
-  // Initialize animation values based on initial mode (no animation on mount)
-  const replyPlaceholderX = useSharedValue(
-    inputMode === "rewrite" ? 0 : -screenWidth
-  );
-  const decodePlaceholderX = useSharedValue(
-    inputMode === "rewrite" ? screenWidth : 0
-  );
+  // Animation values for sliding placeholders - start at 0, will be set immediately in useLayoutEffect
+  const replyPlaceholderX = useSharedValue(0);
+  const decodePlaceholderX = useSharedValue(0);
+
+  // Set initial positions immediately on mount (before first paint)
+  useLayoutEffect(() => {
+    // Cancel any pending animations
+    cancelAnimation(replyPlaceholderX);
+    cancelAnimation(decodePlaceholderX);
+
+    // Set positions immediately without animation
+    if (inputMode === "rewrite") {
+      replyPlaceholderX.value = 0;
+      decodePlaceholderX.value = screenWidth;
+    } else {
+      replyPlaceholderX.value = -screenWidth;
+      decodePlaceholderX.value = 0;
+    }
+
+    // Reset tracking refs
+    isFirstRender.current = true;
+    prevMode.current = inputMode;
+  }, []); // Only run on mount
 
   // Animate placeholders only when mode actually changes (not on mount)
   useEffect(() => {
