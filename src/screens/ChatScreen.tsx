@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
   View,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Text,
+  Dimensions,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,7 +66,6 @@ type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
 
 export function ChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const scrollViewRef = useRef<ScrollView>(null);
   const processedMessageIds = useRef<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,15 +122,77 @@ export function ChatScreen({ navigation, route }: Props) {
     return activeLoop?.messages || [];
   });
 
-  // Filter messages by active mode - only show messages for the current mode
+  // Get screen width for slide animations
+  const screenWidth = Dimensions.get("window").width;
+
+  // Slide animation values for mode switching
+  const replySlideX = useSharedValue(0);
+  const decodeSlideX = useSharedValue(screenWidth);
+
+  // Filter messages by mode - separate lists for each chat loop
+  const replyMessages = useMemo(() => {
+    return allMessages.filter((msg) => {
+      if (!msg.mode) return false; // Only show messages with explicit mode
+      return msg.mode === "rewrite";
+    });
+  }, [allMessages]);
+
+  const decodeMessages = useMemo(() => {
+    return allMessages.filter((msg) => {
+      if (!msg.mode) return false; // Only show messages with explicit mode
+      return msg.mode === "understand";
+    });
+  }, [allMessages]);
+
+  // For backwards compatibility - messages shown in current mode
   const messages = useMemo(() => {
     return allMessages.filter((msg) => {
-      // Messages without a mode are shown in both (legacy support)
       if (!msg.mode) return true;
-      // Map internal mode names: "rewrite" = Reply, "understand" = Decode
       return msg.mode === inputMode;
     });
   }, [allMessages, inputMode]);
+
+  // Refs for both ScrollViews
+  const replyScrollViewRef = useRef<ScrollView>(null);
+  const decodeScrollViewRef = useRef<ScrollView>(null);
+
+  // Handle mode change with slide animation
+  const handleModeChangeWithAnimation = useCallback((newMode: InputMode) => {
+    const SLIDE_DURATION = 300;
+    const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
+    if (newMode === "rewrite") {
+      // Slide Reply in from left, Decode out to right
+      replySlideX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      decodeSlideX.value = withTiming(screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+    } else {
+      // Slide Decode in from right, Reply out to left
+      replySlideX.value = withTiming(-screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      decodeSlideX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+    }
+
+    setInputMode(newMode);
+  }, [screenWidth]);
+
+  // Initialize slide positions based on initial mode
+  useEffect(() => {
+    if (inputMode === "rewrite") {
+      replySlideX.value = 0;
+      decodeSlideX.value = screenWidth;
+    } else {
+      replySlideX.value = -screenWidth;
+      decodeSlideX.value = 0;
+    }
+  }, []);
+
+  // Animated styles for each chat loop
+  const replySlideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: replySlideX.value }],
+  }));
+
+  const decodeSlideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: decodeSlideX.value }],
+  }));
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
@@ -211,9 +273,14 @@ export function ChatScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      // Scroll the active mode's ScrollView to end
+      if (inputMode === "rewrite") {
+        replyScrollViewRef.current?.scrollToEnd({ animated: true });
+      } else {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }
     }, 100);
-  }, [messages.length]);
+  }, [messages.length, inputMode]);
 
   /**
    * SIMPLIFIED FLOW:
@@ -917,20 +984,80 @@ export function ChatScreen({ navigation, route }: Props) {
             isAnalyzing={isLoading}
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
-            onModeChange={setInputMode}
+            onModeChange={handleModeChangeWithAnimation}
           />
 
-          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-            <ScrollView
-              ref={scrollViewRef}
-              className="flex-1"
-              contentContainerClassName="px-4 pt-4"
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {messages.map(renderMessage)}
-              <View style={{ height: 20 }} />
-            </ScrollView>
+          <Animated.View style={[{ flex: 1, overflow: "hidden" }, contentAnimatedStyle]}>
+            {/* Container for both chat loops */}
+            <View style={{ flex: 1, position: "relative" }}>
+              {/* Reply Mode Chat Loop */}
+              <Animated.View
+                style={[
+                  {
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: screenWidth,
+                  },
+                  replySlideStyle,
+                ]}
+              >
+                <ScrollView
+                  ref={replyScrollViewRef}
+                  className="flex-1"
+                  contentContainerClassName="px-4 pt-4"
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {replyMessages.length === 0 ? (
+                    <View className="flex-1 items-center justify-center py-20">
+                      <Text className="text-gray-500 text-center text-base">
+                        Reply mode - craft your response
+                      </Text>
+                    </View>
+                  ) : (
+                    replyMessages.map(renderMessage)
+                  )}
+                  <View style={{ height: 20 }} />
+                </ScrollView>
+              </Animated.View>
+
+              {/* Decode Mode Chat Loop */}
+              <Animated.View
+                style={[
+                  {
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: screenWidth,
+                  },
+                  decodeSlideStyle,
+                ]}
+              >
+                <ScrollView
+                  ref={decodeScrollViewRef}
+                  className="flex-1"
+                  contentContainerClassName="px-4 pt-4"
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {decodeMessages.length === 0 ? (
+                    <View className="flex-1 items-center justify-center py-20">
+                      <Text className="text-gray-500 text-center text-base">
+                        Decode mode - understand the message
+                      </Text>
+                    </View>
+                  ) : (
+                    decodeMessages.map(renderMessage)
+                  )}
+                  <View style={{ height: 20 }} />
+                </ScrollView>
+              </Animated.View>
+            </View>
           </Animated.View>
 
           <Animated.View style={bottomAnimatedStyle}>
