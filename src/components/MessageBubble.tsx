@@ -47,9 +47,9 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
 
   const hasText = content && content !== "[Image]";
 
-  // Full width image dimensions (with padding)
-  const imageWidth = SCREEN_WIDTH - 32; // 16px padding on each side
-  const imageHeight = imageWidth * 1.8; // Tall aspect ratio for chat screenshots
+  // Smaller image dimensions for chat screenshots
+  const imageWidth = SCREEN_WIDTH * 0.65; // 65% of screen width
+  const imageHeight = imageWidth * 1.6; // Tall aspect ratio for chat screenshots
 
   // User messages - warmer white with faint shadow
   if (isUser) {
