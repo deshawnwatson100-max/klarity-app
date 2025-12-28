@@ -2316,19 +2316,16 @@ Return only the text with emojis naturally integrated.`;
 /**
  * Generate a smart conversation title that reflects who the user is communicating with
  * and a brief summary of what's being discussed
+ * Can analyze images to extract context if provided
  */
 export async function generateConversationTitle(
-  userMessage: string
+  userMessage: string,
+  imageBase64?: string
 ): Promise<string> {
   const client = getOpenAIClient();
 
   // Clean up the message - remove [Image] placeholder if present
   const cleanedMessage = userMessage.replace(/\[Image\]/gi, "").trim();
-
-  // If the message is empty or just was an image, use a default
-  if (!cleanedMessage) {
-    return "New conversation";
-  }
 
   const systemPrompt = `You generate very short, descriptive titles for conversations about interpersonal communication.
 
@@ -2347,24 +2344,57 @@ Examples:
 Rules:
 - Maximum 30 characters total
 - NEVER include brackets, parentheses, or technical terms like [Image], (image), etc.
-- If no specific person is mentioned, use a descriptor like "They" or "Someone"
+- If analyzing a screenshot of a text conversation, identify who the user is talking to (look for contact names, relationship hints) and what the conversation is about
 - Focus on the relationship and core issue
 - Keep it simple, neutral, and human-readable
-- If unclear who they're talking about, focus on the situation: "Handling criticism" or "Setting boundaries"
+- If unclear who they're talking about, use "They" or describe the situation
 
 Return ONLY the title, nothing else.`;
 
-  const userPrompt = `Generate a short title for this conversation:
-
-"${cleanedMessage}"`;
-
   try {
+    let messages: any[];
+
+    if (imageBase64) {
+      // Use vision model to analyze the image
+      const userContent: any[] = [
+        {
+          type: "text",
+          text: cleanedMessage
+            ? `Generate a short title for this conversation. The user said: "${cleanedMessage}"`
+            : "Generate a short title for this conversation based on the image. Identify who the user is communicating with and what they're discussing.",
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${imageBase64}`,
+          },
+        },
+      ];
+
+      messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ];
+
+      console.log("[generateConversationTitle] Analyzing image for title");
+    } else {
+      // Text only - if no text, return default
+      if (!cleanedMessage) {
+        return "New conversation";
+      }
+
+      messages = [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Generate a short title for this conversation:\n\n"${cleanedMessage}"`,
+        },
+      ];
+    }
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
+      messages,
       max_completion_tokens: 50,
       temperature: 0.7,
     });
@@ -2373,7 +2403,9 @@ Return ONLY the title, nothing else.`;
 
     if (!result) {
       console.warn("[generateConversationTitle] No result, using fallback");
-      return cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "");
+      return cleanedMessage
+        ? cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "")
+        : "New conversation";
     }
 
     // Remove any quotes, brackets, or parenthetical content
@@ -2388,8 +2420,10 @@ Return ONLY the title, nothing else.`;
     return cleanedResult || "New conversation";
   } catch (error) {
     console.error("[generateConversationTitle] Error:", error);
-    // Fallback to simple truncation
-    return cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "");
+    // Fallback to simple truncation or default
+    return cleanedMessage
+      ? cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "")
+      : "New conversation";
   }
 }
 

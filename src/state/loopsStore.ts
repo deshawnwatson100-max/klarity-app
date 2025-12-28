@@ -191,7 +191,7 @@ export const useLoopsStore = create<LoopsState>()(
               ? {
                   ...loop,
                   title: shouldGenerateTitle
-                    ? message.content.substring(0, 30) + "..."
+                    ? "Generating title..."
                     : loop.title,
                   messages: [...loop.messages, message],
                   updatedAt: new Date().toISOString(),
@@ -204,7 +204,8 @@ export const useLoopsStore = create<LoopsState>()(
         // Generate smart title asynchronously if needed
         if (shouldGenerateTitle && state.activeLoopId) {
           const loopId = state.activeLoopId;
-          generateConversationTitle(message.content)
+          // Pass imageBase64 if available for image analysis
+          generateConversationTitle(message.content, message.imageBase64)
             .then((smartTitle) => {
               // Update the title with the AI-generated one
               set((state) => ({
@@ -217,7 +218,14 @@ export const useLoopsStore = create<LoopsState>()(
             })
             .catch((error) => {
               console.error("Failed to generate smart title:", error);
-              // Keep the temporary title on error
+              // Fallback title on error
+              set((state) => ({
+                loops: state.loops.map((loop) =>
+                  loop.id === loopId
+                    ? { ...loop, title: "New conversation" }
+                    : loop
+                ),
+              }));
             });
         }
       },
