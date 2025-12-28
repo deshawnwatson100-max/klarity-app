@@ -6,8 +6,8 @@ interface GPT5Message {
   content: string;
 }
 
-// Using o4-mini which is the latest mini model available
-const MODEL = "o4-mini-2025-04-16";
+// Using gpt-5.2 which is the latest model available
+const MODEL = "gpt-5.2";
 
 // Get OpenAI client with Vibecode configuration
 const getOpenAIClient = () => {
@@ -330,7 +330,7 @@ Provide a JSON object with:
   ];
 
   try {
-    // o4-mini uses reasoning tokens + output tokens, need much more for reasoning models
+    // GPT-5.2 model with sufficient tokens
     const response = await callGPT5Mini(messages, 3000, true);
 
     // Try to parse JSON
@@ -401,7 +401,7 @@ Provide a JSON object with a "suggestions" array containing 3 items, each with:
   ];
 
   try {
-    // o4-mini uses reasoning tokens + output tokens, need much more for reasoning models
+    // GPT-5.2 model with sufficient tokens
     const response = await callGPT5Mini(messages, 2500, true);
 
     // Try to parse JSON
@@ -490,7 +490,7 @@ Your responses should be:
     { role: "user", content: userMessage },
   ];
 
-  // o4-mini uses reasoning tokens, need much more for reasoning models
+  // GPT-5.2 model with sufficient tokens
   return callGPT5Mini(messages, 2500);
 }
 
@@ -1118,7 +1118,7 @@ Generate a two-part reflective understanding response. Return valid JSON only.`;
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1209,7 +1209,7 @@ Return valid JSON only with this structure:
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -1425,7 +1425,7 @@ Generate a personal impact analysis explaining how this might affect someone. Re
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1531,7 +1531,7 @@ Return valid JSON only.`;
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1632,7 +1632,7 @@ Generate a boundary clarity summary to help the user understand their boundaries
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1759,7 +1759,7 @@ Return valid JSON only.`;
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "o4-mini-2025-04-16",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
