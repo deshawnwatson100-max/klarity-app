@@ -27,11 +27,8 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.80;
-const MAIN_CONTENT_TRANSLATE = DRAWER_WIDTH;
-const MAIN_CONTENT_SCALE = 0.88;
-const MAIN_CONTENT_BORDER_RADIUS = 20;
 
 interface SlideOverDrawerProps {
   visible: boolean;
@@ -193,6 +190,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRendered, setIsRendered] = useState(false);
 
   // Store
   const loops = useLoopsStore((s) => s.loops);
@@ -203,7 +201,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const progress = useSharedValue(0);
 
   // Animation config - ChatGPT-style smooth easing
-  const ANIMATION_DURATION = 350;
+  const ANIMATION_DURATION = 300;
   const EASING = Easing.bezier(0.32, 0.72, 0, 1);
 
   // Filter loops based on search query
@@ -235,6 +233,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // Handle visibility changes
   useEffect(() => {
     if (visible) {
+      setIsRendered(true);
       progress.value = withTiming(1, {
         duration: ANIMATION_DURATION,
         easing: EASING,
@@ -243,6 +242,10 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       progress.value = withTiming(0, {
         duration: ANIMATION_DURATION,
         easing: EASING,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setIsRendered)(false);
+        }
       });
     }
   }, [visible]);
@@ -300,20 +303,9 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     ],
   }));
 
-  // Backdrop style
+  // Backdrop style - controls both opacity and pointer events
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 1], Extrapolation.CLAMP),
-    pointerEvents: progress.value > 0 ? "auto" : "none",
-  }));
-
-  // Main content overlay style (the scaled/translated content effect)
-  const mainContentStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(progress.value, [0, 1], [0, MAIN_CONTENT_TRANSLATE], Extrapolation.CLAMP) },
-      { scale: interpolate(progress.value, [0, 1], [1, MAIN_CONTENT_SCALE], Extrapolation.CLAMP) },
-    ],
-    borderRadius: interpolate(progress.value, [0, 1], [0, MAIN_CONTENT_BORDER_RADIUS], Extrapolation.CLAMP),
-    overflow: "hidden" as const,
+    opacity: progress.value,
   }));
 
   // Menu handlers
@@ -336,8 +328,8 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
     }, 100);
   };
 
-
-  if (!visible && progress.value === 0) {
+  // Don't render if not visible and animation completed
+  if (!visible && !isRendered) {
     return null;
   }
 
@@ -496,21 +488,9 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         bottom: 0,
         zIndex: 1000,
       }}
-      pointerEvents={visible ? "auto" : "none"}
+      pointerEvents={visible || isRendered ? "box-none" : "none"}
     >
-      {/* Dark background layer */}
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "#000000",
-        }}
-      />
-
-      {/* Backdrop - tappable area to close */}
+      {/* Backdrop - tappable area to close with animated opacity */}
       <Animated.View
         style={[
           {
@@ -519,7 +499,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "transparent",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
           },
           backdropStyle,
         ]}
@@ -605,27 +585,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
           )}
         </Animated.View>
       </GestureDetector>
-
-      {/* Main content overlay effect - this creates the ChatGPT-style push effect */}
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: SCREEN_WIDTH,
-            backgroundColor: "#0A0A0C",
-            shadowColor: "#000",
-            shadowOffset: { width: -8, height: 0 },
-            shadowOpacity: 0.4,
-            shadowRadius: 16,
-            elevation: 20,
-          },
-          mainContentStyle,
-        ]}
-        pointerEvents="none"
-      />
     </View>
   );
 }
