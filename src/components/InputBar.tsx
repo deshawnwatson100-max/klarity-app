@@ -1,9 +1,15 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
-import { View, TextInput, Pressable, Keyboard, Image } from "react-native";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
+import { View, TextInput, Pressable, Keyboard, Image, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -27,6 +33,8 @@ interface InputBarProps {
   autoFocus?: boolean;
 }
 
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
   value,
   onChangeText,
@@ -39,12 +47,40 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   selectedImageUri,
   onClearImage,
   isRecording = false,
-  inputMode = "understand",
+  inputMode = "rewrite",
   autoFocus = false,
 }, ref) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const screenWidth = Dimensions.get("window").width;
+
+  // Animation values for sliding placeholders
+  const replyPlaceholderX = useSharedValue(0);
+  const decodePlaceholderX = useSharedValue(screenWidth);
+
+  // Animate placeholders when mode changes
+  useEffect(() => {
+    const SLIDE_DURATION = 300;
+    const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
+    if (inputMode === "rewrite") {
+      replyPlaceholderX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      decodePlaceholderX.value = withTiming(screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+    } else {
+      replyPlaceholderX.value = withTiming(-screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      decodePlaceholderX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+    }
+  }, [inputMode, screenWidth]);
+
+  // Animated styles for placeholders
+  const replyPlaceholderStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: replyPlaceholderX.value }],
+  }));
+
+  const decodePlaceholderStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: decodePlaceholderX.value }],
+  }));
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -86,9 +122,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     }
   };
 
-  const dynamicPlaceholder = inputMode === "rewrite"
-    ? "Type how you want to reply..."
-    : placeholder;
+  // Show sliding placeholders only when input is empty
+  const showSlidingPlaceholders = !value;
 
   return (
     <View
@@ -161,15 +196,60 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               minHeight: 44,
               maxHeight: 100,
               justifyContent: "center",
+              overflow: "hidden",
             }}
           >
+            {/* Sliding Placeholder Container */}
+            {showSlidingPlaceholders && !isFocused && (
+              <View
+                style={{
+                  position: "absolute",
+                  left: 16,
+                  right: 16,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+                pointerEvents="none"
+              >
+                {/* Reply Placeholder */}
+                <Animated.Text
+                  style={[
+                    {
+                      position: "absolute",
+                      color: "#6B7280",
+                      fontSize: 16,
+                    },
+                    replyPlaceholderStyle,
+                  ]}
+                >
+                  Type how you want to reply...
+                </Animated.Text>
+
+                {/* Decode Placeholder */}
+                <Animated.Text
+                  style={[
+                    {
+                      position: "absolute",
+                      color: "#6B7280",
+                      fontSize: 16,
+                    },
+                    decodePlaceholderStyle,
+                  ]}
+                >
+                  Paste the message to decode...
+                </Animated.Text>
+              </View>
+            )}
+
             <TextInput
               ref={inputRef}
               value={value}
               onChangeText={onChangeText}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder={dynamicPlaceholder}
+              placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : "Paste the message to decode...") : ""}
               placeholderTextColor="#6B7280"
               editable={!disabled}
               onSubmitEditing={handleSend}
