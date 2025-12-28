@@ -2322,32 +2322,41 @@ export async function generateConversationTitle(
 ): Promise<string> {
   const client = getOpenAIClient();
 
+  // Clean up the message - remove [Image] placeholder if present
+  const cleanedMessage = userMessage.replace(/\[Image\]/gi, "").trim();
+
+  // If the message is empty or just was an image, use a default
+  if (!cleanedMessage) {
+    return "New conversation";
+  }
+
   const systemPrompt = `You generate very short, descriptive titles for conversations about interpersonal communication.
 
-The title should follow this format when possible:
+The title should follow this format:
 "[Person/Role] - [Brief topic]"
 
 Examples:
-- "Mom - Holiday plans disagreement"
-- "Boss - Feedback on project"
-- "Ex - Closure conversation"
-- "Best friend - Feeling distant lately"
-- "Coworker - Taking credit for work"
-- "Partner - Not feeling heard"
-- "Landlord - Rent increase issue"
+- "Mom - Holiday plans"
+- "Boss - Project feedback"
+- "Ex - Getting closure"
+- "Friend - Feeling distant"
+- "Coworker - Credit for work"
+- "Partner - Communication"
+- "Landlord - Rent increase"
 
 Rules:
-- Maximum 35 characters
-- If no specific person is mentioned, use a general descriptor like "They" or describe the situation
+- Maximum 30 characters total
+- NEVER include brackets, parentheses, or technical terms like [Image], (image), etc.
+- If no specific person is mentioned, use a descriptor like "They" or "Someone"
 - Focus on the relationship and core issue
-- Keep it neutral and descriptive, not emotional
-- If it's unclear who they're talking about, focus on the situation: "Handling criticism" or "Setting boundaries"
+- Keep it simple, neutral, and human-readable
+- If unclear who they're talking about, focus on the situation: "Handling criticism" or "Setting boundaries"
 
 Return ONLY the title, nothing else.`;
 
   const userPrompt = `Generate a short title for this conversation:
 
-"${userMessage}"`;
+"${cleanedMessage}"`;
 
   try {
     const completion = await client.chat.completions.create({
@@ -2364,19 +2373,23 @@ Return ONLY the title, nothing else.`;
 
     if (!result) {
       console.warn("[generateConversationTitle] No result, using fallback");
-      return userMessage.substring(0, 35) + (userMessage.length > 35 ? "..." : "");
+      return cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "");
     }
 
-    // Remove any quotes if the model wrapped the response
-    const cleanedResult = result.replace(/^["']|["']$/g, "");
+    // Remove any quotes, brackets, or parenthetical content
+    let cleanedResult = result
+      .replace(/^["']|["']$/g, "")
+      .replace(/\[.*?\]/g, "")
+      .replace(/\(.*?\)/g, "")
+      .trim();
 
     console.log("[generateConversationTitle] Generated:", cleanedResult);
 
-    return cleanedResult;
+    return cleanedResult || "New conversation";
   } catch (error) {
     console.error("[generateConversationTitle] Error:", error);
     // Fallback to simple truncation
-    return userMessage.substring(0, 35) + (userMessage.length > 35 ? "..." : "");
+    return cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "");
   }
 }
 
