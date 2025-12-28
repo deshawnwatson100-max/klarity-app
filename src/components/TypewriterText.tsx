@@ -62,6 +62,14 @@ export function TypewriterText({
     // Split into words for smoother word-by-word animation
     const words = text.split(" ");
     let currentWordIndex = 0;
+    const totalWords = words.length;
+
+    // Start opacity animation that will complete when all words are shown
+    const totalDuration = totalWords * speed;
+    opacity.value = withTiming(1, {
+      duration: totalDuration,
+      easing: Easing.out(Easing.cubic),
+    });
 
     intervalRef.current = setInterval(() => {
       if (currentWordIndex < words.length) {
