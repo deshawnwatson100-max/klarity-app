@@ -2313,3 +2313,70 @@ Return only the text with emojis naturally integrated.`;
   }
 }
 
+/**
+ * Generate a smart conversation title that reflects who the user is communicating with
+ * and a brief summary of what's being discussed
+ */
+export async function generateConversationTitle(
+  userMessage: string
+): Promise<string> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You generate very short, descriptive titles for conversations about interpersonal communication.
+
+The title should follow this format when possible:
+"[Person/Role] - [Brief topic]"
+
+Examples:
+- "Mom - Holiday plans disagreement"
+- "Boss - Feedback on project"
+- "Ex - Closure conversation"
+- "Best friend - Feeling distant lately"
+- "Coworker - Taking credit for work"
+- "Partner - Not feeling heard"
+- "Landlord - Rent increase issue"
+
+Rules:
+- Maximum 35 characters
+- If no specific person is mentioned, use a general descriptor like "They" or describe the situation
+- Focus on the relationship and core issue
+- Keep it neutral and descriptive, not emotional
+- If it's unclear who they're talking about, focus on the situation: "Handling criticism" or "Setting boundaries"
+
+Return ONLY the title, nothing else.`;
+
+  const userPrompt = `Generate a short title for this conversation:
+
+"${userMessage}"`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 50,
+      temperature: 0.7,
+    });
+
+    const result = completion.choices[0]?.message?.content?.trim();
+
+    if (!result) {
+      console.warn("[generateConversationTitle] No result, using fallback");
+      return userMessage.substring(0, 35) + (userMessage.length > 35 ? "..." : "");
+    }
+
+    // Remove any quotes if the model wrapped the response
+    const cleanedResult = result.replace(/^["']|["']$/g, "");
+
+    console.log("[generateConversationTitle] Generated:", cleanedResult);
+
+    return cleanedResult;
+  } catch (error) {
+    console.error("[generateConversationTitle] Error:", error);
+    // Fallback to simple truncation
+    return userMessage.substring(0, 35) + (userMessage.length > 35 ? "..." : "");
+  }
+}
+

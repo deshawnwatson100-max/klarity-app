@@ -6,13 +6,13 @@ import {
   TrackedRelationship,
   RelationshipType,
   createNewLoop,
-  generateLoopTitle,
 } from "../types/loop";
 import {
   ChatMessage,
   AnalysisMessage,
   MessageMode,
 } from "../types/chat";
+import { generateConversationTitle } from "../api/klarity-api";
 
 /**
  * Loops Store
@@ -164,44 +164,62 @@ export const useLoopsStore = create<LoopsState>()(
 
       // Message Management Actions
       addMessageToActiveLoop: (message: ChatMessage) => {
-        set((state) => {
-          const activeLoop = state.loops.find(
-            (loop) => loop.id === state.activeLoopId
-          );
+        const state = get();
+        const activeLoop = state.loops.find(
+          (loop) => loop.id === state.activeLoopId
+        );
 
-          if (!activeLoop) return state;
+        if (!activeLoop) return;
 
-          // Auto-generate title from first user message
-          let newTitle = activeLoop.title;
-          if (
-            activeLoop.messages.length === 0 &&
-            message.role === "user" &&
-            activeLoop.title === "New Conversation"
-          ) {
-            newTitle = generateLoopTitle(message.content);
-          }
+        // Check if we need to generate a smart title
+        const shouldGenerateTitle =
+          activeLoop.messages.length === 0 &&
+          message.role === "user" &&
+          activeLoop.title === "New Conversation";
 
-          // Extract emotional clarity from analysis messages
-          let emotionalClarity = activeLoop.emotionalClarity;
-          if (message.role === "analysis") {
-            const analysisMsg = message as AnalysisMessage;
-            emotionalClarity = analysisMsg.analysis.emotionalClarity;
-          }
+        // Extract emotional clarity from analysis messages
+        let emotionalClarity = activeLoop.emotionalClarity;
+        if (message.role === "analysis") {
+          const analysisMsg = message as AnalysisMessage;
+          emotionalClarity = analysisMsg.analysis.emotionalClarity;
+        }
 
-          return {
-            loops: state.loops.map((loop) =>
-              loop.id === state.activeLoopId
-                ? {
-                    ...loop,
-                    title: newTitle,
-                    messages: [...loop.messages, message],
-                    updatedAt: new Date().toISOString(),
-                    emotionalClarity,
-                  }
-                : loop
-            ),
-          };
-        });
+        // Update state with message (and temporary title if needed)
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === state.activeLoopId
+              ? {
+                  ...loop,
+                  title: shouldGenerateTitle
+                    ? message.content.substring(0, 30) + "..."
+                    : loop.title,
+                  messages: [...loop.messages, message],
+                  updatedAt: new Date().toISOString(),
+                  emotionalClarity,
+                }
+              : loop
+          ),
+        }));
+
+        // Generate smart title asynchronously if needed
+        if (shouldGenerateTitle && state.activeLoopId) {
+          const loopId = state.activeLoopId;
+          generateConversationTitle(message.content)
+            .then((smartTitle) => {
+              // Update the title with the AI-generated one
+              set((state) => ({
+                loops: state.loops.map((loop) =>
+                  loop.id === loopId
+                    ? { ...loop, title: smartTitle }
+                    : loop
+                ),
+              }));
+            })
+            .catch((error) => {
+              console.error("Failed to generate smart title:", error);
+              // Keep the temporary title on error
+            });
+        }
       },
 
       insertMessageAfter: (afterMessageId: string, message: ChatMessage) => {
