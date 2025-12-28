@@ -77,7 +77,7 @@ export function ImageContinuationCard({
                 lineHeight: 22,
                 marginBottom: 12,
               }}
-              speed={25}
+              speed={45}
               onComplete={() => setHasAnimatedSummary(true)}
             />
           ) : (
@@ -121,7 +121,7 @@ export function ImageContinuationCard({
                   lineHeight: 19,
                   flex: 1,
                 }}
-                speed={20}
+                speed={40}
                 onComplete={() => setHasAnimatedChanged(true)}
               />
             ) : hasAnimatedChanged ? (
@@ -168,7 +168,7 @@ export function ImageContinuationCard({
                     lineHeight: 19,
                     flex: 1,
                   }}
-                  speed={20}
+                  speed={40}
                   onComplete={() => setHasAnimatedShift(true)}
                 />
               ) : hasAnimatedShift ? (

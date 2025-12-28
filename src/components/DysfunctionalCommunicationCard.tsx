@@ -22,6 +22,7 @@ export function DysfunctionalCommunicationCard({
 }: DysfunctionalCommunicationCardProps) {
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false); // Track when to start animation
 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
@@ -43,6 +44,10 @@ export function DysfunctionalCommunicationCard({
     if (isMinimized) {
       contentHeight.value = withTiming(1, { duration: 300 });
       setIsMinimized(false);
+      // Start the typewriter animation when card opens (only first time)
+      if (!hasAnimated) {
+        setTimeout(() => setShouldAnimate(true), 150);
+      }
     } else {
       contentHeight.value = withTiming(0, { duration: 300 });
       setIsMinimized(true);
@@ -123,8 +128,8 @@ export function DysfunctionalCommunicationCard({
 
           {/* Full content */}
           <Animated.View style={contentAnimatedStyle}>
-            {/* Summary text - ChatGPT style typewriter animation */}
-            {!hasAnimated ? (
+            {/* Summary text - ChatGPT style typewriter animation (starts on expand) */}
+            {shouldAnimate && !hasAnimated ? (
               <TypewriterText
                 text={summary}
                 style={{
@@ -132,10 +137,10 @@ export function DysfunctionalCommunicationCard({
                   lineHeight: 26,
                   color: "#ECECF1",
                 }}
-                speed={25}
+                speed={45}
                 onComplete={() => setHasAnimated(true)}
               />
-            ) : (
+            ) : hasAnimated ? (
               <Text
                 style={{
                   fontSize: 15,
@@ -145,7 +150,7 @@ export function DysfunctionalCommunicationCard({
               >
                 {summary}
               </Text>
-            )}
+            ) : null}
 
             {/* Pattern labels */}
             {patterns && patterns.length > 0 && (

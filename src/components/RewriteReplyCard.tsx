@@ -111,7 +111,7 @@ export function RewriteReplyCard({
               lineHeight: 22,
               marginBottom: 12,
             }}
-            speed={25}
+            speed={45}
             onComplete={() => setHasAnimatedReply(true)}
           />
         ) : (
@@ -155,7 +155,7 @@ export function RewriteReplyCard({
                 fontSize: 13,
                 lineHeight: 18,
               }}
-              speed={20}
+              speed={40}
               onComplete={() => setHasAnimatedIntent(true)}
             />
           ) : hasAnimatedIntent ? (
