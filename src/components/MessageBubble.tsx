@@ -58,15 +58,15 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         style={animatedStyle}
         className="mb-5"
       >
-        {/* Image aligned to the left */}
+        {/* Image aligned to the right */}
         {imageUrl && (
-          <View style={{ width: "100%", alignItems: "flex-start", marginBottom: hasText ? 12 : 0 }}>
+          <View style={{ width: "100%", alignItems: "flex-end", marginBottom: hasText ? 12 : 0 }}>
             <Image
               source={{ uri: imageUrl }}
               style={{
                 width: imageWidth,
                 height: imageHeight,
-                borderRadius: 16,
+                borderRadius: 20,
               }}
               contentFit="contain"
               placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
@@ -110,15 +110,15 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
       style={animatedStyle}
       className="mb-5"
     >
-      {/* Image aligned to the left */}
+      {/* Image aligned to the right */}
       {imageUrl && (
-        <View style={{ width: "100%", alignItems: "flex-start", marginBottom: hasText ? 12 : 0 }}>
+        <View style={{ width: "100%", alignItems: "flex-end", marginBottom: hasText ? 12 : 0 }}>
           <Image
             source={{ uri: imageUrl }}
             style={{
               width: imageWidth,
               height: imageHeight,
-              borderRadius: 16,
+              borderRadius: 20,
             }}
             contentFit="contain"
             placeholder={{ blurhash: "L5H2EC=PM+yV0g-mq.wG9c010J}I" }}
