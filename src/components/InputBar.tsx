@@ -54,13 +54,31 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const screenWidth = Dimensions.get("window").width;
+  const isFirstRender = useRef(true);
+  const prevMode = useRef(inputMode);
 
-  // Animation values for sliding placeholders
-  const replyPlaceholderX = useSharedValue(0);
-  const decodePlaceholderX = useSharedValue(screenWidth);
+  // Initialize animation values based on initial mode (no animation on mount)
+  const replyPlaceholderX = useSharedValue(
+    inputMode === "rewrite" ? 0 : -screenWidth
+  );
+  const decodePlaceholderX = useSharedValue(
+    inputMode === "rewrite" ? screenWidth : 0
+  );
 
-  // Animate placeholders when mode changes
+  // Animate placeholders only when mode actually changes (not on mount)
   useEffect(() => {
+    // Skip animation on first render
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // Skip if mode hasn't actually changed
+    if (prevMode.current === inputMode) {
+      return;
+    }
+    prevMode.current = inputMode;
+
     const SLIDE_DURATION = 300;
     const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
