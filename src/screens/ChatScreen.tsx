@@ -986,8 +986,6 @@ export function ChatScreen({ navigation, route }: Props) {
             keyboardVerticalOffset={0}
           >
             <Header
-              showBackButton
-              onBackPress={handleNavigateBack}
               isAnalyzing={isLoading}
               onMenuPress={() => setIsDrawerOpen(true)}
               inputMode={inputMode}
