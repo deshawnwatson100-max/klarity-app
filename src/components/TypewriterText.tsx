@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Text, TextStyle } from "react-native";
+import { TextStyle, View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,14 +10,51 @@ import Animated, {
 interface TypewriterTextProps {
   text: string;
   style?: TextStyle;
-  speed?: number; // ms per character
+  speed?: number; // ms per word
   onComplete?: () => void;
   startDelay?: number; // ms delay before starting
 }
 
+interface WordProps {
+  word: string;
+  style?: TextStyle;
+  isVisible: boolean;
+  isLast: boolean;
+}
+
+/**
+ * Individual word component with fade-in animation
+ */
+function AnimatedWord({ word, style, isVisible, isLast }: WordProps) {
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (isVisible) {
+      opacity.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
+  }, [isVisible]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <Animated.Text style={[style, animatedStyle]}>
+      {word}{isLast ? "" : " "}
+    </Animated.Text>
+  );
+}
+
 /**
  * TypewriterText - ChatGPT-style streaming text animation
- * Text appears word by word with a smooth, calm feel
+ * Text appears word by word, each word fading in as it appears
  */
 export function TypewriterText({
   text,
@@ -26,20 +63,15 @@ export function TypewriterText({
   onComplete,
   startDelay = 0,
 }: TypewriterTextProps) {
-  const [displayedText, setDisplayedText] = useState("");
+  const [visibleWordCount, setVisibleWordCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(startDelay === 0);
-  const opacity = useSharedValue(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    // Fade in smoothly
-    opacity.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
+  const words = text ? text.split(" ") : [];
 
+  useEffect(() => {
     // Start delay before typing begins (only if delay > 0)
     if (startDelay > 0) {
       timeoutRef.current = setTimeout(() => {
@@ -56,26 +88,15 @@ export function TypewriterText({
   useEffect(() => {
     if (!text || !hasStarted) return;
 
-    setDisplayedText("");
+    setVisibleWordCount(0);
     setIsComplete(false);
 
-    // Split into words for smoother word-by-word animation
-    const words = text.split(" ");
     let currentWordIndex = 0;
-    const totalWords = words.length;
-
-    // Start opacity animation that will complete when all words are shown
-    const totalDuration = totalWords * speed;
-    opacity.value = withTiming(1, {
-      duration: totalDuration,
-      easing: Easing.out(Easing.cubic),
-    });
 
     intervalRef.current = setInterval(() => {
       if (currentWordIndex < words.length) {
-        const newText = words.slice(0, currentWordIndex + 1).join(" ");
-        setDisplayedText(newText);
         currentWordIndex++;
+        setVisibleWordCount(currentWordIndex);
       } else {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setIsComplete(true);
@@ -86,19 +107,23 @@ export function TypewriterText({
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [text, speed, hasStarted]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  }, [text, speed, hasStarted, words.length]);
 
   if (!hasStarted) {
     return null;
   }
 
   return (
-    <Animated.Text style={[style, animatedStyle]}>
-      {displayedText}
-    </Animated.Text>
+    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {words.map((word, index) => (
+        <AnimatedWord
+          key={`${index}-${word}`}
+          word={word}
+          style={style}
+          isVisible={index < visibleWordCount}
+          isLast={index === words.length - 1}
+        />
+      ))}
+    </View>
   );
 }
