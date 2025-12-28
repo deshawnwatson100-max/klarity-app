@@ -177,6 +177,13 @@ export const useLoopsStore = create<LoopsState>()(
           message.role === "user" &&
           activeLoop.title === "New Conversation";
 
+        console.log("[loopsStore] addMessageToActiveLoop:", {
+          shouldGenerateTitle,
+          messageContent: message.content?.substring(0, 50),
+          hasImageBase64: !!(message as any).imageBase64,
+          imageBase64Length: (message as any).imageBase64?.length,
+        });
+
         // Extract emotional clarity from analysis messages
         let emotionalClarity = activeLoop.emotionalClarity;
         if (message.role === "analysis") {

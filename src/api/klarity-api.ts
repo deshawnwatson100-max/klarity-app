@@ -2327,6 +2327,14 @@ export async function generateConversationTitle(
   // Clean up the message - remove [Image] placeholder if present
   const cleanedMessage = userMessage.replace(/\[Image\]/gi, "").trim();
 
+  console.log("[generateConversationTitle] Called with:", {
+    hasMessage: !!userMessage,
+    messageLength: userMessage?.length,
+    cleanedLength: cleanedMessage?.length,
+    hasImageBase64: !!imageBase64,
+    imageBase64Length: imageBase64?.length,
+  });
+
   const systemPrompt = `You generate very short, descriptive titles for conversations about interpersonal communication.
 
 The title should follow this format:
@@ -2420,7 +2428,11 @@ Return ONLY the title, nothing else.`;
     return cleanedResult || "New conversation";
   } catch (error) {
     console.error("[generateConversationTitle] Error:", error);
-    // Fallback to simple truncation or default
+    // Fallback - if we have an image but no text, return a generic title
+    // Never return [Image] or similar placeholders
+    if (imageBase64) {
+      return "Image conversation";
+    }
     return cleanedMessage
       ? cleanedMessage.substring(0, 30) + (cleanedMessage.length > 30 ? "..." : "")
       : "New conversation";

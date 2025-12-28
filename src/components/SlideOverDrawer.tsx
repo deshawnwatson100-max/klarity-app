@@ -106,10 +106,32 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   const getPreview = () => {
     const userMessages = loop.messages.filter((m) => m.role === "user");
     if (userMessages.length > 0) {
-      const firstMessage = userMessages[0].content;
-      return firstMessage.length > 60
-        ? firstMessage.substring(0, 60) + "..."
-        : firstMessage;
+      const firstMessage = userMessages[0];
+      // Check if message has an image
+      const hasImage = !!(firstMessage as any).imageUrl || !!(firstMessage as any).imageBase64;
+      const content = firstMessage.content;
+
+      // If it's just "[Image]" placeholder and has an actual image, show a nicer preview
+      if (content === "[Image]" && hasImage) {
+        return "📷 Image conversation";
+      }
+
+      // Remove [Image] from content if there's other text
+      const cleanContent = content.replace(/\[Image\]/gi, "").trim();
+      if (cleanContent) {
+        return cleanContent.length > 60
+          ? cleanContent.substring(0, 60) + "..."
+          : cleanContent;
+      }
+
+      // Fallback if only [Image] with no actual image data
+      if (hasImage) {
+        return "📷 Image conversation";
+      }
+
+      return firstMessage.content.length > 60
+        ? firstMessage.content.substring(0, 60) + "..."
+        : firstMessage.content;
     }
     return "No messages yet";
   };
