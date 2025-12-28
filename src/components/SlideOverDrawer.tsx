@@ -568,12 +568,12 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
                       width: 36,
                       height: 36,
                       borderRadius: 18,
-                      backgroundColor: "rgba(167, 139, 250, 0.2)",
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="person" size={18} color="#A78BFA" />
+                    <Ionicons name="person" size={18} color="#9CA3AF" />
                   </View>
                   <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text
