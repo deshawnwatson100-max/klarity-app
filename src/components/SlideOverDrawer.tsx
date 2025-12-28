@@ -380,23 +380,27 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
             )}
           </View>
 
-          {/* New Chat Button */}
+          {/* New Chat Button - matches Header style */}
           <Pressable
             onPress={handleNewChat}
             className="active:opacity-60 ml-3"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                backgroundColor: "rgba(255, 255, 255, 0.08)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="add" size={22} color="#E5E7EB" />
+            <View style={{ position: "relative" }}>
+              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={12} color="#9CA3AF" />
+              </View>
             </View>
           </Pressable>
         </View>
