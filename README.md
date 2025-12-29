@@ -818,6 +818,56 @@ A second input mode that lets you polish your own replies with AI assistance.
 - You want to respond calmly but your draft feels too reactive
 - You want clarity without the full analysis
 
+### NEW: Decode Mode (Conversational Exploration)
+A collaborative thinking space where users can freely brainstorm and talk through confusion, concern, or uncertainty about social situations.
+
+#### How Decode Mode Works
+Unlike Reply mode which generates response suggestions, Decode Mode is a conversational exploration where:
+
+1. **No Scripts or Replies** - Decode mode does not generate replies unless explicitly asked
+2. **Collaborative Thinking** - Works like a mental whiteboard, helping organize thoughts
+3. **Pattern Surfacing** - Reflects patterns the user may not have noticed
+4. **Reduce Ambiguity** - Makes indirect communication easier to understand
+5. **Maintain Agency** - Never pushes action or tells user what they "should" do
+
+#### Decode Mode Response Style
+- **Invites Exploration First** - "What part of this interaction feels confusing?"
+- **Reflects Before Interpreting** - Summarizes in clearer language to help user hear themselves
+- **Offers Observations, Not Conclusions** - "This could be read a few ways..."
+- **Normalizes Why It Is Hard to Read** - "Mixed signals are common when someone is not sure how the other person feels."
+- **Keeps Agency With User** - "You do not need to decide anything yet."
+
+#### Decode Mode Tone & Vibe
+- Calm
+- Grounded
+- Curious
+- Non-judgmental
+- Collaborative ("thinking with you")
+- Confidence-stabilizing (never makes user feel behind, naive, or wrong)
+
+#### What Decode Mode Does NOT Do
+- Does NOT give scripts or responses unless explicitly asked
+- Does NOT diagnose intent or label people (e.g., toxic, manipulative)
+- Does NOT assume negative meaning by default
+- Does NOT escalate emotionally
+- Does NOT pressure user to confront, decide, or act
+
+If the user asks for advice or wording, Decode Mode suggests switching to Reply mode.
+
+#### Example Decode Mode Closing Language
+Uses soft, open endings:
+- "Want to keep unpacking this?"
+- "Does that framing resonate?"
+- "What part of this feels most important to understand next?"
+
+#### Success Metrics
+Decode Mode success is measured by:
+- Reduced confusion
+- Increased clarity
+- The user feeling steadier and more aware
+
+Not by resolution.
+
 ## Future Enhancements
 
 - Export conversations

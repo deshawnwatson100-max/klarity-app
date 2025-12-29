@@ -49,6 +49,7 @@ import {
   generateRewriteReply,
   analyzeImageContinuation,
   addEmojisToReply,
+  generateDecodeResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -680,6 +681,26 @@ export function ChatScreen({ navigation, route }: Props) {
       return;
     }
 
+    // Handle Decode (understand) mode - conversational exploration
+    if (inputMode === "understand") {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content: currentInput || (selectedImageUri ? "[Screenshot shared]" : ""),
+        timestamp: Date.now(),
+        imageUrl: selectedImageUri,
+        imageBase64: selectedImageBase64,
+      };
+
+      addMessageToActiveLoop(userMessage);
+      setCurrentInput("");
+      setSelectedImageUri(undefined);
+      setSelectedImageBase64(undefined);
+
+      await processDecodeMessage(userMessage);
+      return;
+    }
+
     // Check if this is a mid-loop image (user adding a new image to existing conversation)
     const isMidLoopImage = selectedImageBase64 && conversationContext !== null && messages.length > 1;
 
@@ -756,6 +777,64 @@ export function ChatScreen({ navigation, route }: Props) {
         id: Date.now().toString(),
         role: "assistant",
         content: "I encountered an error polishing your reply. Please try again.",
+        timestamp: Date.now(),
+      });
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  // Process message in Decode mode - conversational exploration for clarity
+  const processDecodeMessage = async (userMessage: ChatMessage) => {
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    try {
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(typingMsg);
+
+      // Build conversation history from decode messages for context
+      const conversationHistory = decodeMessages
+        .filter((msg) => msg.role === "user" || msg.role === "assistant")
+        .map((msg) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }));
+
+      // Generate decode response
+      const result = await generateDecodeResponse(
+        userMessage.content,
+        conversationHistory
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add assistant response as a regular message bubble
+      const assistantMsg: ChatMessage = {
+        id: Date.now().toString() + "_decode_response",
+        role: "assistant",
+        content: result.response,
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(assistantMsg);
+    } catch (error) {
+      console.error("Error processing decode message:", error);
+      // Remove typing indicator if it exists
+      const typingMsgId = Date.now().toString() + "_typing";
+      removeMessageFromActiveLoop(typingMsgId);
+
+      addMessageToActiveLoop({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "I want to make sure I understand. What part of this situation feels most unclear to you?",
         timestamp: Date.now(),
       });
     } finally {
