@@ -142,10 +142,10 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Also slides down in sync with drawer opening
+  // Slides down only when drawer is open, otherwise stays in place
   const INPUT_BAR_SLIDE_DOWN = 120; // How far to slide down when drawer opens
   const bottomAnimatedStyle = useAnimatedStyle(() => {
-    // Combine the existing transition animation with drawer sync
+    // Only slide down when drawer is opening/open
     const drawerSlideOffset = interpolate(
       drawerProgress.value,
       [0, 1],
