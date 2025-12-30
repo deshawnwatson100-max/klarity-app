@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, Dimensions, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -414,23 +414,31 @@ export function InputScreen({ navigation }: Props) {
             onModeChange={setInputMode}
           />
 
-          {/* Center Content - Animated for transitions */}
-          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
-            {isRecording ? (
-              <View className="items-center justify-center w-full">
-                <Text
-                  className="text-xl font-medium mb-6"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  Recording...
-                </Text>
-                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: "#E5E7EB" }} className="text-sm mt-6">
-                  Tap the stop button when done
-                </Text>
-              </View>
-            ) : null}
-          </Animated.View>
+          {/* Center Content - Pressable area that keeps keyboard open */}
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => {
+              // Keep keyboard open by refocusing the input
+              inputBarRef.current?.focus();
+            }}
+          >
+            <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
+              {isRecording ? (
+                <View className="items-center justify-center w-full">
+                  <Text
+                    className="text-xl font-medium mb-6"
+                    style={{ color: "#9CA3AF" }}
+                  >
+                    Recording...
+                  </Text>
+                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                  <Text style={{ color: "#E5E7EB" }} className="text-sm mt-6">
+                    Tap the stop button when done
+                  </Text>
+                </View>
+              ) : null}
+            </Animated.View>
+          </Pressable>
 
           {/* Bottom Elements - Input Bar - Animated for transitions */}
           <Animated.View style={bottomAnimatedStyle}>
