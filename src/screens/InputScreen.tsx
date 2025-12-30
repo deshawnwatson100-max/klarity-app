@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { View, Text, Pressable, Dimensions, Keyboard } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +15,6 @@ import Animated, {
   cancelAnimation,
   interpolate,
   Extrapolation,
-  useAnimatedKeyboard,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
@@ -53,9 +52,6 @@ export function InputScreen({ navigation }: Props) {
   // Ref for input bar to focus programmatically
   const inputBarRef = useRef<InputBarRef>(null);
 
-  // Animated keyboard for smooth input bar movement
-  const keyboard = useAnimatedKeyboard();
-
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
@@ -75,6 +71,18 @@ export function InputScreen({ navigation }: Props) {
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
+  // Dismiss keyboard when drawer opens, refocus when it closes
+  useEffect(() => {
+    if (isDrawerOpen) {
+      Keyboard.dismiss();
+    } else {
+      // Refocus input when drawer closes
+      setTimeout(() => {
+        inputBarRef.current?.focus();
+      }, 100);
+    }
+  }, [isDrawerOpen]);
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -146,13 +154,11 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Input bar slides up/down with keyboard smoothly
+  // Input bar stays fixed - no keyboard animation, drawer handles horizontal movement
   const bottomAnimatedStyle = useAnimatedStyle(() => {
     return {
       opacity: 1, // Always visible
-      transform: [
-        { translateY: -keyboard.height.value }, // Move up with keyboard
-      ],
+      transform: [], // No transform - stays at bottom
     };
   });
 
