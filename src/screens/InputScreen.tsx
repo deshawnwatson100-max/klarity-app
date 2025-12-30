@@ -78,6 +78,10 @@ export function InputScreen({ navigation }: Props) {
     if (!activeLoop) {
       createNewLoop();
     }
+    // Focus input bar on mount to bring up keyboard
+    setTimeout(() => {
+      inputBarRef.current?.focus();
+    }, 300);
   }, []);
 
   // Animate content in when screen gains focus using navigation listener
