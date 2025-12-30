@@ -142,10 +142,22 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  const bottomAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bottomOpacity.value,
-    transform: [{ translateY: bottomTranslateY.value }],
-  }));
+  // Also slides down in sync with drawer opening
+  const INPUT_BAR_SLIDE_DOWN = 120; // How far to slide down when drawer opens
+  const bottomAnimatedStyle = useAnimatedStyle(() => {
+    // Combine the existing transition animation with drawer sync
+    const drawerSlideOffset = interpolate(
+      drawerProgress.value,
+      [0, 1],
+      [0, INPUT_BAR_SLIDE_DOWN],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      opacity: bottomOpacity.value,
+      transform: [{ translateY: bottomTranslateY.value + drawerSlideOffset }],
+    };
+  });
 
   // Navigation helper functions for runOnJS
   const navigateToChatScreen = () => {
