@@ -142,7 +142,7 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Slides down only when drawer is open, otherwise stays in place
+  // Input bar stays in place - only slides down when drawer opens
   const INPUT_BAR_SLIDE_DOWN = 120; // How far to slide down when drawer opens
   const bottomAnimatedStyle = useAnimatedStyle(() => {
     // Only slide down when drawer is opening/open
@@ -154,8 +154,8 @@ export function InputScreen({ navigation }: Props) {
     );
 
     return {
-      opacity: bottomOpacity.value,
-      transform: [{ translateY: bottomTranslateY.value + drawerSlideOffset }],
+      opacity: 1, // Always visible
+      transform: [{ translateY: drawerSlideOffset }], // Only drawer animation, no transition animation
     };
   });
 
