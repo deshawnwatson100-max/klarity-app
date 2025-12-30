@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +15,7 @@ import Animated, {
   cancelAnimation,
   interpolate,
   Extrapolation,
+  useAnimatedKeyboard,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
@@ -51,6 +52,9 @@ export function InputScreen({ navigation }: Props) {
   inputModeRef.current = inputMode;
   // Ref for input bar to focus programmatically
   const inputBarRef = useRef<InputBarRef>(null);
+
+  // Animated keyboard for smooth input bar movement
+  const keyboard = useAnimatedKeyboard();
 
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
@@ -142,11 +146,13 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Input bar stays fixed - parent view handles the drawer slide animation
+  // Input bar slides up/down with keyboard smoothly
   const bottomAnimatedStyle = useAnimatedStyle(() => {
     return {
       opacity: 1, // Always visible
-      transform: [], // No additional transform - parent handles drawer sync
+      transform: [
+        { translateY: -keyboard.height.value }, // Move up with keyboard
+      ],
     };
   });
 
@@ -432,28 +438,23 @@ export function InputScreen({ navigation }: Props) {
           {isProcessing && <VoiceProcessingIndicator />}
         </View>
 
-        {/* Input Bar - Wrapped in KeyboardAvoidingView for keyboard sync */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={0}
-        >
-          <Animated.View style={bottomAnimatedStyle}>
-            <InputBar
-              ref={inputBarRef}
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
-              isRecording={isRecording}
-              inputMode={inputMode}
-              autoFocus
-            />
-          </Animated.View>
-        </KeyboardAvoidingView>
+        {/* Input Bar - Animated with keyboard for smooth sliding */}
+        <Animated.View style={bottomAnimatedStyle}>
+          <InputBar
+            ref={inputBarRef}
+            value={currentInput}
+            onChangeText={setCurrentInput}
+            onSend={handleSend}
+            onVoicePress={handleVoicePress}
+            onImageSelected={handleImageSelected}
+            onClearImage={handleClearImage}
+            selectedImageUri={selectedImageUri}
+            placeholder="Type a message..."
+            isRecording={isRecording}
+            inputMode={inputMode}
+            autoFocus
+          />
+        </Animated.View>
       </Animated.View>
     </GestureDetector>
 
