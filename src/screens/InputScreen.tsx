@@ -142,11 +142,11 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Input bar stays in place - no slide animation, always visible
+  // Input bar stays fixed - parent view handles the drawer slide animation
   const bottomAnimatedStyle = useAnimatedStyle(() => {
     return {
       opacity: 1, // Always visible
-      transform: [{ translateY: 0 }], // No movement - stays at bottom
+      transform: [], // No additional transform - parent handles drawer sync
     };
   });
 
