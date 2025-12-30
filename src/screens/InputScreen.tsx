@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, Dimensions, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, Text, Pressable, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -394,11 +394,8 @@ export function InputScreen({ navigation }: Props) {
         {/* Floating particles - cool-toned minimal - Layer 2 */}
         <FloatingParticles count={20} />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-          keyboardVerticalOffset={0}
-        >
+        {/* Main content area */}
+        <View className="flex-1">
           <Header
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
@@ -431,28 +428,27 @@ export function InputScreen({ navigation }: Props) {
             </Animated.View>
           </Pressable>
 
-          {/* Bottom Elements - Input Bar - Animated for transitions */}
-          <Animated.View style={bottomAnimatedStyle}>
-            {/* Input Bar */}
-            <InputBar
-              ref={inputBarRef}
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
-              isRecording={isRecording}
-              inputMode={inputMode}
-              autoFocus
-            />
-          </Animated.View>
-
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
-        </KeyboardAvoidingView>
+        </View>
+
+        {/* Input Bar - Outside KeyboardAvoidingView for smooth drawer sync */}
+        <Animated.View style={bottomAnimatedStyle}>
+          <InputBar
+            ref={inputBarRef}
+            value={currentInput}
+            onChangeText={setCurrentInput}
+            onSend={handleSend}
+            onVoicePress={handleVoicePress}
+            onImageSelected={handleImageSelected}
+            onClearImage={handleClearImage}
+            selectedImageUri={selectedImageUri}
+            placeholder="Type a message..."
+            isRecording={isRecording}
+            inputMode={inputMode}
+            autoFocus
+          />
+        </Animated.View>
       </Animated.View>
     </GestureDetector>
 
