@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions, Keyboard } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +15,6 @@ import Animated, {
   cancelAnimation,
   interpolate,
   Extrapolation,
-  useAnimatedKeyboard,
 } from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
@@ -53,9 +52,6 @@ export function InputScreen({ navigation }: Props) {
   // Ref for input bar to focus programmatically
   const inputBarRef = useRef<InputBarRef>(null);
 
-  // Animated keyboard for smooth input bar sync
-  const keyboard = useAnimatedKeyboard();
-
   // Content area animation values (for focused chat area transition)
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
@@ -75,18 +71,6 @@ export function InputScreen({ navigation }: Props) {
   // iOS-native easing for content transitions
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
-
-  // Dismiss keyboard when drawer opens, refocus when it closes
-  useEffect(() => {
-    if (isDrawerOpen) {
-      Keyboard.dismiss();
-    } else {
-      // Refocus input when drawer closes
-      setTimeout(() => {
-        inputBarRef.current?.focus();
-      }, 100);
-    }
-  }, [isDrawerOpen]);
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -158,13 +142,10 @@ export function InputScreen({ navigation }: Props) {
   }));
 
   // Animated style for bottom elements (feature buttons and input bar)
-  // Input bar moves in sync with keyboard using useAnimatedKeyboard
   const bottomAnimatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: 1, // Always visible
-      transform: [
-        { translateY: -keyboard.height.value }, // Move up/down with keyboard
-      ],
+      opacity: bottomOpacity.value,
+      transform: [{ translateY: bottomTranslateY.value }],
     };
   });
 
@@ -412,61 +393,56 @@ export function InputScreen({ navigation }: Props) {
         {/* Floating particles - cool-toned minimal - Layer 2 */}
         <FloatingParticles count={20} />
 
-        {/* Main content area */}
-        <View className="flex-1">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={0}
+        >
           <Header
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={setInputMode}
           />
 
-          {/* Center Content - Pressable area that keeps keyboard open */}
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={() => {
-              // Keep keyboard open by refocusing the input
-              inputBarRef.current?.focus();
-            }}
-          >
-            <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
-              {isRecording ? (
-                <View className="items-center justify-center w-full">
-                  <Text
-                    className="text-xl font-medium mb-6"
-                    style={{ color: "#9CA3AF" }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: "#E5E7EB" }} className="text-sm mt-6">
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
-            </Animated.View>
-          </Pressable>
+          {/* Center Content */}
+          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
+            {isRecording ? (
+              <View className="items-center justify-center w-full">
+                <Text
+                  className="text-xl font-medium mb-6"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text style={{ color: "#E5E7EB" }} className="text-sm mt-6">
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : null}
+          </Animated.View>
+
+          {/* Input Bar */}
+          <Animated.View style={bottomAnimatedStyle}>
+            <InputBar
+              ref={inputBarRef}
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder="Type a message..."
+              isRecording={isRecording}
+              inputMode={inputMode}
+              autoFocus
+            />
+          </Animated.View>
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
-        </View>
-
-        {/* Input Bar - Animated in sync with keyboard */}
-        <Animated.View style={bottomAnimatedStyle}>
-          <InputBar
-            ref={inputBarRef}
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            isRecording={isRecording}
-            inputMode={inputMode}
-            autoFocus
-          />
-        </Animated.View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </GestureDetector>
 
