@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions, Keyboard } from "react-native";
+import { View, Text, Pressable, Dimensions, Keyboard, KeyboardAvoidingView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -444,23 +444,28 @@ export function InputScreen({ navigation }: Props) {
           {isProcessing && <VoiceProcessingIndicator />}
         </View>
 
-        {/* Input Bar - Animated with keyboard for smooth sliding */}
-        <Animated.View style={bottomAnimatedStyle}>
-          <InputBar
-            ref={inputBarRef}
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            isRecording={isRecording}
-            inputMode={inputMode}
-            autoFocus
-          />
-        </Animated.View>
+        {/* Input Bar - Wrapped in KeyboardAvoidingView for keyboard sync */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
+        >
+          <Animated.View style={bottomAnimatedStyle}>
+            <InputBar
+              ref={inputBarRef}
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder="Type a message..."
+              isRecording={isRecording}
+              inputMode={inputMode}
+              autoFocus
+            />
+          </Animated.View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </GestureDetector>
 
