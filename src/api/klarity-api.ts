@@ -603,12 +603,7 @@ Respond with valid JSON only containing:
 
     return parsed as ImageAnalysis;
   } catch (error: any) {
-    console.error("[analyzeImageToxicity] Error:", error?.message || error);
-    console.error("[analyzeImageToxicity] Error details:", {
-      status: error?.status,
-      code: error?.code,
-      type: error?.type,
-    });
+    console.warn("[analyzeImageToxicity] Analysis failed, using fallback response");
 
     // Return fallback analysis - graceful degradation
     return {
