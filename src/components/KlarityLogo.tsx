@@ -7,49 +7,42 @@ interface KlarityLogoProps {
 }
 
 /**
- * Klarity Logo - ChatGPT-inspired minimal design
+ * Klarity Logo - ChatGPT-inspired abstract shape
  *
- * Clean, circular logo with a subtle abstract shape
- * representing clarity and conversation.
+ * Minimal circular logo with an abstract flowing shape
+ * suggesting clarity, insight, and conversation flow.
  */
 export function KlarityLogo({ size = 24 }: KlarityLogoProps) {
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 32 32">
-        {/* Outer circle - clean border */}
+        {/* Outer circle */}
         <Circle
           cx={16}
           cy={16}
           r={14}
           fill="#FFFFFF"
-          opacity={0.95}
         />
 
-        {/* Inner abstract K/spark shape */}
+        {/* Abstract flowing shape - like a stylized spark/lens */}
         <Path
-          d="M 12 10 L 12 22"
+          d="M 16 7
+             C 22 10, 24 14, 24 16
+             C 24 18, 22 22, 16 25
+             C 10 22, 8 18, 8 16
+             C 8 14, 10 10, 16 7 Z"
+          fill="none"
           stroke="#000000"
-          strokeWidth={2.5}
+          strokeWidth={2}
           strokeLinecap="round"
-        />
-        <Path
-          d="M 12 16 L 20 10"
-          stroke="#000000"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-        />
-        <Path
-          d="M 12 16 L 20 22"
-          stroke="#000000"
-          strokeWidth={2.5}
-          strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
-        {/* Small accent dot */}
+        {/* Inner dot - the clarity point */}
         <Circle
-          cx={21}
+          cx={16}
           cy={16}
-          r={2}
+          r={2.5}
           fill="#10A37F"
         />
       </Svg>
