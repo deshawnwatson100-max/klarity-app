@@ -14,6 +14,90 @@ import Animated, {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// Helper function to render formatted text with bold and bullet points
+const renderFormattedText = (text: string, baseStyle: any) => {
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+
+  lines.forEach((line, lineIndex) => {
+    const trimmedLine = line.trim();
+    const isBulletPoint = trimmedLine.startsWith("- ") || trimmedLine.startsWith("• ");
+    const bulletContent = isBulletPoint ? trimmedLine.slice(2) : line;
+
+    // Parse bold text (text between ** or __)
+    const parseBoldText = (str: string): React.ReactNode[] => {
+      const parts: React.ReactNode[] = [];
+      const boldRegex = /\*\*(.+?)\*\*|__(.+?)__/g;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = boldRegex.exec(str)) !== null) {
+        // Add text before the bold part
+        if (match.index > lastIndex) {
+          parts.push(
+            <Text key={`text-${lineIndex}-${lastIndex}`} style={baseStyle}>
+              {str.slice(lastIndex, match.index)}
+            </Text>
+          );
+        }
+        // Add the bold text
+        parts.push(
+          <Text
+            key={`bold-${lineIndex}-${match.index}`}
+            style={[baseStyle, { fontWeight: "700" }]}
+          >
+            {match[1] || match[2]}
+          </Text>
+        );
+        lastIndex = match.index + match[0].length;
+      }
+
+      // Add remaining text after last bold match
+      if (lastIndex < str.length) {
+        parts.push(
+          <Text key={`text-${lineIndex}-${lastIndex}-end`} style={baseStyle}>
+            {str.slice(lastIndex)}
+          </Text>
+        );
+      }
+
+      return parts.length > 0 ? parts : [<Text key={`text-${lineIndex}`} style={baseStyle}>{str}</Text>];
+    };
+
+    if (isBulletPoint) {
+      elements.push(
+        <View
+          key={`bullet-${lineIndex}`}
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            marginTop: lineIndex > 0 ? 8 : 0,
+          }}
+        >
+          <Text style={[baseStyle, { marginRight: 8, fontWeight: "600" }]}>•</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={baseStyle}>{parseBoldText(bulletContent)}</Text>
+          </View>
+        </View>
+      );
+    } else if (trimmedLine.length > 0) {
+      elements.push(
+        <Text
+          key={`line-${lineIndex}`}
+          style={[baseStyle, { marginTop: lineIndex > 0 && lines[lineIndex - 1].trim().length > 0 ? 0 : lineIndex > 0 ? 12 : 0 }]}
+        >
+          {parseBoldText(line)}
+        </Text>
+      );
+    } else if (lineIndex > 0 && lineIndex < lines.length - 1) {
+      // Empty line - add spacing
+      elements.push(<View key={`space-${lineIndex}`} style={{ height: 8 }} />);
+    }
+  });
+
+  return elements;
+};
+
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
@@ -222,16 +306,13 @@ export function MessageBubble({
       {/* Text aligned to the left */}
       {hasText && (
         <View style={{ maxWidth: "90%", paddingRight: 20 }}>
-          <Text
-            style={{
-              fontSize: 15,
-              lineHeight: 22,
-              color: "#EDEDED", // Soft off-white
-              letterSpacing: 0.15,
-            }}
-          >
-            {content}
-          </Text>
+          {renderFormattedText(content, {
+            fontSize: 15,
+            lineHeight: 24,
+            color: "#EDEDED",
+            letterSpacing: 0.15,
+            fontWeight: "400",
+          })}
         </View>
       )}
 
