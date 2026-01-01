@@ -307,10 +307,10 @@ export function MessageBubble({
       {hasText && (
         <View style={{ maxWidth: "90%", paddingRight: 20 }}>
           {renderFormattedText(content, {
-            fontSize: 15,
-            lineHeight: 24,
+            fontSize: 17,
+            lineHeight: 26,
             color: "#EDEDED",
-            letterSpacing: 0.15,
+            letterSpacing: 0.2,
             fontWeight: "400",
           })}
         </View>
@@ -337,9 +337,9 @@ export function MessageBubble({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
-              name={copied ? "checkmark" : "copy-outline"}
-              size={18}
-              color={copied ? "#10B981" : "#6B7280"}
+              name={copied ? "checkmark" : "copy"}
+              size={20}
+              color={copied ? "#10B981" : "#9CA3AF"}
             />
           </Pressable>
 
@@ -354,9 +354,9 @@ export function MessageBubble({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
-              name={isSpeaking ? "stop" : "volume-high-outline"}
-              size={18}
-              color={isSpeaking ? "#3B82F6" : "#6B7280"}
+              name={isSpeaking ? "stop" : "volume-high"}
+              size={20}
+              color={isSpeaking ? "#3B82F6" : "#9CA3AF"}
             />
           </Pressable>
 
@@ -372,8 +372,8 @@ export function MessageBubble({
           >
             <Ionicons
               name={liked === true ? "thumbs-up" : "thumbs-up-outline"}
-              size={18}
-              color={liked === true ? "#10B981" : "#6B7280"}
+              size={20}
+              color={liked === true ? "#10B981" : "#9CA3AF"}
             />
           </Pressable>
 
@@ -389,8 +389,8 @@ export function MessageBubble({
           >
             <Ionicons
               name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
-              size={18}
-              color={liked === false ? "#EF4444" : "#6B7280"}
+              size={20}
+              color={liked === false ? "#EF4444" : "#9CA3AF"}
             />
           </Pressable>
 
@@ -405,9 +405,9 @@ export function MessageBubble({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
-              name="share-outline"
-              size={18}
-              color="#6B7280"
+              name="share"
+              size={20}
+              color="#9CA3AF"
             />
           </Pressable>
 
@@ -423,9 +423,9 @@ export function MessageBubble({
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
-                name="refresh-outline"
-                size={18}
-                color="#6B7280"
+                name="refresh"
+                size={20}
+                color="#9CA3AF"
               />
             </Pressable>
           )}
