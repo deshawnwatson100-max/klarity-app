@@ -79,7 +79,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "rewrite");
+  const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -179,12 +179,12 @@ export function ChatScreen({ navigation, route }: Props) {
 
   // Initialize slide positions based on initial mode
   useEffect(() => {
-    if (inputMode === "rewrite") {
-      replySlideX.value = 0;
-      decodeSlideX.value = screenWidth;
-    } else {
+    if (inputMode === "understand") {
       replySlideX.value = -screenWidth;
       decodeSlideX.value = 0;
+    } else {
+      replySlideX.value = 0;
+      decodeSlideX.value = screenWidth;
     }
   }, []);
 

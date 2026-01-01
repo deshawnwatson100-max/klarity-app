@@ -46,7 +46,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   selectedImageUri,
   onClearImage,
   isRecording = false,
-  inputMode = "rewrite",
+  inputMode = "understand",
   autoFocus = false,
 }, ref) {
   const insets = useSafeAreaInsets();
@@ -67,12 +67,12 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     cancelAnimation(decodePlaceholderX);
 
     // Set positions immediately without animation
-    if (inputMode === "rewrite") {
-      replyPlaceholderX.value = 0;
-      decodePlaceholderX.value = screenWidth;
-    } else {
+    if (inputMode === "understand") {
       replyPlaceholderX.value = -screenWidth;
       decodePlaceholderX.value = 0;
+    } else {
+      replyPlaceholderX.value = 0;
+      decodePlaceholderX.value = screenWidth;
     }
 
     // Reset tracking refs

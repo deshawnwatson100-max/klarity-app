@@ -129,25 +129,6 @@ export function Header({
               }}
             >
               <Pressable
-                onPress={() => handleModeChange("rewrite")}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  borderRadius: 12,
-                  backgroundColor: inputMode === "rewrite" ? "#2A2A2C" : "transparent",
-                }}
-              >
-                <Text
-                  style={{
-                    color: inputMode === "rewrite" ? "#F9FAFB" : "#6B7280",
-                    fontSize: 11,
-                    fontWeight: inputMode === "rewrite" ? "600" : "400",
-                  }}
-                >
-                  Reply
-                </Text>
-              </Pressable>
-              <Pressable
                 onPress={() => handleModeChange("understand")}
                 style={{
                   paddingHorizontal: 10,
@@ -164,6 +145,25 @@ export function Header({
                   }}
                 >
                   Decode
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleModeChange("rewrite")}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 12,
+                  backgroundColor: inputMode === "rewrite" ? "#2A2A2C" : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    color: inputMode === "rewrite" ? "#F9FAFB" : "#6B7280",
+                    fontSize: 11,
+                    fontWeight: inputMode === "rewrite" ? "600" : "400",
+                  }}
+                >
+                  Reply
                 </Text>
               </Pressable>
             </View>
