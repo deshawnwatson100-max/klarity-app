@@ -933,6 +933,29 @@ export function ChatScreen({ navigation, route }: Props) {
     console.log("Voice input pressed");
   };
 
+  // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
+  const renderDecodeMessage = (message: ChatMessage) => {
+    if (message.role === "typing") {
+      return <TypingIndicator key={message.id} />;
+    }
+
+    // Only render user and assistant messages in Decode mode - no cards
+    if (message.role === "user" || message.role === "assistant") {
+      return (
+        <MessageBubble
+          key={message.id}
+          role={message.role}
+          content={message.content}
+          timestamp={message.timestamp}
+          imageUrl={message.imageUrl}
+        />
+      );
+    }
+
+    // Skip all card types in Decode mode
+    return null;
+  };
+
   const renderMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
@@ -1136,7 +1159,7 @@ export function ChatScreen({ navigation, route }: Props) {
                       </Text>
                     </View>
                   ) : (
-                    decodeMessages.map(renderMessage)
+                    decodeMessages.map(renderDecodeMessage)
                   )}
                   <View style={{ height: 20 }} />
                 </ScrollView>
