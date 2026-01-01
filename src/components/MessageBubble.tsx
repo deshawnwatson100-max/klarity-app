@@ -1,6 +1,10 @@
-import React, { useEffect } from "react";
-import { View, Text, Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Dimensions, Pressable } from "react-native";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
+import * as Speech from "expo-speech";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,12 +20,27 @@ interface MessageBubbleProps {
   timestamp: number;
   imageUrl?: string;
   showUserBubble?: boolean; // ChatGPT-style bubble for user messages
+  showActions?: boolean; // Show action buttons for assistant messages (ChatGPT-style)
+  onRegenerate?: () => void; // Callback for regenerate action
 }
 
-export function MessageBubble({ role, content, timestamp, imageUrl, showUserBubble = false }: MessageBubbleProps) {
+export function MessageBubble({
+  role,
+  content,
+  timestamp,
+  imageUrl,
+  showUserBubble = false,
+  showActions = false,
+  onRegenerate,
+}: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
+
+  // Action states
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState<boolean | null>(null); // null = no feedback, true = liked, false = disliked
 
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
@@ -51,6 +70,44 @@ export function MessageBubble({ role, content, timestamp, imageUrl, showUserBubb
   // Smaller image dimensions for chat screenshots
   const imageWidth = SCREEN_WIDTH * 0.55; // 55% of screen width
   const imageHeight = imageWidth * 1.8; // Tall aspect ratio for chat screenshots
+
+  // Action handlers
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(content);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSpeak = async () => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setIsSpeaking(true);
+      Speech.speak(content, {
+        onDone: () => setIsSpeaking(false),
+        onStopped: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+      });
+    }
+  };
+
+  const handleLike = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLiked(liked === true ? null : true);
+  };
+
+  const handleDislike = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLiked(liked === false ? null : false);
+  };
+
+  const handleRegenerate = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onRegenerate?.();
+  };
 
   // User messages - warmer white with faint shadow
   if (isUser) {
@@ -164,6 +221,105 @@ export function MessageBubble({ role, content, timestamp, imageUrl, showUserBubb
           >
             {content}
           </Text>
+        </View>
+      )}
+
+      {/* Action buttons - ChatGPT style */}
+      {showActions && hasText && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: 12,
+            gap: 4,
+          }}
+        >
+          {/* Copy button */}
+          <Pressable
+            onPress={handleCopy}
+            style={({ pressed }) => ({
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={copied ? "checkmark" : "copy-outline"}
+              size={18}
+              color={copied ? "#10B981" : "#6B7280"}
+            />
+          </Pressable>
+
+          {/* Read aloud button */}
+          <Pressable
+            onPress={handleSpeak}
+            style={({ pressed }) => ({
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={isSpeaking ? "stop" : "volume-high-outline"}
+              size={18}
+              color={isSpeaking ? "#3B82F6" : "#6B7280"}
+            />
+          </Pressable>
+
+          {/* Like button */}
+          <Pressable
+            onPress={handleLike}
+            style={({ pressed }) => ({
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={liked === true ? "thumbs-up" : "thumbs-up-outline"}
+              size={18}
+              color={liked === true ? "#10B981" : "#6B7280"}
+            />
+          </Pressable>
+
+          {/* Dislike button */}
+          <Pressable
+            onPress={handleDislike}
+            style={({ pressed }) => ({
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
+              size={18}
+              color={liked === false ? "#EF4444" : "#6B7280"}
+            />
+          </Pressable>
+
+          {/* Regenerate button */}
+          {onRegenerate && (
+            <Pressable
+              onPress={handleRegenerate}
+              style={({ pressed }) => ({
+                padding: 8,
+                borderRadius: 8,
+                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={18}
+                color="#6B7280"
+              />
+            </Pressable>
+          )}
         </View>
       )}
     </Animated.View>
