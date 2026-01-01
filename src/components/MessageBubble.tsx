@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Dimensions, Pressable } from "react-native";
+import { View, Text, Dimensions, Pressable, Share } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -107,6 +107,17 @@ export function MessageBubble({
   const handleRegenerate = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onRegenerate?.();
+  };
+
+  const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Share.share({
+        message: content,
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
   };
 
   // User messages - warmer white with faint shadow
@@ -299,6 +310,23 @@ export function MessageBubble({
               name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
               size={18}
               color={liked === false ? "#EF4444" : "#6B7280"}
+            />
+          </Pressable>
+
+          {/* Share/Send button */}
+          <Pressable
+            onPress={handleShare}
+            style={({ pressed }) => ({
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name="share-outline"
+              size={18}
+              color="#6B7280"
             />
           </Pressable>
 
