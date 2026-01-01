@@ -674,19 +674,23 @@ export function ChatScreen({ navigation, route }: Props) {
       return;
     }
 
-    // Handle Rewrite mode
+    // Handle Reply (rewrite) mode - shows communication summary + suggested reply
     if (inputMode === "rewrite") {
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "user",
-        content: currentInput,
+        content: currentInput || (selectedImageUri ? "[Screenshot shared]" : ""),
         timestamp: Date.now(),
+        imageUrl: selectedImageUri,
+        imageBase64: selectedImageBase64,
       };
 
       addMessageToActiveLoop(userMessage);
       setCurrentInput("");
+      setSelectedImageUri(undefined);
+      setSelectedImageBase64(undefined);
 
-      await processRewriteMessage(userMessage);
+      await processUserMessage(userMessage);
       return;
     }
 
