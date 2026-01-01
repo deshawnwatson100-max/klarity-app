@@ -94,7 +94,6 @@ export function MessageBubble({ role, content, timestamp, imageUrl, showUserBubb
                 paddingHorizontal: 16,
                 paddingVertical: 12,
                 borderRadius: 20,
-                borderTopRightRadius: 6, // Slightly flattened corner for chat bubble feel
               } : {
                 maxWidth: "85%",
                 shadowColor: "#000",
