@@ -37,6 +37,7 @@ import { generateConversationTitle } from "../api/klarity-api";
 interface LoopsState {
   // State
   loops: KlarityLoop[]; // All saved loops
+  archivedLoops: KlarityLoop[]; // Archived loops
   activeLoopId: string | null; // ID of the currently active loop
   isHistoryPanelOpen: boolean; // Whether the history drawer is open
   trackedRelationships: TrackedRelationship[]; // Tracked relationships for long-term clarity
@@ -52,6 +53,9 @@ interface LoopsState {
   createNewLoop: () => string; // Returns the new loop ID
   switchToLoop: (loopId: string) => void;
   deleteLoop: (loopId: string) => void;
+  archiveLoop: (loopId: string) => void;
+  unarchiveLoop: (loopId: string) => void;
+  deleteArchivedLoop: (loopId: string) => void;
   updateLoopTitle: (loopId: string, title: string) => void;
 
   // Actions - Message Management
@@ -78,6 +82,7 @@ export const useLoopsStore = create<LoopsState>()(
     (set, get) => ({
       // Initial State
       loops: [],
+      archivedLoops: [],
       activeLoopId: null,
       isHistoryPanelOpen: false,
       trackedRelationships: [],
@@ -150,6 +155,55 @@ export const useLoopsStore = create<LoopsState>()(
             activeLoopId: newActiveLoopId,
           };
         });
+      },
+
+      archiveLoop: (loopId: string) => {
+        set((state) => {
+          const loopToArchive = state.loops.find((loop) => loop.id === loopId);
+          if (!loopToArchive) return state;
+
+          const newLoops = state.loops.filter((loop) => loop.id !== loopId);
+
+          // If we archived the active loop, switch to most recent or create new
+          let newActiveLoopId = state.activeLoopId;
+          if (state.activeLoopId === loopId) {
+            if (newLoops.length > 0) {
+              newActiveLoopId = newLoops[0].id;
+            } else {
+              // No loops left, create a new one
+              const newLoop = createNewLoop();
+              return {
+                loops: [newLoop],
+                archivedLoops: [loopToArchive, ...state.archivedLoops],
+                activeLoopId: newLoop.id,
+              };
+            }
+          }
+
+          return {
+            loops: newLoops,
+            archivedLoops: [loopToArchive, ...state.archivedLoops],
+            activeLoopId: newActiveLoopId,
+          };
+        });
+      },
+
+      unarchiveLoop: (loopId: string) => {
+        set((state) => {
+          const loopToUnarchive = state.archivedLoops.find((loop) => loop.id === loopId);
+          if (!loopToUnarchive) return state;
+
+          return {
+            archivedLoops: state.archivedLoops.filter((loop) => loop.id !== loopId),
+            loops: [loopToUnarchive, ...state.loops],
+          };
+        });
+      },
+
+      deleteArchivedLoop: (loopId: string) => {
+        set((state) => ({
+          archivedLoops: state.archivedLoops.filter((loop) => loop.id !== loopId),
+        }));
       },
 
       updateLoopTitle: (loopId: string, title: string) => {
@@ -412,9 +466,10 @@ export const useLoopsStore = create<LoopsState>()(
     {
       name: "klarity-loops-storage", // Storage key in AsyncStorage
       storage: createJSONStorage(() => AsyncStorage),
-      // Persist loops, activeLoopId, and tracked relationships
+      // Persist loops, activeLoopId, archived loops, and tracked relationships
       partialize: (state) => ({
         loops: state.loops,
+        archivedLoops: state.archivedLoops,
         activeLoopId: state.activeLoopId,
         trackedRelationships: state.trackedRelationships,
       }),
