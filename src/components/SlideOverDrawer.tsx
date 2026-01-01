@@ -26,7 +26,6 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
-import { KlarityLogo } from "./KlarityLogo";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -398,8 +397,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       >
         {/* Klarity Branding */}
         <View className="flex-row items-center mb-4">
-          <KlarityLogo size={26} />
-          <Text className="text-xl font-semibold ml-2" style={{ color: "#F9FAFB" }}>
+          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
             Klarity
           </Text>
         </View>
