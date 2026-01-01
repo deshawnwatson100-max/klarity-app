@@ -398,12 +398,10 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
       >
         {/* Klarity Branding */}
         <View className="flex-row items-center mb-4">
-          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+          <KlarityLogo size={26} />
+          <Text className="text-xl font-semibold ml-2" style={{ color: "#F9FAFB" }}>
             Klarity
           </Text>
-          <View style={{ marginLeft: 8 }}>
-            <KlarityLogo size={24} />
-          </View>
         </View>
 
         {/* Search Bar */}

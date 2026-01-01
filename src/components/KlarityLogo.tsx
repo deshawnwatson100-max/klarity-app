@@ -1,108 +1,94 @@
 import React from "react";
 import { View } from "react-native";
-import Svg, { Defs, LinearGradient, Stop, Path, Circle, G } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Stop, Path, Circle } from "react-native-svg";
 
 interface KlarityLogoProps {
   size?: number;
 }
 
 /**
- * Klarity Logo - Abstract prism/lens symbol
+ * Klarity Logo - Abstract "K" lettermark with signal waves
  *
- * A modern tech logo representing clarity and insight.
- * Features a geometric prism shape with subtle gradients
- * that suggests light being focused/clarified.
+ * A minimal tech logo combining a stylized K shape
+ * with radiating arcs suggesting clarity/signal/insight.
  */
 export function KlarityLogo({ size = 24 }: KlarityLogoProps) {
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 32 32">
         <Defs>
-          {/* Main gradient - cool blue to teal */}
-          <LinearGradient id="prismGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#60A5FA" stopOpacity={1} />
-            <Stop offset="50%" stopColor="#34D399" stopOpacity={0.9} />
-            <Stop offset="100%" stopColor="#2DD4BF" stopOpacity={1} />
+          {/* Primary gradient - electric blue to cyan */}
+          <LinearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+            <Stop offset="100%" stopColor="#06B6D4" stopOpacity={1} />
           </LinearGradient>
 
-          {/* Accent gradient for inner element */}
-          <LinearGradient id="innerGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#818CF8" stopOpacity={0.8} />
-            <Stop offset="100%" stopColor="#F0ABFC" stopOpacity={0.6} />
-          </LinearGradient>
-
-          {/* Subtle shadow gradient */}
-          <LinearGradient id="shadowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#1E293B" stopOpacity={0.3} />
-            <Stop offset="100%" stopColor="#0F172A" stopOpacity={0.5} />
+          {/* Secondary gradient for accents */}
+          <LinearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9} />
+            <Stop offset="100%" stopColor="#EC4899" stopOpacity={0.7} />
           </LinearGradient>
         </Defs>
 
-        {/* Outer prism shape - hexagonal lens */}
-        <G>
-          {/* Main prism body */}
-          <Path
-            d="M16 2 L28 9 L28 23 L16 30 L4 23 L4 9 Z"
-            fill="url(#prismGradient)"
-            opacity={0.95}
-          />
+        {/* Outer signal arc - largest */}
+        <Path
+          d="M 26 16 A 10 10 0 0 0 16 6"
+          fill="none"
+          stroke="url(#mainGradient)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          opacity={0.4}
+        />
 
-          {/* Inner facet - left */}
-          <Path
-            d="M16 2 L4 9 L16 16 Z"
-            fill="#F0F9FF"
-            opacity={0.25}
-          />
+        {/* Middle signal arc */}
+        <Path
+          d="M 22 16 A 6 6 0 0 0 16 10"
+          fill="none"
+          stroke="url(#mainGradient)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          opacity={0.7}
+        />
 
-          {/* Inner facet - right highlight */}
-          <Path
-            d="M16 2 L28 9 L16 16 Z"
-            fill="#FFFFFF"
-            opacity={0.15}
-          />
+        {/* Inner signal arc - smallest */}
+        <Path
+          d="M 18 16 A 2 2 0 0 0 16 14"
+          fill="none"
+          stroke="url(#mainGradient)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          opacity={1}
+        />
 
-          {/* Center point - the "clarity" focus */}
-          <Circle
-            cx={16}
-            cy={16}
-            r={4}
-            fill="url(#innerGlow)"
-          />
+        {/* Center dot - the source point */}
+        <Circle
+          cx={16}
+          cy={16}
+          r={3}
+          fill="url(#accentGradient)"
+        />
 
-          {/* Inner ring */}
-          <Circle
-            cx={16}
-            cy={16}
-            r={6}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={0.5}
-            opacity={0.4}
-          />
+        {/* Stylized K stem - vertical line */}
+        <Path
+          d="M 8 8 L 8 24"
+          stroke="url(#mainGradient)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+        />
 
-          {/* Light ray lines emanating from center */}
-          <Path
-            d="M16 10 L16 6"
-            stroke="#FFFFFF"
-            strokeWidth={1}
-            strokeLinecap="round"
-            opacity={0.5}
-          />
-          <Path
-            d="M21.2 13 L24.5 10.5"
-            stroke="#FFFFFF"
-            strokeWidth={1}
-            strokeLinecap="round"
-            opacity={0.4}
-          />
-          <Path
-            d="M10.8 13 L7.5 10.5"
-            stroke="#FFFFFF"
-            strokeWidth={1}
-            strokeLinecap="round"
-            opacity={0.4}
-          />
-        </G>
+        {/* K diagonal arms */}
+        <Path
+          d="M 8 16 L 14 10"
+          stroke="url(#mainGradient)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+        />
+        <Path
+          d="M 8 16 L 14 22"
+          stroke="url(#mainGradient)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+        />
       </Svg>
     </View>
   );

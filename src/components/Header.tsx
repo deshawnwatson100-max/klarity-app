@@ -99,23 +99,23 @@ export function Header({
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu Button and Klarity text with logo */}
+        {/* Left - Menu Button, Logo, and Klarity text */}
         <View className="flex-row items-center">
           {renderLeftMenu()}
+          <View style={{ marginLeft: 10 }}>
+            <KlarityLogo size={24} />
+          </View>
           <Text
             style={{
               fontSize: 18,
               fontWeight: "600",
               color: "#EDEDED",
-              marginLeft: 12,
+              marginLeft: 6,
               letterSpacing: 0.5,
             }}
           >
             Klarity
           </Text>
-          <View style={{ marginLeft: 8 }}>
-            <KlarityLogo size={22} />
-          </View>
         </View>
 
 
