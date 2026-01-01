@@ -1,46 +1,39 @@
 import React from "react";
 import { View } from "react-native";
-import Svg, { Path, Circle } from "react-native-svg";
+import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 
 interface KlarityLogoProps {
   size?: number;
 }
 
 /**
- * Klarity Logo - ChatGPT-inspired abstract shape
+ * Klarity Logo - Royal crescent / modern tech
  *
- * Minimal circular logo with an abstract flowing shape
- * suggesting clarity, insight, and conversation flow.
+ * Elegant crescent shape with a sleek, premium feel
+ * suggesting clarity, insight, and sophistication.
  */
 export function KlarityLogo({ size = 24 }: KlarityLogoProps) {
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 32 32">
-        {/* Outer circle */}
-        <Circle
-          cx={16}
-          cy={16}
-          r={14}
-          fill="#FFFFFF"
-        />
+        <Defs>
+          <LinearGradient id="crescentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={1} />
+            <Stop offset="100%" stopColor="#E2E8F0" stopOpacity={0.95} />
+          </LinearGradient>
+        </Defs>
 
-        {/* Abstract flowing shape - like a stylized spark/lens */}
+        {/* Outer crescent - main shape */}
         <Path
-          d="M 16 7
-             C 22 10, 24 14, 24 16
-             C 24 18, 22 22, 16 25
-             C 10 22, 8 18, 8 16
-             C 8 14, 10 10, 16 7 Z"
-          fill="none"
-          stroke="#000000"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          d="M 16 2
+             A 14 14 0 1 1 16 30
+             A 10 10 0 1 0 16 2 Z"
+          fill="url(#crescentGradient)"
         />
 
-        {/* Inner dot - the clarity point */}
+        {/* Inner accent dot - the focal point */}
         <Circle
-          cx={16}
+          cx={10}
           cy={16}
           r={2.5}
           fill="#10A37F"
