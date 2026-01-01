@@ -33,7 +33,7 @@ import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
-import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH } from "../components/SlideOverDrawer";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
@@ -1045,18 +1045,11 @@ export function ChatScreen({ navigation, route }: Props) {
     []
   );
 
-  // ChatGPT-style drawer push effect - main content slides over when drawer opens
-  const mainContentPushStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(drawerProgress.value, [0, 1], [0, DRAWER_WIDTH], Extrapolation.CLAMP) },
-    ],
-  }));
-
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Main content with ChatGPT-style push effect */}
+      {/* Main content */}
       <GestureDetector gesture={swipeGesture}>
-        <Animated.View style={[{ flex: 1 }, mainContentPushStyle]}>
+        <View style={{ flex: 1 }}>
           <LinearGradient
             colors={["#050608", "#0A0A0C", "#050608"]}
             locations={[0, 0.5, 1]}
@@ -1171,7 +1164,7 @@ export function ChatScreen({ navigation, route }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
           />
         </KeyboardAvoidingView>
-      </Animated.View>
+      </View>
     </GestureDetector>
 
     {/* Slide Over Drawer - outside main content so it's not affected by transform */}

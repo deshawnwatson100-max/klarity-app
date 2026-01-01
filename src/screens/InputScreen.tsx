@@ -19,7 +19,7 @@ import Animated, {
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { SlideOverDrawer, drawerProgress, DRAWER_WIDTH } from "../components/SlideOverDrawer";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -366,18 +366,11 @@ export function InputScreen({ navigation }: Props) {
     []
   );
 
-  // ChatGPT-style drawer push effect - main content slides over when drawer opens
-  const mainContentPushStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(drawerProgress.value, [0, 1], [0, DRAWER_WIDTH], Extrapolation.CLAMP) },
-    ],
-  }));
-
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Main content with ChatGPT-style push effect */}
+      {/* Main content */}
       <GestureDetector gesture={swipeGesture}>
-        <Animated.View style={[{ flex: 1 }, mainContentPushStyle]}>
+        <View style={{ flex: 1 }}>
           {/* Deep charcoal background - minimal and calming */}
           <LinearGradient
             colors={["#050608", "#0A0A0C", "#050608"]}
@@ -447,7 +440,7 @@ export function InputScreen({ navigation }: Props) {
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
         </KeyboardAvoidingView>
-      </Animated.View>
+      </View>
     </GestureDetector>
 
     {/* Slide Over Drawer - outside main content so it's not affected by transform */}

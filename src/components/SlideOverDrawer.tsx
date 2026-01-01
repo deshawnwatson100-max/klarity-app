@@ -233,11 +233,6 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
-// Shared animated value for parent components to sync with drawer animation
-import { makeMutable } from "react-native-reanimated";
-
-export const drawerProgress = makeMutable(0);
-
 export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -245,6 +240,9 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   // State
   const [searchQuery, setSearchQuery] = useState("");
   const [isRendered, setIsRendered] = useState(false);
+
+  // Drawer animation progress - use useSharedValue inside component
+  const drawerProgress = useSharedValue(0);
 
   // Store
   const loops = useLoopsStore((s) => s.loops);
