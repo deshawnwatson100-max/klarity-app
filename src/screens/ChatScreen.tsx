@@ -957,6 +957,7 @@ export function ChatScreen({ navigation, route }: Props) {
           content={message.content}
           timestamp={message.timestamp}
           imageUrl={message.imageUrl}
+          showUserBubble={message.role === "user"} // ChatGPT-style bubble for user messages
         />
       );
     }

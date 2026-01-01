@@ -15,9 +15,10 @@ interface MessageBubbleProps {
   content: string;
   timestamp: number;
   imageUrl?: string;
+  showUserBubble?: boolean; // ChatGPT-style bubble for user messages
 }
 
-export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBubbleProps) {
+export function MessageBubble({ role, content, timestamp, imageUrl, showUserBubble = false }: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(4); // Subtle 4px drift
@@ -87,7 +88,14 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
         {hasText && (
           <View style={{ alignItems: "flex-end" }}>
             <View
-              style={{
+              style={showUserBubble ? {
+                maxWidth: "85%",
+                backgroundColor: "#2F2F2F", // ChatGPT-style dark gray bubble
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderRadius: 20,
+                borderTopRightRadius: 6, // Slightly flattened corner for chat bubble feel
+              } : {
                 maxWidth: "85%",
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
@@ -98,7 +106,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
               <Text
                 style={{
                   fontSize: 15,
-                  lineHeight: 24,
+                  lineHeight: 22,
                   color: "#F5F5F4", // Warmer white
                   letterSpacing: 0.2,
                 }}
@@ -150,7 +158,7 @@ export function MessageBubble({ role, content, timestamp, imageUrl }: MessageBub
           <Text
             style={{
               fontSize: 15,
-              lineHeight: 24,
+              lineHeight: 22,
               color: "#EDEDED", // Soft off-white
               letterSpacing: 0.15,
             }}
