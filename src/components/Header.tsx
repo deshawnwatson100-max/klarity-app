@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
+import { KlarityLogo } from "./KlarityLogo";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -98,7 +99,7 @@ export function Header({
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
-        {/* Left - Menu Button and Klarity text */}
+        {/* Left - Menu Button and Klarity text with logo */}
         <View className="flex-row items-center">
           {renderLeftMenu()}
           <Text
@@ -112,6 +113,9 @@ export function Header({
           >
             Klarity
           </Text>
+          <View style={{ marginLeft: 8 }}>
+            <KlarityLogo size={22} />
+          </View>
         </View>
 
 
