@@ -135,15 +135,17 @@ export function ChatScreen({ navigation, route }: Props) {
   // Filter messages by mode - separate lists for each chat loop
   const replyMessages = useMemo(() => {
     return allMessages.filter((msg) => {
-      if (!msg.mode) return false; // Only show messages with explicit mode
-      return msg.mode === "rewrite";
+      // Messages explicitly marked as rewrite mode
+      if (msg.mode === "rewrite") return true;
+      return false;
     });
   }, [allMessages]);
 
   const decodeMessages = useMemo(() => {
     return allMessages.filter((msg) => {
-      if (!msg.mode) return false; // Only show messages with explicit mode
-      return msg.mode === "understand";
+      // Messages explicitly marked as understand/decode mode
+      if (msg.mode === "understand") return true;
+      return false;
     });
   }, [allMessages]);
 
@@ -266,7 +268,14 @@ export function ChatScreen({ navigation, route }: Props) {
         const firstMessage = activeLoop.messages[0];
         if (!processedMessageIds.current.has(firstMessage.id)) {
           processedMessageIds.current.add(firstMessage.id);
-          processUserMessage(firstMessage);
+          // Check message mode to determine which processing flow to use
+          const messageMode = firstMessage.mode || inputModeRef.current;
+          console.log("[ChatScreen] Processing first message with mode:", messageMode);
+          if (messageMode === "understand") {
+            processDecodeMessage(firstMessage);
+          } else {
+            processUserMessage(firstMessage);
+          }
         }
       }
 

@@ -198,6 +198,9 @@ export function InputScreen({ navigation }: Props) {
     }
 
     // Add user message to active loop with mode
+    const messageMode = inputMode as "rewrite" | "understand";
+    console.log("[InputScreen] Sending message with mode:", messageMode);
+
     addMessageToActiveLoop({
       id: Date.now().toString(),
       role: "user",
@@ -205,7 +208,7 @@ export function InputScreen({ navigation }: Props) {
       timestamp: Date.now(),
       imageUrl: selectedImageUri,
       imageBase64: selectedImageBase64,
-      mode: inputMode === "rewrite" ? "rewrite" : "understand",
+      mode: messageMode,
     });
 
     // Animate content out then navigate to chat screen
@@ -309,13 +312,15 @@ export function InputScreen({ navigation }: Props) {
         }
 
         // Add user message to active loop
+        const voiceMessageMode = inputMode as "rewrite" | "understand";
+        console.log("[InputScreen] Sending voice message with mode:", voiceMessageMode);
         addMessageToActiveLoop({
           id: Date.now().toString(),
           role: "user",
           content: transcription,
           timestamp: Date.now(),
           isVoiceMessage: true, // Mark as voice message for emotion analysis
-          mode: inputMode === "rewrite" ? "rewrite" : "understand",
+          mode: voiceMessageMode,
         });
 
         // Navigate to chat screen for AI response
