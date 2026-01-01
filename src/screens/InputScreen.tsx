@@ -42,7 +42,7 @@ export function InputScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>("rewrite");
+  const [inputMode, setInputMode] = useState<InputMode>("understand");
 
   // Track if this is the first focus (skip animation on initial app load)
   const isFirstFocus = useRef(true);
