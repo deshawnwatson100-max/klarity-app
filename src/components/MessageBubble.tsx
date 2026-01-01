@@ -14,84 +14,266 @@ import Animated, {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Helper function to render formatted text with bold and bullet points
+// Helper function to render beautifully formatted text
 const renderFormattedText = (text: string, baseStyle: any) => {
   const lines = text.split("\n");
   const elements: React.ReactNode[] = [];
+  let inCodeBlock = false;
+  let codeBlockContent: string[] = [];
 
-  lines.forEach((line, lineIndex) => {
-    const trimmedLine = line.trim();
-    const isBulletPoint = trimmedLine.startsWith("- ") || trimmedLine.startsWith("• ");
-    const bulletContent = isBulletPoint ? trimmedLine.slice(2) : line;
+  // Parse inline formatting (bold, italic, code)
+  const parseInlineFormatting = (str: string, lineIndex: number, partIndex: number = 0): React.ReactNode[] => {
+    const parts: React.ReactNode[] = [];
+    // Match bold (**text** or __text__), italic (*text* or _text_), and inline code (`text`)
+    const formatRegex = /\*\*(.+?)\*\*|__(.+?)__|`([^`]+)`|\*([^*]+)\*|_([^_]+)_/g;
+    let lastIndex = 0;
+    let match;
 
-    // Parse bold text (text between ** or __)
-    const parseBoldText = (str: string): React.ReactNode[] => {
-      const parts: React.ReactNode[] = [];
-      const boldRegex = /\*\*(.+?)\*\*|__(.+?)__/g;
-      let lastIndex = 0;
-      let match;
+    while ((match = formatRegex.exec(str)) !== null) {
+      // Add text before the formatted part
+      if (match.index > lastIndex) {
+        parts.push(
+          <Text key={`text-${lineIndex}-${partIndex}-${lastIndex}`} style={baseStyle}>
+            {str.slice(lastIndex, match.index)}
+          </Text>
+        );
+      }
 
-      while ((match = boldRegex.exec(str)) !== null) {
-        // Add text before the bold part
-        if (match.index > lastIndex) {
-          parts.push(
-            <Text key={`text-${lineIndex}-${lastIndex}`} style={baseStyle}>
-              {str.slice(lastIndex, match.index)}
-            </Text>
-          );
-        }
-        // Add the bold text
+      if (match[1] || match[2]) {
+        // Bold text
         parts.push(
           <Text
-            key={`bold-${lineIndex}-${match.index}`}
-            style={[baseStyle, { fontWeight: "700" }]}
+            key={`bold-${lineIndex}-${partIndex}-${match.index}`}
+            style={[baseStyle, { fontWeight: "700", color: "#FFFFFF" }]}
           >
             {match[1] || match[2]}
           </Text>
         );
-        lastIndex = match.index + match[0].length;
-      }
-
-      // Add remaining text after last bold match
-      if (lastIndex < str.length) {
+      } else if (match[3]) {
+        // Inline code
         parts.push(
-          <Text key={`text-${lineIndex}-${lastIndex}-end`} style={baseStyle}>
-            {str.slice(lastIndex)}
+          <Text
+            key={`code-${lineIndex}-${partIndex}-${match.index}`}
+            style={[
+              baseStyle,
+              {
+                fontFamily: "Courier",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 4,
+                fontSize: baseStyle.fontSize - 1,
+                color: "#A5F3FC",
+              },
+            ]}
+          >
+            {match[3]}
+          </Text>
+        );
+      } else if (match[4] || match[5]) {
+        // Italic text
+        parts.push(
+          <Text
+            key={`italic-${lineIndex}-${partIndex}-${match.index}`}
+            style={[baseStyle, { fontStyle: "italic", color: "#D1D5DB" }]}
+          >
+            {match[4] || match[5]}
           </Text>
         );
       }
+      lastIndex = match.index + match[0].length;
+    }
 
-      return parts.length > 0 ? parts : [<Text key={`text-${lineIndex}`} style={baseStyle}>{str}</Text>];
-    };
+    // Add remaining text
+    if (lastIndex < str.length) {
+      parts.push(
+        <Text key={`text-${lineIndex}-${partIndex}-${lastIndex}-end`} style={baseStyle}>
+          {str.slice(lastIndex)}
+        </Text>
+      );
+    }
 
-    if (isBulletPoint) {
+    return parts.length > 0 ? parts : [<Text key={`text-${lineIndex}-${partIndex}`} style={baseStyle}>{str}</Text>];
+  };
+
+  lines.forEach((line, lineIndex) => {
+    const trimmedLine = line.trim();
+
+    // Handle code blocks
+    if (trimmedLine.startsWith("```")) {
+      if (inCodeBlock) {
+        // End code block
+        elements.push(
+          <View
+            key={`codeblock-${lineIndex}`}
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              borderRadius: 12,
+              padding: 14,
+              marginTop: 12,
+              marginBottom: 8,
+              borderLeftWidth: 3,
+              borderLeftColor: "#6366F1",
+            }}
+          >
+            {codeBlockContent.map((codeLine, i) => (
+              <Text
+                key={`codeline-${i}`}
+                style={{
+                  fontFamily: "Courier",
+                  fontSize: 14,
+                  lineHeight: 20,
+                  color: "#A5F3FC",
+                }}
+              >
+                {codeLine}
+              </Text>
+            ))}
+          </View>
+        );
+        codeBlockContent = [];
+        inCodeBlock = false;
+      } else {
+        // Start code block
+        inCodeBlock = true;
+      }
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(line);
+      return;
+    }
+
+    // Check for headers (# ## ###)
+    const headerMatch = trimmedLine.match(/^(#{1,3})\s+(.+)$/);
+    if (headerMatch) {
+      const level = headerMatch[1].length;
+      const headerText = headerMatch[2];
+      const headerStyles = {
+        1: { fontSize: 22, fontWeight: "700" as const, marginTop: 20, marginBottom: 12, color: "#FFFFFF" },
+        2: { fontSize: 19, fontWeight: "600" as const, marginTop: 16, marginBottom: 10, color: "#F3F4F6" },
+        3: { fontSize: 17, fontWeight: "600" as const, marginTop: 14, marginBottom: 8, color: "#E5E7EB" },
+      };
+      elements.push(
+        <Text
+          key={`header-${lineIndex}`}
+          style={[baseStyle, headerStyles[level as 1 | 2 | 3], { lineHeight: headerStyles[level as 1 | 2 | 3].fontSize * 1.3 }]}
+        >
+          {headerText}
+        </Text>
+      );
+      return;
+    }
+
+    // Check for bullet points (- or • or *)
+    const bulletMatch = trimmedLine.match(/^[-•*]\s+(.+)$/);
+    if (bulletMatch) {
       elements.push(
         <View
           key={`bullet-${lineIndex}`}
           style={{
             flexDirection: "row",
             alignItems: "flex-start",
-            marginTop: lineIndex > 0 ? 8 : 0,
+            marginTop: 10,
+            paddingLeft: 4,
           }}
         >
-          <Text style={[baseStyle, { marginRight: 8, fontWeight: "600" }]}>•</Text>
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: "#818CF8",
+              marginTop: 9,
+              marginRight: 12,
+            }}
+          />
           <View style={{ flex: 1 }}>
-            <Text style={baseStyle}>{parseBoldText(bulletContent)}</Text>
+            <Text style={baseStyle}>{parseInlineFormatting(bulletMatch[1], lineIndex)}</Text>
           </View>
         </View>
       );
-    } else if (trimmedLine.length > 0) {
+      return;
+    }
+
+    // Check for numbered lists (1. 2. etc)
+    const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+    if (numberedMatch) {
+      elements.push(
+        <View
+          key={`numbered-${lineIndex}`}
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            marginTop: 10,
+            paddingLeft: 4,
+          }}
+        >
+          <Text
+            style={[
+              baseStyle,
+              {
+                fontWeight: "600",
+                color: "#818CF8",
+                marginRight: 10,
+                minWidth: 22,
+              },
+            ]}
+          >
+            {numberedMatch[1]}.
+          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={baseStyle}>{parseInlineFormatting(numberedMatch[2], lineIndex)}</Text>
+          </View>
+        </View>
+      );
+      return;
+    }
+
+    // Check for blockquote (> text)
+    const quoteMatch = trimmedLine.match(/^>\s*(.*)$/);
+    if (quoteMatch) {
+      elements.push(
+        <View
+          key={`quote-${lineIndex}`}
+          style={{
+            borderLeftWidth: 3,
+            borderLeftColor: "#6B7280",
+            paddingLeft: 14,
+            marginTop: 12,
+            marginBottom: 8,
+          }}
+        >
+          <Text style={[baseStyle, { fontStyle: "italic", color: "#9CA3AF" }]}>
+            {parseInlineFormatting(quoteMatch[1], lineIndex)}
+          </Text>
+        </View>
+      );
+      return;
+    }
+
+    // Regular paragraph text
+    if (trimmedLine.length > 0) {
+      const prevLine = lineIndex > 0 ? lines[lineIndex - 1].trim() : "";
+      const isNewParagraph = lineIndex > 0 && prevLine.length === 0;
+      const isAfterSpecial = prevLine.match(/^[-•*#>\d]/) !== null;
+
       elements.push(
         <Text
           key={`line-${lineIndex}`}
-          style={[baseStyle, { marginTop: lineIndex > 0 && lines[lineIndex - 1].trim().length > 0 ? 0 : lineIndex > 0 ? 12 : 0 }]}
+          style={[
+            baseStyle,
+            {
+              marginTop: isNewParagraph ? 16 : isAfterSpecial ? 12 : lineIndex > 0 ? 4 : 0,
+            },
+          ]}
         >
-          {parseBoldText(line)}
+          {parseInlineFormatting(line, lineIndex)}
         </Text>
       );
     } else if (lineIndex > 0 && lineIndex < lines.length - 1) {
-      // Empty line - add spacing
-      elements.push(<View key={`space-${lineIndex}`} style={{ height: 8 }} />);
+      // Empty line - creates paragraph break (spacing handled by next element)
     }
   });
 
