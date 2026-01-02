@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
@@ -17,7 +16,6 @@ import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
-import { getOpenAITextResponse } from "../api/chat-service";
 import { MessageMode } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "InputScreen">;
@@ -60,6 +58,24 @@ export function InputScreen({ navigation }: Props) {
 
   // Animation duration
   const CONTENT_TRANSITION_DURATION = 250;
+
+  // Pan responder for swipe to open drawer
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes starting from left edge
+        return gestureState.dx > 20 && Math.abs(gestureState.dy) < 50;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Right swipe to open drawer
+        if (gestureState.dx > 80 && gestureState.vx > 0.5) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setIsDrawerOpen(true);
+        }
+      },
+    })
+  ).current;
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -290,7 +306,7 @@ export function InputScreen({ navigation }: Props) {
           role: "user",
           content: transcription,
           timestamp: Date.now(),
-          isVoiceMessage: true, // Mark as voice message for emotion analysis
+          isVoiceMessage: true,
           mode: voiceMessageMode,
         });
 
@@ -315,51 +331,22 @@ export function InputScreen({ navigation }: Props) {
     }
   };
 
-  // Handler for navigating to chat screen with animation
-  const handleNavigateToChat = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    animateContentOutAndNavigate();
-  };
-
-  // Open drawer handler for swipe gesture
-  const handleOpenDrawer = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsDrawerOpen(true);
-  };
-
-  // Swipe right opens drawer
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX(50)
-        .failOffsetX(-50)
-        .onEnd((event) => {
-          // Right swipe - open drawer
-          if (event.velocityX > 500 && event.translationX > 80) {
-            handleOpenDrawer();
-          }
-        })
-        .runOnJS(true),
-    []
-  );
-
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       {/* Main content */}
-      <GestureDetector gesture={swipeGesture}>
-        <View style={{ flex: 1 }}>
-          {/* Deep charcoal background - minimal and calming */}
-          <LinearGradient
-            colors={["#050608", "#0A0A0C", "#050608"]}
-            locations={[0, 0.5, 1]}
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-            }}
-          />
+      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+        {/* Deep charcoal background - minimal and calming */}
+        <LinearGradient
+          colors={["#050608", "#0A0A0C", "#050608"]}
+          locations={[0, 0.5, 1]}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        />
 
         {/* Soft flares - monochromatic minimal glow - Layer 1 */}
         <SoftFlares />
@@ -369,7 +356,7 @@ export function InputScreen({ navigation }: Props) {
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
+          style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
           <Header
@@ -384,19 +371,20 @@ export function InputScreen({ navigation }: Props) {
               flex: 1,
               opacity: contentOpacity,
               transform: [{ translateY: contentTranslateY }],
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 24,
             }}
-            className="items-center justify-center px-6"
           >
             {isRecording ? (
-              <View className="items-center justify-center w-full">
+              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
                 <Text
-                  className="text-xl font-medium mb-6"
-                  style={{ color: "#9CA3AF" }}
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: "#9CA3AF" }}
                 >
                   Recording...
                 </Text>
                 <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: "#E5E7EB" }} className="text-sm mt-6">
+                <Text style={{ color: "#E5E7EB", fontSize: 14, marginTop: 24 }}>
                   Tap the stop button when done
                 </Text>
               </View>
@@ -430,13 +418,12 @@ export function InputScreen({ navigation }: Props) {
           {isProcessing && <VoiceProcessingIndicator />}
         </KeyboardAvoidingView>
       </View>
-    </GestureDetector>
 
-    {/* Slide Over Drawer - outside main content so it's not affected by transform */}
-    <SlideOverDrawer
-      visible={isDrawerOpen}
-      onClose={() => setIsDrawerOpen(false)}
-    />
-  </View>
+      {/* Slide Over Drawer - outside main content so it's not affected by transform */}
+      <SlideOverDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </View>
   );
 }
