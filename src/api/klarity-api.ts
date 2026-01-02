@@ -1,6 +1,90 @@
 import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis, BoundaryAnalysis } from "../types/chat";
 import OpenAI from "openai";
 
+/**
+ * Klarity Notation types for internal tracking
+ * Used across all chat loops (decode, reply, clarification)
+ */
+export interface KlarityNotation {
+  mode: "decode" | "reply" | "clarification";
+  confidence: "low" | "medium" | "high";
+  signal_types: Array<"interest" | "boundary" | "hesitation" | "alignment" | "power" | "neutral" | "unclear">;
+  advice_level: "none" | "exploratory" | "directive";
+  assumptions_made: "yes" | "no";
+  clarification_needed: "yes" | "no";
+  loop_integrity: "pass" | "warn";
+}
+
+/**
+ * Parse Klarity notation block from response
+ * Returns the user-facing response and the internal notation
+ */
+function parseKlarityNotation(fullResponse: string): {
+  userResponse: string;
+  notation: KlarityNotation | null;
+} {
+  const notationMatch = fullResponse.match(/\[\[KLARITY_NOTES\]\]([\s\S]*?)\[\[\/KLARITY_NOTES\]\]/);
+
+  if (!notationMatch) {
+    return { userResponse: fullResponse.trim(), notation: null };
+  }
+
+  // Extract user-facing response (everything before the notation block)
+  const userResponse = fullResponse
+    .replace(/\[\[KLARITY_NOTES\]\][\s\S]*?\[\[\/KLARITY_NOTES\]\]/, "")
+    .trim();
+
+  // Parse notation fields
+  const notationText = notationMatch[1];
+  const notation: KlarityNotation = {
+    mode: "decode",
+    confidence: "medium",
+    signal_types: ["unclear"],
+    advice_level: "none",
+    assumptions_made: "no",
+    clarification_needed: "no",
+    loop_integrity: "pass",
+  };
+
+  // Parse mode
+  const modeMatch = notationText.match(/mode:\s*(decode|reply|clarification)/i);
+  if (modeMatch) notation.mode = modeMatch[1].toLowerCase() as KlarityNotation["mode"];
+
+  // Parse confidence
+  const confidenceMatch = notationText.match(/confidence:\s*(low|medium|high)/i);
+  if (confidenceMatch) notation.confidence = confidenceMatch[1].toLowerCase() as KlarityNotation["confidence"];
+
+  // Parse signal_types
+  const signalMatch = notationText.match(/signal_types:\s*\[(.*?)\]/i);
+  if (signalMatch) {
+    const signals = signalMatch[1]
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => ["interest", "boundary", "hesitation", "alignment", "power", "neutral", "unclear"].includes(s));
+    if (signals.length > 0) {
+      notation.signal_types = signals as KlarityNotation["signal_types"];
+    }
+  }
+
+  // Parse advice_level
+  const adviceMatch = notationText.match(/advice_level:\s*(none|exploratory|directive)/i);
+  if (adviceMatch) notation.advice_level = adviceMatch[1].toLowerCase() as KlarityNotation["advice_level"];
+
+  // Parse assumptions_made
+  const assumptionsMatch = notationText.match(/assumptions_made:\s*(yes|no)/i);
+  if (assumptionsMatch) notation.assumptions_made = assumptionsMatch[1].toLowerCase() as KlarityNotation["assumptions_made"];
+
+  // Parse clarification_needed
+  const clarificationMatch = notationText.match(/clarification_needed:\s*(yes|no)/i);
+  if (clarificationMatch) notation.clarification_needed = clarificationMatch[1].toLowerCase() as KlarityNotation["clarification_needed"];
+
+  // Parse loop_integrity
+  const integrityMatch = notationText.match(/loop_integrity:\s*(pass|warn)/i);
+  if (integrityMatch) notation.loop_integrity = integrityMatch[1].toLowerCase() as KlarityNotation["loop_integrity"];
+
+  return { userResponse, notation };
+}
+
 interface GPT5Message {
   role: "system" | "user" | "assistant";
   content: string;
@@ -172,14 +256,63 @@ Respond with valid JSON only:
  * Generate a quick suggested reply without needing intention/tone selection
  * Used in the simplified flow for immediate reply generation
  *
- * KLARITY UNDERSTAND MODE: Provides navigation advice — not emotional advice.
+ * KLARITY REPLY MODE: Provides navigation advice — not emotional advice.
  * Replies should help the user navigate the situation effectively.
+ *
+ * Includes Klarity Notation System for internal tracking
  */
 export async function generateQuickSuggestedReply(
   userMessage: string,
   analysis?: EmotionalAnalysis
-): Promise<{ id: string; text: string; guidanceNote: string }> {
-  const systemPrompt = `You are Klarity — a personal communication calibrator.
+): Promise<{ id: string; text: string; guidanceNote: string; notation?: KlarityNotation }> {
+  const systemPrompt = `You are Klarity. In every response, you must generate two outputs:
+
+1. A JSON object with the suggested reply and guidance note.
+2. A hidden internal notation block for system use only.
+
+The internal notation block is mandatory for every response.
+
+## VISIBILITY RULE (CRITICAL)
+
+The JSON response must never reference notations.
+The notation block must never contain conversational language.
+The notation block must always be appended AFTER the JSON object.
+Treat the notation block as machine-readable metadata, not prose.
+
+## REQUIRED NOTATION FORMAT
+
+After your JSON response, append the following block exactly:
+
+[[KLARITY_NOTES]]
+mode: reply
+confidence: <low | medium | high>
+signal_types: [<one or more of: interest, boundary, hesitation, alignment, power, neutral, unclear>]
+advice_level: <none | exploratory | directive>
+assumptions_made: <yes | no>
+clarification_needed: <yes | no>
+loop_integrity: <pass | warn>
+[[/KLARITY_NOTES]]
+
+Do not rename fields. Do not omit fields. Do not add extra fields.
+
+## HOW TO POPULATE FIELDS
+
+- mode: always "reply" for this function
+- confidence: how certain your interpretation is
+- signal_types: social signals detected (or unclear)
+- advice_level:
+  - none → pure exploration (rare in Reply Mode)
+  - exploratory → optional guidance ("one option could be…")
+  - directive → specific actionable guidance (allowed in Reply Mode)
+- assumptions_made: mark yes only if you inferred unstated context
+- clarification_needed: mark yes if more context would improve accuracy
+- loop_integrity: mark warn if response came close to breaking loop rules
+
+---
+
+## YOUR ROLE
+
+You are Klarity — a personal communication calibrator.
 
 Your job is to generate a reply suggestion that helps the user navigate this situation effectively with clarity, calm confidence, and self-respect.
 
@@ -256,11 +389,15 @@ The reply should feel practical, respectful, and strategic if sent. Effective wi
 
 Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) — grounded, practical navigation advice.
 
-Respond with valid JSON only:
+Respond with valid JSON first, then the notation block:
 {
   "text": "string (the suggested reply — ready to send as-is)",
   "guidanceNote": "string (brief, practical navigation advice about this approach)"
-}`;
+}
+
+[[KLARITY_NOTES]]
+...
+[[/KLARITY_NOTES]]`;
 
   const userPrompt = analysis
     ? `Situation: ${userMessage}\n\nAnalysis detected: Tone: ${analysis.tone}, Pattern: ${analysis.pattern}`
@@ -272,11 +409,20 @@ Respond with valid JSON only:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      2000,
-      true
+      2500,
+      false // Not using JSON mode since we have notation block
     );
 
-    let jsonStr = response.trim();
+    // Parse notation from response
+    const { userResponse, notation } = parseKlarityNotation(response);
+
+    // Log notation for internal tracking
+    if (notation) {
+      console.log("[generateQuickSuggestedReply] Klarity Notation:", JSON.stringify(notation, null, 2));
+    }
+
+    // Parse the JSON from user response
+    let jsonStr = userResponse.trim();
     jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
 
     let parsed;
@@ -294,6 +440,7 @@ Respond with valid JSON only:
       id: Date.now().toString(),
       text: parsed.text || "I hear you. That's not something I can take on right now.",
       guidanceNote: parsed.guidanceNote || "Keeps communication clear and neutral.",
+      notation: notation || undefined,
     };
   } catch (error) {
     console.error("Error generating quick suggested reply:", error);
@@ -301,6 +448,15 @@ Respond with valid JSON only:
       id: Date.now().toString(),
       text: "I hear you. Let me get back to you on this.",
       guidanceNote: "Buys time while keeping things neutral.",
+      notation: {
+        mode: "reply",
+        confidence: "low",
+        signal_types: ["unclear"],
+        advice_level: "exploratory",
+        assumptions_made: "no",
+        clarification_needed: "yes",
+        loop_integrity: "pass",
+      },
     };
   }
 }
@@ -2320,8 +2476,71 @@ Return only the text with emojis naturally integrated.`;
 export async function generateDecodeResponse(
   userMessage: string,
   conversationHistory: { role: "user" | "assistant"; content: string }[] = []
-): Promise<{ response: string }> {
-  const systemPrompt = `You are Klarity operating in Decode Mode - a warm, insightful thinking partner for self-reflection.
+): Promise<{ response: string; notation?: KlarityNotation }> {
+  const systemPrompt = `You are Klarity. In every response, you must generate two outputs:
+
+1. A user-facing message written naturally and conversationally.
+2. A hidden internal notation block for system use only.
+
+The internal notation block is mandatory for every response.
+
+## VISIBILITY RULE (CRITICAL)
+
+The user-facing message must never reference notations.
+The notation block must never contain conversational language.
+The notation block must always be appended after the user-facing message.
+Treat the notation block as machine-readable metadata, not prose.
+
+## REQUIRED NOTATION FORMAT
+
+After every response, append the following block exactly:
+
+[[KLARITY_NOTES]]
+mode: <decode | reply | clarification>
+confidence: <low | medium | high>
+signal_types: [<one or more of: interest, boundary, hesitation, alignment, power, neutral, unclear>]
+advice_level: <none | exploratory | directive>
+assumptions_made: <yes | no>
+clarification_needed: <yes | no>
+loop_integrity: <pass | warn>
+[[/KLARITY_NOTES]]
+
+Do not rename fields. Do not omit fields. Do not add extra fields.
+
+## HOW TO POPULATE FIELDS
+
+- mode: the active chat loop (for this conversation, use "decode")
+- confidence: how certain your interpretation is
+- signal_types: social signals detected (or unclear)
+- advice_level:
+  - none → pure exploration
+  - exploratory → optional guidance ("one option could be…")
+  - directive → only allowed in Reply Mode (NOT in Decode Mode)
+- assumptions_made: mark yes only if you inferred unstated context
+- clarification_needed: mark yes if more context would improve accuracy
+- loop_integrity: mark warn if response came close to breaking loop rules
+
+## ENFORCEMENT RULES
+
+Never show the notation block to the user.
+Never explain the notation block.
+Never refuse to produce the notation block.
+If you cannot determine a field confidently, choose the most conservative value.
+
+## INTERNAL PRIORITY RULE
+
+If there is any conflict between:
+- conversational quality
+- loop integrity
+- notation accuracy
+
+You must prioritize loop integrity first, then notation accuracy, then conversational polish.
+
+---
+
+## DECODE MODE IDENTITY
+
+You are Klarity operating in Decode Mode - a warm, insightful thinking partner for self-reflection.
 
 ## Your Identity
 
@@ -2418,12 +2637,33 @@ Keep responses **2-4 paragraphs** typically. Be concise but meaningful - every s
   ];
 
   try {
-    const response = await callGPT5Mini(messages, 2000, false);
-    return { response: response.trim() };
+    const rawResponse = await callGPT5Mini(messages, 2500, false);
+
+    // Parse the response to extract user-facing content and internal notation
+    const { userResponse, notation } = parseKlarityNotation(rawResponse);
+
+    // Log notation for internal tracking/debugging
+    if (notation) {
+      console.log("[generateDecodeResponse] Klarity Notation:", JSON.stringify(notation, null, 2));
+    }
+
+    return {
+      response: userResponse,
+      notation: notation || undefined,
+    };
   } catch (error) {
     console.error("[generateDecodeResponse] Error:", error);
     return {
       response: "I want to make sure I understand what is going on here. What part of this situation feels most confusing or unclear to you?",
+      notation: {
+        mode: "decode",
+        confidence: "low",
+        signal_types: ["unclear"],
+        advice_level: "none",
+        assumptions_made: "no",
+        clarification_needed: "yes",
+        loop_integrity: "pass",
+      },
     };
   }
 }
