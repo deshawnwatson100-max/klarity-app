@@ -1,5 +1,5 @@
 import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis, BoundaryAnalysis } from "../types/chat";
-import OpenAI from "openai";
+import { getOpenAIClient } from "./openai";
 
 /**
  * Klarity Notation types for internal tracking
@@ -92,17 +92,6 @@ interface GPT5Message {
 
 // Using gpt-5.2 which is the latest model available
 const MODEL = "gpt-5.2";
-
-// Get OpenAI client with Vibecode configuration
-const getOpenAIClient = () => {
-  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-  if (!apiKey) {
-    console.warn("OpenAI API key not found in environment variables");
-  }
-  return new OpenAI({
-    apiKey: apiKey,
-  });
-};
 
 /**
  * Send a chat request to GPT-5 Mini
