@@ -1,21 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  runOnJS,
-  Easing,
-  cancelAnimation,
-  interpolate,
-  Extrapolation,
-} from "react-native-reanimated";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
@@ -46,19 +36,19 @@ export function InputScreen({ navigation }: Props) {
 
   // Track if this is the first focus (skip animation on initial app load)
   const isFirstFocus = useRef(true);
-  // Track current input mode for navigation (needs ref for runOnJS)
+  // Track current input mode for navigation
   const inputModeRef = useRef<InputMode>(inputMode);
   inputModeRef.current = inputMode;
   // Ref for input bar to focus programmatically
   const inputBarRef = useRef<InputBarRef>(null);
 
-  // Content area animation values (for focused chat area transition)
-  const contentOpacity = useSharedValue(1);
-  const contentTranslateY = useSharedValue(0);
+  // Content area animation values (using React Native Animated)
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const contentTranslateY = useRef(new Animated.Value(0)).current;
 
-  // Bottom elements animation values (feature buttons and input bar)
-  const bottomOpacity = useSharedValue(1);
-  const bottomTranslateY = useSharedValue(0);
+  // Bottom elements animation values
+  const bottomOpacity = useRef(new Animated.Value(1)).current;
+  const bottomTranslateY = useRef(new Animated.Value(0)).current;
 
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
@@ -68,9 +58,8 @@ export function InputScreen({ navigation }: Props) {
   // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
 
-  // iOS-native easing for content transitions
+  // Animation duration
   const CONTENT_TRANSITION_DURATION = 250;
-  const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
   // Ensure we always have an active loop
   useEffect(() => {
@@ -100,88 +89,70 @@ export function InputScreen({ navigation }: Props) {
         return;
       }
 
-      // Cancel any running animations first
-      cancelAnimation(contentOpacity);
-      cancelAnimation(contentTranslateY);
-      cancelAnimation(bottomOpacity);
-      cancelAnimation(bottomTranslateY);
-
       // Reset to starting position instantly (invisible, offset)
-      contentOpacity.value = 0;
-      contentTranslateY.value = 30;
-      bottomOpacity.value = 0;
-      bottomTranslateY.value = 20;
+      contentOpacity.setValue(0);
+      contentTranslateY.setValue(30);
+      bottomOpacity.setValue(0);
+      bottomTranslateY.setValue(20);
 
-      // Small delay to ensure reset is applied before animation starts
-      setTimeout(() => {
-        // Then animate in
-        contentOpacity.value = withTiming(1, {
+      // Then animate in
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
           duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        contentTranslateY.value = withTiming(0, {
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: 0,
           duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-
-        // Animate bottom elements (input bar)
-        bottomOpacity.value = withTiming(1, {
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomOpacity, {
+          toValue: 1,
           duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-        bottomTranslateY.value = withTiming(0, {
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomTranslateY, {
+          toValue: 0,
           duration: CONTENT_TRANSITION_DURATION,
-          easing: CONTENT_EASING,
-        });
-      }, 16); // One frame delay
+          useNativeDriver: true,
+        }),
+      ]).start();
     });
 
     return unsubscribe;
   }, [navigation]);
 
-  // Animated style for content area (center content only)
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslateY.value }],
-  }));
-
-  // Animated style for bottom elements (feature buttons and input bar)
-  const bottomAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: bottomOpacity.value,
-      transform: [{ translateY: bottomTranslateY.value }],
-    };
-  });
-
-  // Navigation helper functions for runOnJS
+  // Navigation helper functions
   const navigateToChatScreen = () => {
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
   // Animate content out before navigation
   const animateContentOutAndNavigate = () => {
-    // Fade out and slide up slightly - center content
-    contentOpacity.value = withTiming(0, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    });
-    contentTranslateY.value = withTiming(-20, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    }, (finished) => {
-      if (finished) {
-        runOnJS(navigateToChatScreen)();
-      }
-    });
-
-    // Fade out bottom elements - slide down slightly for natural exit
-    bottomOpacity.value = withTiming(0, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    });
-    bottomTranslateY.value = withTiming(15, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 0,
+        duration: CONTENT_TRANSITION_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslateY, {
+        toValue: -20,
+        duration: CONTENT_TRANSITION_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bottomOpacity, {
+        toValue: 0,
+        duration: CONTENT_TRANSITION_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bottomTranslateY, {
+        toValue: 15,
+        duration: CONTENT_TRANSITION_DURATION,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      navigateToChatScreen();
     });
   };
 
@@ -365,9 +336,10 @@ export function InputScreen({ navigation }: Props) {
         .onEnd((event) => {
           // Right swipe - open drawer
           if (event.velocityX > 500 && event.translationX > 80) {
-            runOnJS(handleOpenDrawer)();
+            handleOpenDrawer();
           }
-        }),
+        })
+        .runOnJS(true),
     []
   );
 
@@ -407,7 +379,14 @@ export function InputScreen({ navigation }: Props) {
           />
 
           {/* Center Content */}
-          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]} className="items-center justify-center px-6">
+          <Animated.View
+            style={{
+              flex: 1,
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }],
+            }}
+            className="items-center justify-center px-6"
+          >
             {isRecording ? (
               <View className="items-center justify-center w-full">
                 <Text
@@ -425,7 +404,12 @@ export function InputScreen({ navigation }: Props) {
           </Animated.View>
 
           {/* Input Bar */}
-          <Animated.View style={bottomAnimatedStyle}>
+          <Animated.View
+            style={{
+              opacity: bottomOpacity,
+              transform: [{ translateY: bottomTranslateY }],
+            }}
+          >
             <InputBar
               ref={inputBarRef}
               value={currentInput}
