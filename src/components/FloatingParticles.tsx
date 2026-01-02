@@ -1,13 +1,5 @@
-import React, { useEffect, useMemo } from "react";
-import { View, Dimensions } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  Easing,
-} from "react-native-reanimated";
+import React, { useEffect, useMemo, useRef } from "react";
+import { View, Dimensions, Animated, Easing } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -93,78 +85,97 @@ export function FloatingParticles({ count = 25 }: FloatingParticlesProps) {
 }
 
 function AnimatedParticle({ particle }: { particle: Particle }) {
-  const translateY = useSharedValue(0);
-  const translateX = useSharedValue(0);
-  const opacity = useSharedValue(particle.opacity);
+  const translateY = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(particle.opacity)).current;
+
+  // Store random horizontal sway value
+  const horizontalSwayRef = useRef(Math.random() * 20 - 10);
 
   useEffect(() => {
-    // Slow vertical drift (upward)
-    translateY.value = withDelay(
-      particle.delay,
-      withRepeat(
-        withTiming(-100, {
-          duration: particle.duration,
-          easing: Easing.linear,
-        }),
-        -1, // Infinite repeat
-        false
-      )
-    );
+    // Slow vertical drift (upward) - looping animation
+    const startVerticalAnimation = () => {
+      translateY.setValue(0);
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: particle.duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(() => startVerticalAnimation());
+    };
 
-    // Very subtle horizontal sway
-    translateX.value = withDelay(
-      particle.delay,
-      withRepeat(
-        withTiming(Math.random() * 20 - 10, {
+    // Very subtle horizontal sway - oscillating animation
+    const startHorizontalAnimation = () => {
+      Animated.sequence([
+        Animated.timing(translateX, {
+          toValue: horizontalSwayRef.current,
           duration: particle.duration / 2,
           easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
         }),
-        -1,
-        true // Reverse on repeat
-      )
-    );
+        Animated.timing(translateX, {
+          toValue: -horizontalSwayRef.current,
+          duration: particle.duration / 2,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => startHorizontalAnimation());
+    };
 
-    // Gentle opacity pulse
-    opacity.value = withDelay(
-      particle.delay,
-      withRepeat(
-        withTiming(particle.opacity * 0.5, {
+    // Gentle opacity pulse - oscillating animation
+    const startOpacityAnimation = () => {
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: particle.opacity * 0.5,
           duration: particle.duration * 0.7,
           easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
         }),
-        -1,
-        true
-      )
-    );
-  }, []);
+        Animated.timing(opacity, {
+          toValue: particle.opacity,
+          duration: particle.duration * 0.7,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => startOpacityAnimation());
+    };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY.value },
-      { translateX: translateX.value },
-    ],
-    opacity: opacity.value,
-  }));
+    // Start animations after delay
+    const timeoutId = setTimeout(() => {
+      startVerticalAnimation();
+      startHorizontalAnimation();
+      startOpacityAnimation();
+    }, particle.delay);
+
+    return () => {
+      clearTimeout(timeoutId);
+      translateY.stopAnimation();
+      translateX.stopAnimation();
+      opacity.stopAnimation();
+    };
+  }, []);
 
   return (
     <Animated.View
-      style={[
-        {
-          position: "absolute",
-          left: particle.x,
-          top: particle.y,
-          width: particle.size,
-          height: particle.size,
-          borderRadius: particle.size / 2,
-          backgroundColor: particle.color,
-          // Very soft blur effect (1-3px)
-          shadowColor: particle.color,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.6,
-          shadowRadius: 2,
-        },
-        animatedStyle,
-      ]}
+      style={{
+        position: "absolute",
+        left: particle.x,
+        top: particle.y,
+        width: particle.size,
+        height: particle.size,
+        borderRadius: particle.size / 2,
+        backgroundColor: particle.color,
+        // Very soft blur effect (1-3px)
+        shadowColor: particle.color,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 2,
+        transform: [
+          { translateY: translateY },
+          { translateX: translateX },
+        ],
+        opacity: opacity,
+      }}
     />
   );
 }

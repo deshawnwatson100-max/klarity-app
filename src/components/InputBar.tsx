@@ -1,16 +1,9 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, useLayoutEffect } from "react";
-import { View, TextInput, Pressable, Keyboard, Image, Dimensions } from "react-native";
+import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Easing, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  cancelAnimation,
-} from "react-native-reanimated";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -56,23 +49,23 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const isFirstRender = useRef(true);
   const prevMode = useRef(inputMode);
 
-  // Animation values for sliding placeholders - start at 0, will be set immediately in useLayoutEffect
-  const replyPlaceholderX = useSharedValue(0);
-  const decodePlaceholderX = useSharedValue(0);
+  // Animation values for sliding placeholders - using React Native Animated
+  const replyPlaceholderX = useRef(new Animated.Value(0)).current;
+  const decodePlaceholderX = useRef(new Animated.Value(0)).current;
 
   // Set initial positions immediately on mount (before first paint)
   useLayoutEffect(() => {
-    // Cancel any pending animations
-    cancelAnimation(replyPlaceholderX);
-    cancelAnimation(decodePlaceholderX);
+    // Stop any pending animations
+    replyPlaceholderX.stopAnimation();
+    decodePlaceholderX.stopAnimation();
 
     // Set positions immediately without animation
     if (inputMode === "understand") {
-      replyPlaceholderX.value = -screenWidth;
-      decodePlaceholderX.value = 0;
+      replyPlaceholderX.setValue(-screenWidth);
+      decodePlaceholderX.setValue(0);
     } else {
-      replyPlaceholderX.value = 0;
-      decodePlaceholderX.value = screenWidth;
+      replyPlaceholderX.setValue(0);
+      decodePlaceholderX.setValue(screenWidth);
     }
 
     // Reset tracking refs
@@ -98,22 +91,37 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
     if (inputMode === "rewrite") {
-      replyPlaceholderX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
-      decodePlaceholderX.value = withTiming(screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      Animated.parallel([
+        Animated.timing(replyPlaceholderX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodePlaceholderX, {
+          toValue: screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
-      replyPlaceholderX.value = withTiming(-screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
-      decodePlaceholderX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      Animated.parallel([
+        Animated.timing(replyPlaceholderX, {
+          toValue: -screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodePlaceholderX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [inputMode, screenWidth]);
-
-  // Animated styles for placeholders
-  const replyPlaceholderStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: replyPlaceholderX.value }],
-  }));
-
-  const decodePlaceholderStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: decodePlaceholderX.value }],
-  }));
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -248,28 +256,24 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               >
                 {/* Reply Placeholder */}
                 <Animated.Text
-                  style={[
-                    {
-                      position: "absolute",
-                      color: "#6B7280",
-                      fontSize: 16,
-                    },
-                    replyPlaceholderStyle,
-                  ]}
+                  style={{
+                    position: "absolute",
+                    color: "#6B7280",
+                    fontSize: 16,
+                    transform: [{ translateX: replyPlaceholderX }],
+                  }}
                 >
                   Type how you want to reply...
                 </Animated.Text>
 
                 {/* Decode Placeholder */}
                 <Animated.Text
-                  style={[
-                    {
-                      position: "absolute",
-                      color: "#6B7280",
-                      fontSize: 16,
-                    },
-                    decodePlaceholderStyle,
-                  ]}
+                  style={{
+                    position: "absolute",
+                    color: "#6B7280",
+                    fontSize: 16,
+                    transform: [{ translateX: decodePlaceholderX }],
+                  }}
                 >
                   Paste the message to decode...
                 </Animated.Text>
