@@ -1121,10 +1121,21 @@ export function ChatScreen({ navigation, route }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Main content - slides and scales with drawer */}
+      {/* Drawer - positioned behind main content */}
+      <SlideOverDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        drawerProgress={drawerProgress}
+      />
+
+      {/* Main content - slides and scales with drawer, positioned on top */}
       <Animated.View
         style={{
-          flex: 1,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           transform: [
             { translateX: mainContentTranslateX },
             { scale: mainContentScale },
@@ -1258,13 +1269,6 @@ export function ChatScreen({ navigation, route }: Props) {
           />
         </KeyboardAvoidingView>
       </Animated.View>
-
-      {/* Slide Over Drawer - outside main content so it's not affected by transform */}
-      <SlideOverDrawer
-        visible={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        drawerProgress={drawerProgress}
-      />
     </View>
   );
 }

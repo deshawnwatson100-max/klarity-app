@@ -801,40 +801,13 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
         position: "absolute",
         top: 0,
         left: 0,
-        right: 0,
         bottom: 0,
-        zIndex: 1000,
+        width: DRAWER_WIDTH,
+        backgroundColor: "#171717",
       }}
-      pointerEvents={visible || isRendered ? "box-none" : "none"}
+      pointerEvents={visible || isRendered ? "auto" : "none"}
+      {...panResponder.panHandlers}
     >
-      {/* Backdrop */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          opacity: drawerProgress,
-        }}
-      >
-        <Pressable style={{ flex: 1 }} onPress={closeDrawer} />
-      </Animated.View>
-
-      {/* Drawer */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: DRAWER_WIDTH,
-          backgroundColor: "#171717",
-          transform: [{ translateX: drawerTranslateX }],
-        }}
-        {...panResponder.panHandlers}
-      >
         {showAccountPage ? (
           // Account Page with Archives
           <View style={{ flex: 1 }}>
@@ -1112,7 +1085,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
             )}
           </>
         )}
-      </Animated.View>
     </View>
   );
 }
