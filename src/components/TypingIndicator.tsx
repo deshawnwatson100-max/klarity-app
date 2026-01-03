@@ -1,5 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Animated, Easing } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
 
 const thinkingWords = [
   "Thinking...",
@@ -11,24 +18,34 @@ const thinkingWords = [
 
 export function TypingIndicator() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const opacity = useRef(new Animated.Value(1)).current;
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
   useEffect(() => {
+    const changeWord = () => {
+      setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
+    };
+
     const interval = setInterval(() => {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
-        Animated.timing(opacity, {
-          toValue: 1,
+      opacity.value = withTiming(
+        0,
+        {
           duration: 300,
           easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-          useNativeDriver: true,
-        }).start();
-      });
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(changeWord)();
+            opacity.value = withTiming(1, {
+              duration: 300,
+              easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+            });
+          }
+        }
+      );
     }, 2000);
 
     return () => clearInterval(interval);
@@ -36,7 +53,7 @@ export function TypingIndicator() {
 
   return (
     <View className="self-start mb-4 px-4">
-      <Animated.View style={{ opacity }}>
+      <Animated.View style={animatedStyle}>
         <Text
           style={{
             fontSize: 15,
