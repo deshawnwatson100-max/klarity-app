@@ -10,6 +10,7 @@ import {
   Easing,
   PanResponder,
   Pressable,
+  Keyboard,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -310,6 +311,26 @@ export function ChatScreen({ navigation, route }: Props) {
       }
     }, 100);
   }, [messages.length, inputMode]);
+
+  // Scroll to bottom when keyboard shows
+  useEffect(() => {
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => {
+        setTimeout(() => {
+          if (inputMode === "rewrite") {
+            replyScrollViewRef.current?.scrollToEnd({ animated: true });
+          } else {
+            decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+          }
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardShowListener.remove();
+    };
+  }, [inputMode]);
 
   /**
    * SIMPLIFIED FLOW:
