@@ -1,14 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Extrapolation,
-  Easing,
-} from "react-native-reanimated";
 import { TypewriterText } from "./TypewriterText";
 
 interface RedFlag {
@@ -29,55 +21,65 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
   const [hasAnimatedIntro, setHasAnimatedIntro] = useState(false);
   const [animatedFlagIndex, setAnimatedFlagIndex] = useState(-1);
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(4);
-  const contentHeight = useSharedValue(0);
-  const contentOpacity = useSharedValue(0);
-  const chevronRotation = useSharedValue(0);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(4)).current;
+  const contentHeight = useRef(new Animated.Value(0)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const chevronRotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Gentle fade and drift on mount
-    opacity.value = withTiming(1, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
-    translateY.value = withTiming(0, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const handleToggle = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
 
-    contentHeight.value = withTiming(newExpanded ? 1 : 0, { duration: 300 });
-    contentOpacity.value = withTiming(newExpanded ? 1 : 0, {
-      duration: newExpanded ? 350 : 200,
-      easing: Easing.out(Easing.quad),
-    });
-    chevronRotation.value = withTiming(newExpanded ? 180 : 0, { duration: 300 });
+    Animated.parallel([
+      Animated.timing(contentHeight, {
+        toValue: newExpanded ? 1 : 0,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: newExpanded ? 1 : 0,
+        duration: newExpanded ? 350 : 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+      Animated.timing(chevronRotation, {
+        toValue: newExpanded ? 180 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  // Interpolate content height for expand/collapse animation
+  const contentMaxHeight = contentHeight.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 400],
+    extrapolate: "clamp",
+  });
 
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(
-      contentHeight.value,
-      [0, 1],
-      [0, 400],
-      Extrapolation.CLAMP
-    ),
-    opacity: contentOpacity.value,
-    overflow: "hidden" as const,
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${chevronRotation.value}deg` }],
-  }));
+  const chevronRotate = chevronRotation.interpolate({
+    inputRange: [0, 180],
+    outputRange: ["0deg", "180deg"],
+  });
 
   // Don't render if no flags
   if (!flags || flags.length === 0) {
@@ -86,14 +88,13 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
 
   return (
     <Animated.View
-      style={[
-        animatedStyle,
-        {
-          alignSelf: "flex-start",
-          width: "100%",
-          marginBottom: 20,
-        },
-      ]}
+      style={{
+        opacity,
+        transform: [{ translateY }],
+        alignSelf: "flex-start",
+        width: "100%",
+        marginBottom: 20,
+      }}
     >
       <Pressable onPress={handleToggle}>
         <View
@@ -120,13 +121,19 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
               </Text>
             </View>
 
-            <Animated.View style={chevronStyle}>
+            <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
               <Ionicons name="chevron-down" size={16} color="#6B7280" />
             </Animated.View>
           </View>
 
           {/* Expandable content */}
-          <Animated.View style={contentAnimatedStyle}>
+          <Animated.View
+            style={{
+              maxHeight: contentMaxHeight,
+              opacity: contentOpacity,
+              overflow: "hidden",
+            }}
+          >
             {/* Intro text */}
             {!hasAnimatedIntro ? (
               <TypewriterText

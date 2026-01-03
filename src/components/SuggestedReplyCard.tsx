@@ -1,17 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  interpolate,
-  Extrapolation,
-  Easing,
-} from "react-native-reanimated";
 import { TypewriterText } from "./TypewriterText";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
@@ -51,20 +42,16 @@ function IconButton({
   activeColor?: string;
   size?: number;
 }) {
-  const scale = useSharedValue(1);
+  const scale = useRef(new Animated.Value(1)).current;
   const [isActive, setIsActive] = useState(false);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    scale.value = withSequence(
-      withTiming(0.8, { duration: 80 }),
-      withTiming(1.1, { duration: 80 }),
-      withTiming(1, { duration: 80 })
-    );
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 0.8, duration: 80, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1.1, duration: 80, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 80, useNativeDriver: true }),
+    ]).start();
     setIsActive(true);
     onPress();
 
@@ -88,16 +75,14 @@ function IconButton({
   return (
     <Pressable onPress={handlePress}>
       <Animated.View
-        style={[
-          {
-            width: size + 16,
-            height: size + 16,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: (size + 16) / 2,
-          },
-          animatedStyle,
-        ]}
+        style={{
+          width: size + 16,
+          height: size + 16,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: (size + 16) / 2,
+          transform: [{ scale }],
+        }}
       >
         <Ionicons name={displayIcon} size={size} color={displayColor} />
       </Animated.View>
@@ -127,26 +112,25 @@ function ReplyItem({
   onAddEmoji?: (replyId: string) => void;
   isAddingEmoji?: boolean;
 }) {
-  const contentHeight = useSharedValue(isMinimized ? 0 : 1);
+  const contentHeight = useRef(new Animated.Value(isMinimized ? 0 : 1)).current;
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
   const [hasAnimatedText, setHasAnimatedText] = useState(false);
   const [hasAnimatedGuidance, setHasAnimatedGuidance] = useState(false);
 
   useEffect(() => {
-    contentHeight.value = withTiming(isMinimized ? 0 : 1, { duration: 300 });
+    Animated.timing(contentHeight, {
+      toValue: isMinimized ? 0 : 1,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   }, [isMinimized]);
 
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(
-      contentHeight.value,
-      [0, 1],
-      [0, 500],
-      Extrapolation.CLAMP
-    ),
-    opacity: contentHeight.value,
-    overflow: "hidden" as const,
-  }));
+  const contentMaxHeight = contentHeight.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 500],
+    extrapolate: "clamp",
+  });
 
   const handleCopy = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -276,7 +260,13 @@ function ReplyItem({
             </View>
           </Pressable>
 
-          <Animated.View style={contentAnimatedStyle}>
+          <Animated.View
+            style={{
+              maxHeight: contentMaxHeight,
+              opacity: contentHeight,
+              overflow: "hidden",
+            }}
+          >
             {/* Guidance Note - subtle */}
             <View className="flex-row items-start mt-2 pl-3">
               <Ionicons
@@ -455,8 +445,8 @@ export function SuggestedReplyCard({
   onGenerateDifferent,
   onAddEmoji,
 }: SuggestedReplyCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(4); // Subtle 4px drift
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
   const [minimizedReplies, setMinimizedReplies] = useState<Set<string>>(new Set());
@@ -464,14 +454,20 @@ export function SuggestedReplyCard({
 
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
-    opacity.value = withTiming(1, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
-    translateY.value = withTiming(0, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   // Auto-minimize older replies when new ones are added
@@ -486,11 +482,6 @@ export function SuggestedReplyCard({
     }
     prevRepliesLengthRef.current = replies.length;
   }, [replies.length]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   const toggleReplyMinimize = (replyId: string) => {
     setMinimizedReplies((prev) => {
@@ -526,14 +517,13 @@ export function SuggestedReplyCard({
 
   return (
     <Animated.View
-      style={[
-        {
-          alignSelf: "flex-start",
-          width: "100%",
-          marginBottom: 20, // Generous vertical spacing
-        },
-        animatedStyle,
-      ]}
+      style={{
+        alignSelf: "flex-start",
+        width: "100%",
+        marginBottom: 20, // Generous vertical spacing
+        opacity,
+        transform: [{ translateY }],
+      }}
     >
       {/* Pitch black card background */}
       <View

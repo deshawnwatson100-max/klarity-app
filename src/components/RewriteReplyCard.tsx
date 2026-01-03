@@ -1,15 +1,8 @@
-import React from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useRef, useEffect, useState } from "react";
+import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  Easing,
-} from "react-native-reanimated";
 import { TypewriterText } from "./TypewriterText";
 
 interface RewriteReplyCardProps {
@@ -23,32 +16,30 @@ export function RewriteReplyCard({
   originalIntent,
   onUseReply,
 }: RewriteReplyCardProps) {
-  const [copied, setCopied] = React.useState(false);
-  const [hasAnimatedReply, setHasAnimatedReply] = React.useState(false);
-  const [hasAnimatedIntent, setHasAnimatedIntent] = React.useState(false);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(8);
+  const [copied, setCopied] = useState(false);
+  const [hasAnimatedReply, setHasAnimatedReply] = useState(false);
+  const [hasAnimatedIntent, setHasAnimatedIntent] = useState(false);
 
-  React.useEffect(() => {
-    opacity.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-    });
-    translateY.value = withTiming(0, {
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-    });
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(rewrittenReply);
@@ -58,16 +49,23 @@ export function RewriteReplyCard({
   };
 
   const handleUseReply = () => {
-    scale.value = withSequence(
-      withTiming(0.95, { duration: 50 }),
-      withTiming(1, { duration: 100 })
-    );
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 0.95, duration: 50, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onUseReply(rewrittenReply);
   };
 
   return (
-    <Animated.View style={[{ marginBottom: 12, paddingRight: 20 }, animatedStyle]}>
+    <Animated.View
+      style={{
+        marginBottom: 12,
+        paddingRight: 20,
+        opacity,
+        transform: [{ translateY }],
+      }}
+    >
       {/* Reply Card */}
       <View
         style={{
@@ -172,7 +170,7 @@ export function RewriteReplyCard({
         </View>
 
         {/* Use This Reply Button */}
-        <Animated.View style={buttonAnimatedStyle}>
+        <Animated.View style={{ transform: [{ scale }] }}>
           <Pressable
             onPress={handleUseReply}
             style={{

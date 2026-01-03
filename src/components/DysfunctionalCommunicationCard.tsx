@@ -1,13 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  interpolate,
-  Extrapolation,
-  Easing,
-} from "react-native-reanimated";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TypewriterText } from "./TypewriterText";
 
@@ -24,64 +16,68 @@ export function DysfunctionalCommunicationCard({
   const [hasAnimated, setHasAnimated] = useState(false);
   const [shouldAnimate, setShouldAnimate] = useState(false); // Track when to start animation
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(4); // Subtle 4px drift
-  const contentHeight = useSharedValue(0); // Start minimized
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
+  const contentHeight = useRef(new Animated.Value(0)).current; // Start minimized
 
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
-    opacity.value = withTiming(1, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
-    translateY.value = withTiming(0, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const handleMinimize = () => {
     if (isMinimized) {
-      contentHeight.value = withTiming(1, { duration: 300 });
+      Animated.timing(contentHeight, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
       setIsMinimized(false);
       // Start the typewriter animation when card opens (only first time)
       if (!hasAnimated) {
         setTimeout(() => setShouldAnimate(true), 150);
       }
     } else {
-      contentHeight.value = withTiming(0, { duration: 300 });
+      Animated.timing(contentHeight, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
       setIsMinimized(true);
     }
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    maxHeight: interpolate(
-      contentHeight.value,
-      [0, 1],
-      [0, 500],
-      Extrapolation.CLAMP
-    ),
-    opacity: contentHeight.value,
-    overflow: "hidden" as const,
-  }));
-
   const firstPattern = patterns && patterns.length > 0 ? patterns[0] : null;
+
+  // Interpolate content height for expand/collapse animation
+  const contentMaxHeight = contentHeight.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 500],
+    extrapolate: "clamp",
+  });
 
   return (
     <Animated.View
-      style={[
-        animatedStyle,
-        {
-          alignSelf: "flex-start",
-          width: "100%",
-          marginBottom: 20, // Generous vertical spacing
-        },
-      ]}
+      style={{
+        opacity,
+        transform: [{ translateY }],
+        alignSelf: "flex-start",
+        width: "100%",
+        marginBottom: 20, // Generous vertical spacing
+      }}
     >
       {/* Pitch black card background */}
       <Pressable onPress={handleMinimize}>
@@ -127,7 +123,13 @@ export function DysfunctionalCommunicationCard({
           )}
 
           {/* Full content */}
-          <Animated.View style={contentAnimatedStyle}>
+          <Animated.View
+            style={{
+              maxHeight: contentMaxHeight,
+              opacity: contentHeight,
+              overflow: "hidden",
+            }}
+          >
             {/* Summary text - ChatGPT style typewriter animation (starts on expand) */}
             {shouldAnimate && !hasAnimated ? (
               <TypewriterText

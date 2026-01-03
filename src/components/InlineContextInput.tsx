@@ -1,8 +1,6 @@
-import React, { useState, useRef } from "react";
-import { View, Text, Pressable, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, Pressable, TextInput, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Audio } from "expo-av";
 
 interface InlineContextInputProps {
@@ -21,6 +19,39 @@ export function InlineContextInput({
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const textInputRef = useRef<TextInput>(null);
+
+  // Animation values
+  const containerOpacity = useRef(new Animated.Value(0)).current;
+  const containerTranslateY = useRef(new Animated.Value(20)).current;
+  const modeOpacity = useRef(new Animated.Value(1)).current;
+
+  // Entry animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(containerOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(containerTranslateY, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Mode change animation
+  useEffect(() => {
+    modeOpacity.setValue(0);
+    Animated.timing(modeOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [inputMode]);
 
   // Get color based on relationship direction
   const getIntentionColor = () => {
@@ -99,8 +130,12 @@ export function InlineContextInput({
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(400).springify()}
-      className="mb-4 mx-4"
+      style={{
+        marginBottom: 16,
+        marginHorizontal: 16,
+        opacity: containerOpacity,
+        transform: [{ translateY: containerTranslateY }],
+      }}
     >
       <View
         className="rounded-3xl overflow-hidden"
@@ -125,7 +160,7 @@ export function InlineContextInput({
 
         {/* Mode Selection or Input */}
         {!inputMode ? (
-          <Animated.View entering={FadeIn.duration(300)} className="px-3 pb-3">
+          <Animated.View style={{ opacity: modeOpacity }} className="px-3 pb-3">
             {/* Text Input Option */}
             <Pressable
               onPress={() => handleModeSelect("text")}
@@ -224,7 +259,7 @@ export function InlineContextInput({
           </Animated.View>
         ) : inputMode === "text" ? (
           // Text Input Mode
-          <Animated.View entering={FadeIn.duration(300)} className="px-3 pb-3">
+          <Animated.View style={{ opacity: modeOpacity }} className="px-3 pb-3">
             <View
               className="rounded-2xl overflow-hidden"
               style={{
@@ -307,7 +342,7 @@ export function InlineContextInput({
           </Animated.View>
         ) : (
           // Voice Recording Mode
-          <Animated.View entering={FadeIn.duration(300)} className="px-3 pb-3">
+          <Animated.View style={{ opacity: modeOpacity }} className="px-3 pb-3">
             <View
               className="items-center py-8 rounded-2xl"
               style={{

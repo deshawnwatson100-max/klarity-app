@@ -1,16 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Dimensions, Pressable, Share } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, Dimensions, Pressable, Share, Animated, Easing } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -300,8 +294,8 @@ export function MessageBubble({
   onRegenerate,
 }: MessageBubbleProps) {
   const isUser = role === "user";
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(4); // Subtle 4px drift
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
 
   // Action states
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -310,14 +304,20 @@ export function MessageBubble({
 
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
-    opacity.value = withTiming(1, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
-    translateY.value = withTiming(0, {
-      duration: 350,
-      easing: Easing.out(Easing.quad),
-    });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   useEffect(() => {
@@ -325,11 +325,6 @@ export function MessageBubble({
       console.log("MessageBubble imageUrl:", imageUrl);
     }
   }, [imageUrl]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   const hasText = content && content !== "[Image]";
 
@@ -390,8 +385,11 @@ export function MessageBubble({
   if (isUser) {
     return (
       <Animated.View
-        style={animatedStyle}
-        className="mb-5"
+        style={{
+          opacity,
+          transform: [{ translateY }],
+          marginBottom: 20,
+        }}
       >
         {/* Image aligned to the right */}
         {imageUrl && (
@@ -456,8 +454,11 @@ export function MessageBubble({
   // Assistant messages - soft off-white on pitch black
   return (
     <Animated.View
-      style={animatedStyle}
-      className="mb-5"
+      style={{
+        opacity,
+        transform: [{ translateY }],
+        marginBottom: 20,
+      }}
     >
       {/* Image aligned to the right */}
       {imageUrl && (

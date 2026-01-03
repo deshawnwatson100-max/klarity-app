@@ -1,22 +1,20 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
   Pressable,
   ScrollView,
   Modal,
-  Platform,
+  Animated,
+  Dimensions,
+  Easing,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInRight,
-  SlideOutRight,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoopsStore } from "../state/loopsStore";
 import { cn } from "../utils/cn";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface LoopHistoryPanelProps {
   visible: boolean;
@@ -44,6 +42,44 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
   const switchToLoop = useLoopsStore((s) => s.switchToLoop);
   const deleteLoop = useLoopsStore((s) => s.deleteLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
+
+  // Animation values
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const panelTranslateX = useRef(new Animated.Value(SCREEN_WIDTH * 0.85)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Animate in
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(panelTranslateX, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(panelTranslateX, {
+          toValue: SCREEN_WIDTH * 0.85,
+          duration: 250,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
 
   const handleSelectLoop = (loopId: string) => {
     // switchToLoop will set isHistoryPanelOpen to false automatically
@@ -106,23 +142,28 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
     >
       {/* Backdrop */}
       <Pressable
-        className="flex-1 bg-black/60"
+        className="flex-1"
         onPress={onClose}
         style={{ flex: 1 }}
       >
         <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
-          style={{ flex: 1 }}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            opacity: backdropOpacity,
+          }}
         />
       </Pressable>
 
       {/* Side Panel */}
       <Animated.View
-        entering={SlideInRight.duration(250)}
-        exiting={SlideOutRight.duration(250)}
-        className="absolute top-0 right-0 bottom-0 w-[85%] bg-neutral-950 border-l border-neutral-900"
-        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+        className="absolute top-0 right-0 bottom-0 bg-neutral-950 border-l border-neutral-900"
+        style={{
+          width: "85%",
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          transform: [{ translateX: panelTranslateX }],
+        }}
       >
         {/* Header */}
         <View className="px-4 py-4 border-b border-neutral-900">

@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { View, Text } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { TypewriterText } from "./TypewriterText";
 
 interface ImageContinuationCardProps {
@@ -25,10 +24,65 @@ export function ImageContinuationCard({
   const [hasAnimatedChanged, setHasAnimatedChanged] = useState(false);
   const [hasAnimatedShift, setHasAnimatedShift] = useState(false);
 
+  // Main container animation
+  const containerOpacity = useRef(new Animated.Value(0)).current;
+  const containerTranslateY = useRef(new Animated.Value(20)).current;
+
+  // Section animations
+  const summaryOpacity = useRef(new Animated.Value(0)).current;
+  const changedOpacity = useRef(new Animated.Value(0)).current;
+  const shiftOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Entry animation
+    Animated.parallel([
+      Animated.timing(containerOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(containerTranslateY, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Staggered section animations
+    setTimeout(() => {
+      Animated.timing(summaryOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 100);
+
+    setTimeout(() => {
+      Animated.timing(changedOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 200);
+
+    setTimeout(() => {
+      Animated.timing(shiftOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 300);
+  }, []);
+
   return (
     <Animated.View
-      entering={FadeInDown.duration(400).springify()}
-      className="mb-4"
+      style={{
+        marginBottom: 16,
+        opacity: containerOpacity,
+        transform: [{ translateY: containerTranslateY }],
+      }}
     >
       <View
         style={{
@@ -67,7 +121,7 @@ export function ImageContinuationCard({
         </View>
 
         {/* Continuation Summary */}
-        <Animated.View entering={FadeIn.delay(100).duration(300)}>
+        <Animated.View style={{ opacity: summaryOpacity }}>
           {!hasAnimatedSummary ? (
             <TypewriterText
               text={continuationSummary}
@@ -96,8 +150,8 @@ export function ImageContinuationCard({
 
         {/* What Changed */}
         <Animated.View
-          entering={FadeIn.delay(200).duration(300)}
           style={{
+            opacity: changedOpacity,
             backgroundColor: "rgba(99, 102, 241, 0.08)",
             borderRadius: 10,
             padding: 12,
@@ -143,8 +197,8 @@ export function ImageContinuationCard({
         {/* Approach Shift (only if needed) */}
         {approachShift && (
           <Animated.View
-            entering={FadeIn.delay(300).duration(300)}
             style={{
+              opacity: shiftOpacity,
               backgroundColor: "rgba(251, 191, 36, 0.1)",
               borderRadius: 10,
               padding: 12,

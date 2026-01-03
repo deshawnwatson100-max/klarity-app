@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { TextStyle, View } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import { TextStyle, View, Animated, Easing } from "react-native";
 
 interface TypewriterTextProps {
   text: string;
@@ -26,27 +20,25 @@ interface WordProps {
  * Individual word component with fade-in animation
  */
 function AnimatedWord({ word, style, isVisible, isLast }: WordProps) {
-  const opacity = useSharedValue(0);
+  const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
-      opacity.value = withTiming(1, {
+      Animated.timing(opacity, {
+        toValue: 1,
         duration: 200,
         easing: Easing.out(Easing.cubic),
-      });
+        useNativeDriver: true,
+      }).start();
     }
-  }, [isVisible]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  }, [isVisible, opacity]);
 
   if (!isVisible) {
     return null;
   }
 
   return (
-    <Animated.Text style={[style, animatedStyle]}>
+    <Animated.Text style={[style, { opacity }]}>
       {word}{isLast ? "" : " "}
     </Animated.Text>
   );

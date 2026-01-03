@@ -1,11 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, Animated, Easing } from "react-native";
 
 const thinkingWords = [
   "Thinking...",
@@ -17,34 +11,32 @@ const thinkingWords = [
 
 export function TypingIndicator() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const opacity = useSharedValue(1);
+  const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      opacity.value = withTiming(0, {
+      Animated.timing(opacity, {
+        toValue: 0,
         duration: 300,
         easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-      });
-
-      setTimeout(() => {
+        useNativeDriver: true,
+      }).start(() => {
         setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
-        opacity.value = withTiming(1, {
+        Animated.timing(opacity, {
+          toValue: 1,
           duration: 300,
           easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        });
-      }, 300);
+          useNativeDriver: true,
+        }).start();
+      });
     }, 2000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const textAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
   return (
     <View className="self-start mb-4 px-4">
-      <Animated.View style={textAnimatedStyle}>
+      <Animated.View style={{ opacity }}>
         <Text
           style={{
             fontSize: 15,
