@@ -74,6 +74,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [isAwaitingContext, setIsAwaitingContext] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
+  const [isEditingMessage, setIsEditingMessage] = useState(false);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -720,6 +721,9 @@ export function ChatScreen({ navigation, route }: Props) {
   const handleSend = async () => {
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
 
+    // Reset editing state when sending
+    setIsEditingMessage(false);
+
     if (isAwaitingContext) {
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -1022,6 +1026,12 @@ export function ChatScreen({ navigation, route }: Props) {
   const handleEditMessage = (content: string) => {
     // Set the message content in the input bar for editing
     setCurrentInput(content);
+    setIsEditingMessage(true);
+  };
+
+  const handleCancelEdit = () => {
+    setCurrentInput("");
+    setIsEditingMessage(false);
   };
 
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
@@ -1298,6 +1308,8 @@ export function ChatScreen({ navigation, route }: Props) {
               disabled={isLoading}
               inputMode={inputMode}
               onInputFocus={handleInputFocus}
+              isEditing={isEditingMessage}
+              onCancelEdit={handleCancelEdit}
             />
           </Animated.View>
 

@@ -26,6 +26,8 @@ interface InputBarProps {
   inputMode?: InputMode;
   autoFocus?: boolean;
   onInputFocus?: () => void;
+  isEditing?: boolean;
+  onCancelEdit?: () => void;
 }
 
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
@@ -43,6 +45,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   inputMode = "understand",
   autoFocus = false,
   onInputFocus,
+  isEditing = false,
+  onCancelEdit,
 }, ref) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
@@ -139,6 +143,11 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     }
   };
 
+  const handleCancelEdit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onCancelEdit?.();
+  };
+
   const handlePickImage = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Request permissions
@@ -176,6 +185,37 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
         backgroundColor: "#111111",
       }}
     >
+      {/* Edit Mode Indicator */}
+      {isEditing && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: "#1F1F1F",
+            borderRadius: 12,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            marginBottom: 12,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Ionicons name="pencil" size={16} color="#9CA3AF" />
+            <Text style={{ color: "#9CA3AF", fontSize: 14 }}>Editing message</Text>
+          </View>
+          <Pressable
+            onPress={handleCancelEdit}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.6 : 1,
+              padding: 4,
+            })}
+          >
+            <Ionicons name="close-circle" size={22} color="#6B7280" />
+          </Pressable>
+        </View>
+      )}
+
       {/* Image Preview */}
       {selectedImageUri && (
         <View className="mb-3">
