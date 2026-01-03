@@ -1184,7 +1184,12 @@ export function ChatScreen({ navigation, route }: Props) {
         <SoftFlares />
         <FloatingParticles count={20} />
 
-        <View className="flex-1">
+        <Animated.View
+          style={{
+            flex: 1,
+            paddingBottom: keyboardHeight,
+          }}
+        >
           <Header
             isAnalyzing={isLoading}
             onMenuPress={() => setIsDrawerOpen(true)}
@@ -1198,7 +1203,6 @@ export function ChatScreen({ navigation, route }: Props) {
               overflow: "hidden",
               opacity: contentOpacity,
               transform: [{ translateY: contentTranslateY }],
-              marginBottom: keyboardHeight,
             }}
           >
             {/* Container for both chat loops */}
@@ -1294,7 +1298,7 @@ export function ChatScreen({ navigation, route }: Props) {
             visible={isHistoryPanelOpen}
             onClose={() => setHistoryPanelOpen(false)}
           />
-        </View>
+        </Animated.View>
       </Animated.View>
 
       {/* Drawer - slides over the screen from the left */}
