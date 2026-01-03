@@ -1109,51 +1109,15 @@ export function ChatScreen({ navigation, route }: Props) {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Drawer - positioned behind main content */}
-      <SlideOverDrawer
-        visible={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        drawerProgress={drawerProgress}
-      />
-
-      {/* Main content - slides with drawer, positioned on top */}
-      <Animated.View
+    <View style={{ flex: 1, backgroundColor: "#050608" }}>
+      {/* Main content - stays in place or slides slightly */}
+      <View
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 1,
-          transform: [
-            { translateX: mainContentTranslateX },
-          ],
-          overflow: "hidden",
+          flex: 1,
           backgroundColor: "#050608",
-          // Shadow for depth effect
-          shadowColor: "#000",
-          shadowOffset: { width: -5, height: 0 },
-          shadowOpacity: 0.3,
-          shadowRadius: 10,
-          elevation: 10,
         }}
         {...panResponder.panHandlers}
       >
-        {/* Tap overlay to close drawer when open */}
-        {isDrawerOpen && (
-          <Pressable
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 100,
-            }}
-            onPress={() => setIsDrawerOpen(false)}
-          />
-        )}
         <LinearGradient
           colors={["#050608", "#0A0A0C", "#050608"]}
           locations={[0, 0.5, 1]}
@@ -1276,7 +1240,14 @@ export function ChatScreen({ navigation, route }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
           />
         </KeyboardAvoidingView>
-      </Animated.View>
+      </View>
+
+      {/* Drawer - slides over the screen from the left */}
+      <SlideOverDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        drawerProgress={drawerProgress}
+      />
     </View>
   );
 }

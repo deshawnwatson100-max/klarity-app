@@ -639,12 +639,24 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
 
   const isSearching = searchQuery.trim().length > 0;
 
-  // Drawer opacity - fades in/out with the animation
-  const drawerOpacity = drawerProgress.interpolate({
-    inputRange: [0, 0.3],
-    outputRange: [0, 1],
+  // Drawer slides in from left
+  const drawerTranslateX = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-DRAWER_WIDTH, 0],
     extrapolate: "clamp",
   });
+
+  // Backdrop opacity
+  const backdropOpacity = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5],
+    extrapolate: "clamp",
+  });
+
+  // Don't render if not visible and animation completed
+  if (!visible && !isRendered) {
+    return null;
+  }
 
   // Render header
   const renderHeader = () => {
@@ -791,19 +803,44 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
   };
 
   return (
-    <Animated.View
+    <View
       style={{
         position: "absolute",
         top: 0,
         left: 0,
+        right: 0,
         bottom: 0,
-        width: DRAWER_WIDTH,
-        backgroundColor: "#171717",
-        zIndex: 0,
-        opacity: drawerOpacity,
+        zIndex: 1000,
       }}
-      pointerEvents={visible ? "auto" : "none"}
+      pointerEvents={visible || isRendered ? "box-none" : "none"}
     >
+      {/* Backdrop */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "#000",
+          opacity: backdropOpacity,
+        }}
+      >
+        <Pressable style={{ flex: 1 }} onPress={closeDrawer} />
+      </Animated.View>
+
+      {/* Drawer */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: DRAWER_WIDTH,
+          backgroundColor: "#171717",
+          transform: [{ translateX: drawerTranslateX }],
+        }}
+      >
         {showAccountPage ? (
           // Account Page with Archives
           <View style={{ flex: 1 }}>
@@ -1081,6 +1118,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
             )}
           </>
         )}
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 }
