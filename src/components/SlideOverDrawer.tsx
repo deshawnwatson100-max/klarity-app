@@ -547,14 +547,14 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
         toValue: 1,
         duration: ANIMATION_DURATION,
         easing: EASING_BEZIER,
-        useNativeDriver: true,
+        useNativeDriver: false, // Changed to false to support borderRadius animation
       }).start();
     } else {
       Animated.timing(drawerProgress, {
         toValue: 0,
         duration: ANIMATION_DURATION,
         easing: EASING_BEZIER,
-        useNativeDriver: true,
+        useNativeDriver: false, // Changed to false to support borderRadius animation
       }).start(({ finished }) => {
         if (finished) {
           setIsRendered(false);
@@ -603,13 +603,13 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
             toValue: 0,
             duration: 250,
             easing: EASING_BEZIER,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start();
           closeDrawer();
         } else {
           Animated.spring(drawerProgress, {
             toValue: 1,
-            useNativeDriver: true,
+            useNativeDriver: false,
             damping: 20,
             stiffness: 300,
           }).start();

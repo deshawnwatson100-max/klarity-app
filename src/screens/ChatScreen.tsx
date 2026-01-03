@@ -1131,6 +1131,7 @@ export function ChatScreen({ navigation, route }: Props) {
           ],
           borderRadius: mainContentBorderRadius,
           overflow: "hidden",
+          backgroundColor: "#050608",
         }}
         {...panResponder.panHandlers}
       >
