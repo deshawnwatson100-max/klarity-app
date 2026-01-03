@@ -804,6 +804,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
         bottom: 0,
         width: DRAWER_WIDTH,
         backgroundColor: "#171717",
+        zIndex: 0,
       }}
       pointerEvents={visible || isRendered ? "auto" : "none"}
       {...panResponder.panHandlers}

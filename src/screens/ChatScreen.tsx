@@ -1136,6 +1136,7 @@ export function ChatScreen({ navigation, route }: Props) {
           left: 0,
           right: 0,
           bottom: 0,
+          zIndex: 1,
           transform: [
             { translateX: mainContentTranslateX },
             { scale: mainContentScale },
@@ -1143,6 +1144,12 @@ export function ChatScreen({ navigation, route }: Props) {
           borderRadius: mainContentBorderRadius,
           overflow: "hidden",
           backgroundColor: "#050608",
+          // Shadow for depth effect
+          shadowColor: "#000",
+          shadowOffset: { width: -5, height: 0 },
+          shadowOpacity: 0.3,
+          shadowRadius: 10,
+          elevation: 10,
         }}
         {...panResponder.panHandlers}
       >
