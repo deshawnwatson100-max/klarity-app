@@ -807,7 +807,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
         bottom: 0,
         zIndex: 1000,
       }}
-      pointerEvents={visible || isRendered ? "box-none" : "none"}
+      pointerEvents={visible || isRendered ? "auto" : "none"}
     >
       {/* Backdrop */}
       <Animated.View
@@ -826,6 +826,7 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
 
       {/* Drawer */}
       <Animated.View
+        {...panResponder.panHandlers}
         style={{
           position: "absolute",
           top: 0,
