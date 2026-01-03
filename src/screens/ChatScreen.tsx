@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import {
   View,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Text,
   Dimensions,
@@ -89,6 +88,9 @@ export function ChatScreen({ navigation, route }: Props) {
   const contentTranslateY = useRef(new Animated.Value(30)).current;
   const bottomOpacity = useRef(new Animated.Value(0)).current;
   const bottomTranslateY = useRef(new Animated.Value(20)).current;
+
+  // Keyboard animation value for smooth slide up
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Drawer animation progress - shared with SlideOverDrawer
   const drawerProgress = useRef(new Animated.Value(0)).current;
@@ -314,21 +316,43 @@ export function ChatScreen({ navigation, route }: Props) {
 
   // Scroll to bottom when keyboard shows
   useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener(
+    const keyboardWillShow = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setTimeout(() => {
-          if (inputMode === "rewrite") {
-            replyScrollViewRef.current?.scrollToEnd({ animated: true });
-          } else {
-            decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-          }
-        }, 100);
+      (event) => {
+        const kbHeight = event.endCoordinates.height;
+        Animated.timing(keyboardHeight, {
+          toValue: kbHeight,
+          duration: Platform.OS === "ios" ? event.duration || 250 : 250,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start(() => {
+          // Scroll to end after animation completes
+          setTimeout(() => {
+            if (inputMode === "rewrite") {
+              replyScrollViewRef.current?.scrollToEnd({ animated: true });
+            } else {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }
+          }, 50);
+        });
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: Platform.OS === "ios" ? event.duration || 250 : 250,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start();
       }
     );
 
     return () => {
-      keyboardShowListener.remove();
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
     };
   }, [inputMode]);
 
@@ -1160,11 +1184,7 @@ export function ChatScreen({ navigation, route }: Props) {
         <SoftFlares />
         <FloatingParticles count={20} />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-          keyboardVerticalOffset={0}
-        >
+        <View className="flex-1">
           <Header
             isAnalyzing={isLoading}
             onMenuPress={() => setIsDrawerOpen(true)}
@@ -1178,6 +1198,7 @@ export function ChatScreen({ navigation, route }: Props) {
               overflow: "hidden",
               opacity: contentOpacity,
               transform: [{ translateY: contentTranslateY }],
+              marginBottom: keyboardHeight,
             }}
           >
             {/* Container for both chat loops */}
@@ -1273,7 +1294,7 @@ export function ChatScreen({ navigation, route }: Props) {
             visible={isHistoryPanelOpen}
             onClose={() => setHistoryPanelOpen(false)}
           />
-        </KeyboardAvoidingView>
+        </View>
       </Animated.View>
 
       {/* Drawer - slides over the screen from the left */}
