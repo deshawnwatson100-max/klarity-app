@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
+import * as ContextMenu from "zeego/context-menu";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -282,6 +283,7 @@ interface MessageBubbleProps {
   showUserBubble?: boolean; // ChatGPT-style bubble for user messages
   showActions?: boolean; // Show action buttons for assistant messages (ChatGPT-style)
   onRegenerate?: () => void; // Callback for regenerate action
+  onEdit?: (content: string) => void; // Callback for edit action (user messages)
 }
 
 export function MessageBubble({
@@ -292,6 +294,7 @@ export function MessageBubble({
   showUserBubble = false,
   showActions = false,
   onRegenerate,
+  onEdit,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useRef(new Animated.Value(0)).current;
@@ -381,6 +384,11 @@ export function MessageBubble({
     }
   };
 
+  const handleEdit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onEdit?.(content);
+  };
+
   // User messages - warmer white with faint shadow
   if (isUser) {
     return (
@@ -416,35 +424,51 @@ export function MessageBubble({
           </View>
         )}
 
-        {/* Text aligned to the right */}
+        {/* Text aligned to the right with context menu */}
         {hasText && (
           <View style={{ alignItems: "flex-end" }}>
-            <View
-              style={showUserBubble ? {
-                maxWidth: "85%",
-                backgroundColor: "#2F2F2F", // ChatGPT-style dark gray bubble
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderRadius: 20,
-              } : {
-                maxWidth: "85%",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 15,
-                  lineHeight: 22,
-                  color: "#F5F5F4", // Warmer white
-                  letterSpacing: 0.2,
-                }}
-              >
-                {content}
-              </Text>
-            </View>
+            <ContextMenu.Root>
+              <ContextMenu.Trigger>
+                <View
+                  style={showUserBubble ? {
+                    maxWidth: SCREEN_WIDTH * 0.85,
+                    backgroundColor: "#2F2F2F", // ChatGPT-style dark gray bubble
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 20,
+                  } : {
+                    maxWidth: SCREEN_WIDTH * 0.85,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      lineHeight: 22,
+                      color: "#F5F5F4", // Warmer white
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    {content}
+                  </Text>
+                </View>
+              </ContextMenu.Trigger>
+              <ContextMenu.Content>
+                <ContextMenu.Item key="copy" onSelect={handleCopy}>
+                  <ContextMenu.ItemTitle>Copy</ContextMenu.ItemTitle>
+                  <ContextMenu.ItemIcon ios={{ name: "doc.on.doc" }} />
+                </ContextMenu.Item>
+                {onEdit && (
+                  <ContextMenu.Item key="edit" onSelect={handleEdit}>
+                    <ContextMenu.ItemTitle>Edit Message</ContextMenu.ItemTitle>
+                    <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
+                  </ContextMenu.Item>
+                )}
+              </ContextMenu.Content>
+            </ContextMenu.Root>
           </View>
         )}
       </Animated.View>

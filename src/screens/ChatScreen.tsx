@@ -1019,6 +1019,11 @@ export function ChatScreen({ navigation, route }: Props) {
     }, 150);
   };
 
+  const handleEditMessage = (content: string) => {
+    // Set the message content in the input bar for editing
+    setCurrentInput(content);
+  };
+
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
   const renderDecodeMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
@@ -1036,6 +1041,7 @@ export function ChatScreen({ navigation, route }: Props) {
           imageUrl={message.imageUrl}
           showUserBubble={message.role === "user"} // ChatGPT-style bubble for user messages
           showActions={message.role === "assistant"} // Show action buttons for assistant messages
+          onEdit={message.role === "user" ? handleEditMessage : undefined}
         />
       );
     }
@@ -1127,6 +1133,7 @@ export function ChatScreen({ navigation, route }: Props) {
         content={message.content}
         timestamp={message.timestamp}
         imageUrl={message.imageUrl}
+        onEdit={message.role === "user" ? handleEditMessage : undefined}
       />
     );
   };
