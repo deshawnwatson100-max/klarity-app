@@ -25,6 +25,7 @@ interface InputBarProps {
   isRecording?: boolean;
   inputMode?: InputMode;
   autoFocus?: boolean;
+  onInputFocus?: () => void;
 }
 
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
@@ -41,6 +42,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   isRecording = false,
   inputMode = "understand",
   autoFocus = false,
+  onInputFocus,
 }, ref) {
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
@@ -284,7 +286,10 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               ref={inputRef}
               value={value}
               onChangeText={onChangeText}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => {
+                setIsFocused(true);
+                onInputFocus?.();
+              }}
               onBlur={() => setIsFocused(false)}
               placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : "Paste the message to decode...") : ""}
               placeholderTextColor="#6B7280"

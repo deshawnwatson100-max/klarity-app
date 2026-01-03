@@ -984,6 +984,17 @@ export function ChatScreen({ navigation, route }: Props) {
     console.log("Voice input pressed");
   };
 
+  const handleInputFocus = () => {
+    // Scroll to bottom when input is focused
+    setTimeout(() => {
+      if (inputMode === "rewrite") {
+        replyScrollViewRef.current?.scrollToEnd({ animated: true });
+      } else {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }
+    }, 150);
+  };
+
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
   const renderDecodeMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
@@ -1186,7 +1197,7 @@ export function ChatScreen({ navigation, route }: Props) {
                 <ScrollView
                   ref={replyScrollViewRef}
                   className="flex-1"
-                  contentContainerClassName="px-4 pt-4"
+                  contentContainerClassName="px-4 pt-4 pb-4"
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -1218,7 +1229,7 @@ export function ChatScreen({ navigation, route }: Props) {
                 <ScrollView
                   ref={decodeScrollViewRef}
                   className="flex-1"
-                  contentContainerClassName="px-4 pt-4"
+                  contentContainerClassName="px-4 pt-4 pb-4"
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -1254,6 +1265,7 @@ export function ChatScreen({ navigation, route }: Props) {
               placeholder="Type a message..."
               disabled={isLoading}
               inputMode={inputMode}
+              onInputFocus={handleInputFocus}
             />
           </Animated.View>
 
