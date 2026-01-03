@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
   PanResponder,
+  Pressable,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -1153,6 +1154,20 @@ export function ChatScreen({ navigation, route }: Props) {
         }}
         {...panResponder.panHandlers}
       >
+        {/* Tap overlay to close drawer when open */}
+        {isDrawerOpen && (
+          <Pressable
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 100,
+            }}
+            onPress={() => setIsDrawerOpen(false)}
+          />
+        )}
         <LinearGradient
           colors={["#050608", "#0A0A0C", "#050608"]}
           locations={[0, 0.5, 1]}

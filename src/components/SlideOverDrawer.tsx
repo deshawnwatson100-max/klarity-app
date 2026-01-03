@@ -618,13 +618,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
     })
   ).current;
 
-  // Animated styles - Drawer slides in from left
-  const drawerTranslateX = drawerProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-DRAWER_WIDTH, 0],
-    extrapolate: "clamp",
-  });
-
   // Menu handlers
   const handleNewChat = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -643,11 +636,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
       navigation.navigate("ChatScreen" as never);
     }, 100);
   };
-
-  // Don't render if not visible and animation completed
-  if (!visible && !isRendered) {
-    return null;
-  }
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -806,8 +794,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
         backgroundColor: "#171717",
         zIndex: 0,
       }}
-      pointerEvents={visible || isRendered ? "auto" : "none"}
-      {...panResponder.panHandlers}
+      pointerEvents={visible ? "auto" : "none"}
     >
         {showAccountPage ? (
           // Account Page with Archives
