@@ -27,7 +27,7 @@ import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
-import { SlideOverDrawer, DRAWER_WIDTH, MAIN_CONTENT_SCALE, MAIN_CONTENT_BORDER_RADIUS } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
@@ -1108,18 +1108,6 @@ export function ChatScreen({ navigation, route }: Props) {
     extrapolate: "clamp",
   });
 
-  const mainContentScale = drawerProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, MAIN_CONTENT_SCALE],
-    extrapolate: "clamp",
-  });
-
-  const mainContentBorderRadius = drawerProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, MAIN_CONTENT_BORDER_RADIUS],
-    extrapolate: "clamp",
-  });
-
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       {/* Drawer - positioned behind main content */}
@@ -1129,7 +1117,7 @@ export function ChatScreen({ navigation, route }: Props) {
         drawerProgress={drawerProgress}
       />
 
-      {/* Main content - slides and scales with drawer, positioned on top */}
+      {/* Main content - slides with drawer, positioned on top */}
       <Animated.View
         style={{
           position: "absolute",
@@ -1140,9 +1128,7 @@ export function ChatScreen({ navigation, route }: Props) {
           zIndex: 1,
           transform: [
             { translateX: mainContentTranslateX },
-            { scale: mainContentScale },
           ],
-          borderRadius: mainContentBorderRadius,
           overflow: "hidden",
           backgroundColor: "#050608",
           // Shadow for depth effect
