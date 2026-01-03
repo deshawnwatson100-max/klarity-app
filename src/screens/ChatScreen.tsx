@@ -75,6 +75,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -106,6 +107,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const insertMessageAfter = useLoopsStore((s) => s.insertMessageAfter);
   const removeMessageFromActiveLoop = useLoopsStore((s) => s.removeMessageFromActiveLoop);
   const updateMessageInActiveLoop = useLoopsStore((s) => s.updateMessageInActiveLoop);
+  const setActiveLoopMessages = useLoopsStore((s) => s.setActiveLoopMessages);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
 
@@ -721,8 +723,50 @@ export function ChatScreen({ navigation, route }: Props) {
   const handleSend = async () => {
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
 
-    // Reset editing state when sending
+    // Handle editing an existing message
+    if (isEditingMessage && editingMessageId) {
+      // Find the index of the message being edited
+      const messageIndex = allMessages.findIndex((m) => m.id === editingMessageId);
+
+      if (messageIndex !== -1) {
+        // Get all messages up to (but not including) the edited message
+        const messagesBeforeEdit = allMessages.slice(0, messageIndex);
+
+        // Create the updated user message with the same ID
+        const updatedUserMessage: ChatMessage = {
+          id: editingMessageId,
+          role: "user",
+          content: currentInput,
+          timestamp: Date.now(),
+          imageUrl: selectedImageUri,
+          imageBase64: selectedImageBase64,
+          mode: allMessages[messageIndex].mode,
+        };
+
+        // Set messages to only include messages before the edit + the updated message
+        setActiveLoopMessages([...messagesBeforeEdit, updatedUserMessage]);
+
+        // Reset editing state
+        setIsEditingMessage(false);
+        setEditingMessageId(null);
+        setCurrentInput("");
+        setSelectedImageUri(undefined);
+        setSelectedImageBase64(undefined);
+
+        // Reprocess the edited message based on mode
+        const messageMode = updatedUserMessage.mode || inputMode;
+        if (messageMode === "understand") {
+          await processDecodeMessage(updatedUserMessage);
+        } else {
+          await processUserMessage(updatedUserMessage);
+        }
+        return;
+      }
+    }
+
+    // Reset editing state when sending normally
     setIsEditingMessage(false);
+    setEditingMessageId(null);
 
     if (isAwaitingContext) {
       const userMessage: ChatMessage = {
@@ -1023,15 +1067,17 @@ export function ChatScreen({ navigation, route }: Props) {
     }, 150);
   };
 
-  const handleEditMessage = (content: string) => {
+  const handleEditMessage = (content: string, messageId: string) => {
     // Set the message content in the input bar for editing
     setCurrentInput(content);
     setIsEditingMessage(true);
+    setEditingMessageId(messageId);
   };
 
   const handleCancelEdit = () => {
     setCurrentInput("");
     setIsEditingMessage(false);
+    setEditingMessageId(null);
   };
 
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
@@ -1052,6 +1098,7 @@ export function ChatScreen({ navigation, route }: Props) {
           showUserBubble={message.role === "user"} // ChatGPT-style bubble for user messages
           showActions={message.role === "assistant"} // Show action buttons for assistant messages
           onEdit={message.role === "user" ? handleEditMessage : undefined}
+          messageId={message.id}
         />
       );
     }
@@ -1144,6 +1191,7 @@ export function ChatScreen({ navigation, route }: Props) {
         timestamp={message.timestamp}
         imageUrl={message.imageUrl}
         onEdit={message.role === "user" ? handleEditMessage : undefined}
+        messageId={message.id}
       />
     );
   };

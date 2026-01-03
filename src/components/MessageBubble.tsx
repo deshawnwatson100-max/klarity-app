@@ -283,7 +283,8 @@ interface MessageBubbleProps {
   showUserBubble?: boolean; // ChatGPT-style bubble for user messages
   showActions?: boolean; // Show action buttons for assistant messages (ChatGPT-style)
   onRegenerate?: () => void; // Callback for regenerate action
-  onEdit?: (content: string) => void; // Callback for edit action (user messages)
+  onEdit?: (content: string, messageId: string) => void; // Callback for edit action (user messages)
+  messageId?: string; // Message ID for edit tracking
 }
 
 export function MessageBubble({
@@ -295,6 +296,7 @@ export function MessageBubble({
   showActions = false,
   onRegenerate,
   onEdit,
+  messageId,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const opacity = useRef(new Animated.Value(0)).current;
@@ -386,7 +388,9 @@ export function MessageBubble({
 
   const handleEdit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onEdit?.(content);
+    if (messageId) {
+      onEdit?.(content, messageId);
+    }
   };
 
   // User messages - warmer white with faint shadow
