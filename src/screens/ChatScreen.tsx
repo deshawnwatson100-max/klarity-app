@@ -6,21 +6,14 @@ import {
   Platform,
   Text,
   Dimensions,
+  Animated,
+  Easing,
+  PanResponder,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  runOnJS,
-  Easing,
-  interpolate,
-  Extrapolation,
-} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
 import { InputBar, InputMode } from "../components/InputBar";
@@ -89,11 +82,11 @@ export function ChatScreen({ navigation, route }: Props) {
     previousReply?: string;
   } | null>(null);
 
-  // Content area animation values
-  const contentOpacity = useSharedValue(0);
-  const contentTranslateY = useSharedValue(30);
-  const bottomOpacity = useSharedValue(0);
-  const bottomTranslateY = useSharedValue(20);
+  // Content area animation values - using React Native Animated
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(30)).current;
+  const bottomOpacity = useRef(new Animated.Value(0)).current;
+  const bottomTranslateY = useRef(new Animated.Value(20)).current;
 
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -128,9 +121,9 @@ export function ChatScreen({ navigation, route }: Props) {
   // Get screen width for slide animations
   const screenWidth = Dimensions.get("window").width;
 
-  // Slide animation values for mode switching
-  const replySlideX = useSharedValue(0);
-  const decodeSlideX = useSharedValue(screenWidth);
+  // Slide animation values for mode switching - using React Native Animated
+  const replySlideX = useRef(new Animated.Value(0)).current;
+  const decodeSlideX = useRef(new Animated.Value(screenWidth)).current;
 
   // Filter messages by mode - separate lists for each chat loop
   const replyMessages = useMemo(() => {
@@ -168,12 +161,36 @@ export function ChatScreen({ navigation, route }: Props) {
 
     if (newMode === "rewrite") {
       // Slide Reply in from left, Decode out to right
-      replySlideX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
-      decodeSlideX.value = withTiming(screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      Animated.parallel([
+        Animated.timing(replySlideX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodeSlideX, {
+          toValue: screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
       // Slide Decode in from right, Reply out to left
-      replySlideX.value = withTiming(-screenWidth, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
-      decodeSlideX.value = withTiming(0, { duration: SLIDE_DURATION, easing: SLIDE_EASING });
+      Animated.parallel([
+        Animated.timing(replySlideX, {
+          toValue: -screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodeSlideX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
 
     setInputMode(newMode);
@@ -182,86 +199,82 @@ export function ChatScreen({ navigation, route }: Props) {
   // Initialize slide positions based on initial mode
   useEffect(() => {
     if (inputMode === "understand") {
-      replySlideX.value = -screenWidth;
-      decodeSlideX.value = 0;
+      replySlideX.setValue(-screenWidth);
+      decodeSlideX.setValue(0);
     } else {
-      replySlideX.value = 0;
-      decodeSlideX.value = screenWidth;
+      replySlideX.setValue(0);
+      decodeSlideX.setValue(screenWidth);
     }
   }, []);
-
-  // Animated styles for each chat loop
-  const replySlideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: replySlideX.value }],
-  }));
-
-  const decodeSlideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: decodeSlideX.value }],
-  }));
-
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslateY.value }],
-  }));
-
-  const bottomAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bottomOpacity.value,
-    transform: [{ translateY: bottomTranslateY.value }],
-  }));
 
   const navigateToInputScreen = () => {
     navigation.navigate("InputScreen");
   };
 
   const animateContentOutAndNavigate = (destination: "InputScreen") => {
-    contentOpacity.value = withTiming(0, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    });
-    contentTranslateY.value = withTiming(-20, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    }, (finished) => {
-      if (finished) {
-        runOnJS(navigateToInputScreen)();
-      }
-    });
-
-    bottomOpacity.value = withTiming(0, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
-    });
-    bottomTranslateY.value = withTiming(15, {
-      duration: CONTENT_TRANSITION_DURATION,
-      easing: CONTENT_EASING,
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 0,
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslateY, {
+        toValue: -20,
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bottomOpacity, {
+        toValue: 0,
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bottomTranslateY, {
+        toValue: 15,
+        duration: CONTENT_TRANSITION_DURATION,
+        easing: CONTENT_EASING,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      navigateToInputScreen();
     });
   };
 
   useFocusEffect(
     React.useCallback(() => {
-      contentOpacity.value = 0;
-      contentTranslateY.value = 30;
+      contentOpacity.setValue(0);
+      contentTranslateY.setValue(30);
+      bottomOpacity.setValue(0);
+      bottomTranslateY.setValue(20);
 
-      contentOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      contentTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-
-      bottomOpacity.value = 0;
-      bottomTranslateY.value = 20;
-
-      bottomOpacity.value = withTiming(1, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
-      bottomTranslateY.value = withTiming(0, {
-        duration: CONTENT_TRANSITION_DURATION,
-        easing: CONTENT_EASING,
-      });
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: 0,
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomOpacity, {
+          toValue: 1,
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomTranslateY, {
+          toValue: 0,
+          duration: CONTENT_TRANSITION_DURATION,
+          easing: CONTENT_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
 
       const activeLoop = getActiveLoop();
       if (activeLoop && activeLoop.messages.length === 1 && activeLoop.messages[0].role === "user") {
@@ -1069,62 +1082,67 @@ export function ChatScreen({ navigation, route }: Props) {
     setIsDrawerOpen(true);
   };
 
-  // Swipe right opens drawer instead of navigating back
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX(50)
-        .failOffsetX(-50)
-        .onEnd((event) => {
-          if (event.velocityX > 500 && event.translationX > 80) {
-            runOnJS(handleOpenDrawer)();
-          }
-        }),
-    []
-  );
+  // Swipe right opens drawer using PanResponder
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dx > 50 && Math.abs(gestureState.dy) < 50;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.vx > 0.5 && gestureState.dx > 80) {
+          handleOpenDrawer();
+        }
+      },
+    })
+  ).current;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       {/* Main content */}
-      <GestureDetector gesture={swipeGesture}>
-        <View style={{ flex: 1 }}>
-          <LinearGradient
-            colors={["#050608", "#0A0A0C", "#050608"]}
-            locations={[0, 0.5, 1]}
-            style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+        <LinearGradient
+          colors={["#050608", "#0A0A0C", "#050608"]}
+          locations={[0, 0.5, 1]}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+
+        <SoftFlares />
+        <FloatingParticles count={20} />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={0}
+        >
+          <Header
+            isAnalyzing={isLoading}
+            onMenuPress={() => setIsDrawerOpen(true)}
+            inputMode={inputMode}
+            onModeChange={handleModeChangeWithAnimation}
           />
 
-          <SoftFlares />
-          <FloatingParticles count={20} />
-
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            className="flex-1"
-            keyboardVerticalOffset={0}
+          <Animated.View
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }],
+            }}
           >
-            <Header
-              isAnalyzing={isLoading}
-              onMenuPress={() => setIsDrawerOpen(true)}
-              inputMode={inputMode}
-              onModeChange={handleModeChangeWithAnimation}
-            />
-
-          <Animated.View style={[{ flex: 1, overflow: "hidden" }, contentAnimatedStyle]}>
             {/* Container for both chat loops */}
             <View style={{ flex: 1, position: "relative" }}>
               {/* Reply Mode Chat Loop */}
               <Animated.View
-                style={[
-                  {
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    width: screenWidth,
-                  },
-                  replySlideStyle,
-                ]}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: screenWidth,
+                  transform: [{ translateX: replySlideX }],
+                }}
               >
                 <ScrollView
                   ref={replyScrollViewRef}
@@ -1148,17 +1166,15 @@ export function ChatScreen({ navigation, route }: Props) {
 
               {/* Decode Mode Chat Loop */}
               <Animated.View
-                style={[
-                  {
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    width: screenWidth,
-                  },
-                  decodeSlideStyle,
-                ]}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: screenWidth,
+                  transform: [{ translateX: decodeSlideX }],
+                }}
               >
                 <ScrollView
                   ref={decodeScrollViewRef}
@@ -1182,7 +1198,12 @@ export function ChatScreen({ navigation, route }: Props) {
             </View>
           </Animated.View>
 
-          <Animated.View style={bottomAnimatedStyle}>
+          <Animated.View
+            style={{
+              opacity: bottomOpacity,
+              transform: [{ translateY: bottomTranslateY }],
+            }}
+          >
             <InputBar
               value={currentInput}
               onChangeText={setCurrentInput}
@@ -1203,13 +1224,12 @@ export function ChatScreen({ navigation, route }: Props) {
           />
         </KeyboardAvoidingView>
       </View>
-    </GestureDetector>
 
-    {/* Slide Over Drawer - outside main content so it's not affected by transform */}
-    <SlideOverDrawer
-      visible={isDrawerOpen}
-      onClose={() => setIsDrawerOpen(false)}
-    />
-  </View>
+      {/* Slide Over Drawer - outside main content so it's not affected by transform */}
+      <SlideOverDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </View>
   );
 }
