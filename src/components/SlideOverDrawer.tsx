@@ -639,6 +639,13 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
 
   const isSearching = searchQuery.trim().length > 0;
 
+  // Drawer opacity - fades in/out with the animation
+  const drawerOpacity = drawerProgress.interpolate({
+    inputRange: [0, 0.3],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
   // Render header
   const renderHeader = () => {
     return (
@@ -784,7 +791,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
   };
 
   return (
-    <View
+    <Animated.View
       style={{
         position: "absolute",
         top: 0,
@@ -793,6 +800,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
         width: DRAWER_WIDTH,
         backgroundColor: "#171717",
         zIndex: 0,
+        opacity: drawerOpacity,
       }}
       pointerEvents={visible ? "auto" : "none"}
     >
@@ -1073,6 +1081,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
             )}
           </>
         )}
-    </View>
+    </Animated.View>
   );
 }
