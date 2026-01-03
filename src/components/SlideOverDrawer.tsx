@@ -31,6 +31,7 @@ const ACTION_BUTTON_WIDTH = 70;
 interface SlideOverDrawerProps {
   visible: boolean;
   onClose: () => void;
+  drawerProgress: Animated.Value; // Shared animation value for coordinated animations
 }
 
 interface MenuItemProps {
@@ -484,7 +485,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
-export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
+export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -492,9 +493,6 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
-
-  // Drawer animation progress
-  const drawerProgress = useRef(new Animated.Value(0)).current;
 
   // Store
   const loops = useLoopsStore((s) => s.loops);

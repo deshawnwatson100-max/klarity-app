@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
 import { InputBar, InputMode, InputBarRef } from "../components/InputBar";
 import { Header } from "../components/Header";
-import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
@@ -47,6 +47,9 @@ export function InputScreen({ navigation }: Props) {
   // Bottom elements animation values
   const bottomOpacity = useRef(new Animated.Value(1)).current;
   const bottomTranslateY = useRef(new Animated.Value(0)).current;
+
+  // Drawer animation progress - shared with SlideOverDrawer
+  const drawerProgress = useRef(new Animated.Value(0)).current;
 
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
@@ -331,10 +334,23 @@ export function InputScreen({ navigation }: Props) {
     }
   };
 
+  // Main content slides right when drawer opens
+  const mainContentTranslateX = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, DRAWER_WIDTH],
+    extrapolate: "clamp",
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Main content */}
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+      {/* Main content - slides with drawer */}
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [{ translateX: mainContentTranslateX }],
+        }}
+        {...panResponder.panHandlers}
+      >
         {/* Deep charcoal background - minimal and calming */}
         <LinearGradient
           colors={["#050608", "#0A0A0C", "#050608"]}
@@ -417,12 +433,13 @@ export function InputScreen({ navigation }: Props) {
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
         </KeyboardAvoidingView>
-      </View>
+      </Animated.View>
 
       {/* Slide Over Drawer - outside main content so it's not affected by transform */}
       <SlideOverDrawer
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        drawerProgress={drawerProgress}
       />
     </View>
   );
