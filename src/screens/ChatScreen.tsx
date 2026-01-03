@@ -27,7 +27,7 @@ import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
-import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
+import { SlideOverDrawer } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
@@ -88,9 +88,6 @@ export function ChatScreen({ navigation, route }: Props) {
   const contentTranslateY = useRef(new Animated.Value(30)).current;
   const bottomOpacity = useRef(new Animated.Value(0)).current;
   const bottomTranslateY = useRef(new Animated.Value(20)).current;
-
-  // Drawer animation progress - shared with SlideOverDrawer for coordinated animations
-  const drawerProgress = useRef(new Animated.Value(0)).current;
 
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -1101,16 +1098,9 @@ export function ChatScreen({ navigation, route }: Props) {
     })
   ).current;
 
-  // Animated interpolations for main content when drawer opens
-  const mainContentTranslateX = drawerProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, DRAWER_WIDTH],
-    extrapolate: "clamp",
-  });
-
   return (
     <View style={{ flex: 1, backgroundColor: "#050608" }}>
-      {/* Main content - stays in place or slides slightly */}
+      {/* Main content */}
       <View
         style={{
           flex: 1,
@@ -1246,7 +1236,6 @@ export function ChatScreen({ navigation, route }: Props) {
       <SlideOverDrawer
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        drawerProgress={drawerProgress}
       />
     </View>
   );

@@ -21,11 +21,8 @@ import { KlarityLoop } from "../types/loop";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Constants for the ChatGPT-style effect (exported for parent use)
+// Constants
 export const DRAWER_WIDTH = SCREEN_WIDTH * 0.80;
-export const MAIN_CONTENT_TRANSLATE = DRAWER_WIDTH;
-export const MAIN_CONTENT_SCALE = 0.88;
-export const MAIN_CONTENT_BORDER_RADIUS = 20;
 
 // Swipe action constants
 const SWIPE_THRESHOLD = 80;
@@ -34,7 +31,6 @@ const ACTION_BUTTON_WIDTH = 70;
 interface SlideOverDrawerProps {
   visible: boolean;
   onClose: () => void;
-  drawerProgress?: Animated.Value; // Optional external animation value for coordinated animations
 }
 
 interface MenuItemProps {
@@ -488,7 +484,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
-export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDrawerProgress }: SlideOverDrawerProps) {
+export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -497,9 +493,8 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDraw
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
-  // Drawer animation progress - use external if provided, otherwise create internal
-  const internalDrawerProgress = useRef(new Animated.Value(0)).current;
-  const drawerProgress = externalDrawerProgress || internalDrawerProgress;
+  // Drawer animation progress
+  const drawerProgress = useRef(new Animated.Value(0)).current;
 
   // Store
   const loops = useLoopsStore((s) => s.loops);
