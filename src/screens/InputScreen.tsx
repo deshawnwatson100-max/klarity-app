@@ -32,21 +32,11 @@ export function InputScreen({ navigation }: Props) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
 
-  // Track if this is the first focus (skip animation on initial app load)
-  const isFirstFocus = useRef(true);
   // Track current input mode for navigation
   const inputModeRef = useRef<InputMode>(inputMode);
   inputModeRef.current = inputMode;
   // Ref for input bar to focus programmatically
   const inputBarRef = useRef<InputBarRef>(null);
-
-  // Content area animation values (using React Native Animated)
-  const contentOpacity = useRef(new Animated.Value(1)).current;
-  const contentTranslateY = useRef(new Animated.Value(0)).current;
-
-  // Bottom elements animation values
-  const bottomOpacity = useRef(new Animated.Value(1)).current;
-  const bottomTranslateY = useRef(new Animated.Value(0)).current;
 
   // Drawer animation progress - shared with SlideOverDrawer
   const drawerProgress = useRef(new Animated.Value(0)).current;
@@ -58,9 +48,6 @@ export function InputScreen({ navigation }: Props) {
 
   // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
-
-  // Animation duration
-  const CONTENT_TRANSITION_DURATION = 250;
 
   // Pan responder for swipe to open drawer
   const panResponder = useRef(
@@ -92,51 +79,12 @@ export function InputScreen({ navigation }: Props) {
     }, 300);
   }, []);
 
-  // Animate content in when screen gains focus using navigation listener
+  // Focus input bar when screen gains focus
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      console.log("[InputScreen] Focus event - isFirstFocus:", isFirstFocus.current);
-
-      // Focus the input bar when screen gains focus
       setTimeout(() => {
         inputBarRef.current?.focus();
       }, 100);
-
-      // Skip animation on initial app load, animate on subsequent focuses (returning from other screens)
-      if (isFirstFocus.current) {
-        isFirstFocus.current = false;
-        return;
-      }
-
-      // Reset to starting position instantly (invisible, offset)
-      contentOpacity.setValue(0);
-      contentTranslateY.setValue(30);
-      bottomOpacity.setValue(0);
-      bottomTranslateY.setValue(20);
-
-      // Then animate in
-      Animated.parallel([
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: CONTENT_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(contentTranslateY, {
-          toValue: 0,
-          duration: CONTENT_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bottomOpacity, {
-          toValue: 1,
-          duration: CONTENT_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bottomTranslateY, {
-          toValue: 0,
-          duration: CONTENT_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }),
-      ]).start();
     });
 
     return unsubscribe;
@@ -145,34 +93,6 @@ export function InputScreen({ navigation }: Props) {
   // Navigation helper functions
   const navigateToChatScreen = () => {
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
-  };
-
-  // Animate content out before navigation
-  const animateContentOutAndNavigate = () => {
-    Animated.parallel([
-      Animated.timing(contentOpacity, {
-        toValue: 0,
-        duration: CONTENT_TRANSITION_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(contentTranslateY, {
-        toValue: -20,
-        duration: CONTENT_TRANSITION_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bottomOpacity, {
-        toValue: 0,
-        duration: CONTENT_TRANSITION_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bottomTranslateY, {
-        toValue: 15,
-        duration: CONTENT_TRANSITION_DURATION,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      navigateToChatScreen();
-    });
   };
 
   const handleSend = () => {
@@ -201,8 +121,8 @@ export function InputScreen({ navigation }: Props) {
       mode: messageMode,
     });
 
-    // Animate content out then navigate to chat screen
-    animateContentOutAndNavigate();
+    // Navigate to chat screen
+    navigateToChatScreen();
     setCurrentInput("");
     setSelectedImageUri(undefined);
     setSelectedImageBase64(undefined);
@@ -316,7 +236,7 @@ export function InputScreen({ navigation }: Props) {
         // Navigate to chat screen for AI response
         setIsProcessing(false);
         setProcessingMessage("");
-        animateContentOutAndNavigate();
+        navigateToChatScreen();
       } catch (transcriptionError) {
         console.error("Transcription error:", transcriptionError);
         setProcessingMessage("Unable to transcribe audio. Please check your connection and try again.");
@@ -382,11 +302,9 @@ export function InputScreen({ navigation }: Props) {
           />
 
           {/* Center Content */}
-          <Animated.View
+          <View
             style={{
               flex: 1,
-              opacity: contentOpacity,
-              transform: [{ translateY: contentTranslateY }],
               alignItems: "center",
               justifyContent: "center",
               paddingHorizontal: 24,
@@ -405,15 +323,10 @@ export function InputScreen({ navigation }: Props) {
                 </Text>
               </View>
             ) : null}
-          </Animated.View>
+          </View>
 
           {/* Input Bar */}
-          <Animated.View
-            style={{
-              opacity: bottomOpacity,
-              transform: [{ translateY: bottomTranslateY }],
-            }}
-          >
+          <View>
             <InputBar
               ref={inputBarRef}
               value={currentInput}
@@ -428,7 +341,7 @@ export function InputScreen({ navigation }: Props) {
               inputMode={inputMode}
               autoFocus
             />
-          </Animated.View>
+          </View>
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
