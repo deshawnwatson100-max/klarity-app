@@ -1,12 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  runOnJS,
-} from "react-native-reanimated";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Animated, Easing } from "react-native";
 
 const thinkingWords = [
   "Thinking...",
@@ -18,42 +11,43 @@ const thinkingWords = [
 
 export function TypingIndicator() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  const opacity = useRef(new Animated.Value(1)).current;
+  const wordIndexRef = useRef(0);
 
   useEffect(() => {
-    const changeWord = () => {
-      setCurrentWordIndex((prev) => (prev + 1) % thinkingWords.length);
-    };
+    const animateWord = () => {
+      // Fade out
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        useNativeDriver: true,
+      }).start(() => {
+        // Update word index after fade out completes
+        wordIndexRef.current = (wordIndexRef.current + 1) % thinkingWords.length;
+        // Use setTimeout to defer state update outside animation callback
+        setTimeout(() => {
+          setCurrentWordIndex(wordIndexRef.current);
+        }, 0);
 
-    const interval = setInterval(() => {
-      opacity.value = withTiming(
-        0,
-        {
+        // Fade in
+        Animated.timing(opacity, {
+          toValue: 1,
           duration: 300,
           easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        },
-        (finished) => {
-          if (finished) {
-            runOnJS(changeWord)();
-            opacity.value = withTiming(1, {
-              duration: 300,
-              easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-            });
-          }
-        }
-      );
-    }, 2000);
+          useNativeDriver: true,
+        }).start();
+      });
+    };
+
+    const interval = setInterval(animateWord, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [opacity]);
 
   return (
     <View className="self-start mb-4 px-4">
-      <Animated.View style={animatedStyle}>
+      <Animated.View style={{ opacity }}>
         <Text
           style={{
             fontSize: 15,
