@@ -34,6 +34,7 @@ const ACTION_BUTTON_WIDTH = 70;
 interface SlideOverDrawerProps {
   visible: boolean;
   onClose: () => void;
+  drawerProgress?: Animated.Value; // Optional external animation value for coordinated animations
 }
 
 interface MenuItemProps {
@@ -487,7 +488,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
   );
 }
 
-export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
+export function SlideOverDrawer({ visible, onClose, drawerProgress: externalDrawerProgress }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -496,8 +497,9 @@ export function SlideOverDrawer({ visible, onClose }: SlideOverDrawerProps) {
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
-  // Drawer animation progress - using React Native Animated
-  const drawerProgress = useRef(new Animated.Value(0)).current;
+  // Drawer animation progress - use external if provided, otherwise create internal
+  const internalDrawerProgress = useRef(new Animated.Value(0)).current;
+  const drawerProgress = externalDrawerProgress || internalDrawerProgress;
 
   // Store
   const loops = useLoopsStore((s) => s.loops);

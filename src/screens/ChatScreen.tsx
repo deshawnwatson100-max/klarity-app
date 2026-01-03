@@ -26,7 +26,7 @@ import { SuggestedReplyCard } from "../components/SuggestedReplyCard";
 import { InlineContextInput } from "../components/InlineContextInput";
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
-import { SlideOverDrawer } from "../components/SlideOverDrawer";
+import { SlideOverDrawer, DRAWER_WIDTH, MAIN_CONTENT_SCALE, MAIN_CONTENT_BORDER_RADIUS } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { useLoopsStore } from "../state/loopsStore";
@@ -87,6 +87,9 @@ export function ChatScreen({ navigation, route }: Props) {
   const contentTranslateY = useRef(new Animated.Value(30)).current;
   const bottomOpacity = useRef(new Animated.Value(0)).current;
   const bottomTranslateY = useRef(new Animated.Value(20)).current;
+
+  // Drawer animation progress - shared with SlideOverDrawer for coordinated animations
+  const drawerProgress = useRef(new Animated.Value(0)).current;
 
   const CONTENT_TRANSITION_DURATION = 250;
   const CONTENT_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -1097,10 +1100,40 @@ export function ChatScreen({ navigation, route }: Props) {
     })
   ).current;
 
+  // Animated interpolations for main content when drawer opens
+  const mainContentTranslateX = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, DRAWER_WIDTH],
+    extrapolate: "clamp",
+  });
+
+  const mainContentScale = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, MAIN_CONTENT_SCALE],
+    extrapolate: "clamp",
+  });
+
+  const mainContentBorderRadius = drawerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, MAIN_CONTENT_BORDER_RADIUS],
+    extrapolate: "clamp",
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
-      {/* Main content */}
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+      {/* Main content - slides and scales with drawer */}
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [
+            { translateX: mainContentTranslateX },
+            { scale: mainContentScale },
+          ],
+          borderRadius: mainContentBorderRadius,
+          overflow: "hidden",
+        }}
+        {...panResponder.panHandlers}
+      >
         <LinearGradient
           colors={["#050608", "#0A0A0C", "#050608"]}
           locations={[0, 0.5, 1]}
@@ -1223,12 +1256,13 @@ export function ChatScreen({ navigation, route }: Props) {
             onClose={() => setHistoryPanelOpen(false)}
           />
         </KeyboardAvoidingView>
-      </View>
+      </Animated.View>
 
       {/* Slide Over Drawer - outside main content so it's not affected by transform */}
       <SlideOverDrawer
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        drawerProgress={drawerProgress}
       />
     </View>
   );
