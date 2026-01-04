@@ -31,7 +31,13 @@ import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextModal } from "../components/PersonContextModal";
-import { useLoopsStore } from "../state/loopsStore";
+import {
+  DeepSearchResultBubble,
+  DeepSearchLoading,
+  DeepSearchNoResults,
+} from "../components/DeepSearchResultBubble";
+import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
+import { usePersonContextStore } from "../state/personContextStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
   generateDysfunctionalCommunicationSummary,
@@ -47,6 +53,7 @@ import {
   generateDecodeResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
+import { executeDeepSearch } from "../api/deepSearchService";
 import {
   ChatMessage,
   TypingMessage,
@@ -57,6 +64,8 @@ import {
   EmotionalAnalysis,
   RewriteReplyCardMessage,
   ImageContinuationMessage,
+  DeepSearchLoadingMessage,
+  DeepSearchResultMessage,
   MessageMode,
 } from "../types/chat";
 
@@ -112,6 +121,17 @@ export function ChatScreen({ navigation, route }: Props) {
   const setActiveLoopMessages = useLoopsStore((s) => s.setActiveLoopMessages);
   const isHistoryPanelOpen = useLoopsStore((s) => s.isHistoryPanelOpen);
   const setHistoryPanelOpen = useLoopsStore((s) => s.setHistoryPanelOpen);
+  const setActiveLoopDeepSearchCompleted = useLoopsStore((s) => s.setActiveLoopDeepSearchCompleted);
+
+  // Person context for Deep Search
+  const activeLoopPersonContextId = useActiveLoopPersonContextId();
+  const getPersonContextById = usePersonContextStore((s) => s.getPersonContextById);
+  const activePersonContext = activeLoopPersonContextId
+    ? getPersonContextById(activeLoopPersonContextId)
+    : null;
+
+  // Track if Deep Search has been triggered this session
+  const deepSearchTriggered = useRef(false);
 
   // Track current mode in a ref for use in callbacks
   const inputModeRef = useRef<InputMode>(inputMode);
@@ -307,6 +327,96 @@ export function ChatScreen({ navigation, route }: Props) {
       return () => {};
     }, [])
   );
+
+  // Handle Deep Search trigger when navigating from PersonContextModal
+  useEffect(() => {
+    const triggerDeepSearch = route.params?.triggerDeepSearch;
+
+    if (triggerDeepSearch && activePersonContext && !deepSearchTriggered.current) {
+      deepSearchTriggered.current = true;
+
+      // Run Deep Search asynchronously
+      const runDeepSearch = async () => {
+        // Add loading message
+        const loadingMsgId = `deep-search-loading-${Date.now()}`;
+        const loadingMessage: DeepSearchLoadingMessage = {
+          id: loadingMsgId,
+          role: "deep-search-loading",
+          content: "",
+          timestamp: Date.now(),
+          personName: activePersonContext.name,
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(loadingMessage);
+
+        try {
+          // Execute Deep Search
+          const result = await executeDeepSearch({
+            personContext: activePersonContext,
+            onProgress: (status) => {
+              console.log("[DeepSearch] Progress:", status);
+            },
+          });
+
+          // Remove loading message
+          removeMessageFromActiveLoop(loadingMsgId);
+
+          if (result.success && result.result) {
+            // Add result message
+            const resultMessage: DeepSearchResultMessage = {
+              id: `deep-search-result-${Date.now()}`,
+              role: "deep-search-result",
+              content: "",
+              timestamp: Date.now(),
+              searchResult: result.result,
+              showSafetyResources: false,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(resultMessage);
+            setActiveLoopDeepSearchCompleted(true);
+          } else if (result.safetyBlock) {
+            // Safety block - show resources if needed
+            const safetyMessage: ChatMessage = {
+              id: `deep-search-safety-${Date.now()}`,
+              role: "assistant",
+              content: result.safetyBlock.reason === "safety_concern"
+                ? "I noticed some safety concerns. Your well-being comes first. If you feel unsafe, please reach out to someone who can help."
+                : "I am not able to search in this case. The request seems to be about monitoring or surveillance.",
+              timestamp: Date.now(),
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(safetyMessage);
+          } else if (result.error) {
+            // Error message
+            const errorMessage: ChatMessage = {
+              id: `deep-search-error-${Date.now()}`,
+              role: "assistant",
+              content: "I was not able to complete the search right now. You can ask me to try again later.",
+              timestamp: Date.now(),
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(errorMessage);
+          }
+        } catch (error) {
+          console.error("[DeepSearch] Error:", error);
+          removeMessageFromActiveLoop(loadingMsgId);
+
+          // Show error message
+          const errorMessage: ChatMessage = {
+            id: `deep-search-error-${Date.now()}`,
+            role: "assistant",
+            content: "Something went wrong while searching. You can ask me to try again.",
+            timestamp: Date.now(),
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(errorMessage);
+        }
+      };
+
+      // Small delay to ensure UI is ready
+      setTimeout(runDeepSearch, 500);
+    }
+  }, [route.params?.triggerDeepSearch, activePersonContext]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -1086,6 +1196,23 @@ export function ChatScreen({ navigation, route }: Props) {
   const renderDecodeMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
+    }
+
+    // Deep Search loading state
+    if (message.role === "deep-search-loading") {
+      return <DeepSearchLoading key={message.id} />;
+    }
+
+    // Deep Search results
+    if (message.role === "deep-search-result") {
+      const msg = message as DeepSearchResultMessage;
+      return (
+        <DeepSearchResultBubble
+          key={message.id}
+          result={msg.searchResult}
+          showSafetyResources={msg.showSafetyResources}
+        />
+      );
     }
 
     // Only render user and assistant messages in Decode mode - no cards

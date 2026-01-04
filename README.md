@@ -1144,10 +1144,23 @@ Automatically searches publicly available information when Person Context is cre
 - "Do a deep search"
 - "Check their online presence"
 
+**Auto-Trigger Flow:**
+When a user completes adding person context info from the Input Screen:
+1. User taps person icon in header → PersonContextModal opens
+2. User fills in name, relationship, notes → taps Save
+3. `onPersonContextCreated` callback fires with new person context ID
+4. InputScreen navigates to ChatScreen with `triggerDeepSearch: true`
+5. ChatScreen detects the flag and auto-runs Deep Search
+6. Loading state shows "Searching public sources..."
+7. Results appear in chat as `DeepSearchResultBubble`
+
 **Files:**
 - `src/api/deepSearch.ts` - Prompts, types, and parsing
 - `src/api/deepSearchService.ts` - Orchestration and LLM calls
 - `src/components/DeepSearchResultBubble.tsx` - Chat UI component
+- `src/types/chat.ts` - DeepSearchLoadingMessage, DeepSearchResultMessage types
+- `src/screens/ChatScreen.tsx` - Auto-trigger logic and message rendering
+- `src/screens/InputScreen.tsx` - Navigation with triggerDeepSearch param
 
 ## Development
 

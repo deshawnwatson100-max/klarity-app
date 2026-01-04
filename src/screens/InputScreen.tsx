@@ -363,6 +363,13 @@ export function InputScreen({ navigation }: Props) {
       <PersonContextModal
         visible={isPersonContextModalVisible}
         onClose={() => setIsPersonContextModalVisible(false)}
+        onPersonContextCreated={(personContextId) => {
+          // Navigate to ChatScreen and trigger Deep Search
+          navigation.navigate("ChatScreen", {
+            inputMode: inputModeRef.current,
+            triggerDeepSearch: true,
+          });
+        }}
       />
     </View>
   );

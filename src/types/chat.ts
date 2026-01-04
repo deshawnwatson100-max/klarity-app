@@ -27,7 +27,9 @@ export type MessageRole =
   | "dysfunctional-communication"
   | "red-flags"
   | "rewrite-reply-card"
-  | "image-continuation";
+  | "image-continuation"
+  | "deep-search-loading"
+  | "deep-search-result";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -258,6 +260,34 @@ export interface ImageContinuationMessage extends Message {
   approachShift?: string;
 }
 
+export interface DeepSearchLoadingMessage extends Message {
+  role: "deep-search-loading";
+  personName: string;
+}
+
+export interface DeepSearchResultMessage extends Message {
+  role: "deep-search-result";
+  searchResult: {
+    id: string;
+    timestamp: string;
+    personContextId: string;
+    searchQuery: string;
+    sources: Array<{
+      type: "social" | "professional" | "dating" | "news" | "other";
+      platform: string;
+      url?: string;
+      summary: string;
+      relevantDetails: string[];
+      isVerified: boolean;
+    }>;
+    summary: string;
+    alignmentNotes: string[];
+    uncertainties: string[];
+    rawResponse: string;
+  };
+  showSafetyResources?: boolean;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -286,4 +316,6 @@ export type ChatMessage =
   | DysfunctionalCommunicationMessage
   | RedFlagsMessage
   | RewriteReplyCardMessage
-  | ImageContinuationMessage;
+  | ImageContinuationMessage
+  | DeepSearchLoadingMessage
+  | DeepSearchResultMessage;

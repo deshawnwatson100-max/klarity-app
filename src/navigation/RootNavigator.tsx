@@ -11,7 +11,7 @@ import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
-  ChatScreen: { inputMode?: "understand" | "rewrite" } | undefined;
+  ChatScreen: { inputMode?: "understand" | "rewrite"; triggerDeepSearch?: boolean } | undefined;
   EmotionScanScreen: undefined;
   AnalysisScreen: {
     analysis: import("../types/chat").EmotionalAnalysis;

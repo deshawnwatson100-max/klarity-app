@@ -80,11 +80,14 @@ type ContextChipId = (typeof CONTEXT_CHIPS)[number]["id"];
 interface PersonContextModalProps {
   visible: boolean;
   onClose: () => void;
+  /** Called when a new person context is created - receives the new context ID */
+  onPersonContextCreated?: (personContextId: string) => void;
 }
 
 export function PersonContextModal({
   visible,
   onClose,
+  onPersonContextCreated,
 }: PersonContextModalProps) {
   // Animation values
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -259,6 +262,9 @@ export function PersonContextModal({
     // Reset and close
     resetForm();
     handleClose();
+
+    // Notify parent that a new person context was created (for triggering Deep Search)
+    onPersonContextCreated?.(newId);
   };
 
   // Handle chip toggle
