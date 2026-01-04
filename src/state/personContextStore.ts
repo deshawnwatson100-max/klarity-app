@@ -42,6 +42,7 @@ interface PersonContextState {
   personContexts: PersonContext[];
   activePersonContextId: string | null;
   activeSelectedAt: string | null;
+  isContextPaused: boolean; // NEW: Pause using context
 
   // Privacy settings
   privacySettings: {
@@ -77,6 +78,9 @@ interface PersonContextState {
   // Actions - Active Selection
   setActivePersonContext: (id: string | null) => void;
   clearActivePersonContext: () => void;
+  pauseContext: () => void;
+  resumeContext: () => void;
+  toggleContextPause: () => void;
 
   // Actions - Notes Management
   addNote: (personContextId: string, content: string, tagIds?: string[]) => string; // Returns note ID
@@ -121,6 +125,7 @@ export const usePersonContextStore = create<PersonContextState>()(
       personContexts: [],
       activePersonContextId: null,
       activeSelectedAt: null,
+      isContextPaused: false,
       privacySettings: initialPrivacySettings,
 
       // Getters
@@ -230,6 +235,18 @@ export const usePersonContextStore = create<PersonContextState>()(
           activePersonContextId: null,
           activeSelectedAt: null,
         });
+      },
+
+      pauseContext: () => {
+        set({ isContextPaused: true });
+      },
+
+      resumeContext: () => {
+        set({ isContextPaused: false });
+      },
+
+      toggleContextPause: () => {
+        set((state) => ({ isContextPaused: !state.isContextPaused }));
       },
 
       // Notes Management
@@ -467,6 +484,7 @@ export const usePersonContextStore = create<PersonContextState>()(
           personContexts: [],
           activePersonContextId: null,
           activeSelectedAt: null,
+          isContextPaused: false,
           privacySettings: initialPrivacySettings,
         });
       },
@@ -479,6 +497,7 @@ export const usePersonContextStore = create<PersonContextState>()(
         personContexts: state.personContexts,
         activePersonContextId: state.activePersonContextId,
         activeSelectedAt: state.activeSelectedAt,
+        isContextPaused: state.isContextPaused,
         privacySettings: state.privacySettings,
       }),
     }
@@ -511,4 +530,24 @@ export function useIsPersonContextActive(personContextId: string) {
  */
 export function usePersonContextCount() {
   return usePersonContextStore((s) => s.personContexts.filter((pc) => !pc.isArchived).length);
+}
+
+/**
+ * Hook to check if context is paused
+ */
+export function useIsContextPaused() {
+  return usePersonContextStore((s) => s.isContextPaused);
+}
+
+/**
+ * Hook to get effective active context (null if paused)
+ * Use this when you want to respect the pause state
+ */
+export function useEffectiveActiveContext() {
+  const activeId = usePersonContextStore((s) => s.activePersonContextId);
+  const isPaused = usePersonContextStore((s) => s.isContextPaused);
+  const getById = usePersonContextStore((s) => s.getPersonContextById);
+
+  if (isPaused || !activeId) return null;
+  return getById(activeId) || null;
 }

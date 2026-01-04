@@ -123,8 +123,12 @@ export function buildChatPromptWithPersonContext(params: {
   userMessage: string;
   recentChatHistory: Array<{ role: "user" | "assistant"; content: string }>;
   activePersonContext: PersonContextCard | null;
+  isContextPaused?: boolean;
 }): string {
-  const { userMessage, recentChatHistory, activePersonContext } = params;
+  const { userMessage, recentChatHistory, activePersonContext, isContextPaused = false } = params;
+
+  // If context is paused, treat it as if there is no active context
+  const effectivePersonContext = isContextPaused ? null : activePersonContext;
 
   // Format recent chat history
   const historyText =
@@ -135,18 +139,18 @@ export function buildChatPromptWithPersonContext(params: {
           .join("\n")
       : "No recent messages.";
 
-  // Format person context if active
+  // Format person context if active and not paused
   let personContextSection = "";
-  if (activePersonContext) {
+  if (effectivePersonContext) {
     personContextSection = `
 ---
 ACTIVE PERSON CONTEXT (use silently unless it clearly helps):
-Name: ${activePersonContext.title.replace("Context card for ", "")}
-Known context: ${activePersonContext.knownContext.join("; ")}
-Things to keep in mind: ${activePersonContext.thingsToKeepInMind.join("; ")}
-Helpful questions the user might explore: ${activePersonContext.helpfulQuestions.join("; ")}
-Tone: ${activePersonContext.toneNotes.defaultTone}
-Remember: ${activePersonContext.safety.agencyLine}
+Name: ${effectivePersonContext.title.replace("Context card for ", "")}
+Known context: ${effectivePersonContext.knownContext.join("; ")}
+Things to keep in mind: ${effectivePersonContext.thingsToKeepInMind.join("; ")}
+Helpful questions the user might explore: ${effectivePersonContext.helpfulQuestions.join("; ")}
+Tone: ${effectivePersonContext.toneNotes.defaultTone}
+Remember: ${effectivePersonContext.safety.agencyLine}
 ---`;
   }
 
@@ -312,8 +316,14 @@ And honestly? If you do not have a question, that is fine too. Sometimes the bes
 
 export function shouldReferenceContext(
   userMessage: string,
-  personContext: PersonContextCard | null
+  personContext: PersonContextCard | null,
+  isContextPaused?: boolean
 ): { shouldReference: boolean; reason: string } {
+  // If context is paused, never reference it
+  if (isContextPaused) {
+    return { shouldReference: false, reason: "Context is paused by user" };
+  }
+
   if (!personContext) {
     return { shouldReference: false, reason: "No active person context" };
   }

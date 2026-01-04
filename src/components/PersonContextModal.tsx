@@ -11,6 +11,7 @@ import {
   Platform,
   Animated,
   Dimensions,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -98,9 +99,14 @@ export function PersonContextModal({
   const clearActivePersonContext = usePersonContextStore(
     (s) => s.clearActivePersonContext
   );
+  const deletePersonContext = usePersonContextStore(
+    (s) => s.deletePersonContext
+  );
   const getNonArchivedContexts = usePersonContextStore(
     (s) => s.getNonArchivedContexts
   );
+  const isContextPaused = usePersonContextStore((s) => s.isContextPaused);
+  const toggleContextPause = usePersonContextStore((s) => s.toggleContextPause);
 
   // Local state
   const [step, setStep] = useState<ModalStep>("basics");
@@ -112,6 +118,8 @@ export function PersonContextModal({
     new Set()
   );
   const [additionalNotes, setAdditionalNotes] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [personToDelete, setPersonToDelete] = useState<string | null>(null);
 
   // Handle animations when visibility changes
   useEffect(() => {
@@ -265,12 +273,35 @@ export function PersonContextModal({
     animateStepChange("basics");
   };
 
-  // Handle clear/remove
+  // Handle clear/remove - show confirmation
   const handleClear = () => {
+    if (!activePersonContext) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    clearActivePersonContext();
+    setPersonToDelete(activePersonContext.id);
+    setShowDeleteConfirm(true);
+  };
+
+  // Handle confirmed delete
+  const handleConfirmDelete = () => {
+    if (!personToDelete) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    deletePersonContext(personToDelete);
+    setShowDeleteConfirm(false);
+    setPersonToDelete(null);
     animateStepChange("basics");
     resetForm();
+  };
+
+  // Handle cancel delete
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setPersonToDelete(null);
+  };
+
+  // Handle pause toggle
+  const handlePauseToggle = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleContextPause();
   };
 
   // Render Step 1: Basics
@@ -668,14 +699,62 @@ export function PersonContextModal({
           </Pressable>
         </View>
 
+        {/* Pause Toggle */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: isContextPaused
+              ? "rgba(251, 191, 36, 0.1)"
+              : "rgba(255, 255, 255, 0.03)",
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: isContextPaused
+              ? "rgba(251, 191, 36, 0.3)"
+              : "rgba(255, 255, 255, 0.06)",
+          }}
+        >
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: isContextPaused ? "#FBBF24" : "#9CA3AF",
+              }}
+            >
+              {isContextPaused ? "Context paused" : "Context active"}
+            </Text>
+            <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+              {isContextPaused
+                ? "Klarity will not use this context right now"
+                : "Klarity considers this when responding"}
+            </Text>
+          </View>
+          <Switch
+            value={!isContextPaused}
+            onValueChange={handlePauseToggle}
+            trackColor={{ false: "#3f3f46", true: "rgba(99, 102, 241, 0.5)" }}
+            thumbColor={isContextPaused ? "#6B7280" : "#818CF8"}
+            ios_backgroundColor="#3f3f46"
+          />
+        </View>
+
         {/* Person Card */}
         <View
           style={{
-            backgroundColor: "rgba(99, 102, 241, 0.08)",
+            backgroundColor: isContextPaused
+              ? "rgba(255, 255, 255, 0.03)"
+              : "rgba(99, 102, 241, 0.08)",
             borderRadius: 16,
             padding: 18,
             borderWidth: 1,
-            borderColor: "rgba(99, 102, 241, 0.2)",
+            borderColor: isContextPaused
+              ? "rgba(255, 255, 255, 0.08)"
+              : "rgba(99, 102, 241, 0.2)",
+            opacity: isContextPaused ? 0.7 : 1,
           }}
         >
           {/* Name & Relationship */}
@@ -685,13 +764,19 @@ export function PersonContextModal({
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: "rgba(99, 102, 241, 0.2)",
+                backgroundColor: isContextPaused
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(99, 102, 241, 0.2)",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 12,
               }}
             >
-              <Ionicons name="person-circle" size={26} color="#818CF8" />
+              <Ionicons
+                name="person-circle"
+                size={26}
+                color={isContextPaused ? "#6B7280" : "#818CF8"}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <Text
@@ -703,21 +788,33 @@ export function PersonContextModal({
                 {relationshipLabel}
               </Text>
             </View>
-            <Ionicons name="checkmark-circle" size={22} color="#34D399" />
+            {!isContextPaused && (
+              <Ionicons name="checkmark-circle" size={22} color="#34D399" />
+            )}
+            {isContextPaused && (
+              <Ionicons name="pause-circle" size={22} color="#FBBF24" />
+            )}
           </View>
 
           {/* User Intent */}
           {activePersonContext.userIntent && (
             <View
               style={{
-                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                backgroundColor: isContextPaused
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(16, 185, 129, 0.1)",
                 borderRadius: 8,
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 marginTop: 8,
               }}
             >
-              <Text style={{ fontSize: 13, color: "#34D399" }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: isContextPaused ? "#6B7280" : "#34D399",
+                }}
+              >
                 Goal: {activePersonContext.userIntent}
               </Text>
             </View>
@@ -752,17 +849,19 @@ export function PersonContextModal({
         </View>
 
         {/* Helper text */}
-        <Text
-          style={{
-            fontSize: 13,
-            color: "#6B7280",
-            textAlign: "center",
-            marginTop: 16,
-            marginBottom: 8,
-          }}
-        >
-          Klarity will keep this context in mind during your conversation.
-        </Text>
+        {!isContextPaused && (
+          <Text
+            style={{
+              fontSize: 13,
+              color: "#6B7280",
+              textAlign: "center",
+              marginTop: 16,
+              marginBottom: 8,
+            }}
+          >
+            Klarity will keep this context in mind during your conversation.
+          </Text>
+        )}
 
         {/* Action Buttons */}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
@@ -911,6 +1010,7 @@ export function PersonContextModal({
   };
 
   return (
+    <>
     <Modal
       visible={visible}
       transparent
@@ -984,5 +1084,133 @@ export function PersonContextModal({
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelDelete}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+          }}
+          onPress={handleCancelDelete}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "#18181B",
+              borderRadius: 20,
+              width: "100%",
+              maxWidth: 340,
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.08)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                paddingTop: 24,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: "rgba(239, 68, 68, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons name="warning" size={28} color="#F87171" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: "#F9FAFB",
+                  textAlign: "center",
+                }}
+              >
+                Delete this person?
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#9CA3AF",
+                  textAlign: "center",
+                  marginTop: 8,
+                  lineHeight: 20,
+                }}
+              >
+                This will remove{" "}
+                <Text style={{ fontWeight: "600", color: "#E5E7EB" }}>
+                  {activePersonContext?.name}
+                </Text>{" "}
+                and all associated notes. This cannot be undone.
+              </Text>
+            </View>
+
+            {/* Actions */}
+            <View
+              style={{
+                flexDirection: "row",
+                padding: 16,
+                gap: 12,
+                marginTop: 8,
+              }}
+            >
+              <Pressable
+                onPress={handleCancelDelete}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.1)",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 15, fontWeight: "500", color: "#9CA3AF" }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmDelete}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(239, 68, 68, 0.15)",
+                  borderWidth: 1,
+                  borderColor: "rgba(239, 68, 68, 0.3)",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 15, fontWeight: "600", color: "#F87171" }}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }

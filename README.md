@@ -1024,6 +1024,51 @@ Global identity-safe voice module that ensures Klarity sounds like a grounded fr
 - `extractUserExemptions(userMessage)` - Get words user already used
 - `buildGuardedSystemPrompt(basePrompt)` - Combine with guardrails
 
+#### Person Context Controls (Prompt 7)
+User controls for managing person context during conversations.
+
+**Control Options:**
+From the header modal, users can:
+1. **Switch active person** - Select a different saved person from the list
+2. **Edit** - Modify the current person's context
+3. **Clear/Delete** - Remove the person (with confirmation)
+4. **Pause context toggle** - Temporarily disable context without deleting
+
+**Pause Context Feature:**
+- Toggle switch: "Context active" ↔ "Context paused"
+- When paused:
+  - Yellow warning styling on toggle
+  - Context card appears dimmed (70% opacity)
+  - Pause icon shown instead of checkmark
+  - Helper text: "Klarity will not use this context right now"
+- When active:
+  - Purple accent styling
+  - Checkmark indicator
+  - Helper text: "Klarity considers this when responding"
+
+**Prompt Logic When Paused:**
+- Context JSON is NOT included in chat prompts
+- `shouldReferenceContext()` returns false with reason "Context is paused by user"
+- `buildChatPromptWithPersonContext()` treats paused as null context
+- Assistant responds as if no person context exists
+
+**Delete Confirmation:**
+- Confirmation modal appears before deleting
+- Shows person name and warning about permanent deletion
+- Two buttons: Cancel (gray) / Delete (red)
+- Haptic feedback on delete
+
+**State Management:**
+- `isContextPaused: boolean` - Stored in personContextStore
+- `pauseContext()` / `resumeContext()` / `toggleContextPause()` - Actions
+- `useIsContextPaused()` - Hook for checking pause state
+- `useEffectiveActiveContext()` - Returns null if paused, context if active
+
+**Files Modified:**
+- `src/state/personContextStore.ts` - Pause state and actions
+- `src/components/PersonContextModal.tsx` - Controls UI
+- `src/api/personContextChatIntegration.ts` - Prompt logic changes
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.
