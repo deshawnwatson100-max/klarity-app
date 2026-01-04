@@ -3,7 +3,7 @@
  *
  * Searches publicly available information to help users gain clearer context
  * about a person they are dealing with. Results are presented in the chat loop
- * similar to Perplexity-style search results.
+ * with a ChatGPT-style interface.
  */
 
 import { PersonContext } from "../types/personContext";
@@ -14,42 +14,81 @@ import { PersonContext } from "../types/personContext";
 
 export const DEEP_SEARCH_SYSTEM_PROMPT = `You are Klarity Deep Search.
 
-Your role is to help the user gain clearer context about a person by reviewing:
-- What the user has provided
-- What appears publicly across the web including:
-  • Social media platforms (LinkedIn, Instagram, Facebook, Twitter/X, TikTok)
-  • Dating websites and apps (if profiles are public)
-  • Professional directories and company pages
-  • News articles and public records
-  • Secondary or alternative online identities
+Your role is to help the user gain clearer context about a person by conducting a thorough, careful search of publicly available information - the way a thoughtful human would if they were trying to understand who someone really is online.
+
+SEARCH METHODOLOGY:
+You must search thoroughly and patiently. Do not take shortcuts. Use common sense and human intuition:
+
+1. Name Variations:
+   - Try the full name, first name only, last name only
+   - Try nicknames, diminutives, and common misspellings
+   - If a username is provided, search for it across platforms
+   - Look for patterns in how they might create usernames
+
+2. Dating Apps & Websites:
+   - Search for public or indexed dating profiles
+   - Look for cached pages, mirrors, or reposts
+   - Search for profile screenshots or references on forums
+   - Check for old profiles that might still be visible
+
+3. Social Media Deep Dive:
+   - Instagram, Facebook, X/Twitter, TikTok, LinkedIn, Snapchat
+   - Look for reused usernames across sites
+   - Search for secondary or "finsta" type accounts
+   - Examine bios, photos, captions, or comments that help identify them
+   - Note any tagged locations or check-ins
+
+4. Signs of Multiple Personas:
+   - Different usernames that appear connected by similar photos, bio language, or friends
+   - Accounts that seem separate from their "main" presence
+   - Any public activity that contradicts what they have told the user
+
+5. Public Discussions & Mentions:
+   - Posts where this person is mentioned by name or username
+   - Forum posts, Reddit threads, comment sections
+   - Archived pages or Wayback Machine snapshots
+   - Reviews they have left or received
+
+6. If Name is Common:
+   - Slow down and cross-reference details
+   - Look for matching location, photos, writing style, bio language
+   - Do not assume the first match is correct
+
+7. Second Pass Strategy:
+   - If initial searches yield nothing, think about how someone might hide or compartmentalize their online presence
+   - Search again with that mindset, using variations and lateral thinking
+   - Consider what platforms they would likely use based on their age, profession, interests
 
 CORE PRINCIPLES:
 - You only use publicly accessible information
 - You do NOT access private accounts, private databases, or hidden content
-- You do NOT bypass privacy settings or provide instructions to do so
+- You do NOT bypass privacy settings or suggest ways to do so
 - You must be honest, calm, and non-judgmental
-- You must not label someone's character or intent
-- You must not diagnose, moralize, or speculate beyond what is supported
+- You must NOT label someone as bad, suspicious, or toxic
+- You must NOT diagnose, moralize, or speculate beyond what evidence supports
 
 LANGUAGE RULES:
-Avoid serious or analytical wording unless the user uses it first.
-Do NOT use these words by default: tracking, pattern, signals, escalation, frequency, timeline, data points, analysis, diagnosis, red flags, toxic, suspicious.
+Avoid serious or clinical wording unless the user uses it first.
+Do NOT use: tracking, pattern, signals, escalation, frequency, timeline, data points, analysis, diagnosis, red flags, toxic, suspicious, concerning.
 
-Prefer everyday phrasing: keep in mind, taken together, this adds context, this helps explain, worth noticing, from what I found, publicly available, based on what's out there.
+Prefer everyday phrasing: keep in mind, taken together, this adds context, worth noticing, from what I found, publicly available, based on what is out there, I noticed, this stood out.
 
 KEY FRAMING RULES:
 - Finding something does not mean it is bad
 - Not finding something does not mean it does not exist
-- Your job is to surface alignment or misalignment with what the person has said or implied
-- Multiple people might match - say so clearly if uncertain
-- If nothing meaningful is found, say that plainly
+- Your job is to surface alignment or misalignment with what the person has said
+- Multiple people might match - say so clearly and explain why you cannot be certain
+- If nothing meaningful is found, say that plainly and explain what you tried
 
 OUTPUT STRUCTURE:
-Present findings in a clear, organized way:
-1. What was searched
-2. What was found (organized by source type)
-3. How it connects to what the user shared
-4. What remains unclear or unverified
+1. Brief summary of what was searched
+2. What was found (organized by source/platform)
+   - For each finding, explain what it is in simple language
+   - State your confidence level that it is actually this person
+   - Note if it appears current, old, or unclear
+3. How findings connect to what the user shared
+4. What remains unclear or could not be verified
+5. If nothing was found, explain what you tried and what might help narrow things down
 
 Always end by asking: "How does this sit with you?"`;
 
@@ -57,30 +96,52 @@ Always end by asking: "How does this sit with you?"`;
 // DEVELOPER PROMPT - Search Guidance
 // ============================================================================
 
-export const DEEP_SEARCH_DEVELOPER_PROMPT = `SEARCH STRATEGY:
-1. Start with the name + location/context if provided
-2. Search professional networks (LinkedIn) for work-related context
-3. Search social platforms for personal context
-4. Look for consistency or inconsistency with what user shared
-5. Note any secondary profiles or alternative names found
+export const DEEP_SEARCH_DEVELOPER_PROMPT = `EXECUTION INSTRUCTIONS:
 
-PRESENTATION FORMAT:
-- Use clear headers for each source type
-- Include relevant quotes or details sparingly
-- Always note the source (e.g., "On LinkedIn..." or "A public Instagram shows...")
-- Distinguish between verified and unverified information
-- If profiles are private or not found, say so directly
+You are performing a real web search. Be thorough and methodical.
 
-SAFETY GUARDRAILS:
-- Never encourage the user to create fake accounts to view private content
-- Never suggest hacking, social engineering, or deception
-- If the search reveals potentially dangerous information (criminal records, etc.), present factually without dramatizing
-- If user seems to be in danger, prioritize safety resources over search results
+SEARCH SEQUENCE:
+1. Start with exact name in quotes: "First Last"
+2. Add location if known: "First Last" + city/state
+3. Search each major platform directly:
+   - LinkedIn: "First Last" site:linkedin.com
+   - Instagram: "First Last" OR @username site:instagram.com
+   - Facebook: "First Last" site:facebook.com
+   - Twitter/X: "First Last" OR @username site:twitter.com OR site:x.com
+   - TikTok: "First Last" OR @username site:tiktok.com
+4. Dating platforms (search carefully):
+   - Look for: Tinder, Bumble, Hinge, OkCupid, Match, POF profiles
+   - Search: "First Last" + dating OR "First Last" + tinder/bumble/etc
+   - Check forums that discuss or screenshot dating profiles
+5. If username provided:
+   - Search that username on its own
+   - Use sites like namecheckr pattern to find reuse
+   - Search: "@username" across platforms
+6. Reverse patterns:
+   - If you find one account, look at their followers/following for other accounts
+   - Check who comments on their posts for context
+
+CONFIDENCE LEVELS:
+- HIGH: Multiple matching details (same photo, location, bio info, linked accounts)
+- MEDIUM: Some matching details but not definitive
+- LOW: Same name only, common name, or limited cross-reference
+
+PRESENTATION:
+- Use clear platform headers
+- Quote relevant bio text or post content sparingly
+- Note when a profile is private vs public
+- Distinguish verified information from speculation
+- If you find contradictions with what user shared, present factually
+
+SAFETY:
+- If content suggests user may be in danger, prioritize safety resources
+- Never encourage fake accounts, hacking, or deception
+- Present concerning information calmly without dramatizing
 
 TONE:
-- Calm and matter-of-fact
 - Like a thoughtful friend who looked something up for you
-- Not like a private investigator or surveillance report`;
+- Not like a private investigator or surveillance report
+- Honest about limitations and uncertainty`;
 
 // ============================================================================
 // USER PROMPT BUILDER
@@ -97,30 +158,77 @@ export function buildDeepSearchUserPrompt(input: DeepSearchInput): string {
 
   const notes = personContext.notes.map((n) => n.content).join("\n- ");
   const searchTerms = additionalSearchTerms.length > 0
-    ? `\nAdditional search terms: ${additionalSearchTerms.join(", ")}`
-    : "";
-  const focus = focusAreas.length > 0
-    ? `\nFocus areas: ${focusAreas.join(", ")}`
+    ? `\nAdditional identifiers to search: ${additionalSearchTerms.join(", ")}`
     : "";
 
-  return `Please search for publicly available information about this person:
+  // Build focus areas description
+  let focusDescription = "";
+  if (focusAreas.includes("dating")) {
+    focusDescription += "\n- Pay special attention to dating apps and websites";
+  }
+  if (focusAreas.includes("social")) {
+    focusDescription += "\n- Focus on social media presence and secondary accounts";
+  }
+  if (focusAreas.includes("professional")) {
+    focusDescription += "\n- Focus on professional/work presence (LinkedIn, company pages)";
+  }
 
-NAME: ${personContext.name}
-RELATIONSHIP TO USER: ${personContext.relationshipContext}
+  return `I need you to do a thorough web search on this person. Look for them the way a careful human would if they were trying to understand who someone really is online.
 
-WHAT THE USER HAS SHARED:
-- ${notes || "No specific notes provided"}
+Use variations of their name, usernames, nicknames, and any identifiers I give you. If nothing comes up at first, try different combinations and spellings. If the name is common, slow down and look for matching details like location, photos, bio language, or writing style.
 
-USER'S GOAL: ${personContext.userIntent || "Gain clarity"}
+PERSON TO SEARCH:
+Name: ${personContext.name}
+Relationship to me: ${personContext.relationshipContext}
+
+WHAT I KNOW ABOUT THEM:
+- ${notes || "No specific details provided yet"}
+
+MY GOAL: ${personContext.userIntent || "I want clarity about who this person really is"}
 ${searchTerms}
-${focus}
+${focusDescription}
 
-Search for this person across public sources and help me understand:
-1. Does what I find align with what the user has shared?
-2. Is there anything worth noticing that adds context?
-3. Are there any gaps or things that could not be verified?
+SPECIFICALLY LOOK FOR:
 
-Present findings clearly, note sources, and end by asking how this sits with the user.`;
+• Dating apps or dating websites
+  - Public or indexed dating profiles
+  - Cached pages, mirrors, or reposts
+  - Profile screenshots or references on forums
+  - Old profiles that might still be visible online
+
+• Social media across platforms
+  - Instagram, Facebook, X, TikTok, LinkedIn, and any other public platforms
+  - Reused usernames across sites
+  - Secondary or less obvious accounts
+  - Bios, photos, captions, or comments that help identify them
+
+• Signs of multiple online personas
+  - Different usernames that appear connected
+  - Accounts that feel separate from their "main" presence
+  - Any public activity that does not obviously match what they have told me
+
+• Public discussions or mentions
+  - Posts where this person is mentioned by name or username
+  - Forum posts, comment sections, or archived pages
+  - Anything publicly indexed that adds context
+
+IMPORTANT GUIDELINES:
+
+Do NOT assume wrongdoing. Do NOT label them. Do NOT exaggerate.
+
+If you find something:
+- Explain what it is in simple language
+- Say how confident you are it is actually them (high/medium/low and why)
+- Say whether it looks current, old, or unclear
+
+If you do not find anything meaningful:
+- Say that plainly
+- Tell me what you tried
+- Explain what might make it easier to find more (without telling me to invade privacy)
+
+Be honest, be careful, and be thorough. I am not looking for drama - I am looking for clarity.
+
+If you think nothing exists, double-check by imagining how someone would try to hide or compartmentalize their online presence - then look again using that mindset, while still staying within public information only.`;
 }
 
 // ============================================================================
@@ -146,6 +254,7 @@ export interface DeepSearchSource {
   summary: string;
   relevantDetails: string[];
   isVerified: boolean;
+  confidence?: "high" | "medium" | "low";
 }
 
 // ============================================================================
@@ -155,29 +264,55 @@ export interface DeepSearchSource {
 export function buildSearchQueries(personContext: PersonContext): string[] {
   const queries: string[] = [];
   const name = personContext.name;
+  const nameParts = name.split(" ");
 
-  // Basic name search
+  // Exact name search
   queries.push(`"${name}"`);
 
-  // Add relationship context for better targeting
-  if (personContext.relationshipContext === "work") {
-    queries.push(`"${name}" LinkedIn professional`);
-    queries.push(`"${name}" company employee`);
-  } else if (personContext.relationshipContext === "dating") {
-    queries.push(`"${name}" social media profile`);
+  // First name only (if multi-part name)
+  if (nameParts.length > 1) {
+    queries.push(`"${nameParts[0]}"`);
   }
 
-  // Search for name + any locations or companies mentioned in notes
+  // Platform-specific searches
+  queries.push(`"${name}" site:linkedin.com`);
+  queries.push(`"${name}" site:instagram.com`);
+  queries.push(`"${name}" site:facebook.com`);
+
+  // Dating-focused if relationship is dating/romantic
+  if (personContext.relationshipContext === "dating" ||
+      personContext.relationshipContext === "romantic") {
+    queries.push(`"${name}" dating profile`);
+    queries.push(`"${name}" tinder OR bumble OR hinge`);
+  }
+
+  // Extract locations and context from notes
   const notesText = personContext.notes.map((n) => n.content).join(" ");
 
   // Extract potential location mentions
-  const locationPatterns = /(?:in|from|lives in|based in|works at|at)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g;
+  const locationPatterns = /(?:in|from|lives in|based in|works at|at|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g;
   let match;
+  const locations: string[] = [];
   while ((match = locationPatterns.exec(notesText)) !== null) {
-    queries.push(`"${name}" ${match[1]}`);
+    locations.push(match[1]);
   }
 
-  return queries.slice(0, 5); // Limit to 5 queries
+  // Add location-based queries
+  for (const location of locations.slice(0, 2)) {
+    queries.push(`"${name}" ${location}`);
+  }
+
+  // Extract potential usernames (@ mentions or quoted names)
+  const usernamePatterns = /@([a-zA-Z0-9_]+)|"([^"]+)"|username[:\s]+([a-zA-Z0-9_]+)/gi;
+  while ((match = usernamePatterns.exec(notesText)) !== null) {
+    const username = match[1] || match[2] || match[3];
+    if (username && username !== name) {
+      queries.push(`"${username}" OR @${username}`);
+    }
+  }
+
+  // Remove duplicates and limit
+  return [...new Set(queries)].slice(0, 8);
 }
 
 // ============================================================================
@@ -192,47 +327,79 @@ export function parseDeepSearchResponse(
   // Generate unique ID
   const id = `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  // Basic parsing - in production this would be more sophisticated
   const sources: DeepSearchSource[] = [];
 
-  // Check for platform mentions and extract
+  // Enhanced platform detection
   const platformPatterns = [
-    { regex: /LinkedIn[:\s]+(.*?)(?=\n\n|On [A-Z]|$)/gis, type: "professional" as const, platform: "LinkedIn" },
-    { regex: /Instagram[:\s]+(.*?)(?=\n\n|On [A-Z]|$)/gis, type: "social" as const, platform: "Instagram" },
-    { regex: /Facebook[:\s]+(.*?)(?=\n\n|On [A-Z]|$)/gis, type: "social" as const, platform: "Facebook" },
-    { regex: /Twitter|X[:\s]+(.*?)(?=\n\n|On [A-Z]|$)/gis, type: "social" as const, platform: "Twitter/X" },
+    { regex: /LinkedIn[:\s]+([\s\S]*?)(?=\n(?:Instagram|Facebook|Twitter|TikTok|Dating|Tinder|Bumble|Hinge|Reddit|[A-Z][a-z]+:)|$)/gi, type: "professional" as const, platform: "LinkedIn" },
+    { regex: /Instagram[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Facebook|Twitter|TikTok|Dating|Tinder|Bumble|Hinge|Reddit|[A-Z][a-z]+:)|$)/gi, type: "social" as const, platform: "Instagram" },
+    { regex: /Facebook[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Instagram|Twitter|TikTok|Dating|Tinder|Bumble|Hinge|Reddit|[A-Z][a-z]+:)|$)/gi, type: "social" as const, platform: "Facebook" },
+    { regex: /(?:Twitter|X\.com|X)[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Instagram|Facebook|TikTok|Dating|Tinder|Bumble|Hinge|Reddit|[A-Z][a-z]+:)|$)/gi, type: "social" as const, platform: "Twitter/X" },
+    { regex: /TikTok[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Instagram|Facebook|Twitter|Dating|Tinder|Bumble|Hinge|Reddit|[A-Z][a-z]+:)|$)/gi, type: "social" as const, platform: "TikTok" },
+    { regex: /(?:Tinder|Bumble|Hinge|OkCupid|Match\.com|POF|Dating)[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Instagram|Facebook|Twitter|TikTok|Reddit|[A-Z][a-z]+:)|$)/gi, type: "dating" as const, platform: "Dating Profile" },
+    { regex: /Reddit[:\s]+([\s\S]*?)(?=\n(?:LinkedIn|Instagram|Facebook|Twitter|TikTok|Dating|[A-Z][a-z]+:)|$)/gi, type: "social" as const, platform: "Reddit" },
   ];
 
   for (const pattern of platformPatterns) {
     const matches = response.matchAll(pattern.regex);
     for (const match of matches) {
-      sources.push({
-        type: pattern.type,
-        platform: pattern.platform,
-        summary: match[1]?.trim().slice(0, 200) || "",
-        relevantDetails: [],
-        isVerified: false,
-      });
+      const content = match[1]?.trim();
+      if (content && content.length > 10) {
+        // Determine confidence
+        let confidence: "high" | "medium" | "low" = "medium";
+        const lowerContent = content.toLowerCase();
+        if (lowerContent.includes("high confidence") || lowerContent.includes("definitely") || lowerContent.includes("confirmed")) {
+          confidence = "high";
+        } else if (lowerContent.includes("low confidence") || lowerContent.includes("might be") || lowerContent.includes("unclear") || lowerContent.includes("common name")) {
+          confidence = "low";
+        }
+
+        sources.push({
+          type: pattern.type,
+          platform: pattern.platform,
+          summary: content.slice(0, 300),
+          relevantDetails: extractBulletPoints(content),
+          isVerified: confidence === "high",
+          confidence,
+        });
+      }
     }
   }
 
-  // Extract alignment notes (things that match what user shared)
+  // Extract alignment notes
   const alignmentNotes: string[] = [];
-  const alignmentMatch = response.match(/align[s]?.*?:(.+?)(?=\n\n|What remains|$)/is);
-  if (alignmentMatch) {
-    alignmentNotes.push(alignmentMatch[1].trim());
+  const alignmentPatterns = [
+    /(?:aligns?|matches?|consistent|confirms?)[:\s]+([\s\S]*?)(?=\n\n|What (?:remains|could)|Uncertain|$)/gi,
+    /(?:supports?|backs up|lines up)[:\s]+([\s\S]*?)(?=\n\n|What (?:remains|could)|Uncertain|$)/gi,
+  ];
+  for (const pattern of alignmentPatterns) {
+    const match = response.match(pattern);
+    if (match) {
+      alignmentNotes.push(match[1].trim().slice(0, 200));
+    }
   }
 
   // Extract uncertainties
   const uncertainties: string[] = [];
-  const uncertaintyMatch = response.match(/(?:unclear|uncertain|could not verify|not found).*?:?(.+?)(?=\n\n|How does|$)/is);
-  if (uncertaintyMatch) {
-    uncertainties.push(uncertaintyMatch[1].trim());
+  const uncertaintyPatterns = [
+    /(?:unclear|uncertain|could not verify|not found|unable to confirm)[:\s]+([\s\S]*?)(?=\n\n|How does|$)/gi,
+    /(?:limitations?|what I tried)[:\s]+([\s\S]*?)(?=\n\n|How does|$)/gi,
+  ];
+  for (const pattern of uncertaintyPatterns) {
+    const match = response.match(pattern);
+    if (match) {
+      uncertainties.push(match[1].trim().slice(0, 200));
+    }
   }
 
-  // Generate summary
-  const summaryMatch = response.match(/^(.+?)(?=\n\n)/);
-  const summary = summaryMatch ? summaryMatch[1] : "Search completed.";
+  // Generate summary (first paragraph or first 2-3 sentences)
+  const paragraphs = response.split("\n\n");
+  let summary = paragraphs[0] || "Search completed.";
+  if (summary.length > 400) {
+    // Find a good cutoff point
+    const sentences = summary.match(/[^.!?]+[.!?]+/g) || [];
+    summary = sentences.slice(0, 3).join(" ");
+  }
 
   return {
     id,
@@ -245,6 +412,20 @@ export function parseDeepSearchResponse(
     uncertainties,
     rawResponse: response,
   };
+}
+
+// Helper to extract bullet points from text
+function extractBulletPoints(text: string): string[] {
+  const bullets: string[] = [];
+  const bulletPattern = /[-•]\s*(.+?)(?=\n[-•]|\n\n|$)/g;
+  let match;
+  while ((match = bulletPattern.exec(text)) !== null) {
+    const point = match[1].trim();
+    if (point.length > 5 && point.length < 200) {
+      bullets.push(point);
+    }
+  }
+  return bullets.slice(0, 5);
 }
 
 // ============================================================================
@@ -264,7 +445,8 @@ export function checkDeepSearchSafety(personContext: PersonContext): SafetyCheck
   const dangerKeywords = [
     "hit me", "hurting me", "threatened", "scared for my life",
     "stalking me", "following me", "weapon", "kill", "violence",
-    "abuse", "hurt my kids", "restrained"
+    "abuse", "hurt my kids", "restrained", "choked", "punched",
+    "afraid of him", "afraid of her", "scared of him", "scared of her"
   ];
 
   const hasDangerKeywords = dangerKeywords.some((kw) => notesText.includes(kw));
@@ -280,7 +462,8 @@ export function checkDeepSearchSafety(personContext: PersonContext): SafetyCheck
   // Check for surveillance intent from user
   const surveillanceKeywords = [
     "track where", "follow them", "monitor their", "spy on",
-    "without them knowing", "hack", "password", "break into"
+    "without them knowing", "hack", "password", "break into",
+    "access their account", "get into their"
   ];
 
   const hasSurveillanceIntent = surveillanceKeywords.some((kw) => notesText.includes(kw));
@@ -322,16 +505,27 @@ export const SAFETY_RESOURCES = {
 // NO RESULTS RESPONSE
 // ============================================================================
 
-export const NO_RESULTS_RESPONSE = `I searched for publicly available information about this person, but I was not able to find anything definitive.
+export const NO_RESULTS_RESPONSE = `I did a thorough search for publicly available information about this person, but I was not able to find anything definitive.
+
+What I searched:
+- Their name (exact and variations) across major platforms
+- LinkedIn, Instagram, Facebook, Twitter/X, TikTok
+- Dating platforms and forums
+- General web search with location details you provided
 
 This could mean:
-- They have a common name and it is hard to identify the right person
-- They keep a low online presence
-- Their profiles may be set to private
-- They may use a different name online
+- They have a common name and it is hard to identify the right person without more details
+- They keep a low online presence intentionally
+- Their profiles are set to private
+- They may use a different name or username online
+- They might be newer to social media or have deleted old accounts
 
-Not finding something does not mean there is nothing to find - it just means it is not easily accessible through public searches.
+Not finding something does not mean there is nothing to find - it just means it is not easily accessible through public searches right now.
 
-If you have more details that might help narrow things down (workplace, city, username), I can try again with more specific searches.
+What might help narrow things down (only if you have this info):
+- A username they use
+- Their workplace or school
+- The city they live in
+- An approximate age range
 
 How does this sit with you?`;
