@@ -30,7 +30,7 @@ import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
-import { PersonContextModal } from "../components/PersonContextModal";
+import { PersonContextCard } from "../components/PersonContextCard";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -66,6 +66,7 @@ import {
   ImageContinuationMessage,
   DeepSearchLoadingMessage,
   DeepSearchResultMessage,
+  PersonContextCardMessage,
   MessageMode,
 } from "../types/chat";
 
@@ -86,7 +87,6 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [isPersonContextModalOpen, setIsPersonContextModalOpen] = useState(false);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -1238,6 +1238,23 @@ export function ChatScreen({ navigation, route }: Props) {
       );
     }
 
+    // Person Context Card - inline in chat
+    if (message.role === "person-context-card") {
+      return (
+        <PersonContextCard
+          key={message.id}
+          onPersonContextCreated={(personContextId) => {
+            // Remove the card from chat after saving
+            removeMessageFromActiveLoop(message.id);
+          }}
+          onDismiss={() => {
+            // Remove the card from chat when dismissed
+            removeMessageFromActiveLoop(message.id);
+          }}
+        />
+      );
+    }
+
     // Only render user and assistant messages in Decode mode - no cards
     if (message.role === "user" || message.role === "assistant") {
       return (
@@ -1412,7 +1429,21 @@ export function ChatScreen({ navigation, route }: Props) {
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={handleModeChangeWithAnimation}
-            onPersonContextPress={() => setIsPersonContextModalOpen(true)}
+            onPersonContextPress={() => {
+              // Add person context card to the chat loop
+              const personContextCardMsg: PersonContextCardMessage = {
+                id: `person-context-card-${Date.now()}`,
+                role: "person-context-card",
+                content: "",
+                timestamp: Date.now(),
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(personContextCardMsg);
+              // Scroll to bottom to show the card
+              setTimeout(() => {
+                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            }}
             showPersonContext={true}
           />
 
@@ -1527,12 +1558,6 @@ export function ChatScreen({ navigation, route }: Props) {
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
-      />
-
-      {/* Person Context Modal */}
-      <PersonContextModal
-        visible={isPersonContextModalOpen}
-        onClose={() => setIsPersonContextModalOpen(false)}
       />
     </View>
   );

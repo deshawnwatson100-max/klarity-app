@@ -891,8 +891,9 @@ Save context about people you interact with so Klarity can provide more grounded
 
 #### How it Works
 1. Tap the **person icon** in the chat header (right side)
-2. If no person is saved, see the "Add someone" flow
-3. If a person is active, see their context card with options
+2. A Person Context Card appears **inline in the chat loop** (not as a popup modal)
+3. Fill in the context details directly in the chat
+4. Card is removed from chat after saving or dismissing
 
 #### Add Someone Flow (2 Steps)
 **Step 1 - Basics:**

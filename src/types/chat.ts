@@ -29,7 +29,8 @@ export type MessageRole =
   | "rewrite-reply-card"
   | "image-continuation"
   | "deep-search-loading"
-  | "deep-search-result";
+  | "deep-search-result"
+  | "person-context-card";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -288,6 +289,10 @@ export interface DeepSearchResultMessage extends Message {
   showSafetyResources?: boolean;
 }
 
+export interface PersonContextCardMessage extends Message {
+  role: "person-context-card";
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -318,4 +323,5 @@ export type ChatMessage =
   | RewriteReplyCardMessage
   | ImageContinuationMessage
   | DeepSearchLoadingMessage
-  | DeepSearchResultMessage;
+  | DeepSearchResultMessage
+  | PersonContextCardMessage;
