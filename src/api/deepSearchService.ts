@@ -15,6 +15,7 @@ import {
   buildSearchQueries,
   DeepSearchResult,
   NO_RESULTS_RESPONSE,
+  SearchCategory,
 } from "./deepSearch";
 
 // ============================================================================
@@ -23,7 +24,7 @@ import {
 
 interface DeepSearchOptions {
   personContext: PersonContext;
-  focusAreas?: ("social" | "professional" | "dating" | "news" | "general")[];
+  focusAreas?: SearchCategory[];
   onProgress?: (status: string) => void;
 }
 
@@ -48,7 +49,7 @@ interface DeepSearchResponse {
 export async function executeDeepSearch(
   options: DeepSearchOptions
 ): Promise<DeepSearchResponse> {
-  const { personContext, focusAreas = ["general"], onProgress } = options;
+  const { personContext, focusAreas, onProgress } = options;
 
   try {
     // Step 1: Safety check

@@ -14,7 +14,7 @@ import {
 import {
   useLoopsStore,
 } from "../state/loopsStore";
-import { RelationshipContextType, ContextAnchorType } from "../types/personContext";
+import { RelationshipContextType, ContextAnchorType, DeepSearchExtendedContext } from "../types/personContext";
 
 // ChatGPT-style colors - minimal, borderless
 const COLORS = {
@@ -122,6 +122,14 @@ export const PersonContextCard = memo(function PersonContextCard({
   const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
 
+  // Extended context fields for more thorough searches
+  const [showExtendedDetails, setShowExtendedDetails] = useState(false);
+  const [countyOrRegion, setCountyOrRegion] = useState("");
+  const [middleNameOrInitial, setMiddleNameOrInitial] = useState("");
+  const [previousLocation, setPreviousLocation] = useState("");
+  const [professionalInfo, setProfessionalInfo] = useState("");
+  const [knownAliases, setKnownAliases] = useState("");
+
   // Completed state
   const [isCompleted, setIsCompleted] = useState(false);
   const [savedName, setSavedName] = useState("");
@@ -139,6 +147,7 @@ export const PersonContextCard = memo(function PersonContextCard({
       contextAnchor?: { type: ContextAnchorType; value: string };
       knownUsername?: string;
       approximateAge?: string;
+      extendedContext?: DeepSearchExtendedContext;
     } = {};
 
     if (location.trim()) {
@@ -155,6 +164,35 @@ export const PersonContextCard = memo(function PersonContextCard({
     }
     if (approximateAge.trim()) {
       deepSearchContext.approximateAge = approximateAge.trim();
+    }
+
+    // Build extended context if any fields are filled
+    const extendedContext: DeepSearchExtendedContext = {};
+    if (countyOrRegion.trim()) {
+      extendedContext.countyOrRegion = countyOrRegion.trim();
+    }
+    if (middleNameOrInitial.trim()) {
+      extendedContext.middleNameOrInitial = middleNameOrInitial.trim();
+    }
+    if (previousLocation.trim()) {
+      extendedContext.previousLocation = previousLocation.trim();
+    }
+    if (professionalInfo.trim()) {
+      extendedContext.professionalInfo = professionalInfo.trim();
+    }
+    if (knownAliases.trim()) {
+      // Split by commas and clean up
+      const aliases = knownAliases
+        .split(",")
+        .map((a) => a.trim())
+        .filter((a) => a.length > 0);
+      if (aliases.length > 0) {
+        extendedContext.knownAliases = aliases;
+      }
+    }
+
+    if (Object.keys(extendedContext).length > 0) {
+      deepSearchContext.extendedContext = extendedContext;
     }
 
     const newId = createPersonContext(
@@ -406,10 +444,73 @@ export const PersonContextCard = memo(function PersonContextCard({
           />
           <ChatBubbleInput
             label="Approximate age"
-            helperText="A rough age range."
+            helperText="Used only to narrow public matches."
             placeholder="e.g. Late 20s, Mid 30s"
             value={approximateAge}
             onChangeText={setApproximateAge}
+          />
+        </View>
+      )}
+
+      {/* 5. Extended details for more thorough searches */}
+      <Pressable
+        onPress={() => {
+          Haptics.selectionAsync();
+          setShowExtendedDetails(!showExtendedDetails);
+        }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 10,
+          marginBottom: showExtendedDetails ? 10 : 0,
+        }}
+      >
+        <Ionicons
+          name={showExtendedDetails ? "chevron-down" : "chevron-forward"}
+          size={16}
+          color={COLORS.textMuted}
+        />
+        <Text style={{ fontSize: 13, color: COLORS.textMuted, marginLeft: 4 }}>
+          Add more details for thorough search
+        </Text>
+      </Pressable>
+
+      {showExtendedDetails && (
+        <View style={{ marginBottom: 16 }}>
+          <ChatBubbleInput
+            label="County or region"
+            helperText="County or region helps with court and public record searches."
+            placeholder="e.g. Los Angeles County, Harris County"
+            value={countyOrRegion}
+            onChangeText={setCountyOrRegion}
+          />
+          <ChatBubbleInput
+            label="Middle name or initial"
+            helperText="Helps distinguish people with similar names."
+            placeholder="e.g. Michael, J."
+            value={middleNameOrInitial}
+            onChangeText={setMiddleNameOrInitial}
+          />
+          <ChatBubbleInput
+            label="Previous city or state"
+            helperText="If they recently moved or lived elsewhere."
+            placeholder="e.g. Chicago, IL"
+            value={previousLocation}
+            onChangeText={setPreviousLocation}
+          />
+          <ChatBubbleInput
+            label="Company, business, or role"
+            helperText="Used for professional or business searches."
+            placeholder="e.g. Google, Real estate agent"
+            value={professionalInfo}
+            onChangeText={setProfessionalInfo}
+          />
+          <ChatBubbleInput
+            label="Known aliases or past usernames"
+            helperText="Any usernames they have used before, even if old. Separate with commas."
+            placeholder="e.g. cooluser123, old_handle"
+            value={knownAliases}
+            onChangeText={setKnownAliases}
           />
         </View>
       )}

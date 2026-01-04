@@ -274,12 +274,13 @@ export interface DeepSearchResultMessage extends Message {
     personContextId: string;
     searchQuery: string;
     sources: Array<{
-      type: "social" | "professional" | "dating" | "news" | "other";
+      type: "social" | "professional" | "dating" | "legal" | "username" | "images" | "writing" | "location" | "archived" | "other";
       platform: string;
       url?: string;
       summary: string;
       relevantDetails: string[];
       isVerified: boolean;
+      confidence?: "high" | "medium" | "low";
     }>;
     summary: string;
     alignmentNotes: string[];

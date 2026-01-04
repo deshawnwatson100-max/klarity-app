@@ -108,6 +108,22 @@ export type ContextAnchorType =
   | "username";
 
 /**
+ * Extended Deep Search context fields for more thorough searches
+ */
+export interface DeepSearchExtendedContext {
+  // County or region for court/public record searches
+  countyOrRegion?: string;
+  // Middle name or initial to distinguish similar names
+  middleNameOrInitial?: string;
+  // Previous city or state if recently moved
+  previousLocation?: string;
+  // Known company, business name, or professional role
+  professionalInfo?: string;
+  // Known aliases or past usernames
+  knownAliases?: string[];
+}
+
+/**
  * Core Person Context record
  */
 export interface PersonContext {
@@ -126,6 +142,9 @@ export interface PersonContext {
   };
   knownUsername?: string; // Optional boost: known handle
   approximateAge?: string; // Optional boost: age range
+
+  // Extended Deep Search fields for more thorough searches
+  extendedContext?: DeepSearchExtendedContext;
 
   // User's intent for tracking this context
   userIntent?: string; // e.g., "I want to understand our dynamic better"

@@ -11,6 +11,7 @@ import {
   RelationshipContextType,
   PerceptionFeeling,
   ContextAnchorType,
+  DeepSearchExtendedContext,
   createPersonContext,
   createPersonContextNote,
   createPerceptionState,
@@ -70,12 +71,13 @@ interface PersonContextState {
       contextAnchor?: { type: ContextAnchorType; value: string };
       knownUsername?: string;
       approximateAge?: string;
+      extendedContext?: DeepSearchExtendedContext;
     }
   ) => string; // Returns new ID
   updatePersonContext: (
     id: string,
     updates: Partial<
-      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent" | "location" | "contextAnchor" | "knownUsername" | "approximateAge">
+      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent" | "location" | "contextAnchor" | "knownUsername" | "approximateAge" | "extendedContext">
     >
   ) => void;
   deletePersonContext: (id: string) => void;
@@ -172,6 +174,7 @@ export const usePersonContextStore = create<PersonContextState>()(
           contextAnchor?: { type: ContextAnchorType; value: string };
           knownUsername?: string;
           approximateAge?: string;
+          extendedContext?: DeepSearchExtendedContext;
         }
       ) => {
         const newContext = createPersonContext(name, relationshipContext);
@@ -190,6 +193,9 @@ export const usePersonContextStore = create<PersonContextState>()(
           }
           if (deepSearchContext.approximateAge) {
             newContext.approximateAge = deepSearchContext.approximateAge;
+          }
+          if (deepSearchContext.extendedContext) {
+            newContext.extendedContext = deepSearchContext.extendedContext;
           }
         }
 

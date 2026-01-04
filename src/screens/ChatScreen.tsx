@@ -389,13 +389,9 @@ export function ChatScreen({ navigation, route }: Props) {
       addMessageToActiveLoopRaw(loadingMessage);
 
       try {
-        // Execute Deep Search
+        // Execute Deep Search - searches all 9 categories thoroughly
         const result = await executeDeepSearch({
           personContext: activePersonContext,
-          focusAreas: activePersonContext.relationshipContext === "dating" ||
-                      activePersonContext.relationshipContext === "romantic"
-            ? ["dating", "social"]
-            : ["social", "professional"],
           onProgress: (status) => {
             console.log("[DeepSearch] Progress:", status);
           },
@@ -490,13 +486,9 @@ export function ChatScreen({ navigation, route }: Props) {
     }, 100);
 
     try {
-      // Execute Deep Search
+      // Execute Deep Search - searches all 9 categories thoroughly
       const result = await executeDeepSearch({
         personContext: personContext,
-        focusAreas: personContext.relationshipContext === "dating" ||
-                    personContext.relationshipContext === "romantic"
-          ? ["dating", "social"]
-          : ["social", "professional"],
         onProgress: (status) => {
           console.log("[DeepSearch] Progress:", status);
         },

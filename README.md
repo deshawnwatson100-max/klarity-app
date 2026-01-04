@@ -1106,12 +1106,76 @@ Automatically searches publicly available information when Person Context is cre
 3. Results appear in chat loop with sources, alignment notes, and uncertainties
 4. User is asked "How does this sit with you?" for perception calibration
 
-**What Deep Search Looks For:**
-- Social media platforms (LinkedIn, Instagram, Facebook, Twitter/X)
-- Professional directories and company pages
-- Dating websites and apps (if profiles are public)
-- News articles and public records
-- Secondary or alternative online identities
+**Search Scope (All 9 Categories):**
+Deep Search performs multiple search passes covering all of the following areas:
+
+1. **Dating Sites and Apps**
+   - Publicly indexed dating profiles
+   - SEO mirrors, cached pages, archived snapshots
+   - Reused usernames or photos associated with dating platforms
+
+2. **Social Media Presence**
+   - Major platforms (Instagram, Facebook, X/Twitter, TikTok, LinkedIn)
+   - Secondary or lesser-known platforms if indexed
+   - Username reuse across platforms
+   - Public bios, posts, images, and comments
+
+3. **Legal and Public Records**
+   - Court case portals (civil and criminal)
+   - Jail or booking records where publicly posted
+   - State or federal inmate/DOC lookup pages
+   - Publicly available press releases or news articles
+   - Official .gov sources when available
+
+4. **Professional and Business Footprint**
+   - Company websites and staff bios
+   - LinkedIn and professional directories
+   - Business registrations and public filings
+   - Professional licenses where searchable
+
+5. **Username and Alias Reuse**
+   - Occurrences of the same username across multiple sites
+   - Variations of usernames that appear connected
+   - Old or secondary usernames that remain publicly indexed
+
+6. **Images and Visual Footprint**
+   - Public profile photos reused across platforms
+   - Image search results and thumbnails
+   - Archived or cached image pages
+
+7. **Public Writing and Comments**
+   - Blog posts, Medium articles, guest posts
+   - Forum posts, Reddit comments, Quora answers
+   - Any publicly indexed written content tied to the name or username
+
+8. **Location History Signals**
+   - Locations mentioned in bios, profiles, or posts
+   - Changes in listed cities over time
+   - Public check-ins or tagged locations
+
+9. **Archived and Cached Pages**
+   - Wayback Machine snapshots
+   - Cached search results
+   - Deleted but still indexed pages
+
+**Optional Inputs for Better Results:**
+The Person Context Card includes optional fields to improve Deep Search accuracy:
+
+- **County or region** - Helps with court and public record searches
+- **Middle name or initial** - Helps distinguish people with similar names
+- **Approximate age range** - Used only to narrow public matches
+- **Previous city or state** - If they recently moved or lived elsewhere
+- **Company, business, or role** - Used for professional or business searches
+- **Known aliases or past usernames** - Any usernames they have used before, even if old
+
+**Multi-Pass Search Strategy:**
+The search uses multiple query variations:
+- Exact name in quotes
+- Name + location combinations
+- Name + county if provided
+- Name variations (with/without middle name/initial)
+- Each known username independently
+- Aliases if provided
 
 **Key Framing Rules:**
 - Finding something does not mean it is bad
@@ -1119,6 +1183,7 @@ Automatically searches publicly available information when Person Context is cre
 - Surfaces alignment or misalignment with what user has shared
 - If multiple people match, says so clearly
 - If nothing found, explains possible reasons
+- If identity is unclear, results are treated as possible matches rather than confirmed
 
 **Safety Guardrails:**
 - Only uses publicly accessible information
@@ -1128,8 +1193,8 @@ Automatically searches publicly available information when Person Context is cre
 - Shows safety resources if danger keywords detected
 
 **Results Display:**
-- Summary of what was searched
-- Sources found (expandable cards by platform)
+- Summary of what was searched across all 9 categories
+- Sources found (expandable cards by category)
 - Alignment notes (matches what user shared)
 - Uncertainties (could not verify)
 - Perception check: "How does this sit with you?"
@@ -1156,10 +1221,11 @@ When a user completes adding person context info from the Input Screen:
 7. Results appear in chat as `DeepSearchResultBubble`
 
 **Files:**
-- `src/api/deepSearch.ts` - Prompts, types, and parsing
+- `src/api/deepSearch.ts` - Prompts, types, search categories, and parsing
 - `src/api/deepSearchService.ts` - Orchestration and LLM calls
 - `src/components/DeepSearchResultBubble.tsx` - Chat UI component
 - `src/types/chat.ts` - DeepSearchLoadingMessage, DeepSearchResultMessage types
+- `src/types/personContext.ts` - DeepSearchExtendedContext interface
 - `src/screens/ChatScreen.tsx` - Auto-trigger logic and message rendering
 - `src/screens/InputScreen.tsx` - Navigation with triggerDeepSearch param
 
