@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import {
   View,
   Text,
   Pressable,
   TextInput,
-  ScrollView,
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,8 +13,6 @@ import {
 } from "../state/personContextStore";
 import {
   useLoopsStore,
-  useActiveLoopPersonContextId,
-  useActiveLoopPersonContextPaused,
 } from "../state/loopsStore";
 import { RelationshipContextType, ContextAnchorType } from "../types/personContext";
 
@@ -59,12 +56,56 @@ const CONTEXT_ANCHOR_OPTIONS: {
   { type: "username", label: "Known username or handle", placeholder: "e.g. @handle" },
 ];
 
+// Extracted input component to prevent re-renders
+interface ChatBubbleInputProps {
+  label: string;
+  helperText: string;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  required?: boolean;
+}
+
+const ChatBubbleInput = memo(function ChatBubbleInput({
+  label,
+  helperText,
+  placeholder,
+  value,
+  onChangeText,
+  required = false,
+}: ChatBubbleInputProps) {
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
+        {label}{required && <Text style={{ color: COLORS.textMuted }}> *</Text>}
+      </Text>
+      <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
+        {helperText}
+      </Text>
+      <TextInput
+        style={{
+          backgroundColor: COLORS.surface,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          fontSize: 14,
+          color: COLORS.text,
+        }}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
+        value={value}
+        onChangeText={onChangeText}
+      />
+    </View>
+  );
+});
+
 interface PersonContextCardProps {
   onPersonContextCreated?: (personContextId: string) => void;
   onDismiss?: () => void;
 }
 
-export function PersonContextCard({
+export const PersonContextCard = memo(function PersonContextCard({
   onPersonContextCreated,
   onDismiss,
 }: PersonContextCardProps) {
@@ -133,49 +174,6 @@ export function PersonContextCard({
     resetForm();
     onPersonContextCreated?.(newId);
   };
-
-  // Chat bubble style input component
-  const ChatBubbleInput = ({
-    label,
-    helperText,
-    placeholder,
-    value,
-    onChangeText,
-    autoFocus = false,
-    required = false,
-  }: {
-    label: string;
-    helperText: string;
-    placeholder: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    autoFocus?: boolean;
-    required?: boolean;
-  }) => (
-    <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
-        {label}{required && <Text style={{ color: COLORS.textMuted }}> *</Text>}
-      </Text>
-      <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-        {helperText}
-      </Text>
-      <TextInput
-        style={{
-          backgroundColor: COLORS.surface,
-          borderRadius: 12,
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-          fontSize: 14,
-          color: COLORS.text,
-        }}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
-        value={value}
-        onChangeText={onChangeText}
-        autoFocus={autoFocus}
-      />
-    </View>
-  );
 
   return (
     <View
@@ -390,4 +388,4 @@ export function PersonContextCard({
       </Pressable>
     </View>
   );
-}
+});
