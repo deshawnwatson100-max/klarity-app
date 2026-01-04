@@ -2,10 +2,6 @@ import React, { useState } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-} from "react-native-reanimated";
 import { DeepSearchResult, DeepSearchSource, SAFETY_RESOURCES } from "../api/deepSearch";
 
 interface DeepSearchResultBubbleProps {
@@ -69,8 +65,7 @@ export function DeepSearchResultBubble({
   };
 
   return (
-    <Animated.View
-      entering={FadeInUp.duration(300).springify()}
+    <View
       style={{
         marginVertical: 8,
         marginHorizontal: 16,
@@ -109,8 +104,7 @@ export function DeepSearchResultBubble({
 
       {/* Safety Resources (if needed) */}
       {showSafetyResources && (
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(200)}
+        <View
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.1)",
             borderRadius: 12,
@@ -150,7 +144,7 @@ export function DeepSearchResultBubble({
               </Text>
             </View>
           </Pressable>
-        </Animated.View>
+        </View>
       )}
 
       {/* Main Results Card */}
@@ -383,7 +377,7 @@ export function DeepSearchResultBubble({
           </Text>
         </Pressable>
       )}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -438,8 +432,7 @@ function PerceptionChip({
  */
 export function DeepSearchLoading() {
   return (
-    <Animated.View
-      entering={FadeInUp.duration(200)}
+    <View
       style={{
         marginVertical: 8,
         marginHorizontal: 16,
@@ -503,7 +496,7 @@ export function DeepSearchLoading() {
           </View>
         ))}
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -512,8 +505,7 @@ export function DeepSearchLoading() {
  */
 export function DeepSearchNoResults({ personName }: { personName: string }) {
   return (
-    <Animated.View
-      entering={FadeInUp.duration(300)}
+    <View
       style={{
         marginVertical: 8,
         marginHorizontal: 16,
@@ -581,6 +573,6 @@ export function DeepSearchNoResults({ personName }: { personName: string }) {
           How does this sit with you?
         </Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
