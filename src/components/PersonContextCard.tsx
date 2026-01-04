@@ -122,16 +122,10 @@ export const PersonContextCard = memo(function PersonContextCard({
   const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
 
-  const resetForm = () => {
-    setName("");
-    setRelationshipContext(null);
-    setLocation("");
-    setSelectedAnchorType(null);
-    setAnchorValue("");
-    setShowBoost(false);
-    setKnownUsername("");
-    setApproximateAge("");
-  };
+  // Completed state
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [savedName, setSavedName] = useState("");
+  const [savedRelationship, setSavedRelationship] = useState<RelationshipContextType | null>(null);
 
   const isFormValid = name.trim().length > 0 && relationshipContext !== null;
 
@@ -171,10 +165,65 @@ export const PersonContextCard = memo(function PersonContextCard({
     );
 
     setActiveLoopPersonContext(newId);
-    resetForm();
+
+    // Save info for completed state display
+    setSavedName(name.trim());
+    setSavedRelationship(relationshipContext);
+    setIsCompleted(true);
+
     onPersonContextCreated?.(newId);
   };
 
+  // Completed state view
+  if (isCompleted) {
+    const relationshipLabel = RELATIONSHIP_OPTIONS.find(
+      (r) => r.value === savedRelationship
+    )?.label || savedRelationship;
+
+    return (
+      <View
+        style={{
+          backgroundColor: COLORS.background,
+          borderRadius: 16,
+          padding: 16,
+          marginVertical: 8,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: COLORS.accentBg,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={22} color={COLORS.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
+                {savedName}
+              </Text>
+              <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
+                {relationshipLabel} · Context saved
+              </Text>
+            </View>
+          </View>
+          {onDismiss && (
+            <Pressable onPress={onDismiss} hitSlop={12}>
+              <Ionicons name="close" size={20} color={COLORS.textMuted} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // Form view
   return (
     <View
       style={{
@@ -370,7 +419,7 @@ export const PersonContextCard = memo(function PersonContextCard({
         onPress={handleSave}
         disabled={!isFormValid}
         style={({ pressed }) => ({
-          backgroundColor: isFormValid ? "#000" : COLORS.surface,
+          backgroundColor: isFormValid ? COLORS.accent : COLORS.surface,
           paddingVertical: 14,
           borderRadius: 10,
           marginTop: 8,

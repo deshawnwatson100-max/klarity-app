@@ -1362,15 +1362,14 @@ export function ChatScreen({ navigation, route }: Props) {
         <PersonContextCard
           key={message.id}
           onPersonContextCreated={(personContextId) => {
-            // Remove the card from chat after saving
-            removeMessageFromActiveLoop(message.id);
+            // Card stays visible with completed state - don't remove
             // Trigger deep search for the new person context
             setTimeout(() => {
               runDeepSearchForPerson(personContextId);
             }, 300);
           }}
           onDismiss={() => {
-            // Remove the card from chat when dismissed
+            // Remove the card from chat when dismissed via X button
             removeMessageFromActiveLoop(message.id);
           }}
         />
