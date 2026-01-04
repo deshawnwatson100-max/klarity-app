@@ -8,8 +8,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { DeepSearchResult, DeepSearchSource, SAFETY_RESOURCES } from "../api/deepSearch";
 
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 interface DeepSearchResultBubbleProps {
   result: DeepSearchResult;
   onAskFollowUp?: () => void;
@@ -71,7 +69,7 @@ export function DeepSearchResultBubble({
   };
 
   return (
-    <AnimatedView
+    <Animated.View
       entering={FadeInUp.duration(300).springify()}
       style={{
         marginVertical: 8,
@@ -111,7 +109,7 @@ export function DeepSearchResultBubble({
 
       {/* Safety Resources (if needed) */}
       {showSafetyResources && (
-        <AnimatedView
+        <Animated.View
           entering={FadeInDown.delay(100).duration(200)}
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.1)",
@@ -152,7 +150,7 @@ export function DeepSearchResultBubble({
               </Text>
             </View>
           </Pressable>
-        </AnimatedView>
+        </Animated.View>
       )}
 
       {/* Main Results Card */}
@@ -385,7 +383,7 @@ export function DeepSearchResultBubble({
           </Text>
         </Pressable>
       )}
-    </AnimatedView>
+    </Animated.View>
   );
 }
 
@@ -440,7 +438,7 @@ function PerceptionChip({
  */
 export function DeepSearchLoading() {
   return (
-    <AnimatedView
+    <Animated.View
       entering={FadeInUp.duration(200)}
       style={{
         marginVertical: 8,
@@ -505,7 +503,7 @@ export function DeepSearchLoading() {
           </View>
         ))}
       </View>
-    </AnimatedView>
+    </Animated.View>
   );
 }
 
@@ -514,7 +512,7 @@ export function DeepSearchLoading() {
  */
 export function DeepSearchNoResults({ personName }: { personName: string }) {
   return (
-    <AnimatedView
+    <Animated.View
       entering={FadeInUp.duration(300)}
       style={{
         marginVertical: 8,
@@ -583,6 +581,6 @@ export function DeepSearchNoResults({ personName }: { personName: string }) {
           How does this sit with you?
         </Text>
       </View>
-    </AnimatedView>
+    </Animated.View>
   );
 }
