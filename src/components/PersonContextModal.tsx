@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,15 +9,18 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, SlideInRight, SlideOutLeft } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import {
   usePersonContextStore,
   useActivePersonContext,
 } from "../state/personContextStore";
 import { RelationshipContextType } from "../types/personContext";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 /**
  * Modal step state machine
@@ -64,7 +67,7 @@ const CONTEXT_CHIPS = [
   { id: "reputation_concerns", label: "Reputation concerns" },
   { id: "past_issues", label: "Past issues (legal/professional)" },
   { id: "mostly_positive", label: "Mostly positive" },
-  { id: "not_sure", label: "I'm not sure yet" },
+  { id: "not_sure", label: "I am not sure yet" },
 ] as const;
 
 type ContextChipId = (typeof CONTEXT_CHIPS)[number]["id"];
@@ -78,6 +81,11 @@ export function PersonContextModal({
   visible,
   onClose,
 }: PersonContextModalProps) {
+  // Animation values
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const contentFadeAnim = useRef(new Animated.Value(1)).current;
+
   // Store hooks
   const activePersonContext = useActivePersonContext();
   const createPersonContext = usePersonContextStore(
@@ -105,6 +113,40 @@ export function PersonContextModal({
   );
   const [additionalNotes, setAdditionalNotes] = useState("");
 
+  // Handle animations when visibility changes
+  useEffect(() => {
+    if (visible) {
+      // Animate in
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          damping: 20,
+          stiffness: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
   // Determine initial step based on active context
   useEffect(() => {
     if (visible) {
@@ -130,6 +172,23 @@ export function PersonContextModal({
     onClose();
   };
 
+  // Animate step transition
+  const animateStepChange = (newStep: ModalStep) => {
+    Animated.sequence([
+      Animated.timing(contentFadeAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentFadeAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    setStep(newStep);
+  };
+
   // Step 1 validation
   const isStep1Valid = name.trim().length > 0 && relationshipContext !== null;
 
@@ -137,7 +196,7 @@ export function PersonContextModal({
   const handleNextToChips = () => {
     if (!isStep1Valid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep("context_chips");
+    animateStepChange("context_chips");
   };
 
   // Handle create context
@@ -196,31 +255,27 @@ export function PersonContextModal({
   const handleSwitchPerson = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     clearActivePersonContext();
-    setStep("basics");
+    animateStepChange("basics");
     resetForm();
   };
 
   // Handle edit (for now, just switch - full edit can be added later)
   const handleEdit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep("basics");
+    animateStepChange("basics");
   };
 
   // Handle clear/remove
   const handleClear = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     clearActivePersonContext();
-    setStep("basics");
+    animateStepChange("basics");
     resetForm();
   };
 
   // Render Step 1: Basics
   const renderBasicsStep = () => (
-    <Animated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(150)}
-      style={{ flex: 1 }}
-    >
+    <View style={{ flex: 1 }}>
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <View>
@@ -425,23 +480,19 @@ export function PersonContextModal({
           />
         </Pressable>
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 
   // Render Step 2: Context Chips
   const renderContextChipsStep = () => (
-    <Animated.View
-      entering={SlideInRight.duration(250)}
-      exiting={SlideOutLeft.duration(200)}
-      style={{ flex: 1 }}
-    >
+    <View style={{ flex: 1 }}>
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setStep("basics");
+              animateStepChange("basics");
             }}
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}
           >
@@ -589,7 +640,7 @@ export function PersonContextModal({
           <Text style={{ fontSize: 14, color: "#6B7280" }}>Skip for now</Text>
         </Pressable>
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 
   // Render View Saved Person
@@ -602,11 +653,7 @@ export function PersonContextModal({
       )?.label || activePersonContext.relationshipContext;
 
     return (
-      <Animated.View
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(150)}
-        style={{ flex: 1 }}
-      >
+      <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#F9FAFB" }}>
@@ -845,7 +892,7 @@ export function PersonContextModal({
             </ScrollView>
           </View>
         )}
-      </Animated.View>
+      </View>
     );
   };
 
@@ -879,26 +926,21 @@ export function PersonContextModal({
           onPress={handleClose}
         >
           {/* Backdrop */}
-          {visible && (
-            <Animated.View
-              entering={FadeIn.duration(200)}
-              exiting={FadeOut.duration(200)}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-              }}
-            />
-          )}
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              opacity: fadeAnim,
+            }}
+          />
 
           {/* Modal Content */}
           <Pressable onPress={(e) => e.stopPropagation()}>
             <Animated.View
-              entering={SlideInDown.duration(300).springify().damping(20)}
-              exiting={SlideOutDown.duration(200)}
               style={{
                 backgroundColor: "#0D0E10",
                 borderTopLeftRadius: 24,
@@ -907,6 +949,7 @@ export function PersonContextModal({
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.06)",
                 maxHeight: "85%",
+                transform: [{ translateY: slideAnim }],
               }}
             >
               {/* Handle */}
@@ -921,13 +964,21 @@ export function PersonContextModal({
                 />
               </View>
 
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8, flexGrow: 1 }}
+              <Animated.View
+                style={{
+                  paddingHorizontal: 20,
+                  paddingBottom: 8,
+                  opacity: contentFadeAnim,
+                }}
               >
-                {renderStep()}
-              </ScrollView>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={{ flexGrow: 1 }}
+                >
+                  {renderStep()}
+                </ScrollView>
+              </Animated.View>
             </Animated.View>
           </Pressable>
         </Pressable>
