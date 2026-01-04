@@ -27,21 +27,21 @@ import { RelationshipContextType } from "../types/personContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// ChatGPT-style colors
+// ChatGPT-style colors - minimal, borderless
 const COLORS = {
   background: "#212121",
-  surface: "#2F2F2F",
-  surfaceHover: "#3A3A3A",
-  border: "#3F3F3F",
+  surface: "#000000",
+  surfaceHover: "#1A1A1A",
+  border: "transparent",
   text: "#ECECEC",
   textSecondary: "#B4B4B4",
   textMuted: "#8E8E8E",
   accent: "#10A37F",
-  accentBg: "rgba(16, 163, 127, 0.1)",
+  accentBg: "rgba(16, 163, 127, 0.15)",
   error: "#EF4444",
-  errorBg: "rgba(239, 68, 68, 0.1)",
+  errorBg: "rgba(239, 68, 68, 0.15)",
   warning: "#F59E0B",
-  warningBg: "rgba(245, 158, 11, 0.1)",
+  warningBg: "rgba(245, 158, 11, 0.15)",
 };
 
 type ModalStep = "basics" | "context_chips" | "view_saved";
@@ -234,8 +234,6 @@ export function PersonContextModal({
             paddingVertical: 12,
             fontSize: 15,
             color: COLORS.text,
-            borderWidth: 1,
-            borderColor: name.trim() ? COLORS.accent : COLORS.border,
           }}
           placeholder="Their name or nickname"
           placeholderTextColor={COLORS.textMuted}
@@ -263,8 +261,6 @@ export function PersonContextModal({
                   paddingVertical: 10,
                   borderRadius: 8,
                   backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? COLORS.accent : COLORS.border,
                 }}
               >
                 <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
@@ -327,8 +323,6 @@ export function PersonContextModal({
                   paddingVertical: 10,
                   borderRadius: 8,
                   backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? COLORS.accent : COLORS.border,
                 }}
               >
                 <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
@@ -351,8 +345,6 @@ export function PersonContextModal({
             paddingVertical: 12,
             fontSize: 15,
             color: COLORS.text,
-            borderWidth: 1,
-            borderColor: COLORS.border,
             minHeight: 80,
             textAlignVertical: "top",
           }}
@@ -415,8 +407,6 @@ export function PersonContextModal({
             borderRadius: 8,
             padding: 12,
             marginBottom: 16,
-            borderWidth: 1,
-            borderColor: isContextPaused ? COLORS.warning : COLORS.border,
           }}>
             <Text style={{ fontSize: 14, color: isContextPaused ? COLORS.warning : COLORS.textSecondary }}>
               {isContextPaused ? "Paused" : "Active"}
@@ -437,8 +427,6 @@ export function PersonContextModal({
             backgroundColor: COLORS.surface,
             borderRadius: 12,
             padding: 16,
-            borderWidth: 1,
-            borderColor: COLORS.border,
             opacity: isContextPaused ? 0.6 : 1,
           }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -464,7 +452,7 @@ export function PersonContextModal({
             </View>
 
             {activePersonContext.notes.length > 0 && (
-              <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border }}>
+              <View style={{ marginTop: 12, paddingTop: 12 }}>
                 {activePersonContext.notes.slice(0, 2).map((note) => (
                   <Text key={note.id} style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 4 }} numberOfLines={1}>
                     {note.content}
@@ -483,8 +471,6 @@ export function PersonContextModal({
                 paddingVertical: 12,
                 borderRadius: 8,
                 backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
-                borderWidth: 1,
-                borderColor: COLORS.border,
                 alignItems: "center",
               })}
             >
@@ -497,8 +483,6 @@ export function PersonContextModal({
                 paddingVertical: 12,
                 borderRadius: 8,
                 backgroundColor: pressed ? COLORS.errorBg : COLORS.surface,
-                borderWidth: 1,
-                borderColor: COLORS.border,
                 alignItems: "center",
               })}
             >
@@ -528,8 +512,6 @@ export function PersonContextModal({
                         paddingVertical: 10,
                         borderRadius: 8,
                         marginRight: 8,
-                        borderWidth: 1,
-                        borderColor: COLORS.border,
                       }}
                     >
                       <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>{pc.name}</Text>
@@ -581,7 +563,7 @@ export function PersonContextModal({
               >
                 {/* Handle */}
                 <View style={{ alignItems: "center", paddingVertical: 8 }}>
-                  <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: COLORS.border }} />
+                  <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: COLORS.textMuted }} />
                 </View>
                 <View style={{ flex: 1 }}>
                   {renderStep()}
