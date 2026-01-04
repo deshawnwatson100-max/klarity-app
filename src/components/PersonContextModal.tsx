@@ -221,7 +221,7 @@ export function PersonContextModal({
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Name */}
         <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>
           Name
@@ -310,7 +310,7 @@ export function PersonContextModal({
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
         <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 12 }}>
           Optional - helps with context
         </Text>
@@ -405,138 +405,140 @@ export function PersonContextModal({
           </Pressable>
         </View>
 
-        {/* Pause toggle */}
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          backgroundColor: isContextPaused ? COLORS.warningBg : COLORS.surface,
-          borderRadius: 8,
-          padding: 12,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: isContextPaused ? COLORS.warning : COLORS.border,
-        }}>
-          <Text style={{ fontSize: 14, color: isContextPaused ? COLORS.warning : COLORS.textSecondary }}>
-            {isContextPaused ? "Paused" : "Active"}
-          </Text>
-          <Switch
-            value={!isContextPaused}
-            onValueChange={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              toggleActiveLoopPersonContextPause();
-            }}
-            trackColor={{ false: COLORS.border, true: COLORS.accent }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        {/* Person card */}
-        <View style={{
-          backgroundColor: COLORS.surface,
-          borderRadius: 12,
-          padding: 16,
-          borderWidth: 1,
-          borderColor: COLORS.border,
-          opacity: isContextPaused ? 0.6 : 1,
-        }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: COLORS.accentBg,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}>
-              <Ionicons name="person" size={20} color={COLORS.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: "500", color: COLORS.text }}>
-                {activePersonContext.name}
-              </Text>
-              <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
-                {relationshipLabel}
-              </Text>
-            </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* Pause toggle */}
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: isContextPaused ? COLORS.warningBg : COLORS.surface,
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: isContextPaused ? COLORS.warning : COLORS.border,
+          }}>
+            <Text style={{ fontSize: 14, color: isContextPaused ? COLORS.warning : COLORS.textSecondary }}>
+              {isContextPaused ? "Paused" : "Active"}
+            </Text>
+            <Switch
+              value={!isContextPaused}
+              onValueChange={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                toggleActiveLoopPersonContextPause();
+              }}
+              trackColor={{ false: COLORS.border, true: COLORS.accent }}
+              thumbColor="#fff"
+            />
           </View>
 
-          {activePersonContext.notes.length > 0 && (
-            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border }}>
-              {activePersonContext.notes.slice(0, 2).map((note) => (
-                <Text key={note.id} style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 4 }} numberOfLines={1}>
-                  {note.content}
+          {/* Person card */}
+          <View style={{
+            backgroundColor: COLORS.surface,
+            borderRadius: 12,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            opacity: isContextPaused ? 0.6 : 1,
+          }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: COLORS.accentBg,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}>
+                <Ionicons name="person" size={20} color={COLORS.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: "500", color: COLORS.text }}>
+                  {activePersonContext.name}
                 </Text>
-              ))}
+                <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
+                  {relationshipLabel}
+                </Text>
+              </View>
+            </View>
+
+            {activePersonContext.notes.length > 0 && (
+              <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border }}>
+                {activePersonContext.notes.slice(0, 2).map((note) => (
+                  <Text key={note.id} style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 4 }} numberOfLines={1}>
+                    {note.content}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Actions */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+            <Pressable
+              onPress={handleSwitchPerson}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 8,
+                backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                alignItems: "center",
+              })}
+            >
+              <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Switch</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleClear}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 8,
+                backgroundColor: pressed ? COLORS.errorBg : COLORS.surface,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                alignItems: "center",
+              })}
+            >
+              <Text style={{ fontSize: 14, color: COLORS.error }}>Remove</Text>
+            </Pressable>
+          </View>
+
+          {/* Other saved */}
+          {getNonArchivedContexts().length > 1 && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
+                Other saved
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {getNonArchivedContexts()
+                  .filter((pc) => pc.id !== activePersonContext.id)
+                  .map((pc) => (
+                    <Pressable
+                      key={pc.id}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setActiveLoopPersonContext(pc.id);
+                      }}
+                      style={{
+                        backgroundColor: COLORS.surface,
+                        paddingHorizontal: 14,
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        marginRight: 8,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>{pc.name}</Text>
+                    </Pressable>
+                  ))}
+              </ScrollView>
             </View>
           )}
-        </View>
-
-        {/* Actions */}
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          <Pressable
-            onPress={handleSwitchPerson}
-            style={({ pressed }) => ({
-              flex: 1,
-              paddingVertical: 12,
-              borderRadius: 8,
-              backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
-              borderWidth: 1,
-              borderColor: COLORS.border,
-              alignItems: "center",
-            })}
-          >
-            <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Switch</Text>
-          </Pressable>
-          <Pressable
-            onPress={handleClear}
-            style={({ pressed }) => ({
-              flex: 1,
-              paddingVertical: 12,
-              borderRadius: 8,
-              backgroundColor: pressed ? COLORS.errorBg : COLORS.surface,
-              borderWidth: 1,
-              borderColor: COLORS.border,
-              alignItems: "center",
-            })}
-          >
-            <Text style={{ fontSize: 14, color: COLORS.error }}>Remove</Text>
-          </Pressable>
-        </View>
-
-        {/* Other saved */}
-        {getNonArchivedContexts().length > 1 && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
-              Other saved
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {getNonArchivedContexts()
-                .filter((pc) => pc.id !== activePersonContext.id)
-                .map((pc) => (
-                  <Pressable
-                    key={pc.id}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setActiveLoopPersonContext(pc.id);
-                    }}
-                    style={{
-                      backgroundColor: COLORS.surface,
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      borderRadius: 8,
-                      marginRight: 8,
-                      borderWidth: 1,
-                      borderColor: COLORS.border,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>{pc.name}</Text>
-                  </Pressable>
-                ))}
-            </ScrollView>
-          </View>
-        )}
+        </ScrollView>
       </View>
     );
   };
@@ -572,7 +574,8 @@ export function PersonContextModal({
                   paddingTop: 8,
                   paddingHorizontal: 20,
                   paddingBottom: Platform.OS === "ios" ? 34 : 24,
-                  maxHeight: "80%",
+                  minHeight: 400,
+                  maxHeight: "85%",
                   transform: [{ translateY: slideAnim }],
                 }}
               >
@@ -580,7 +583,9 @@ export function PersonContextModal({
                 <View style={{ alignItems: "center", paddingVertical: 8 }}>
                   <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: COLORS.border }} />
                 </View>
-                {renderStep()}
+                <View style={{ flex: 1 }}>
+                  {renderStep()}
+                </View>
               </Animated.View>
             </Pressable>
           </Pressable>
