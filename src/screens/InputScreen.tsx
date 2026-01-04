@@ -13,6 +13,7 @@ import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator";
+import { PersonContextModal } from "../components/PersonContextModal";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -31,6 +32,7 @@ export function InputScreen({ navigation }: Props) {
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+  const [isPersonContextModalVisible, setIsPersonContextModalVisible] = useState(false);
 
   // Track current input mode for navigation
   const inputModeRef = useRef<InputMode>(inputMode);
@@ -299,6 +301,8 @@ export function InputScreen({ navigation }: Props) {
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={setInputMode}
+            onPersonContextPress={() => setIsPersonContextModalVisible(true)}
+            showPersonContext={true}
           />
 
           {/* Center Content */}
@@ -353,6 +357,12 @@ export function InputScreen({ navigation }: Props) {
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
+      />
+
+      {/* Person Context Modal */}
+      <PersonContextModal
+        visible={isPersonContextModalVisible}
+        onClose={() => setIsPersonContextModalVisible(false)}
       />
     </View>
   );

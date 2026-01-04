@@ -2,10 +2,12 @@ import React from "react";
 import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useActivePersonContext } from "../state/personContextStore";
+import { useActiveLoopPersonContextId } from "../state/loopsStore";
+import { usePersonContextStore } from "../state/personContextStore";
 
 /**
  * Header icon component for Person Context
+ * Uses loop-scoped person context (each loop can have its own person context)
  */
 interface PersonContextHeaderIconProps {
   onPress: () => void;
@@ -14,7 +16,13 @@ interface PersonContextHeaderIconProps {
 export function PersonContextHeaderIcon({
   onPress,
 }: PersonContextHeaderIconProps) {
-  const activePersonContext = useActivePersonContext();
+  // Get the person context ID for the current active loop
+  const activeLoopPersonContextId = useActiveLoopPersonContextId();
+  // Get the actual person context data
+  const getPersonContextById = usePersonContextStore((s) => s.getPersonContextById);
+  const activePersonContext = activeLoopPersonContextId
+    ? getPersonContextById(activeLoopPersonContextId)
+    : null;
   const hasActivePerson = !!activePersonContext;
 
   return (
