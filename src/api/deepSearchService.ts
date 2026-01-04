@@ -207,8 +207,11 @@ export function shouldAutoTriggerDeepSearch(personContext: PersonContext): boole
     return false;
   }
 
-  // Check if user has uncertainty in their notes
-  const notesText = personContext.notes.map((n) => n.content).join(" ").toLowerCase();
+  // Check if user has uncertainty in their notes - safely handle undefined
+  const notesText = (personContext.notes || [])
+    .map((n) => n?.content || "")
+    .join(" ")
+    .toLowerCase();
   const uncertaintyIndicators = [
     "not sure",
     "unsure",

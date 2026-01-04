@@ -156,7 +156,11 @@ export interface DeepSearchInput {
 export function buildDeepSearchUserPrompt(input: DeepSearchInput): string {
   const { personContext, additionalSearchTerms = [], focusAreas = ["general"] } = input;
 
-  const notes = personContext.notes.map((n) => n.content).join("\n- ");
+  // Safely build notes text - handle undefined or empty notes
+  const notes = (personContext.notes || [])
+    .map((n) => n?.content || "")
+    .filter((content) => content.trim().length > 0)
+    .join("\n- ");
   const searchTerms = additionalSearchTerms.length > 0
     ? `\nAdditional identifiers to search: ${additionalSearchTerms.join(", ")}`
     : "";
@@ -263,7 +267,13 @@ export interface DeepSearchSource {
 
 export function buildSearchQueries(personContext: PersonContext): string[] {
   const queries: string[] = [];
-  const name = personContext.name;
+  const name = personContext.name || "";
+
+  // Guard against empty name
+  if (!name.trim()) {
+    return ["person search"];
+  }
+
   const nameParts = name.split(" ");
 
   // Exact name search
@@ -286,8 +296,10 @@ export function buildSearchQueries(personContext: PersonContext): string[] {
     queries.push(`"${name}" tinder OR bumble OR hinge`);
   }
 
-  // Extract locations and context from notes
-  const notesText = personContext.notes.map((n) => n.content).join(" ");
+  // Extract locations and context from notes - safely handle undefined
+  const notesText = (personContext.notes || [])
+    .map((n) => n?.content || "")
+    .join(" ");
 
   // Extract potential location mentions
   const locationPatterns = /(?:in|from|lives in|based in|works at|at|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g;
@@ -439,7 +451,11 @@ export interface SafetyCheckResult {
 }
 
 export function checkDeepSearchSafety(personContext: PersonContext): SafetyCheckResult {
-  const notesText = personContext.notes.map((n) => n.content).join(" ").toLowerCase();
+  // Safely get notes text - handle undefined or empty notes
+  const notesText = (personContext.notes || [])
+    .map((n) => n?.content || "")
+    .join(" ")
+    .toLowerCase();
 
   // Check for immediate danger keywords
   const dangerKeywords = [
