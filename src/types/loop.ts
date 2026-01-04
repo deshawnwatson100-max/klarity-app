@@ -30,6 +30,11 @@ export interface KlarityLoop {
   summary?: string; // Optional emotional clarity summary
   emotionalClarity?: number; // Optional percentage (0-100)
   relationshipId?: string; // Optional link to a tracked relationship
+
+  // Person Context - Loop-specific
+  personContextId?: string; // ID of the person context for this loop
+  isPersonContextPaused?: boolean; // Whether person context is paused for this loop
+  deepSearchCompleted?: boolean; // Whether deep search has run for this loop
 }
 
 /**

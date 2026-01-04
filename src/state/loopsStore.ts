@@ -48,6 +48,8 @@ interface LoopsState {
   getRelationshipById: (id: string) => TrackedRelationship | undefined;
   getLoopsForRelationship: (relationshipId: string) => KlarityLoop[];
   getActiveLoopMessagesByMode: (mode: MessageMode) => ChatMessage[];
+  getActiveLoopPersonContextId: () => string | null;
+  isActiveLoopPersonContextPaused: () => boolean;
 
   // Actions - Loop Management
   createNewLoop: () => string; // Returns the new loop ID
@@ -75,6 +77,14 @@ interface LoopsState {
   deleteRelationship: (relationshipId: string) => void;
   linkLoopToRelationship: (loopId: string, relationshipId: string) => void;
   unlinkLoopFromRelationship: (loopId: string) => void;
+
+  // Actions - Person Context (Loop-specific)
+  setLoopPersonContext: (loopId: string, personContextId: string | null) => void;
+  setActiveLoopPersonContext: (personContextId: string | null) => void;
+  toggleActiveLoopPersonContextPause: () => void;
+  setActiveLoopPersonContextPaused: (paused: boolean) => void;
+  clearActiveLoopPersonContext: () => void;
+  setActiveLoopDeepSearchCompleted: (completed: boolean) => void;
 }
 
 export const useLoopsStore = create<LoopsState>()(
@@ -112,6 +122,18 @@ export const useLoopsStore = create<LoopsState>()(
         const activeLoop = state.loops.find((loop) => loop.id === state.activeLoopId);
         if (!activeLoop) return [];
         return activeLoop.messages.filter((msg) => msg.mode === mode || msg.mode === undefined);
+      },
+
+      getActiveLoopPersonContextId: () => {
+        const state = get();
+        const activeLoop = state.loops.find((loop) => loop.id === state.activeLoopId);
+        return activeLoop?.personContextId || null;
+      },
+
+      isActiveLoopPersonContextPaused: () => {
+        const state = get();
+        const activeLoop = state.loops.find((loop) => loop.id === state.activeLoopId);
+        return activeLoop?.isPersonContextPaused || false;
       },
 
       // Loop Management Actions
@@ -462,6 +484,110 @@ export const useLoopsStore = create<LoopsState>()(
           ),
         }));
       },
+
+      // Person Context (Loop-specific) Actions
+      setLoopPersonContext: (loopId: string, personContextId: string | null) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === loopId
+              ? {
+                  ...loop,
+                  personContextId: personContextId || undefined,
+                  isPersonContextPaused: false, // Reset pause when setting new context
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
+
+      setActiveLoopPersonContext: (personContextId: string | null) => {
+        const state = get();
+        if (!state.activeLoopId) return;
+
+        set((s) => ({
+          loops: s.loops.map((loop) =>
+            loop.id === s.activeLoopId
+              ? {
+                  ...loop,
+                  personContextId: personContextId || undefined,
+                  isPersonContextPaused: false,
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
+
+      toggleActiveLoopPersonContextPause: () => {
+        const state = get();
+        if (!state.activeLoopId) return;
+
+        set((s) => ({
+          loops: s.loops.map((loop) =>
+            loop.id === s.activeLoopId
+              ? {
+                  ...loop,
+                  isPersonContextPaused: !loop.isPersonContextPaused,
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
+
+      setActiveLoopPersonContextPaused: (paused: boolean) => {
+        const state = get();
+        if (!state.activeLoopId) return;
+
+        set((s) => ({
+          loops: s.loops.map((loop) =>
+            loop.id === s.activeLoopId
+              ? {
+                  ...loop,
+                  isPersonContextPaused: paused,
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
+
+      clearActiveLoopPersonContext: () => {
+        const state = get();
+        if (!state.activeLoopId) return;
+
+        set((s) => ({
+          loops: s.loops.map((loop) =>
+            loop.id === s.activeLoopId
+              ? {
+                  ...loop,
+                  personContextId: undefined,
+                  isPersonContextPaused: false,
+                  deepSearchCompleted: false,
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
+
+      setActiveLoopDeepSearchCompleted: (completed: boolean) => {
+        const state = get();
+        if (!state.activeLoopId) return;
+
+        set((s) => ({
+          loops: s.loops.map((loop) =>
+            loop.id === s.activeLoopId
+              ? {
+                  ...loop,
+                  deepSearchCompleted: completed,
+                  updatedAt: new Date().toISOString(),
+                }
+              : loop
+          ),
+        }));
+      },
     }),
     {
       name: "klarity-loops-storage", // Storage key in AsyncStorage
@@ -476,3 +602,37 @@ export const useLoopsStore = create<LoopsState>()(
     }
   )
 );
+
+/**
+ * Custom hooks for loop-specific person context
+ */
+
+/**
+ * Hook to get the active loop's person context ID
+ */
+export function useActiveLoopPersonContextId() {
+  return useLoopsStore((s) => {
+    const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
+    return activeLoop?.personContextId || null;
+  });
+}
+
+/**
+ * Hook to check if the active loop's person context is paused
+ */
+export function useActiveLoopPersonContextPaused() {
+  return useLoopsStore((s) => {
+    const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
+    return activeLoop?.isPersonContextPaused || false;
+  });
+}
+
+/**
+ * Hook to check if deep search has been completed for active loop
+ */
+export function useActiveLoopDeepSearchCompleted() {
+  return useLoopsStore((s) => {
+    const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
+    return activeLoop?.deepSearchCompleted || false;
+  });
+}

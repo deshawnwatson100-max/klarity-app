@@ -1029,7 +1029,7 @@ User controls for managing person context during conversations.
 
 **Control Options:**
 From the header modal, users can:
-1. **Switch active person** - Select a different saved person from the list
+1. **Switch active person** - Select a different saved person for this loop
 2. **Edit** - Modify the current person's context
 3. **Clear/Delete** - Remove the person (with confirmation)
 4. **Pause context toggle** - Temporarily disable context without deleting
@@ -1058,15 +1058,42 @@ From the header modal, users can:
 - Two buttons: Cancel (gray) / Delete (red)
 - Haptic feedback on delete
 
+#### Loop-Scoped Person Context Architecture
+Person Context is specific to individual chat loops, not global across all loops.
+
+**How it Works:**
+- Each chat loop has its own `personContextId` and `isPersonContextPaused` state
+- Creating/selecting a Person Context associates it with the current active loop
+- Switching loops automatically loads that loop's Person Context (if any)
+- This allows different conversations to focus on different people
+
+**KlarityLoop Fields:**
+```typescript
+interface KlarityLoop {
+  // ... existing fields
+  personContextId?: string;        // ID of the person context for this loop
+  isPersonContextPaused?: boolean; // Whether person context is paused for this loop
+  deepSearchCompleted?: boolean;   // Whether deep search has run for this loop
+}
+```
+
 **State Management:**
-- `isContextPaused: boolean` - Stored in personContextStore
-- `pauseContext()` / `resumeContext()` / `toggleContextPause()` - Actions
-- `useIsContextPaused()` - Hook for checking pause state
-- `useEffectiveActiveContext()` - Returns null if paused, context if active
+- `getActiveLoopPersonContextId()` - Get the current loop's person context ID
+- `isActiveLoopPersonContextPaused()` - Check if context is paused for current loop
+- `setActiveLoopPersonContext(id)` - Set person context for current loop
+- `toggleActiveLoopPersonContextPause()` - Toggle pause state for current loop
+- `clearActiveLoopPersonContext()` - Remove person context from current loop
+- `setActiveLoopDeepSearchCompleted(completed)` - Track deep search status
+
+**Hooks:**
+- `useActiveLoopPersonContextId()` - React hook for current loop's context ID
+- `useActiveLoopPersonContextPaused()` - React hook for pause state
+- `useActiveLoopDeepSearchCompleted()` - React hook for deep search status
 
 **Files Modified:**
-- `src/state/personContextStore.ts` - Pause state and actions
-- `src/components/PersonContextModal.tsx` - Controls UI
+- `src/types/loop.ts` - Added loop-scoped fields to KlarityLoop
+- `src/state/loopsStore.ts` - Added getters, actions, and hooks
+- `src/components/PersonContextModal.tsx` - Uses loop store instead of global store
 - `src/api/personContextChatIntegration.ts` - Prompt logic changes
 
 #### Deep Search (Prompt 8+)

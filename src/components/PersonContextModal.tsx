@@ -17,8 +17,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import {
   usePersonContextStore,
-  useActivePersonContext,
 } from "../state/personContextStore";
+import {
+  useLoopsStore,
+  useActiveLoopPersonContextId,
+  useActiveLoopPersonContextPaused,
+} from "../state/loopsStore";
 import { RelationshipContextType } from "../types/personContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -87,26 +91,38 @@ export function PersonContextModal({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Store hooks
-  const activePersonContext = useActivePersonContext();
+  // Person Context Store hooks (for CRUD on person contexts)
   const createPersonContext = usePersonContextStore(
     (s) => s.createPersonContext
   );
   const addNote = usePersonContextStore((s) => s.addNote);
-  const setActivePersonContext = usePersonContextStore(
-    (s) => s.setActivePersonContext
-  );
-  const clearActivePersonContext = usePersonContextStore(
-    (s) => s.clearActivePersonContext
-  );
   const deletePersonContext = usePersonContextStore(
     (s) => s.deletePersonContext
   );
   const getNonArchivedContexts = usePersonContextStore(
     (s) => s.getNonArchivedContexts
   );
-  const isContextPaused = usePersonContextStore((s) => s.isContextPaused);
-  const toggleContextPause = usePersonContextStore((s) => s.toggleContextPause);
+  const getPersonContextById = usePersonContextStore(
+    (s) => s.getPersonContextById
+  );
+
+  // Loops Store hooks (for loop-specific person context)
+  const activeLoopPersonContextId = useActiveLoopPersonContextId();
+  const isContextPaused = useActiveLoopPersonContextPaused();
+  const setActiveLoopPersonContext = useLoopsStore(
+    (s) => s.setActiveLoopPersonContext
+  );
+  const toggleActiveLoopPersonContextPause = useLoopsStore(
+    (s) => s.toggleActiveLoopPersonContextPause
+  );
+  const clearActiveLoopPersonContext = useLoopsStore(
+    (s) => s.clearActiveLoopPersonContext
+  );
+
+  // Get active person context from the ID
+  const activePersonContext = activeLoopPersonContextId
+    ? getPersonContextById(activeLoopPersonContextId)
+    : null;
 
   // Local state
   const [step, setStep] = useState<ModalStep>("basics");
@@ -237,8 +253,8 @@ export function PersonContextModal({
       addNote(newId, additionalNotes.trim());
     }
 
-    // Set as active
-    setActivePersonContext(newId);
+    // Set as active for this loop
+    setActiveLoopPersonContext(newId);
 
     // Reset and close
     resetForm();
@@ -262,7 +278,7 @@ export function PersonContextModal({
   // Handle switch person
   const handleSwitchPerson = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clearActivePersonContext();
+    clearActiveLoopPersonContext();
     animateStepChange("basics");
     resetForm();
   };
@@ -301,7 +317,7 @@ export function PersonContextModal({
   // Handle pause toggle
   const handlePauseToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleContextPause();
+    toggleActiveLoopPersonContextPause();
   };
 
   // Render Step 1: Basics
@@ -971,7 +987,7 @@ export function PersonContextModal({
                     key={pc.id}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      setActivePersonContext(pc.id);
+                      setActiveLoopPersonContext(pc.id);
                     }}
                     style={{
                       backgroundColor: "rgba(255, 255, 255, 0.04)",
