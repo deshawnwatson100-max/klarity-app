@@ -179,6 +179,9 @@ function SearchResultCard({
     }
   };
 
+  const isSocialMedia = ["linkedin", "twitter", "x.com", "facebook", "instagram", "youtube", "reddit", "github", "tiktok"]
+    .some(platform => source.platform.toLowerCase().includes(platform));
+
   return (
     <View>
       {/* URL / Source line */}
@@ -252,6 +255,28 @@ function SearchResultCard({
             </View>
           ))}
         </View>
+      )}
+
+      {/* View Profile Link - always show for social media */}
+      {source.url && (
+        <Pressable
+          onPress={handlePress}
+          style={({ pressed }) => ({
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: 12,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Ionicons
+            name={isSocialMedia ? "open-outline" : "arrow-forward"}
+            size={14}
+            color={COLORS.link}
+          />
+          <Text style={{ fontSize: 13, color: COLORS.link, marginLeft: 6, fontWeight: "500" }}>
+            {isSocialMedia ? "View Profile" : "Visit Site"}
+          </Text>
+        </Pressable>
       )}
     </View>
   );
