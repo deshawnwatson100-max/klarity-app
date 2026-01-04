@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   TextInput,
   ScrollView,
   Keyboard,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, SlideInRight, SlideOutLeft } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import {
   usePersonContextStore,
@@ -76,9 +78,6 @@ export function PersonContextModal({
   visible,
   onClose,
 }: PersonContextModalProps) {
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["85%"], []);
-
   // Store hooks
   const activePersonContext = useActivePersonContext();
   const createPersonContext = usePersonContextStore(
@@ -126,28 +125,9 @@ export function PersonContextModal({
     setAdditionalNotes("");
   };
 
-  // Handle sheet changes
-  const handleSheetChanges = useCallback(
-    (index: number) => {
-      if (index === -1) {
-        onClose();
-      }
-    },
-    [onClose]
-  );
-
-  // Open/close sheet based on visible prop
-  useEffect(() => {
-    if (visible) {
-      bottomSheetRef.current?.snapToIndex(0);
-    } else {
-      bottomSheetRef.current?.close();
-    }
-  }, [visible]);
-
   const handleClose = () => {
     Keyboard.dismiss();
-    bottomSheetRef.current?.close();
+    onClose();
   };
 
   // Step 1 validation
@@ -223,7 +203,6 @@ export function PersonContextModal({
   // Handle edit (for now, just switch - full edit can be added later)
   const handleEdit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Pre-fill form with existing data
     setStep("basics");
   };
 
@@ -235,28 +214,15 @@ export function PersonContextModal({
     resetForm();
   };
 
-  // Render backdrop
-  const renderBackdrop = useCallback(
-    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.7}
-      />
-    ),
-    []
-  );
-
   // Render Step 1: Basics
   const renderBasicsStep = () => (
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
-      className="flex-1"
+      style={{ flex: 1 }}
     >
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-2">
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <View>
           <Text style={{ fontSize: 22, fontWeight: "700", color: "#F9FAFB" }}>
             Add someone
@@ -267,7 +233,7 @@ export function PersonContextModal({
         </View>
         <Pressable
           onPress={handleClose}
-          className="active:opacity-60"
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="close" size={24} color="#6B7280" />
@@ -280,7 +246,7 @@ export function PersonContextModal({
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Name Input */}
-        <View className="mt-6">
+        <View style={{ marginTop: 24 }}>
           <Text
             style={{
               fontSize: 14,
@@ -313,7 +279,7 @@ export function PersonContextModal({
         </View>
 
         {/* Relationship Context */}
-        <View className="mt-6">
+        <View style={{ marginTop: 24 }}>
           <Text
             style={{
               fontSize: 14,
@@ -370,7 +336,7 @@ export function PersonContextModal({
         </View>
 
         {/* Goal (Optional) */}
-        <View className="mt-6">
+        <View style={{ marginTop: 24 }}>
           <Text
             style={{
               fontSize: 14,
@@ -467,17 +433,17 @@ export function PersonContextModal({
     <Animated.View
       entering={SlideInRight.duration(250)}
       exiting={SlideOutLeft.duration(200)}
-      className="flex-1"
+      style={{ flex: 1 }}
     >
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center">
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setStep("basics");
             }}
-            className="active:opacity-60 mr-3"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}
           >
             <Ionicons name="chevron-back" size={24} color="#6B7280" />
           </Pressable>
@@ -494,7 +460,7 @@ export function PersonContextModal({
         </View>
         <Pressable
           onPress={handleClose}
-          className="active:opacity-60"
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="close" size={24} color="#6B7280" />
@@ -554,7 +520,7 @@ export function PersonContextModal({
         </View>
 
         {/* Additional Notes */}
-        <View className="mt-6">
+        <View style={{ marginTop: 24 }}>
           <Text
             style={{
               fontSize: 14,
@@ -639,16 +605,16 @@ export function PersonContextModal({
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(150)}
-        className="flex-1"
+        style={{ flex: 1 }}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#F9FAFB" }}>
             Active context
           </Text>
           <Pressable
             onPress={handleClose}
-            className="active:opacity-60"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={24} color="#6B7280" />
@@ -666,7 +632,7 @@ export function PersonContextModal({
           }}
         >
           {/* Name & Relationship */}
-          <View className="flex-row items-center mb-3">
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
             <View
               style={{
                 width: 44,
@@ -680,7 +646,7 @@ export function PersonContextModal({
             >
               <Ionicons name="person-circle" size={26} color="#818CF8" />
             </View>
-            <View className="flex-1">
+            <View style={{ flex: 1 }}>
               <Text
                 style={{ fontSize: 18, fontWeight: "600", color: "#F9FAFB" }}
               >
@@ -712,7 +678,7 @@ export function PersonContextModal({
 
           {/* Notes Preview */}
           {activePersonContext.notes.length > 0 && (
-            <View className="mt-4">
+            <View style={{ marginTop: 16 }}>
               <Text
                 style={{ fontSize: 12, color: "#6B7280", marginBottom: 6 }}
               >
@@ -840,7 +806,7 @@ export function PersonContextModal({
 
         {/* Existing Saved People (if any) */}
         {getNonArchivedContexts().length > 1 && (
-          <View className="mt-6">
+          <View style={{ marginTop: 24 }}>
             <Text
               style={{
                 fontSize: 14,
@@ -897,38 +863,75 @@ export function PersonContextModal({
     }
   };
 
-  if (!visible) return null;
-
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      onChange={handleSheetChanges}
-      enablePanDownToClose
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{
-        backgroundColor: "#0D0E10",
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-      }}
-      handleIndicatorStyle={{
-        backgroundColor: "rgba(255, 255, 255, 0.3)",
-        width: 36,
-      }}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
     >
-      <BottomSheetScrollView
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 40,
-          flexGrow: 1,
-        }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        {renderStep()}
-      </BottomSheetScrollView>
-    </BottomSheet>
+        <Pressable
+          style={{ flex: 1, justifyContent: "flex-end" }}
+          onPress={handleClose}
+        >
+          {/* Backdrop */}
+          {visible && (
+            <Animated.View
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(200)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+              }}
+            />
+          )}
+
+          {/* Modal Content */}
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <Animated.View
+              entering={SlideInDown.duration(300).springify().damping(20)}
+              exiting={SlideOutDown.duration(200)}
+              style={{
+                backgroundColor: "#0D0E10",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                paddingBottom: Platform.OS === "ios" ? 34 : 24,
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.06)",
+                maxHeight: "85%",
+              }}
+            >
+              {/* Handle */}
+              <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 8 }}>
+                <View
+                  style={{
+                    width: 36,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  }}
+                />
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8, flexGrow: 1 }}
+              >
+                {renderStep()}
+              </ScrollView>
+            </Animated.View>
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
