@@ -13,7 +13,6 @@ import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator";
-import { PersonContextModal } from "../components/PersonContextModal";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -32,7 +31,6 @@ export function InputScreen({ navigation }: Props) {
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
-  const [isPersonContextModalVisible, setIsPersonContextModalVisible] = useState(false);
 
   // Track current input mode for navigation
   const inputModeRef = useRef<InputMode>(inputMode);
@@ -301,7 +299,13 @@ export function InputScreen({ navigation }: Props) {
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={setInputMode}
-            onPersonContextPress={() => setIsPersonContextModalVisible(true)}
+            onPersonContextPress={() => {
+              // Navigate to ChatScreen and show inline person context card
+              navigation.navigate("ChatScreen", {
+                inputMode: inputModeRef.current,
+                showPersonContextCard: true,
+              });
+            }}
             showPersonContext={true}
           />
 
@@ -357,23 +361,6 @@ export function InputScreen({ navigation }: Props) {
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
-      />
-
-      {/* Person Context Modal */}
-      <PersonContextModal
-        visible={isPersonContextModalVisible}
-        onClose={() => setIsPersonContextModalVisible(false)}
-        onPersonContextCreated={(personContextId) => {
-          // Close the modal first
-          setIsPersonContextModalVisible(false);
-          // Small delay to let modal close animation complete, then navigate
-          setTimeout(() => {
-            navigation.navigate("ChatScreen", {
-              inputMode: inputModeRef.current,
-              triggerDeepSearch: true,
-            });
-          }, 100);
-        }}
       />
     </View>
   );

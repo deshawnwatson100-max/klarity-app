@@ -333,6 +333,27 @@ export function ChatScreen({ navigation, route }: Props) {
     }, [])
   );
 
+  // Handle showing person context card when navigating from InputScreen
+  useEffect(() => {
+    const showPersonContextCard = route.params?.showPersonContextCard;
+
+    if (showPersonContextCard) {
+      // Add person context card to the chat loop
+      const personContextCardMsg: PersonContextCardMessage = {
+        id: `person-context-card-${Date.now()}`,
+        role: "person-context-card",
+        content: "",
+        timestamp: Date.now(),
+        mode: "understand",
+      };
+      addMessageToActiveLoopRaw(personContextCardMsg);
+      // Scroll to bottom to show the card
+      setTimeout(() => {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [route.params?.showPersonContextCard]);
+
   // Handle Deep Search trigger when navigating from PersonContextModal
   useEffect(() => {
     const triggerDeepSearch = route.params?.triggerDeepSearch;
