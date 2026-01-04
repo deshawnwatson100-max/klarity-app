@@ -386,7 +386,7 @@ export function parseDeepSearchResponse(
   ];
   for (const pattern of alignmentPatterns) {
     const match = response.match(pattern);
-    if (match) {
+    if (match && match[1]) {
       alignmentNotes.push(match[1].trim().slice(0, 200));
     }
   }
@@ -399,7 +399,7 @@ export function parseDeepSearchResponse(
   ];
   for (const pattern of uncertaintyPatterns) {
     const match = response.match(pattern);
-    if (match) {
+    if (match && match[1]) {
       uncertainties.push(match[1].trim().slice(0, 200));
     }
   }
@@ -432,8 +432,8 @@ function extractBulletPoints(text: string): string[] {
   const bulletPattern = /[-•]\s*(.+?)(?=\n[-•]|\n\n|$)/g;
   let match;
   while ((match = bulletPattern.exec(text)) !== null) {
-    const point = match[1].trim();
-    if (point.length > 5 && point.length < 200) {
+    const point = match[1]?.trim();
+    if (point && point.length > 5 && point.length < 200) {
       bullets.push(point);
     }
   }
