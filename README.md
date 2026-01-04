@@ -1069,6 +1069,59 @@ From the header modal, users can:
 - `src/components/PersonContextModal.tsx` - Controls UI
 - `src/api/personContextChatIntegration.ts` - Prompt logic changes
 
+#### Deep Search (Prompt 8+)
+Automatically searches publicly available information when Person Context is created, displaying results in the chat loop similar to Perplexity.
+
+**How it Works:**
+1. User creates a Person Context with name, relationship, and notes
+2. Deep Search automatically runs (or can be triggered manually in chat)
+3. Results appear in chat loop with sources, alignment notes, and uncertainties
+4. User is asked "How does this sit with you?" for perception calibration
+
+**What Deep Search Looks For:**
+- Social media platforms (LinkedIn, Instagram, Facebook, Twitter/X)
+- Professional directories and company pages
+- Dating websites and apps (if profiles are public)
+- News articles and public records
+- Secondary or alternative online identities
+
+**Key Framing Rules:**
+- Finding something does not mean it is bad
+- Not finding something does not mean it does not exist
+- Surfaces alignment or misalignment with what user has shared
+- If multiple people match, says so clearly
+- If nothing found, explains possible reasons
+
+**Safety Guardrails:**
+- Only uses publicly accessible information
+- Does NOT access private accounts or bypass privacy settings
+- Checks for safety concerns before searching
+- Blocks surveillance-intent requests
+- Shows safety resources if danger keywords detected
+
+**Results Display:**
+- Summary of what was searched
+- Sources found (expandable cards by platform)
+- Alignment notes (matches what user shared)
+- Uncertainties (could not verify)
+- Perception check: "How does this sit with you?"
+
+**Auto-Trigger Conditions:**
+- Dating or romantic relationships
+- User notes contain uncertainty indicators ("not sure", "feels off", etc.)
+
+**Manual Trigger Phrases:**
+- "Search for..."
+- "Look up..."
+- "What can you find about..."
+- "Do a deep search"
+- "Check their online presence"
+
+**Files:**
+- `src/api/deepSearch.ts` - Prompts, types, and parsing
+- `src/api/deepSearchService.ts` - Orchestration and LLM calls
+- `src/components/DeepSearchResultBubble.tsx` - Chat UI component
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.
