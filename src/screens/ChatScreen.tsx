@@ -462,6 +462,103 @@ export function ChatScreen({ navigation, route }: Props) {
     setTimeout(runDeepSearch, 300);
   }, [route.params?.triggerDeepSearch, activePersonContext, activeLoopPersonContextId]);
 
+  // Reusable function to run deep search for a person context
+  const runDeepSearchForPerson = async (personContextId: string) => {
+    const personContext = getPersonContextById(personContextId);
+    if (!personContext) {
+      console.log("[DeepSearch] No person context found for ID:", personContextId);
+      return;
+    }
+
+    console.log("[DeepSearch] Starting search for:", personContext.name);
+
+    // Add loading message
+    const loadingMsgId = `deep-search-loading-${Date.now()}`;
+    const loadingMessage: DeepSearchLoadingMessage = {
+      id: loadingMsgId,
+      role: "deep-search-loading",
+      content: "",
+      timestamp: Date.now(),
+      personName: personContext.name,
+      mode: "understand",
+    };
+    addMessageToActiveLoopRaw(loadingMessage);
+
+    // Scroll to show loading
+    setTimeout(() => {
+      decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+      // Execute Deep Search
+      const result = await executeDeepSearch({
+        personContext: personContext,
+        focusAreas: personContext.relationshipContext === "dating" ||
+                    personContext.relationshipContext === "romantic"
+          ? ["dating", "social"]
+          : ["social", "professional"],
+        onProgress: (status) => {
+          console.log("[DeepSearch] Progress:", status);
+        },
+      });
+
+      console.log("[DeepSearch] Result:", result.success, result.error);
+
+      // Remove loading message
+      removeMessageFromActiveLoop(loadingMsgId);
+
+      if (result.success && result.result) {
+        // Add result message
+        const resultMessage: DeepSearchResultMessage = {
+          id: `deep-search-result-${Date.now()}`,
+          role: "deep-search-result",
+          content: "",
+          timestamp: Date.now(),
+          searchResult: result.result,
+          showSafetyResources: false,
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(resultMessage);
+        setActiveLoopDeepSearchCompleted(true);
+      } else if (result.safetyBlock) {
+        // Safety block - show resources if needed
+        const safetyMessage: ChatMessage = {
+          id: `deep-search-safety-${Date.now()}`,
+          role: "assistant",
+          content: result.safetyBlock.reason === "safety_concern"
+            ? "I noticed some safety concerns. Your well-being comes first. If you feel unsafe, please reach out to someone who can help."
+            : "I am not able to search in this case. The request seems to be about monitoring or surveillance.",
+          timestamp: Date.now(),
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(safetyMessage);
+      } else if (result.error) {
+        // Error message
+        const errorMessage: ChatMessage = {
+          id: `deep-search-error-${Date.now()}`,
+          role: "assistant",
+          content: "I was not able to complete the search right now. You can ask me to try again later.",
+          timestamp: Date.now(),
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(errorMessage);
+      }
+    } catch (error) {
+      console.error("[DeepSearch] Error:", error);
+      removeMessageFromActiveLoop(loadingMsgId);
+
+      // Show error message
+      const errorMessage: ChatMessage = {
+        id: `deep-search-error-${Date.now()}`,
+        role: "assistant",
+        content: "Something went wrong while searching. You can ask me to try again.",
+        timestamp: Date.now(),
+        mode: "understand",
+      };
+      addMessageToActiveLoopRaw(errorMessage);
+    }
+  };
+
   useEffect(() => {
     setTimeout(() => {
       // Scroll the active mode's ScrollView to end
@@ -1267,6 +1364,10 @@ export function ChatScreen({ navigation, route }: Props) {
           onPersonContextCreated={(personContextId) => {
             // Remove the card from chat after saving
             removeMessageFromActiveLoop(message.id);
+            // Trigger deep search for the new person context
+            setTimeout(() => {
+              runDeepSearchForPerson(personContextId);
+            }, 300);
           }}
           onDismiss={() => {
             // Remove the card from chat when dismissed
