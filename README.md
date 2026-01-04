@@ -962,6 +962,32 @@ When a Person Context is active, Klarity:
 
 Prompt files: `src/api/personContextChatIntegration.ts`
 
+#### Perception Calibration (Prompt 5)
+A 2-second check-in that appears after showing a context card or heavy context.
+
+**Question:** "How does this sit with you?"
+
+**Options:**
+1. "Feels fine" (green) → Lighter tone, fewer cautions, action-focused
+2. "I am unsure" (yellow) → Balanced + one clarifying question
+3. "This feels like a lot" (red) → Slower, more supportive, grounding
+
+**Tone Adaptation by Selection:**
+
+| Selection | Tone Style | Example Response |
+|-----------|-----------|------------------|
+| Feels fine | Direct, action-focused | "Makes sense. Here is one thing to try..." |
+| Unsure | Balanced + clarifying | "What part feels most unclear?" |
+| Feels like a lot | Slow, supportive | "You do not have to sort it all out today." |
+
+**Components:**
+- `src/components/PerceptionCalibration.tsx` - UI chips
+- `src/api/perceptionTunedPrompts.ts` - Prompt snippets + examples
+
+**Storage:**
+- Perception state stored in `perceptionHistory` array on PersonContext
+- Retrieved via `getLatestPerception(personContextId)`
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.
