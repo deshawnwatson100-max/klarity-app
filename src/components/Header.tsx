@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
-import { PersonContextHeaderIcon } from "./PersonContextModal";
+import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
 
 export type InputMode = "understand" | "rewrite";
 
