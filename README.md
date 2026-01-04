@@ -933,6 +933,35 @@ The Person Context feature uses warm, non-clinical language:
 - User controls what data exists
 - Can archive or delete contexts anytime
 
+#### Person Context Card Generation (Prompt 3)
+When creating a Person Context Card, the LLM generates structured JSON with:
+- `knownContext` - 3-6 factual things the user shared
+- `thingsToKeepInMind` - 3-6 observations that might be useful
+- `helpfulQuestions` - 3-6 gentle questions to explore
+- `toneNotes` - Language preferences (warm_grounded tone)
+- `safety` - Guardrails (no labeling, no diagnosis, user agency)
+
+Prompt files: `src/api/personContextPrompts.ts`
+
+#### Chat Loop Integration (Prompt 4)
+When a Person Context is active, Klarity:
+- Silently considers the context when crafting responses
+- Only references it explicitly when genuinely helpful
+- Uses natural language like "You mentioned earlier..." or "Taken together..."
+- Never sounds like surveillance ("I am tracking...", "Pattern detected...")
+
+**Routing Rules:**
+- Reference when: user mentions the person, asks for advice, expresses confusion
+- Stay silent when: user is venting, topic is unrelated, would feel intrusive
+
+**Example phrases:**
+- DO: "This adds context to what you shared before..."
+- DO: "If this keeps coming up..."
+- DO NOT: "Based on your timeline..."
+- DO NOT: "I detected a pattern..."
+
+Prompt files: `src/api/personContextChatIntegration.ts`
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.
