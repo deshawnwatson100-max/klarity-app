@@ -364,11 +364,15 @@ export function InputScreen({ navigation }: Props) {
         visible={isPersonContextModalVisible}
         onClose={() => setIsPersonContextModalVisible(false)}
         onPersonContextCreated={(personContextId) => {
-          // Navigate to ChatScreen and trigger Deep Search
-          navigation.navigate("ChatScreen", {
-            inputMode: inputModeRef.current,
-            triggerDeepSearch: true,
-          });
+          // Close the modal first
+          setIsPersonContextModalVisible(false);
+          // Small delay to let modal close animation complete, then navigate
+          setTimeout(() => {
+            navigation.navigate("ChatScreen", {
+              inputMode: inputModeRef.current,
+              triggerDeepSearch: true,
+            });
+          }, 100);
         }}
       />
     </View>

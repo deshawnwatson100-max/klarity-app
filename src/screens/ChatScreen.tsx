@@ -133,6 +133,11 @@ export function ChatScreen({ navigation, route }: Props) {
   // Track if Deep Search has been triggered this session
   const deepSearchTriggered = useRef(false);
 
+  // Reset deep search trigger when active loop changes
+  useEffect(() => {
+    deepSearchTriggered.current = false;
+  }, [activeLoopId]);
+
   // Track current mode in a ref for use in callbacks
   const inputModeRef = useRef<InputMode>(inputMode);
   inputModeRef.current = inputMode;
@@ -332,91 +337,109 @@ export function ChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     const triggerDeepSearch = route.params?.triggerDeepSearch;
 
-    if (triggerDeepSearch && activePersonContext && !deepSearchTriggered.current) {
-      deepSearchTriggered.current = true;
+    console.log("[ChatScreen] Deep Search trigger check:", {
+      triggerDeepSearch,
+      activePersonContext: activePersonContext?.name,
+      alreadyTriggered: deepSearchTriggered.current,
+    });
 
-      // Run Deep Search asynchronously
-      const runDeepSearch = async () => {
-        // Add loading message
-        const loadingMsgId = `deep-search-loading-${Date.now()}`;
-        const loadingMessage: DeepSearchLoadingMessage = {
-          id: loadingMsgId,
-          role: "deep-search-loading",
-          content: "",
-          timestamp: Date.now(),
-          personName: activePersonContext.name,
-          mode: "understand",
-        };
-        addMessageToActiveLoopRaw(loadingMessage);
+    // Only run if we have both the trigger flag and an active person context
+    if (!triggerDeepSearch || !activePersonContext || deepSearchTriggered.current) {
+      return;
+    }
 
-        try {
-          // Execute Deep Search
-          const result = await executeDeepSearch({
-            personContext: activePersonContext,
-            onProgress: (status) => {
-              console.log("[DeepSearch] Progress:", status);
-            },
-          });
+    // Mark as triggered immediately to prevent duplicates
+    deepSearchTriggered.current = true;
 
-          // Remove loading message
-          removeMessageFromActiveLoop(loadingMsgId);
+    // Run Deep Search
+    const runDeepSearch = async () => {
+      console.log("[DeepSearch] Starting search for:", activePersonContext.name);
 
-          if (result.success && result.result) {
-            // Add result message
-            const resultMessage: DeepSearchResultMessage = {
-              id: `deep-search-result-${Date.now()}`,
-              role: "deep-search-result",
-              content: "",
-              timestamp: Date.now(),
-              searchResult: result.result,
-              showSafetyResources: false,
-              mode: "understand",
-            };
-            addMessageToActiveLoopRaw(resultMessage);
-            setActiveLoopDeepSearchCompleted(true);
-          } else if (result.safetyBlock) {
-            // Safety block - show resources if needed
-            const safetyMessage: ChatMessage = {
-              id: `deep-search-safety-${Date.now()}`,
-              role: "assistant",
-              content: result.safetyBlock.reason === "safety_concern"
-                ? "I noticed some safety concerns. Your well-being comes first. If you feel unsafe, please reach out to someone who can help."
-                : "I am not able to search in this case. The request seems to be about monitoring or surveillance.",
-              timestamp: Date.now(),
-              mode: "understand",
-            };
-            addMessageToActiveLoopRaw(safetyMessage);
-          } else if (result.error) {
-            // Error message
-            const errorMessage: ChatMessage = {
-              id: `deep-search-error-${Date.now()}`,
-              role: "assistant",
-              content: "I was not able to complete the search right now. You can ask me to try again later.",
-              timestamp: Date.now(),
-              mode: "understand",
-            };
-            addMessageToActiveLoopRaw(errorMessage);
-          }
-        } catch (error) {
-          console.error("[DeepSearch] Error:", error);
-          removeMessageFromActiveLoop(loadingMsgId);
+      // Add loading message
+      const loadingMsgId = `deep-search-loading-${Date.now()}`;
+      const loadingMessage: DeepSearchLoadingMessage = {
+        id: loadingMsgId,
+        role: "deep-search-loading",
+        content: "",
+        timestamp: Date.now(),
+        personName: activePersonContext.name,
+        mode: "understand",
+      };
+      addMessageToActiveLoopRaw(loadingMessage);
 
-          // Show error message
+      try {
+        // Execute Deep Search
+        const result = await executeDeepSearch({
+          personContext: activePersonContext,
+          focusAreas: activePersonContext.relationshipContext === "dating" ||
+                      activePersonContext.relationshipContext === "romantic"
+            ? ["dating", "social"]
+            : ["social", "professional"],
+          onProgress: (status) => {
+            console.log("[DeepSearch] Progress:", status);
+          },
+        });
+
+        console.log("[DeepSearch] Result:", result.success, result.error);
+
+        // Remove loading message
+        removeMessageFromActiveLoop(loadingMsgId);
+
+        if (result.success && result.result) {
+          // Add result message
+          const resultMessage: DeepSearchResultMessage = {
+            id: `deep-search-result-${Date.now()}`,
+            role: "deep-search-result",
+            content: "",
+            timestamp: Date.now(),
+            searchResult: result.result,
+            showSafetyResources: false,
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(resultMessage);
+          setActiveLoopDeepSearchCompleted(true);
+        } else if (result.safetyBlock) {
+          // Safety block - show resources if needed
+          const safetyMessage: ChatMessage = {
+            id: `deep-search-safety-${Date.now()}`,
+            role: "assistant",
+            content: result.safetyBlock.reason === "safety_concern"
+              ? "I noticed some safety concerns. Your well-being comes first. If you feel unsafe, please reach out to someone who can help."
+              : "I am not able to search in this case. The request seems to be about monitoring or surveillance.",
+            timestamp: Date.now(),
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(safetyMessage);
+        } else if (result.error) {
+          // Error message
           const errorMessage: ChatMessage = {
             id: `deep-search-error-${Date.now()}`,
             role: "assistant",
-            content: "Something went wrong while searching. You can ask me to try again.",
+            content: "I was not able to complete the search right now. You can ask me to try again later.",
             timestamp: Date.now(),
             mode: "understand",
           };
           addMessageToActiveLoopRaw(errorMessage);
         }
-      };
+      } catch (error) {
+        console.error("[DeepSearch] Error:", error);
+        removeMessageFromActiveLoop(loadingMsgId);
 
-      // Small delay to ensure UI is ready
-      setTimeout(runDeepSearch, 500);
-    }
-  }, [route.params?.triggerDeepSearch, activePersonContext]);
+        // Show error message
+        const errorMessage: ChatMessage = {
+          id: `deep-search-error-${Date.now()}`,
+          role: "assistant",
+          content: "Something went wrong while searching. You can ask me to try again.",
+          timestamp: Date.now(),
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(errorMessage);
+      }
+    };
+
+    // Small delay to ensure state is settled and UI is ready
+    setTimeout(runDeepSearch, 300);
+  }, [route.params?.triggerDeepSearch, activePersonContext, activeLoopPersonContextId]);
 
   useEffect(() => {
     setTimeout(() => {
