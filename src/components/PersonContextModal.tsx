@@ -29,7 +29,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // ChatGPT-style colors - minimal, borderless
 const COLORS = {
-  background: "#212121",
+  background: "#050505",
   surface: "#000000",
   surfaceHover: "#1A1A1A",
   border: "transparent",
