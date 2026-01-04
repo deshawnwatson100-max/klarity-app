@@ -81,14 +81,11 @@ KEY FRAMING RULES:
 - If nothing meaningful is found, say that plainly and explain what you tried
 
 OUTPUT STRUCTURE:
-1. Brief summary of what was searched
-2. What was found (organized by source/platform)
+1. What was found (organized by source/platform)
    - For each finding, explain what it is in simple language
-   - State your confidence level that it is actually this person
+   - Include the profile URL so the user can visit it
    - Note if it appears current, old, or unclear
-3. How findings connect to what the user shared
-4. What remains unclear or could not be verified
-5. If nothing was found, explain what you tried and what might help narrow things down
+2. If nothing was found, explain what might help narrow things down
 
 Always end by asking: "How does this sit with you?"`;
 
@@ -121,17 +118,12 @@ SEARCH SEQUENCE:
    - If you find one account, look at their followers/following for other accounts
    - Check who comments on their posts for context
 
-CONFIDENCE LEVELS:
-- HIGH: Multiple matching details (same photo, location, bio info, linked accounts)
-- MEDIUM: Some matching details but not definitive
-- LOW: Same name only, common name, or limited cross-reference
-
 PRESENTATION:
 - Use clear platform headers
+- Always include the profile URL
 - Quote relevant bio text or post content sparingly
 - Note when a profile is private vs public
-- Distinguish verified information from speculation
-- If you find contradictions with what user shared, present factually
+- Keep descriptions brief and factual
 
 SAFETY:
 - If content suggests user may be in danger, prioritize safety resources
@@ -141,7 +133,7 @@ SAFETY:
 TONE:
 - Like a thoughtful friend who looked something up for you
 - Not like a private investigator or surveillance report
-- Honest about limitations and uncertainty`;
+- Honest about limitations`;
 
 // ============================================================================
 // USER PROMPT BUILDER
@@ -357,22 +349,17 @@ export function parseDeepSearchResponse(
     for (const match of matches) {
       const content = match[1]?.trim();
       if (content && content.length > 10) {
-        // Determine confidence
-        let confidence: "high" | "medium" | "low" = "medium";
-        const lowerContent = content.toLowerCase();
-        if (lowerContent.includes("high confidence") || lowerContent.includes("definitely") || lowerContent.includes("confirmed")) {
-          confidence = "high";
-        } else if (lowerContent.includes("low confidence") || lowerContent.includes("might be") || lowerContent.includes("unclear") || lowerContent.includes("common name")) {
-          confidence = "low";
-        }
+        // Extract URL from content if present
+        const urlMatch = content.match(/https?:\/\/[^\s)]+/);
+        const url = urlMatch ? urlMatch[0] : undefined;
 
         sources.push({
           type: pattern.type,
           platform: pattern.platform,
+          url,
           summary: content.slice(0, 300),
           relevantDetails: extractBulletPoints(content),
-          isVerified: confidence === "high",
-          confidence,
+          isVerified: true,
         });
       }
     }
@@ -380,29 +367,9 @@ export function parseDeepSearchResponse(
 
   // Extract alignment notes
   const alignmentNotes: string[] = [];
-  const alignmentPatterns = [
-    /(?:aligns?|matches?|consistent|confirms?)[:\s]+([\s\S]*?)(?=\n\n|What (?:remains|could)|Uncertain|$)/gi,
-    /(?:supports?|backs up|lines up)[:\s]+([\s\S]*?)(?=\n\n|What (?:remains|could)|Uncertain|$)/gi,
-  ];
-  for (const pattern of alignmentPatterns) {
-    const match = response.match(pattern);
-    if (match && match[1]) {
-      alignmentNotes.push(match[1].trim().slice(0, 200));
-    }
-  }
 
   // Extract uncertainties
   const uncertainties: string[] = [];
-  const uncertaintyPatterns = [
-    /(?:unclear|uncertain|could not verify|not found|unable to confirm)[:\s]+([\s\S]*?)(?=\n\n|How does|$)/gi,
-    /(?:limitations?|what I tried)[:\s]+([\s\S]*?)(?=\n\n|How does|$)/gi,
-  ];
-  for (const pattern of uncertaintyPatterns) {
-    const match = response.match(pattern);
-    if (match && match[1]) {
-      uncertainties.push(match[1].trim().slice(0, 200));
-    }
-  }
 
   // Generate summary (first paragraph or first 2-3 sentences)
   const paragraphs = response.split("\n\n");
