@@ -23,7 +23,7 @@ import {
   useActiveLoopPersonContextId,
   useActiveLoopPersonContextPaused,
 } from "../state/loopsStore";
-import { RelationshipContextType } from "../types/personContext";
+import { RelationshipContextType, ContextAnchorType } from "../types/personContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -44,7 +44,7 @@ const COLORS = {
   warningBg: "rgba(245, 158, 11, 0.15)",
 };
 
-type ModalStep = "basics" | "context_chips" | "view_saved";
+type ModalStep = "input" | "view_saved";
 
 const RELATIONSHIP_OPTIONS: {
   value: RelationshipContextType;
@@ -58,15 +58,16 @@ const RELATIONSHIP_OPTIONS: {
   { value: "other", label: "Other" },
 ];
 
-const CONTEXT_CHIPS = [
-  { id: "power_imbalance", label: "Power imbalance" },
-  { id: "boundary_concerns", label: "Boundary concerns" },
-  { id: "communication_unclear", label: "Unclear communication" },
-  { id: "mostly_positive", label: "Mostly positive" },
-  { id: "not_sure", label: "Not sure yet" },
-] as const;
-
-type ContextChipId = (typeof CONTEXT_CHIPS)[number]["id"];
+const CONTEXT_ANCHOR_OPTIONS: {
+  type: ContextAnchorType;
+  label: string;
+  placeholder: string;
+}[] = [
+  { type: "workplace", label: "Workplace or industry", placeholder: "e.g. Tech startup, Hospital" },
+  { type: "school", label: "School", placeholder: "e.g. UCLA, Local high school" },
+  { type: "dating_app", label: "Dating app you met on", placeholder: "e.g. Hinge, Bumble" },
+  { type: "username", label: "Known username or handle", placeholder: "e.g. @handle" },
+];
 
 interface PersonContextModalProps {
   visible: boolean;
@@ -83,7 +84,6 @@ export function PersonContextModal({
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const createPersonContext = usePersonContextStore((s) => s.createPersonContext);
-  const addNote = usePersonContextStore((s) => s.addNote);
   const deletePersonContext = usePersonContextStore((s) => s.deletePersonContext);
   const getNonArchivedContexts = usePersonContextStore((s) => s.getNonArchivedContexts);
   const getPersonContextById = usePersonContextStore((s) => s.getPersonContextById);
@@ -98,11 +98,17 @@ export function PersonContextModal({
     ? getPersonContextById(activeLoopPersonContextId)
     : null;
 
-  const [step, setStep] = useState<ModalStep>("basics");
+  const [step, setStep] = useState<ModalStep>("input");
+
+  // Form state
   const [name, setName] = useState("");
   const [relationshipContext, setRelationshipContext] = useState<RelationshipContextType | null>(null);
-  const [selectedChips, setSelectedChips] = useState<Set<ContextChipId>>(new Set());
-  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [location, setLocation] = useState("");
+  const [selectedAnchorType, setSelectedAnchorType] = useState<ContextAnchorType | null>(null);
+  const [anchorValue, setAnchorValue] = useState("");
+  const [showBoost, setShowBoost] = useState(false);
+  const [knownUsername, setKnownUsername] = useState("");
+  const [approximateAge, setApproximateAge] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -124,7 +130,7 @@ export function PersonContextModal({
       if (activePersonContext) {
         setStep("view_saved");
       } else {
-        setStep("basics");
+        setStep("input");
         resetForm();
       }
     }
@@ -133,8 +139,12 @@ export function PersonContextModal({
   const resetForm = () => {
     setName("");
     setRelationshipContext(null);
-    setSelectedChips(new Set());
-    setAdditionalNotes("");
+    setLocation("");
+    setSelectedAnchorType(null);
+    setAnchorValue("");
+    setShowBoost(false);
+    setKnownUsername("");
+    setApproximateAge("");
   };
 
   const handleClose = () => {
@@ -142,31 +152,41 @@ export function PersonContextModal({
     onClose();
   };
 
-  const isStep1Valid = name.trim().length > 0 && relationshipContext !== null;
+  const isFormValid = name.trim().length > 0 && relationshipContext !== null;
 
-  const handleNextToChips = () => {
-    if (!isStep1Valid) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep("context_chips");
-  };
-
-  const handleCreateContext = () => {
-    if (!isStep1Valid) return;
+  const handleSave = () => {
+    if (!isFormValid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const newId = createPersonContext(name.trim(), relationshipContext!, undefined);
+    const deepSearchContext: {
+      location?: string;
+      contextAnchor?: { type: ContextAnchorType; value: string };
+      knownUsername?: string;
+      approximateAge?: string;
+    } = {};
 
-    const chipLabels = Array.from(selectedChips)
-      .map((chipId) => CONTEXT_CHIPS.find((c) => c.id === chipId)?.label)
-      .filter(Boolean);
-
-    if (chipLabels.length > 0) {
-      addNote(newId, `Context: ${chipLabels.join(", ")}`);
+    if (location.trim()) {
+      deepSearchContext.location = location.trim();
+    }
+    if (selectedAnchorType && anchorValue.trim()) {
+      deepSearchContext.contextAnchor = {
+        type: selectedAnchorType,
+        value: anchorValue.trim(),
+      };
+    }
+    if (knownUsername.trim()) {
+      deepSearchContext.knownUsername = knownUsername.trim();
+    }
+    if (approximateAge.trim()) {
+      deepSearchContext.approximateAge = approximateAge.trim();
     }
 
-    if (additionalNotes.trim()) {
-      addNote(newId, additionalNotes.trim());
-    }
+    const newId = createPersonContext(
+      name.trim(),
+      relationshipContext!,
+      undefined,
+      Object.keys(deepSearchContext).length > 0 ? deepSearchContext : undefined
+    );
 
     setActiveLoopPersonContext(newId);
     resetForm();
@@ -174,23 +194,10 @@ export function PersonContextModal({
     onPersonContextCreated?.(newId);
   };
 
-  const toggleChip = (chipId: ContextChipId) => {
-    Haptics.selectionAsync();
-    setSelectedChips((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(chipId)) {
-        newSet.delete(chipId);
-      } else {
-        newSet.add(chipId);
-      }
-      return newSet;
-    });
-  };
-
   const handleSwitchPerson = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     clearActiveLoopPersonContext();
-    setStep("basics");
+    setStep("input");
     resetForm();
   };
 
@@ -205,174 +212,246 @@ export function PersonContextModal({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     deletePersonContext(activePersonContext.id);
     setShowDeleteConfirm(false);
-    setStep("basics");
+    setStep("input");
     resetForm();
   };
 
-  // Step 1: Basics
-  const renderBasicsStep = () => (
-    <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text }}>
-          Add someone
-        </Text>
-        <Pressable onPress={handleClose} hitSlop={12}>
-          <Ionicons name="close" size={22} color={COLORS.textMuted} />
-        </Pressable>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Name */}
-        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>
-          Name
-        </Text>
-        <TextInput
-          style={{
-            backgroundColor: COLORS.surface,
-            borderRadius: 8,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            fontSize: 15,
-            color: COLORS.text,
-          }}
-          placeholder="Their name or nickname"
-          placeholderTextColor={COLORS.textMuted}
-          value={name}
-          onChangeText={setName}
-          autoFocus
-        />
-
-        {/* Relationship */}
-        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 20, marginBottom: 10 }}>
-          Relationship
-        </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {RELATIONSHIP_OPTIONS.map((option) => {
-            const isSelected = relationshipContext === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setRelationshipContext(option.value);
-                }}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 8,
-                  backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
-                }}
-              >
-                <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Continue */}
-        <Pressable
-          onPress={handleNextToChips}
-          disabled={!isStep1Valid}
-          style={({ pressed }) => ({
-            backgroundColor: isStep1Valid ? COLORS.accent : COLORS.surface,
-            paddingVertical: 14,
-            borderRadius: 8,
-            marginTop: 28,
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <Text style={{ fontSize: 15, fontWeight: "500", color: isStep1Valid ? "#fff" : COLORS.textMuted, textAlign: "center" }}>
-            Continue
-          </Text>
-        </Pressable>
-      </ScrollView>
+  // Chat bubble style input component
+  const ChatBubbleInput = ({
+    label,
+    helperText,
+    placeholder,
+    value,
+    onChangeText,
+    autoFocus = false,
+    required = false,
+  }: {
+    label: string;
+    helperText: string;
+    placeholder: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    autoFocus?: boolean;
+    required?: boolean;
+  }) => (
+    <View style={{ marginBottom: 20 }}>
+      <Text style={{ fontSize: 15, color: COLORS.text, marginBottom: 4 }}>
+        {label}{required && <Text style={{ color: COLORS.textMuted }}> *</Text>}
+      </Text>
+      <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
+        {helperText}
+      </Text>
+      <TextInput
+        style={{
+          backgroundColor: COLORS.surface,
+          borderRadius: 16,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          fontSize: 15,
+          color: COLORS.text,
+        }}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
+        value={value}
+        onChangeText={onChangeText}
+        autoFocus={autoFocus}
+      />
     </View>
   );
 
-  // Step 2: Context chips
-  const renderContextChipsStep = () => (
+  // Input step - collect Deep Search context
+  const renderInputStep = () => (
     <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 24 }}>
-        <Pressable onPress={() => setStep("basics")} hitSlop={12} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={22} color={COLORS.textMuted} />
-        </Pressable>
-        <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, flex: 1 }}>
-          Anything to note?
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text }}>
+          Add context
         </Text>
         <Pressable onPress={handleClose} hitSlop={12}>
           <Ionicons name="close" size={22} color={COLORS.textMuted} />
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 12 }}>
-          Optional - helps with context
-        </Text>
-
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {CONTEXT_CHIPS.map((chip) => {
-            const isSelected = selectedChips.has(chip.id);
-            return (
-              <Pressable
-                key={chip.id}
-                onPress={() => toggleChip(chip.id)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 8,
-                  backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
-                }}
-              >
-                <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
-                  {chip.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Additional notes */}
-        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 20, marginBottom: 8 }}>
-          Anything else?
-        </Text>
-        <TextInput
-          style={{
-            backgroundColor: COLORS.surface,
-            borderRadius: 8,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            fontSize: 15,
-            color: COLORS.text,
-            minHeight: 80,
-            textAlignVertical: "top",
-          }}
-          placeholder="Add any details..."
-          placeholderTextColor={COLORS.textMuted}
-          value={additionalNotes}
-          onChangeText={setAdditionalNotes}
-          multiline
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        {/* 1. Name (required) */}
+        <ChatBubbleInput
+          label="Name"
+          helperText="Use the name they go by publicly."
+          placeholder="Their name"
+          value={name}
+          onChangeText={setName}
+          autoFocus
+          required
         />
 
-        {/* Create */}
+        {/* Relationship (required) */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ fontSize: 15, color: COLORS.text, marginBottom: 4 }}>
+            Relationship<Text style={{ color: COLORS.textMuted }}> *</Text>
+          </Text>
+          <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
+            How do you know them?
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {RELATIONSHIP_OPTIONS.map((option) => {
+              const isSelected = relationshipContext === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setRelationshipContext(option.value);
+                  }}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 20,
+                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 2. Location (optional) */}
+        <ChatBubbleInput
+          label="Location"
+          helperText="City or area they are usually in."
+          placeholder="e.g. Los Angeles, NYC"
+          value={location}
+          onChangeText={setLocation}
+        />
+
+        {/* 3. Context anchor (optional - select ONE) */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ fontSize: 15, color: COLORS.text, marginBottom: 4 }}>
+            One detail that might help
+          </Text>
+          <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
+            Just one thing that could help narrow results.
+          </Text>
+          <View style={{ gap: 8 }}>
+            {CONTEXT_ANCHOR_OPTIONS.map((option) => {
+              const isSelected = selectedAnchorType === option.type;
+              return (
+                <Pressable
+                  key={option.type}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    if (isSelected) {
+                      setSelectedAnchorType(null);
+                      setAnchorValue("");
+                    } else {
+                      setSelectedAnchorType(option.type);
+                    }
+                  }}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Show input for selected anchor */}
+          {selectedAnchorType && (
+            <View style={{ marginTop: 12 }}>
+              <TextInput
+                style={{
+                  backgroundColor: COLORS.surface,
+                  borderRadius: 16,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  fontSize: 15,
+                  color: COLORS.text,
+                }}
+                placeholder={CONTEXT_ANCHOR_OPTIONS.find(o => o.type === selectedAnchorType)?.placeholder}
+                placeholderTextColor={COLORS.textMuted}
+                value={anchorValue}
+                onChangeText={setAnchorValue}
+                autoFocus
+              />
+            </View>
+          )}
+        </View>
+
+        {/* 4. Optional boost (collapsed by default) */}
         <Pressable
-          onPress={handleCreateContext}
-          style={({ pressed }) => ({
-            backgroundColor: COLORS.accent,
-            paddingVertical: 14,
-            borderRadius: 8,
-            marginTop: 24,
-            opacity: pressed ? 0.8 : 1,
-          })}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setShowBoost(!showBoost);
+          }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 12,
+            marginBottom: showBoost ? 12 : 0,
+          }}
         >
-          <Text style={{ fontSize: 15, fontWeight: "500", color: "#fff", textAlign: "center" }}>
-            Done
+          <Ionicons
+            name={showBoost ? "chevron-down" : "chevron-forward"}
+            size={18}
+            color={COLORS.textMuted}
+          />
+          <Text style={{ fontSize: 14, color: COLORS.textMuted, marginLeft: 6 }}>
+            Additional details (optional)
           </Text>
         </Pressable>
 
-        <Pressable onPress={handleCreateContext} style={{ paddingVertical: 12, alignItems: "center" }}>
-          <Text style={{ fontSize: 14, color: COLORS.textMuted }}>Skip</Text>
+        {showBoost && (
+          <View style={{ marginBottom: 20 }}>
+            <ChatBubbleInput
+              label="Known username"
+              helperText="A handle you know they use."
+              placeholder="@username"
+              value={knownUsername}
+              onChangeText={setKnownUsername}
+            />
+            <ChatBubbleInput
+              label="Approximate age"
+              helperText="A rough age range."
+              placeholder="e.g. Late 20s, Mid 30s"
+              value={approximateAge}
+              onChangeText={setApproximateAge}
+            />
+          </View>
+        )}
+
+        {/* Save button */}
+        <Pressable
+          onPress={handleSave}
+          disabled={!isFormValid}
+          style={({ pressed }) => ({
+            backgroundColor: isFormValid ? COLORS.accent : COLORS.surface,
+            paddingVertical: 16,
+            borderRadius: 12,
+            marginTop: 12,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text style={{
+            fontSize: 16,
+            fontWeight: "600",
+            color: isFormValid ? "#fff" : COLORS.textMuted,
+            textAlign: "center"
+          }}>
+            Save
+          </Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -385,6 +464,10 @@ export function PersonContextModal({
     const relationshipLabel = RELATIONSHIP_OPTIONS.find(
       (r) => r.value === activePersonContext.relationshipContext
     )?.label || activePersonContext.relationshipContext;
+
+    const anchorLabel = activePersonContext.contextAnchor
+      ? CONTEXT_ANCHOR_OPTIONS.find(o => o.type === activePersonContext.contextAnchor?.type)?.label
+      : null;
 
     return (
       <View style={{ flex: 1 }}>
@@ -404,8 +487,8 @@ export function PersonContextModal({
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: isContextPaused ? COLORS.warningBg : COLORS.surface,
-            borderRadius: 8,
-            padding: 12,
+            borderRadius: 12,
+            padding: 14,
             marginBottom: 16,
           }}>
             <Text style={{ fontSize: 14, color: isContextPaused ? COLORS.warning : COLORS.textSecondary }}>
@@ -425,39 +508,67 @@ export function PersonContextModal({
           {/* Person card */}
           <View style={{
             backgroundColor: COLORS.surface,
-            borderRadius: 12,
-            padding: 16,
+            borderRadius: 16,
+            padding: 18,
             opacity: isContextPaused ? 0.6 : 1,
           }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
               <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: COLORS.accentBg,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 12,
+                marginRight: 14,
               }}>
-                <Ionicons name="person" size={20} color={COLORS.accent} />
+                <Ionicons name="person" size={22} color={COLORS.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: "500", color: COLORS.text }}>
+                <Text style={{ fontSize: 17, fontWeight: "600", color: COLORS.text }}>
                   {activePersonContext.name}
                 </Text>
-                <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
+                <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginTop: 2 }}>
                   {relationshipLabel}
                 </Text>
               </View>
             </View>
 
-            {activePersonContext.notes.length > 0 && (
-              <View style={{ marginTop: 12, paddingTop: 12 }}>
-                {activePersonContext.notes.slice(0, 2).map((note) => (
-                  <Text key={note.id} style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 4 }} numberOfLines={1}>
-                    {note.content}
-                  </Text>
-                ))}
+            {/* Context details */}
+            {(activePersonContext.location || activePersonContext.contextAnchor || activePersonContext.knownUsername || activePersonContext.approximateAge) && (
+              <View style={{ marginTop: 8 }}>
+                {activePersonContext.location && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="location-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 6 }}>
+                      {activePersonContext.location}
+                    </Text>
+                  </View>
+                )}
+                {activePersonContext.contextAnchor && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 6 }}>
+                      {anchorLabel}: {activePersonContext.contextAnchor.value}
+                    </Text>
+                  </View>
+                )}
+                {activePersonContext.knownUsername && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="at-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 6 }}>
+                      {activePersonContext.knownUsername}
+                    </Text>
+                  </View>
+                )}
+                {activePersonContext.approximateAge && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="calendar-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 6 }}>
+                      {activePersonContext.approximateAge}
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -468,32 +579,32 @@ export function PersonContextModal({
               onPress={handleSwitchPerson}
               style={({ pressed }) => ({
                 flex: 1,
-                paddingVertical: 12,
-                borderRadius: 8,
+                paddingVertical: 14,
+                borderRadius: 12,
                 backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
                 alignItems: "center",
               })}
             >
-              <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Switch</Text>
+              <Text style={{ fontSize: 15, color: COLORS.textSecondary }}>Switch</Text>
             </Pressable>
             <Pressable
               onPress={handleClear}
               style={({ pressed }) => ({
                 flex: 1,
-                paddingVertical: 12,
-                borderRadius: 8,
+                paddingVertical: 14,
+                borderRadius: 12,
                 backgroundColor: pressed ? COLORS.errorBg : COLORS.surface,
                 alignItems: "center",
               })}
             >
-              <Text style={{ fontSize: 14, color: COLORS.error }}>Remove</Text>
+              <Text style={{ fontSize: 15, color: COLORS.error }}>Remove</Text>
             </Pressable>
           </View>
 
           {/* Other saved */}
           {getNonArchivedContexts().length > 1 && (
-            <View style={{ marginTop: 20 }}>
-              <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 10 }}>
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 12 }}>
                 Other saved
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -508,10 +619,10 @@ export function PersonContextModal({
                       }}
                       style={{
                         backgroundColor: COLORS.surface,
-                        paddingHorizontal: 14,
-                        paddingVertical: 10,
-                        borderRadius: 8,
-                        marginRight: 8,
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        marginRight: 10,
                       }}
                     >
                       <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>{pc.name}</Text>
@@ -527,10 +638,9 @@ export function PersonContextModal({
 
   const renderStep = () => {
     switch (step) {
-      case "basics": return renderBasicsStep();
-      case "context_chips": return renderContextChipsStep();
+      case "input": return renderInputStep();
       case "view_saved": return renderViewSavedStep();
-      default: return renderBasicsStep();
+      default: return renderInputStep();
     }
   };
 
@@ -551,19 +661,19 @@ export function PersonContextModal({
               <Animated.View
                 style={{
                   backgroundColor: COLORS.background,
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
                   paddingTop: 8,
                   paddingHorizontal: 20,
                   paddingBottom: Platform.OS === "ios" ? 34 : 24,
                   minHeight: 400,
-                  maxHeight: "85%",
+                  maxHeight: "90%",
                   transform: [{ translateY: slideAnim }],
                 }}
               >
                 {/* Handle */}
-                <View style={{ alignItems: "center", paddingVertical: 8 }}>
-                  <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: COLORS.textMuted }} />
+                <View style={{ alignItems: "center", paddingVertical: 10 }}>
+                  <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: COLORS.textMuted }} />
                 </View>
                 <View style={{ flex: 1 }}>
                   {renderStep()}
@@ -580,25 +690,25 @@ export function PersonContextModal({
           style={{ flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)", justifyContent: "center", alignItems: "center", padding: 24 }}
           onPress={() => setShowDeleteConfirm(false)}
         >
-          <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: COLORS.background, borderRadius: 12, width: "100%", maxWidth: 320, padding: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: "600", color: COLORS.text, textAlign: "center", marginBottom: 8 }}>
+          <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: COLORS.background, borderRadius: 16, width: "100%", maxWidth: 320, padding: 24 }}>
+            <Text style={{ fontSize: 17, fontWeight: "600", color: COLORS.text, textAlign: "center", marginBottom: 8 }}>
               Remove {activePersonContext?.name}?
             </Text>
-            <Text style={{ fontSize: 14, color: COLORS.textSecondary, textAlign: "center", marginBottom: 20 }}>
-              This will delete all associated notes.
+            <Text style={{ fontSize: 14, color: COLORS.textSecondary, textAlign: "center", marginBottom: 24 }}>
+              This will delete all saved context.
             </Text>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: 12 }}>
               <Pressable
                 onPress={() => setShowDeleteConfirm(false)}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: COLORS.surface, alignItems: "center" }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: COLORS.surface, alignItems: "center" }}
               >
-                <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Cancel</Text>
+                <Text style={{ fontSize: 15, color: COLORS.textSecondary }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleConfirmDelete}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: COLORS.errorBg, alignItems: "center" }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: COLORS.errorBg, alignItems: "center" }}
               >
-                <Text style={{ fontSize: 14, fontWeight: "500", color: COLORS.error }}>Remove</Text>
+                <Text style={{ fontSize: 15, fontWeight: "500", color: COLORS.error }}>Remove</Text>
               </Pressable>
             </View>
           </Pressable>

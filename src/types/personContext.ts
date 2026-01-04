@@ -99,6 +99,15 @@ export interface PersonContextInsight {
 }
 
 /**
+ * Context anchor types for Deep Search
+ */
+export type ContextAnchorType =
+  | "workplace"
+  | "school"
+  | "dating_app"
+  | "username";
+
+/**
  * Core Person Context record
  */
 export interface PersonContext {
@@ -108,6 +117,15 @@ export interface PersonContext {
   name: string; // User-provided name/label for this person
   relationshipContext: RelationshipContextType;
   customRelationshipLabel?: string; // If "other", user can specify
+
+  // Deep Search context fields
+  location?: string; // Approximate location (city or area)
+  contextAnchor?: {
+    type: ContextAnchorType;
+    value: string;
+  };
+  knownUsername?: string; // Optional boost: known handle
+  approximateAge?: string; // Optional boost: age range
 
   // User's intent for tracking this context
   userIntent?: string; // e.g., "I want to understand our dynamic better"

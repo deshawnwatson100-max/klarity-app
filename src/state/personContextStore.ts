@@ -10,6 +10,7 @@ import {
   ActivePersonContextSelection,
   RelationshipContextType,
   PerceptionFeeling,
+  ContextAnchorType,
   createPersonContext,
   createPersonContextNote,
   createPerceptionState,
@@ -63,12 +64,18 @@ interface PersonContextState {
   createPersonContext: (
     name: string,
     relationshipContext: RelationshipContextType,
-    userIntent?: string
+    userIntent?: string,
+    deepSearchContext?: {
+      location?: string;
+      contextAnchor?: { type: ContextAnchorType; value: string };
+      knownUsername?: string;
+      approximateAge?: string;
+    }
   ) => string; // Returns new ID
   updatePersonContext: (
     id: string,
     updates: Partial<
-      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent">
+      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent" | "location" | "contextAnchor" | "knownUsername" | "approximateAge">
     >
   ) => void;
   deletePersonContext: (id: string) => void;
@@ -159,11 +166,31 @@ export const usePersonContextStore = create<PersonContextState>()(
       createPersonContext: (
         name: string,
         relationshipContext: RelationshipContextType,
-        userIntent?: string
+        userIntent?: string,
+        deepSearchContext?: {
+          location?: string;
+          contextAnchor?: { type: ContextAnchorType; value: string };
+          knownUsername?: string;
+          approximateAge?: string;
+        }
       ) => {
         const newContext = createPersonContext(name, relationshipContext);
         if (userIntent) {
           newContext.userIntent = userIntent;
+        }
+        if (deepSearchContext) {
+          if (deepSearchContext.location) {
+            newContext.location = deepSearchContext.location;
+          }
+          if (deepSearchContext.contextAnchor) {
+            newContext.contextAnchor = deepSearchContext.contextAnchor;
+          }
+          if (deepSearchContext.knownUsername) {
+            newContext.knownUsername = deepSearchContext.knownUsername;
+          }
+          if (deepSearchContext.approximateAge) {
+            newContext.approximateAge = deepSearchContext.approximateAge;
+          }
         }
 
         set((state) => ({
