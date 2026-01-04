@@ -988,6 +988,42 @@ A 2-second check-in that appears after showing a context card or heavy context.
 - Perception state stored in `perceptionHistory` array on PersonContext
 - Retrieved via `getLatestPerception(personContextId)`
 
+#### Language Guardrails (Prompt 6)
+Global identity-safe voice module that ensures Klarity sounds like a grounded friend, not a clinical analyst.
+
+**Voice Identity:**
+- User should feel like themselves, just more grounded
+- Avoid sounding like: scientist, investigator, therapist, moral judge
+
+**Banned Words (unless user uses them first):**
+- Clinical: tracking, pattern, signals, escalation, frequency, timeline, data points, analyze, diagnosis, unsafe
+- Labels: toxic, abusive, predator, narcissist, manipulator, gaslighter
+- Surveillance: detected, identified, flagged, monitoring, evidence, documented
+
+**Preferred Phrases:**
+| Instead of... | Use... |
+|--------------|--------|
+| "tracking patterns" | "things that keep coming up" |
+| "I detected" | "I noticed" |
+| "frequency/timeline" | "over time" |
+| "escalation" | "things getting heavier" |
+| "data points" | "what you have shared" |
+| "red flags" | "things worth noticing" |
+| "analysis" | "making sense of" |
+
+**Core Rules:**
+- Never label people (describe behaviors instead)
+- Never claim to verify external facts
+- Always preserve user agency ("you decide what matters")
+
+**Module:** `src/api/languageGuardrails.ts`
+
+**Functions:**
+- `applyLanguageGuardrails(text, userUsedWords)` - Post-process filter
+- `containsBannedWords(text, exemptions)` - Check for violations
+- `extractUserExemptions(userMessage)` - Get words user already used
+- `buildGuardedSystemPrompt(basePrompt)` - Combine with guardrails
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.
