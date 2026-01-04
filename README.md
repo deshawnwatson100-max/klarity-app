@@ -886,6 +886,53 @@ Not by resolution.
 - **Export calendar data (PDF/CSV)**
 - **Calendar reminders and check-ins**
 
+### NEW: Person Context Feature
+Save context about people you interact with so Klarity can provide more grounded, human responses.
+
+#### How it Works
+1. Tap the **person icon** in the chat header (right side)
+2. If no person is saved, see the "Add someone" flow
+3. If a person is active, see their context card with options
+
+#### Add Someone Flow (2 Steps)
+**Step 1 - Basics:**
+- Enter name or nickname (required)
+- Select relationship type: Dating, Romantic, Work, Family, Friend, Other
+- Optional: Choose your goal - Feel steady, Make a decision, Handle conflict, Set a boundary, Improve things, Other
+
+**Step 2 - What to Keep in Mind:**
+- Select relevant context chips:
+  - Power imbalance
+  - Boundary concerns
+  - Communication feels unclear
+  - Reputation concerns
+  - Past issues (legal/professional)
+  - Mostly positive
+  - I am not sure yet
+- Optional: Add free-text notes
+
+#### Active Person Context
+When a person context is active:
+- Person icon shows a green dot indicator
+- Tapping shows the saved context card with:
+  - Name and relationship type
+  - Goal (if set)
+  - Notes preview
+- Actions: Switch, Edit, Clear
+
+#### Language Guidelines
+The Person Context feature uses warm, non-clinical language:
+- Uses: "keep in mind", "taken together", "this adds context"
+- Avoids: "tracking", "patterns", "signals", "risk analysis"
+- Never labels people as good/bad/unsafe/toxic
+- Always preserves user agency
+
+#### Privacy
+- All data stored locally on device (AsyncStorage)
+- No automatic cloud sync
+- User controls what data exists
+- Can archive or delete contexts anytime
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.

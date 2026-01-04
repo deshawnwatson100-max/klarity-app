@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
+import { PersonContextHeaderIcon } from "./PersonContextModal";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -17,6 +18,8 @@ interface HeaderProps {
   onMenuPress?: () => void;
   inputMode?: InputMode;
   onModeChange?: (mode: InputMode) => void;
+  onPersonContextPress?: () => void;
+  showPersonContext?: boolean;
 }
 
 /**
@@ -39,6 +42,8 @@ export function Header({
   onMenuPress,
   inputMode,
   onModeChange,
+  onPersonContextPress,
+  showPersonContext = true,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -115,8 +120,13 @@ export function Header({
         </View>
 
 
-        {/* Right - Mode Toggle + New Loop Button */}
+        {/* Right - Person Context Icon + Mode Toggle + New Loop Button */}
         <View className="flex-row items-center">
+          {/* Person Context Icon */}
+          {showPersonContext && onPersonContextPress && (
+            <PersonContextHeaderIcon onPress={onPersonContextPress} />
+          )}
+
           {/* Mode Toggle (only when onModeChange is provided) */}
           {onModeChange && inputMode && (
             <View

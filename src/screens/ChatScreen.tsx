@@ -30,6 +30,7 @@ import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
+import { PersonContextModal } from "../components/PersonContextModal";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
@@ -76,6 +77,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [isPersonContextModalOpen, setIsPersonContextModalOpen] = useState(false);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -1260,6 +1262,8 @@ export function ChatScreen({ navigation, route }: Props) {
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={handleModeChangeWithAnimation}
+            onPersonContextPress={() => setIsPersonContextModalOpen(true)}
+            showPersonContext={true}
           />
 
           <Animated.View
@@ -1373,6 +1377,12 @@ export function ChatScreen({ navigation, route }: Props) {
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
+      />
+
+      {/* Person Context Modal */}
+      <PersonContextModal
+        visible={isPersonContextModalOpen}
+        onClose={() => setIsPersonContextModalOpen(false)}
       />
     </View>
   );
