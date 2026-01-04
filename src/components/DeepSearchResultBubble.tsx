@@ -108,31 +108,37 @@ export function DeepSearchResultBubble({
         </View>
       )}
 
-      {/* Related searches / Follow-up */}
-      {onAskFollowUp && (
-        <View style={{ marginTop: 20 }}>
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              onAskFollowUp();
-            }}
-            style={({ pressed }) => ({
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
-              borderRadius: 20,
-              alignSelf: "flex-start",
-            })}
-          >
-            <Ionicons name="search-outline" size={14} color={COLORS.link} />
-            <Text style={{ fontSize: 13, color: COLORS.link, marginLeft: 8 }}>
-              Search for more
-            </Text>
-          </Pressable>
+      {/* How does this sit with you? */}
+      <View style={{ marginTop: 24 }}>
+        <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 12 }}>
+          How does this sit with you?
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {["Feels fine", "I'm unsure", "This feels like a lot"].map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => {
+                Haptics.selectionAsync();
+                if (onAskFollowUp && option !== "Feels fine") {
+                  onAskFollowUp();
+                }
+              }}
+              style={({ pressed }) => ({
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                backgroundColor: pressed ? COLORS.surfaceHover : COLORS.surface,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+              })}
+            >
+              <Text style={{ fontSize: 13, color: COLORS.textSecondary }}>
+                {option}
+              </Text>
+            </Pressable>
+          ))}
         </View>
-      )}
+      </View>
     </View>
   );
 }
