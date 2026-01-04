@@ -179,11 +179,6 @@ function SearchResultCard({
         <Text style={{ fontSize: 12, color: COLORS.green }} numberOfLines={1}>
           {source.url ? getDomainFromUrl(source.url) : source.platform.toLowerCase()}
         </Text>
-        {!source.isVerified && (
-          <Text style={{ fontSize: 10, color: COLORS.textMuted, marginLeft: 8 }}>
-            · Unverified
-          </Text>
-        )}
       </View>
 
       {/* Title / Platform - clickable */}
