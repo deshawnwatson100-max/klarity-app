@@ -86,11 +86,11 @@ export function DeepSearchResultBubble({
         </View>
       )}
 
-      {/* Search Header */}
+      {/* Results Header - focus on what was found */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
-        <Ionicons name="search" size={16} color={COLORS.textMuted} />
-        <Text style={{ fontSize: 13, color: COLORS.textMuted, marginLeft: 8 }}>
-          {result.sources.length} result{result.sources.length !== 1 ? "s" : ""} found
+        <Ionicons name="checkmark-circle" size={16} color={COLORS.green} />
+        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 8 }}>
+          Found {result.sources.length} public profile{result.sources.length !== 1 ? "s" : ""}
         </Text>
       </View>
 
@@ -108,32 +108,9 @@ export function DeepSearchResultBubble({
         </View>
       )}
 
-      {/* Divider */}
-      {result.sources.length > 0 && (
-        <View style={{ height: 1, backgroundColor: COLORS.divider, marginVertical: 20 }} />
-      )}
-
-      {/* Brief summary - kept minimal */}
-      {result.summary && (
-        <Text
-          style={{
-            fontSize: 14,
-            color: COLORS.textSecondary,
-            lineHeight: 21,
-            marginBottom: 16,
-          }}
-          numberOfLines={3}
-        >
-          {result.summary}
-        </Text>
-      )}
-
       {/* Related searches / Follow-up */}
       {onAskFollowUp && (
-        <View>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
-            Related
-          </Text>
+        <View style={{ marginTop: 20 }}>
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
@@ -151,7 +128,7 @@ export function DeepSearchResultBubble({
           >
             <Ionicons name="search-outline" size={14} color={COLORS.link} />
             <Text style={{ fontSize: 13, color: COLORS.link, marginLeft: 8 }}>
-              Search for more details
+              Search for more
             </Text>
           </Pressable>
         </View>
