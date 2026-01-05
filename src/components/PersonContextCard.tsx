@@ -265,10 +265,8 @@ export const PersonContextCard = memo(function PersonContextCard({
   return (
     <View
       style={{
-        backgroundColor: COLORS.background,
-        borderRadius: 16,
-        padding: 16,
         marginVertical: 8,
+        paddingHorizontal: 4,
       }}
     >
       {/* Header */}
