@@ -651,6 +651,17 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
     return null;
   }
 
+  // Handle Deep Search navigation
+  const handleDeepSearch = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    closeDrawer();
+    setTimeout(() => {
+      createNewLoop();
+      // Navigate to ChatScreen with person context card to trigger Deep Search flow
+      (navigation as any).navigate("ChatScreen", { showPersonContextCard: true });
+    }, 100);
+  };
+
   // Render header
   const renderHeader = () => {
     return (
@@ -712,6 +723,50 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
             </View>
           </Pressable>
         </View>
+
+        {/* Deep Search Section */}
+        <Pressable
+          onPress={handleDeepSearch}
+          className="active:opacity-70 mt-4"
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              backgroundColor: "rgba(99, 102, 241, 0.12)",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "rgba(99, 102, 241, 0.25)",
+            }}
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: "rgba(99, 102, 241, 0.2)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="globe-outline" size={20} color="#818CF8" />
+            </View>
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: "#A5B4FC" }}
+              >
+                Deep Search
+              </Text>
+              <Text className="text-xs" style={{ color: "#6B7280" }}>
+                Research someone across the web
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#6366F1" />
+          </View>
+        </Pressable>
       </View>
     );
   };
