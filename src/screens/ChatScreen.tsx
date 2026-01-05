@@ -1153,12 +1153,84 @@ export function ChatScreen({ navigation, route }: Props) {
     }
   };
 
+  // Helper function to detect deep search intent in user message
+  const isDeepSearchRequest = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase();
+    const deepSearchPhrases = [
+      "deep search",
+      "deepsearch",
+      "search for",
+      "look up",
+      "look into",
+      "find out about",
+      "find information",
+      "research",
+      "investigate",
+      "dig into",
+      "background check",
+      "who is",
+      "learn more about",
+      "what can you find",
+      "search someone",
+      "search this person",
+      "search them",
+    ];
+
+    return deepSearchPhrases.some((phrase) => lowerMessage.includes(phrase));
+  };
+
   // Process message in Decode mode - conversational exploration for clarity
   const processDecodeMessage = async (userMessage: ChatMessage) => {
     setIsProcessing(true);
     setIsLoading(true);
 
     try {
+      // Check if user is requesting a deep search
+      if (isDeepSearchRequest(userMessage.content)) {
+        // Show typing indicator briefly
+        const typingMsg: TypingMessage = {
+          id: Date.now().toString() + "_typing",
+          role: "typing",
+          content: "",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(typingMsg);
+
+        // Brief delay for natural feel
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Remove typing indicator
+        removeMessageFromActiveLoop(typingMsg.id);
+
+        // Add assistant message explaining deep search
+        const assistantMsg: ChatMessage = {
+          id: Date.now().toString() + "_deep_search_intro",
+          role: "assistant",
+          content: "I can help you learn more about someone. Fill out the details below and I will search across the web to find publicly available information.",
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(assistantMsg);
+
+        // Add the PersonContextCard for user to fill out
+        const personContextCardMsg: PersonContextCardMessage = {
+          id: `person-context-card-${Date.now()}`,
+          role: "person-context-card",
+          content: "",
+          timestamp: Date.now(),
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(personContextCardMsg);
+
+        // Scroll to bottom to show the card
+        setTimeout(() => {
+          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+
+        setIsLoading(false);
+        setIsProcessing(false);
+        return;
+      }
+
       // Show typing indicator
       const typingMsg: TypingMessage = {
         id: Date.now().toString() + "_typing",
