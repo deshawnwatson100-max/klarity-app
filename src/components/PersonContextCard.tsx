@@ -274,19 +274,7 @@ export const PersonContextCard = memo(function PersonContextCard({
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: COLORS.accentBg,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 10,
-            }}
-          >
-            <Ionicons name="search" size={16} color={COLORS.accent} />
-          </View>
+          <Ionicons name="search" size={18} color={COLORS.textMuted} style={{ marginRight: 8 }} />
           <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
             Deep Search
           </Text>
