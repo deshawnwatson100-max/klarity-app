@@ -285,10 +285,10 @@ export const PersonContextCard = memo(function PersonContextCard({
               marginRight: 10,
             }}
           >
-            <Ionicons name="person-add" size={16} color={COLORS.accent} />
+            <Ionicons name="search" size={16} color={COLORS.accent} />
           </View>
           <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-            Add context
+            Deep Search
           </Text>
         </View>
         {onDismiss && (
