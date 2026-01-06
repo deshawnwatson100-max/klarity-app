@@ -1,5 +1,5 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, useLayoutEffect } from "react";
-import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Easing, Text } from "react-native";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useLayoutEffect } from "react";
+import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -57,75 +57,16 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const replyPlaceholderX = useRef(new Animated.Value(0)).current;
   const decodePlaceholderX = useRef(new Animated.Value(0)).current;
 
-  // Track previous mode for detecting user-initiated vs navigation-based changes
-  const prevModeRef = useRef<InputMode | null>(null);
-  const isUserToggle = useRef(false);
-
-  // Set positions immediately on mount/navigation (before paint)
+  // Always ensure correct positions - runs synchronously before paint
   useLayoutEffect(() => {
-    // If this is the first render or mode is different from what we last animated to,
-    // set positions immediately without animation
-    if (prevModeRef.current === null || prevModeRef.current !== inputMode) {
-      if (inputMode === "understand") {
-        replyPlaceholderX.setValue(-screenWidth);
-        decodePlaceholderX.setValue(0);
-      } else {
-        replyPlaceholderX.setValue(0);
-        decodePlaceholderX.setValue(screenWidth);
-      }
-      prevModeRef.current = inputMode;
-    }
-  }, [inputMode, screenWidth]);
-
-  // Handle animated transitions when user toggles mode (not on navigation)
-  useEffect(() => {
-    // Skip first render - handled by useLayoutEffect
-    if (!isUserToggle.current) {
-      isUserToggle.current = true;
-      return;
-    }
-
-    // Skip if mode hasn't changed
-    if (prevModeRef.current === inputMode) {
-      return;
-    }
-
-    const SLIDE_DURATION = 300;
-    const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
-
-    if (inputMode === "rewrite") {
-      Animated.parallel([
-        Animated.timing(replyPlaceholderX, {
-          toValue: 0,
-          duration: SLIDE_DURATION,
-          easing: SLIDE_EASING,
-          useNativeDriver: true,
-        }),
-        Animated.timing(decodePlaceholderX, {
-          toValue: screenWidth,
-          duration: SLIDE_DURATION,
-          easing: SLIDE_EASING,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    // Always set positions to match current mode
+    if (inputMode === "understand") {
+      replyPlaceholderX.setValue(-screenWidth);
+      decodePlaceholderX.setValue(0);
     } else {
-      Animated.parallel([
-        Animated.timing(replyPlaceholderX, {
-          toValue: -screenWidth,
-          duration: SLIDE_DURATION,
-          easing: SLIDE_EASING,
-          useNativeDriver: true,
-        }),
-        Animated.timing(decodePlaceholderX, {
-          toValue: 0,
-          duration: SLIDE_DURATION,
-          easing: SLIDE_EASING,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      replyPlaceholderX.setValue(0);
+      decodePlaceholderX.setValue(screenWidth);
     }
-
-    prevModeRef.current = inputMode;
   }, [inputMode, screenWidth]);
 
   useImperativeHandle(ref, () => ({
