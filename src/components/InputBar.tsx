@@ -1,4 +1,4 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Easing, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,46 +52,26 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const screenWidth = Dimensions.get("window").width;
-  const isFirstRender = useRef(true);
-  const prevMode = useRef(inputMode);
 
   // Animation values for sliding placeholders - using React Native Animated
-  const replyPlaceholderX = useRef(new Animated.Value(0)).current;
-  const decodePlaceholderX = useRef(new Animated.Value(0)).current;
+  // Initialize with correct positions based on initial inputMode
+  const replyPlaceholderX = useRef(
+    new Animated.Value(inputMode === "rewrite" ? 0 : -screenWidth)
+  ).current;
+  const decodePlaceholderX = useRef(
+    new Animated.Value(inputMode === "understand" ? 0 : screenWidth)
+  ).current;
 
-  // Set initial positions immediately on mount (before first paint)
-  useLayoutEffect(() => {
-    // Stop any pending animations
-    replyPlaceholderX.stopAnimation();
-    decodePlaceholderX.stopAnimation();
+  // Track previous mode for animation triggering
+  const prevModeRef = useRef(inputMode);
 
-    // Set positions immediately without animation
-    if (inputMode === "understand") {
-      replyPlaceholderX.setValue(-screenWidth);
-      decodePlaceholderX.setValue(0);
-    } else {
-      replyPlaceholderX.setValue(0);
-      decodePlaceholderX.setValue(screenWidth);
-    }
-
-    // Reset tracking refs
-    isFirstRender.current = true;
-    prevMode.current = inputMode;
-  }, []); // Only run on mount
-
-  // Animate placeholders only when mode actually changes (not on mount)
+  // Animate placeholders when mode changes
   useEffect(() => {
-    // Skip animation on first render
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    // Skip if mode hasn't changed (prevents animation on mount)
+    if (prevModeRef.current === inputMode) {
       return;
     }
-
-    // Skip if mode hasn't actually changed
-    if (prevMode.current === inputMode) {
-      return;
-    }
-    prevMode.current = inputMode;
+    prevModeRef.current = inputMode;
 
     const SLIDE_DURATION = 300;
     const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
