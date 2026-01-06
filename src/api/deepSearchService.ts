@@ -28,6 +28,8 @@ import {
   categorizeResults,
   getCategorizedResultsStats,
   CategorizedResults,
+  generateUsernameVariations,
+  generateUsernameFirstQueries,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -38,27 +40,60 @@ import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 /**
  * Search passes executed in order. Each pass focuses on specific query types.
  * The search continues until strong results are found or all passes complete.
+ *
+ * IMPORTANT: If a username is provided, USERNAME_FIRST runs as Pass 1 (highest priority).
+ * This ensures username-based discovery happens early, not as an afterthought.
  */
 export enum SearchPass {
-  NAME_LOCATION = 1,        // Pass 1: name + location
-  PLATFORM_TARGETED = 2,    // Pass 2: social + professional site: queries
-  USERNAME_FOCUSED = 3,     // Pass 3: username-only + username platform-targeted
-  DATING_MIRRORS = 4,       // Pass 4: dating keywords + mirrors/caches
-  LEGAL_RECORDS = 5,        // Pass 5: legal/public records portal discovery
-  ARCHIVED_CACHED = 6,      // Pass 6: archived/cached pages
+  USERNAME_FIRST = 1,         // Pass 1: Username-first (runs early if username exists)
+  NAME_LOCATION = 2,          // Pass 2: name + location
+  PLATFORM_TARGETED = 3,      // Pass 3: social + professional site: queries
+  USERNAME_EXPANDED = 4,      // Pass 4: username variations + additional platforms
+  DATING_MIRRORS = 5,         // Pass 5: dating keywords + mirrors/caches
+  LEGAL_RECORDS = 6,          // Pass 6: legal/public records portal discovery
+  ARCHIVED_CACHED = 7,        // Pass 7: archived/cached pages
 }
 
 export interface PassConfig {
   pass: SearchPass;
   name: string;
   description: string;
+  requiresUsername?: boolean; // If true, skip if no username
   generateQueries: (input: QueryGeneratorInput) => string[];
 }
 
 /**
  * Configuration for each search pass
+ *
+ * Pass order is critical:
+ * 1. USERNAME_FIRST - If username exists, search it immediately
+ * 2. NAME_LOCATION - Basic name + location
+ * 3. PLATFORM_TARGETED - site: queries for social/professional
+ * 4. USERNAME_EXPANDED - Username variations and additional platforms
+ * 5. DATING_MIRRORS - Dating-focused
+ * 6. LEGAL_RECORDS - Court and public records
+ * 7. ARCHIVED_CACHED - Archive.org and cached pages
  */
 const PASS_CONFIGS: PassConfig[] = [
+  {
+    pass: SearchPass.USERNAME_FIRST,
+    name: "Username First",
+    description: "Priority username search with variations - runs early",
+    requiresUsername: true,
+    generateQueries: (input) => {
+      const { username, anchor } = input;
+      const queries: string[] = [];
+
+      // Get the primary username
+      const primaryUsername = username || (anchor?.type === "username" ? anchor.value : null);
+      if (!primaryUsername) return queries;
+
+      // Use the comprehensive username-first query generator with variations
+      queries.push(...generateUsernameFirstQueries(primaryUsername, true));
+
+      return queries;
+    },
+  },
   {
     pass: SearchPass.NAME_LOCATION,
     name: "Name + Location",
@@ -131,50 +166,67 @@ const PASS_CONFIGS: PassConfig[] = [
     },
   },
   {
-    pass: SearchPass.USERNAME_FOCUSED,
-    name: "Username Focused",
-    description: "Username-only and username platform-targeted searches",
+    pass: SearchPass.USERNAME_EXPANDED,
+    name: "Username Expanded",
+    description: "Username variations and additional platform searches",
+    requiresUsername: true,
     generateQueries: (input) => {
       const queries: string[] = [];
       const { username, aliases, anchor } = input;
 
-      // Primary username
-      if (username) {
-        const cleanUsername = username.replace(/^@/, "");
-        queries.push(`@${cleanUsername}`);
-        queries.push(`"${cleanUsername}"`);
-        queries.push(`"${cleanUsername}" profile`);
-        queries.push(`${cleanUsername} site:instagram.com`);
-        queries.push(`${cleanUsername} site:twitter.com`);
-        queries.push(`${cleanUsername} site:tiktok.com`);
-        queries.push(`${cleanUsername} site:reddit.com`);
-        queries.push(`${cleanUsername} site:linkedin.com`);
-        queries.push(`${cleanUsername} site:youtube.com`);
-        queries.push(`${cleanUsername} site:github.com`);
-      }
+      // Collect all usernames to expand
+      const usernamesToSearch: string[] = [];
 
-      // Username anchor
+      if (username) {
+        usernamesToSearch.push(username);
+      }
       if (anchor?.type === "username" && anchor.value) {
         const anchorUsername = anchor.value.replace(/^@/, "");
-        if (anchorUsername !== username?.replace(/^@/, "")) {
-          queries.push(`@${anchorUsername}`);
-          queries.push(`"${anchorUsername}" profile`);
-          queries.push(`${anchorUsername} site:instagram.com`);
-          queries.push(`${anchorUsername} site:twitter.com`);
+        if (!usernamesToSearch.includes(anchorUsername)) {
+          usernamesToSearch.push(anchorUsername);
         }
       }
-
-      // Known aliases
       if (aliases?.length) {
         for (const alias of aliases.slice(0, 3)) {
           const cleanAlias = alias.replace(/^@/, "");
-          queries.push(`@${cleanAlias}`);
-          queries.push(`"${cleanAlias}" profile`);
-          queries.push(`${cleanAlias} site:instagram.com`);
+          if (!usernamesToSearch.includes(cleanAlias)) {
+            usernamesToSearch.push(cleanAlias);
+          }
         }
       }
 
-      return queries;
+      // For each username, generate variations and search additional platforms
+      for (const u of usernamesToSearch) {
+        const variations = generateUsernameVariations(u);
+
+        // Additional niche platforms not covered in USERNAME_FIRST
+        const nichePlatforms = [
+          "medium.com",
+          "quora.com",
+          "tumblr.com",
+          "soundcloud.com",
+          "spotify.com",
+          "venmo.com",
+          "cashapp.com",
+          "discord.com",
+          "telegram.org",
+        ];
+
+        // Search variations on niche platforms
+        for (const variation of variations.slice(0, 5)) {
+          for (const platform of nichePlatforms) {
+            queries.push(`${variation.username} site:${platform}`);
+          }
+        }
+
+        // Dating platforms with username
+        queries.push(`${u} dating profile`);
+        queries.push(`${u} tinder`);
+        queries.push(`${u} bumble`);
+      }
+
+      // De-duplicate
+      return [...new Set(queries)];
     },
   },
   {
@@ -299,6 +351,12 @@ const PASS_CONFIGS: PassConfig[] = [
         queries.push(`${cleanUsername} site:web.archive.org`);
         queries.push(`${cleanUsername} cached`);
         queries.push(`${cleanUsername} deleted`);
+
+        // Also search username variations in archives
+        const variations = generateUsernameVariations(username);
+        for (const v of variations.slice(0, 3)) {
+          queries.push(`${v.username} site:web.archive.org`);
+        }
       }
 
       // Alternative archive sites
@@ -422,10 +480,11 @@ export async function executeMultiPassSearch(
   const totalPasses = PASS_CONFIGS.length;
 
   // Determine which passes to run based on input
+  // Passes with requiresUsername: true are skipped if no username is available
+  const hasUsername = !!(input.username || input.aliases?.length || input.anchor?.type === "username");
   const passesToRun = PASS_CONFIGS.filter(config => {
-    // Skip username pass if no username
-    if (config.pass === SearchPass.USERNAME_FOCUSED) {
-      return !!(input.username || input.aliases?.length || input.anchor?.type === "username");
+    if (config.requiresUsername && !hasUsername) {
+      return false;
     }
     return true;
   });

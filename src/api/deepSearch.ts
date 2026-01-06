@@ -636,6 +636,251 @@ export function generateWritingPlatformQueries(name: string, username?: string):
 }
 
 // ============================================================================
+// USERNAME VARIATION GENERATOR
+// ============================================================================
+
+export interface UsernameVariation {
+  username: string;
+  source: "original" | "case_change" | "special_char_removed" | "prefix_variant" | "suffix_variant";
+}
+
+/**
+ * Generates variations of a username for comprehensive searching.
+ *
+ * Variations include:
+ * - Original (cleaned of @ prefix)
+ * - Case changes (lowercase, uppercase, title case)
+ * - Special character removal (underscores, dots, dashes)
+ * - Common prefix/suffix variants (numbers, years, common patterns)
+ *
+ * Example for "katie.j_23":
+ * - katie.j_23 (original)
+ * - katiej23 (special chars removed)
+ * - katie_j_23, katie.j.23 (char swaps)
+ * - katiej, katie_j (without numbers)
+ * - katie.j_2023 (year variant)
+ */
+export function generateUsernameVariations(username: string): UsernameVariation[] {
+  if (!username?.trim()) return [];
+
+  const variations: UsernameVariation[] = [];
+  const seen = new Set<string>();
+
+  // Clean the username (remove @ prefix if present)
+  const clean = username.trim().replace(/^@/, "");
+
+  // Helper to add unique variations
+  const addVariation = (u: string, source: UsernameVariation["source"]) => {
+    const normalized = u.toLowerCase();
+    if (normalized && !seen.has(normalized) && normalized.length >= 2) {
+      seen.add(normalized);
+      variations.push({ username: u, source });
+    }
+  };
+
+  // 1. Original
+  addVariation(clean, "original");
+
+  // 2. Case changes
+  addVariation(clean.toLowerCase(), "case_change");
+  addVariation(clean.toUpperCase(), "case_change");
+  // Title case (first letter caps)
+  const titleCase = clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+  addVariation(titleCase, "case_change");
+
+  // 3. Special character removal (underscores, dots, dashes, numbers at end)
+  const noSpecialChars = clean.replace(/[._\-]/g, "");
+  addVariation(noSpecialChars, "special_char_removed");
+
+  // Remove trailing numbers
+  const noTrailingNums = clean.replace(/\d+$/, "");
+  if (noTrailingNums !== clean) {
+    addVariation(noTrailingNums, "special_char_removed");
+    // Also without special chars AND trailing nums
+    const cleanNoNums = noTrailingNums.replace(/[._\-]/g, "");
+    addVariation(cleanNoNums, "special_char_removed");
+  }
+
+  // Replace underscores with dots and vice versa
+  if (clean.includes("_")) {
+    addVariation(clean.replace(/_/g, "."), "special_char_removed");
+    addVariation(clean.replace(/_/g, ""), "special_char_removed");
+  }
+  if (clean.includes(".")) {
+    addVariation(clean.replace(/\./g, "_"), "special_char_removed");
+    addVariation(clean.replace(/\./g, ""), "special_char_removed");
+  }
+
+  // 4. Prefix variants (only if username doesn't already have these)
+  const baseWithoutPrefixes = clean.replace(/^(the|real|official|its|im|i_am|iam|iamthe)/i, "");
+  if (baseWithoutPrefixes !== clean && baseWithoutPrefixes.length >= 2) {
+    addVariation(baseWithoutPrefixes, "prefix_variant");
+  }
+
+  // Add common prefixes if not present
+  if (!clean.match(/^(the|real|official)/i)) {
+    // Only add prefix variants for short usernames to avoid too many variations
+    if (clean.length <= 12) {
+      addVariation(`the${noSpecialChars}`, "prefix_variant");
+      addVariation(`real${noSpecialChars}`, "prefix_variant");
+    }
+  }
+
+  // 5. Suffix variants
+  // Extract trailing numbers
+  const trailingNumMatch = clean.match(/(\d+)$/);
+  if (trailingNumMatch) {
+    const num = trailingNumMatch[1];
+    const base = clean.slice(0, -num.length);
+
+    // Try different number formats
+    if (num.length === 2) {
+      // Could be year (23 -> 2023, 1923), or just digits
+      addVariation(`${base}20${num}`, "suffix_variant");
+      addVariation(`${base}19${num}`, "suffix_variant");
+    } else if (num.length === 4 && (num.startsWith("19") || num.startsWith("20"))) {
+      // Full year, try short version
+      addVariation(`${base}${num.slice(2)}`, "suffix_variant");
+    }
+
+    // Without any numbers
+    if (base.length >= 2) {
+      addVariation(base.replace(/[._\-]$/, ""), "suffix_variant");
+    }
+  } else {
+    // No trailing numbers - try adding common ones
+    if (clean.length <= 12) {
+      addVariation(`${clean}1`, "suffix_variant");
+      addVariation(`${clean}_`, "suffix_variant");
+    }
+  }
+
+  return variations;
+}
+
+/**
+ * Generate platform-specific queries for username variations
+ */
+export function generateUsernameFirstQueries(
+  username: string,
+  includeVariations: boolean = true
+): string[] {
+  const queries: string[] = [];
+
+  // Get variations or just use the original
+  const variations = includeVariations
+    ? generateUsernameVariations(username)
+    : [{ username: username.replace(/^@/, ""), source: "original" as const }];
+
+  // Major platforms to search for each variation
+  const platforms = [
+    { domain: "instagram.com", prefix: "" },
+    { domain: "twitter.com", prefix: "" },
+    { domain: "x.com", prefix: "@" },
+    { domain: "tiktok.com", prefix: "@" },
+    { domain: "reddit.com", prefix: "u/" },
+    { domain: "linkedin.com", prefix: "" },
+    { domain: "facebook.com", prefix: "" },
+    { domain: "github.com", prefix: "" },
+    { domain: "youtube.com", prefix: "@" },
+    { domain: "pinterest.com", prefix: "" },
+    { domain: "snapchat.com", prefix: "" },
+    { domain: "twitch.tv", prefix: "" },
+  ];
+
+  // For original and key variations, do full platform sweep
+  const priorityVariations = variations.filter(
+    v => v.source === "original" || v.source === "special_char_removed"
+  ).slice(0, 4); // Limit to 4 priority variations
+
+  for (const variation of priorityVariations) {
+    const u = variation.username;
+
+    // General username searches
+    queries.push(`@${u}`);
+    queries.push(`"${u}" profile`);
+    queries.push(`"${u}" social media`);
+
+    // Platform-specific searches
+    for (const platform of platforms) {
+      queries.push(`${platform.prefix}${u} site:${platform.domain}`);
+    }
+  }
+
+  // For other variations, just do generic searches
+  const otherVariations = variations.filter(
+    v => v.source !== "original" && v.source !== "special_char_removed"
+  ).slice(0, 3); // Limit other variations
+
+  for (const variation of otherVariations) {
+    const u = variation.username;
+    queries.push(`@${u}`);
+    queries.push(`"${u}" profile`);
+    queries.push(`${u} site:instagram.com`);
+    queries.push(`${u} site:twitter.com`);
+  }
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+// ============================================================================
+// EXAMPLE: Username Variations for "katie.j_23"
+// ============================================================================
+/*
+Input: "katie.j_23"
+
+Generated Variations:
+1. katie.j_23 (original)
+2. KATIE.J_23 (uppercase)
+3. Katie.j_23 (title case)
+4. katiej23 (special chars removed)
+5. katie.j_ (trailing numbers removed)
+6. katiej (special chars + numbers removed)
+7. katie_j_23 (dots to underscores)
+8. katiej_23 (dots removed)
+9. katie.j.23 (underscores to dots)
+10. katie.j23 (underscores removed)
+11. thekatiej23 (prefix variant)
+12. realkatiej23 (prefix variant)
+13. katie.j_2023 (year variant: 23 -> 2023)
+14. katie.j_1923 (year variant: 23 -> 1923)
+15. katie.j (base without numbers)
+
+Example Query List for "katie.j_23":
+Pass 1 (USERNAME_FIRST) generates ~60 queries:
+
+General searches:
+- @katie.j_23
+- "katie.j_23" profile
+- "katie.j_23" social media
+- @katiej23
+- "katiej23" profile
+- "katiej23" social media
+
+Platform-specific (for each priority variation):
+- katie.j_23 site:instagram.com
+- katie.j_23 site:twitter.com
+- @katie.j_23 site:x.com
+- @katie.j_23 site:tiktok.com
+- u/katie.j_23 site:reddit.com
+- katie.j_23 site:linkedin.com
+- katie.j_23 site:facebook.com
+- katie.j_23 site:github.com
+- @katie.j_23 site:youtube.com
+- katie.j_23 site:pinterest.com
+- katie.j_23 site:snapchat.com
+- katie.j_23 site:twitch.tv
+(repeated for katiej23, katie_j_23, katiej variations)
+
+Other variations (limited searches):
+- @katie.j_2023
+- "katie.j_2023" profile
+- katie.j_2023 site:instagram.com
+- katie.j_2023 site:twitter.com
+*/
+
+// ============================================================================
 // SEARCH QUERIES BUILDER - Generates 10+ query variations automatically
 // ============================================================================
 
