@@ -1,5 +1,5 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useLayoutEffect } from "react";
-import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Text } from "react-native";
+import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
+import { View, TextInput, Pressable, Keyboard, Image, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -51,23 +51,6 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const screenWidth = Dimensions.get("window").width;
-
-  // Animation values for sliding placeholders - using React Native Animated
-  const replyPlaceholderX = useRef(new Animated.Value(0)).current;
-  const decodePlaceholderX = useRef(new Animated.Value(0)).current;
-
-  // Always ensure correct positions - runs synchronously before paint
-  useLayoutEffect(() => {
-    // Always set positions to match current mode
-    if (inputMode === "understand") {
-      replyPlaceholderX.setValue(-screenWidth);
-      decodePlaceholderX.setValue(0);
-    } else {
-      replyPlaceholderX.setValue(0);
-      decodePlaceholderX.setValue(screenWidth);
-    }
-  }, [inputMode, screenWidth]);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -222,7 +205,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               overflow: "hidden",
             }}
           >
-            {/* Sliding Placeholder Container */}
+            {/* Placeholder - show only one based on current mode */}
             {showSlidingPlaceholders && !isFocused && (
               <View
                 style={{
@@ -232,33 +215,19 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                   top: 0,
                   bottom: 0,
                   justifyContent: "center",
-                  overflow: "hidden",
                 }}
                 pointerEvents="none"
               >
-                {/* Reply Placeholder */}
-                <Animated.Text
+                <Text
                   style={{
-                    position: "absolute",
                     color: "#6B7280",
                     fontSize: 16,
-                    transform: [{ translateX: replyPlaceholderX }],
                   }}
                 >
-                  Type how you want to reply...
-                </Animated.Text>
-
-                {/* Decode Placeholder */}
-                <Animated.Text
-                  style={{
-                    position: "absolute",
-                    color: "#6B7280",
-                    fontSize: 16,
-                    transform: [{ translateX: decodePlaceholderX }],
-                  }}
-                >
-                  Paste the message to decode...
-                </Animated.Text>
+                  {inputMode === "rewrite"
+                    ? "Type how you want to reply..."
+                    : "Paste the message to decode..."}
+                </Text>
               </View>
             )}
 
