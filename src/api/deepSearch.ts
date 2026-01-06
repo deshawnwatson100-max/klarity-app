@@ -385,6 +385,254 @@ export interface DeepSearchSource {
   summary: string;
   relevantDetails: string[];
   isVerified?: boolean; // Optional, not displayed to user
+  category?: "socialPresence" | "professionalFootprint" | "publicWriting" | "datingProfiles" | "legalRecords" | "archived" | "other";
+}
+
+// ============================================================================
+// PLATFORM TARGETING CONFIGURATION
+// ============================================================================
+
+/**
+ * Platform configuration for site:-targeted queries
+ */
+export interface PlatformConfig {
+  domain: string;
+  name: string;
+  category: DeepSearchSource["category"];
+  type: DeepSearchSource["type"];
+  queryVariants: (name: string, username?: string, location?: string) => string[];
+}
+
+/**
+ * All platforms to target with site: queries
+ */
+export const PLATFORM_CONFIGS: PlatformConfig[] = [
+  // Social Media Platforms
+  {
+    domain: "instagram.com",
+    name: "Instagram",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username, location) => {
+      const queries = [`"${name}" site:instagram.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:instagram.com`);
+      }
+      if (location) {
+        queries.push(`"${name}" ${location} site:instagram.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "facebook.com",
+    name: "Facebook",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username, location) => {
+      const queries = [`"${name}" site:facebook.com`];
+      if (location) {
+        queries.push(`"${name}" ${location} site:facebook.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "twitter.com",
+    name: "Twitter/X",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username) => {
+      const queries = [
+        `"${name}" site:twitter.com`,
+        `"${name}" site:x.com`,
+      ];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:twitter.com`);
+        queries.push(`@${clean} site:x.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "x.com",
+    name: "X (Twitter)",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username) => {
+      const queries = [`"${name}" site:x.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`@${clean} site:x.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "tiktok.com",
+    name: "TikTok",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username) => {
+      const queries = [`"${name}" site:tiktok.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:tiktok.com`);
+        queries.push(`@${clean} tiktok`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "reddit.com",
+    name: "Reddit",
+    category: "socialPresence",
+    type: "social",
+    queryVariants: (name, username) => {
+      const queries = [`"${name}" site:reddit.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:reddit.com`);
+        queries.push(`u/${clean} site:reddit.com`);
+      }
+      return queries;
+    },
+  },
+  // Professional Platforms
+  {
+    domain: "linkedin.com",
+    name: "LinkedIn",
+    category: "professionalFootprint",
+    type: "professional",
+    queryVariants: (name, username, location) => {
+      const queries = [`"${name}" site:linkedin.com`];
+      if (location) {
+        queries.push(`"${name}" ${location} site:linkedin.com`);
+      }
+      queries.push(`"${name}" site:linkedin.com/in`);
+      return queries;
+    },
+  },
+  {
+    domain: "github.com",
+    name: "GitHub",
+    category: "professionalFootprint",
+    type: "professional",
+    queryVariants: (name, username) => {
+      const queries = [`"${name}" site:github.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:github.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "behance.net",
+    name: "Behance",
+    category: "professionalFootprint",
+    type: "professional",
+    queryVariants: (name) => [`"${name}" site:behance.net`],
+  },
+  {
+    domain: "dribbble.com",
+    name: "Dribbble",
+    category: "professionalFootprint",
+    type: "professional",
+    queryVariants: (name) => [`"${name}" site:dribbble.com`],
+  },
+  // Public Writing Platforms
+  {
+    domain: "medium.com",
+    name: "Medium",
+    category: "publicWriting",
+    type: "writing",
+    queryVariants: (name, username) => {
+      const queries = [`"${name}" site:medium.com`];
+      if (username) {
+        const clean = username.replace(/^@/, "");
+        queries.push(`${clean} site:medium.com`);
+        queries.push(`@${clean} site:medium.com`);
+      }
+      return queries;
+    },
+  },
+  {
+    domain: "substack.com",
+    name: "Substack",
+    category: "publicWriting",
+    type: "writing",
+    queryVariants: (name) => [`"${name}" site:substack.com`],
+  },
+  {
+    domain: "quora.com",
+    name: "Quora",
+    category: "publicWriting",
+    type: "writing",
+    queryVariants: (name) => [`"${name}" site:quora.com`],
+  },
+  {
+    domain: "wordpress.com",
+    name: "WordPress",
+    category: "publicWriting",
+    type: "writing",
+    queryVariants: (name) => [`"${name}" site:wordpress.com`],
+  },
+  {
+    domain: "blogger.com",
+    name: "Blogger",
+    category: "publicWriting",
+    type: "writing",
+    queryVariants: (name) => [`"${name}" site:blogger.com`],
+  },
+];
+
+/**
+ * Generate platform-targeted queries for all configured platforms
+ */
+export function generatePlatformTargetedQueries(
+  name: string,
+  username?: string,
+  location?: string,
+  categories?: Array<"socialPresence" | "professionalFootprint" | "publicWriting">
+): string[] {
+  const queries: string[] = [];
+
+  // Filter platforms by category if specified
+  const platforms = categories
+    ? PLATFORM_CONFIGS.filter(p => categories.includes(p.category as typeof categories[number]))
+    : PLATFORM_CONFIGS;
+
+  for (const platform of platforms) {
+    const platformQueries = platform.queryVariants(name, username, location);
+    queries.push(...platformQueries);
+  }
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+/**
+ * Generate social-only platform queries
+ */
+export function generateSocialPlatformQueries(name: string, username?: string, location?: string): string[] {
+  return generatePlatformTargetedQueries(name, username, location, ["socialPresence"]);
+}
+
+/**
+ * Generate professional-only platform queries
+ */
+export function generateProfessionalPlatformQueries(name: string, username?: string, location?: string): string[] {
+  return generatePlatformTargetedQueries(name, username, location, ["professionalFootprint"]);
+}
+
+/**
+ * Generate public writing platform queries
+ */
+export function generateWritingPlatformQueries(name: string, username?: string): string[] {
+  return generatePlatformTargetedQueries(name, username, undefined, ["publicWriting"]);
 }
 
 // ============================================================================
@@ -863,15 +1111,20 @@ function getPlatformFromUrl(url: string): string {
   if (lowerUrl.includes("reddit.com")) return "Reddit";
   if (lowerUrl.includes("youtube.com")) return "YouTube";
   if (lowerUrl.includes("github.com")) return "GitHub";
+  if (lowerUrl.includes("behance.net")) return "Behance";
+  if (lowerUrl.includes("dribbble.com")) return "Dribbble";
   if (lowerUrl.includes("medium.com")) return "Medium";
+  if (lowerUrl.includes("substack.com")) return "Substack";
   if (lowerUrl.includes("quora.com")) return "Quora";
+  if (lowerUrl.includes("wordpress.com")) return "WordPress";
+  if (lowerUrl.includes("blogger.com")) return "Blogger";
   if (lowerUrl.includes("tinder.com")) return "Tinder";
   if (lowerUrl.includes("bumble.com")) return "Bumble";
   if (lowerUrl.includes("hinge.co")) return "Hinge";
   if (lowerUrl.includes("okcupid.com")) return "OkCupid";
   if (lowerUrl.includes("match.com")) return "Match.com";
   if (lowerUrl.includes("court") || lowerUrl.includes(".gov")) return "Public Records";
-  if (lowerUrl.includes("archive.org")) return "Web Archive";
+  if (lowerUrl.includes("archive.org") || lowerUrl.includes("archive.is") || lowerUrl.includes("archive.ph")) return "Web Archive";
 
   // Extract domain name as platform
   try {
@@ -885,13 +1138,144 @@ function getPlatformFromUrl(url: string): string {
 // Helper to determine type from platform
 function getTypeFromPlatform(platform: string): DeepSearchSource["type"] {
   const lower = platform.toLowerCase();
-  if (["linkedin"].some(p => lower.includes(p))) return "professional";
+  if (["linkedin", "github", "behance", "dribbble"].some(p => lower.includes(p))) return "professional";
   if (["instagram", "facebook", "twitter", "x", "tiktok", "reddit", "youtube"].some(p => lower.includes(p))) return "social";
   if (["tinder", "bumble", "hinge", "okcupid", "match"].some(p => lower.includes(p))) return "dating";
   if (["court", "gov", "public records", "arrest", "jail"].some(p => lower.includes(p))) return "legal";
-  if (["medium", "quora", "blog"].some(p => lower.includes(p))) return "writing";
+  if (["medium", "substack", "quora", "wordpress", "blogger", "blog"].some(p => lower.includes(p))) return "writing";
   if (["archive"].some(p => lower.includes(p))) return "archived";
   return "other";
+}
+
+// Helper to determine category from platform (more detailed than type)
+function getCategoryFromPlatform(platform: string): DeepSearchSource["category"] {
+  const lower = platform.toLowerCase();
+
+  // Social Presence
+  if (["instagram", "facebook", "twitter", "x", "tiktok", "reddit", "youtube", "snapchat", "threads"].some(p => lower.includes(p))) {
+    return "socialPresence";
+  }
+
+  // Professional Footprint
+  if (["linkedin", "github", "behance", "dribbble", "gitlab", "stackoverflow", "angel", "crunchbase"].some(p => lower.includes(p))) {
+    return "professionalFootprint";
+  }
+
+  // Public Writing
+  if (["medium", "substack", "quora", "wordpress", "blogger", "blog", "tumblr", "dev.to"].some(p => lower.includes(p))) {
+    return "publicWriting";
+  }
+
+  // Dating Profiles
+  if (["tinder", "bumble", "hinge", "okcupid", "match", "plenty", "pof", "eharmony", "coffee meets bagel"].some(p => lower.includes(p))) {
+    return "datingProfiles";
+  }
+
+  // Legal Records
+  if (["court", "gov", "public records", "arrest", "jail", "inmate", "case", "docket"].some(p => lower.includes(p))) {
+    return "legalRecords";
+  }
+
+  // Archived
+  if (["archive", "wayback", "cached"].some(p => lower.includes(p))) {
+    return "archived";
+  }
+
+  return "other";
+}
+
+// ============================================================================
+// CATEGORIZED RESULTS
+// ============================================================================
+
+export interface CategorizedResults {
+  socialPresence: DeepSearchSource[];
+  professionalFootprint: DeepSearchSource[];
+  publicWriting: DeepSearchSource[];
+  datingProfiles: DeepSearchSource[];
+  legalRecords: DeepSearchSource[];
+  archived: DeepSearchSource[];
+  other: DeepSearchSource[];
+}
+
+/**
+ * Categorize sources into distinct buckets with URL de-duplication
+ */
+export function categorizeResults(sources: DeepSearchSource[]): CategorizedResults {
+  const seenUrls = new Set<string>();
+  const results: CategorizedResults = {
+    socialPresence: [],
+    professionalFootprint: [],
+    publicWriting: [],
+    datingProfiles: [],
+    legalRecords: [],
+    archived: [],
+    other: [],
+  };
+
+  for (const source of sources) {
+    // De-duplicate by URL
+    if (source.url) {
+      if (seenUrls.has(source.url)) continue;
+      seenUrls.add(source.url);
+    }
+
+    // Determine category (use existing or compute from platform)
+    const category = source.category || getCategoryFromPlatform(source.platform);
+
+    // Add to appropriate bucket
+    const enrichedSource = { ...source, category };
+    switch (category) {
+      case "socialPresence":
+        results.socialPresence.push(enrichedSource);
+        break;
+      case "professionalFootprint":
+        results.professionalFootprint.push(enrichedSource);
+        break;
+      case "publicWriting":
+        results.publicWriting.push(enrichedSource);
+        break;
+      case "datingProfiles":
+        results.datingProfiles.push(enrichedSource);
+        break;
+      case "legalRecords":
+        results.legalRecords.push(enrichedSource);
+        break;
+      case "archived":
+        results.archived.push(enrichedSource);
+        break;
+      default:
+        results.other.push(enrichedSource);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Get summary stats for categorized results
+ */
+export function getCategorizedResultsStats(categorized: CategorizedResults): {
+  total: number;
+  byCategory: Record<string, number>;
+  categoriesWithResults: string[];
+} {
+  const byCategory: Record<string, number> = {
+    socialPresence: categorized.socialPresence.length,
+    professionalFootprint: categorized.professionalFootprint.length,
+    publicWriting: categorized.publicWriting.length,
+    datingProfiles: categorized.datingProfiles.length,
+    legalRecords: categorized.legalRecords.length,
+    archived: categorized.archived.length,
+    other: categorized.other.length,
+  };
+
+  const total = Object.values(byCategory).reduce((sum, count) => sum + count, 0);
+  const categoriesWithResults = Object.entries(byCategory)
+    .filter(([_, count]) => count > 0)
+    .map(([category]) => category);
+
+  return { total, byCategory, categoriesWithResults };
 }
 
 // Helper to extract summary from context around URL

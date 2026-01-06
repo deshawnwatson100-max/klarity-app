@@ -21,6 +21,13 @@ import {
   NO_RESULTS_RESPONSE,
   SearchCategory,
   QueryGeneratorInput,
+  generatePlatformTargetedQueries,
+  generateSocialPlatformQueries,
+  generateProfessionalPlatformQueries,
+  generateWritingPlatformQueries,
+  categorizeResults,
+  getCategorizedResultsStats,
+  CategorizedResults,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -93,25 +100,22 @@ const PASS_CONFIGS: PassConfig[] = [
     name: "Platform Targeted",
     description: "Social media and professional site-specific searches",
     generateQueries: (input) => {
+      const { name, location, username, anchor } = input;
+      if (!name) return [];
+
+      // Use the centralized platform query generators
       const queries: string[] = [];
-      const { name, location, anchor } = input;
-      if (!name) return queries;
 
-      // Social media platforms
-      queries.push(`"${name}" site:linkedin.com`);
-      queries.push(`"${name}" site:facebook.com`);
-      queries.push(`"${name}" site:instagram.com`);
-      queries.push(`"${name}" site:twitter.com`);
-      queries.push(`"${name}" site:tiktok.com`);
-      queries.push(`"${name}" site:reddit.com`);
+      // Social platforms (Instagram, Facebook, Twitter/X, TikTok, Reddit)
+      queries.push(...generateSocialPlatformQueries(name, username, location));
 
-      // With location for better targeting
-      if (location) {
-        queries.push(`"${name}" ${location} site:linkedin.com`);
-        queries.push(`"${name}" ${location} site:facebook.com`);
-      }
+      // Professional platforms (LinkedIn, GitHub, Behance, Dribbble)
+      queries.push(...generateProfessionalPlatformQueries(name, username, location));
 
-      // Professional anchors
+      // Public writing platforms (Medium, Substack, Quora, WordPress, Blogger)
+      queries.push(...generateWritingPlatformQueries(name, username));
+
+      // Professional anchors (additional queries)
       if (anchor?.type === "workplace" && anchor.value) {
         queries.push(`"${name}" ${anchor.value}`);
         queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
@@ -119,13 +123,11 @@ const PASS_CONFIGS: PassConfig[] = [
       if (anchor?.type === "school" && anchor.value) {
         queries.push(`"${name}" ${anchor.value}`);
         queries.push(`"${name}" ${anchor.value} alumni`);
+        queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
       }
 
-      // Public writing
-      queries.push(`"${name}" site:medium.com`);
-      queries.push(`"${name}" site:quora.com`);
-
-      return queries;
+      // De-duplicate
+      return [...new Set(queries)];
     },
   },
   {
@@ -380,6 +382,12 @@ export function evaluateResultStrength(result: DeepSearchResult): ResultStrength
 
 export interface MultiPassResult {
   finalResult: DeepSearchResult;
+  categorizedResults: CategorizedResults;
+  categorizedStats: {
+    total: number;
+    byCategory: Record<string, number>;
+    categoriesWithResults: string[];
+  };
   passesExecuted: number;
   passResults: PassResult[];
   stoppedEarly: boolean;
@@ -540,10 +548,17 @@ export async function executeMultiPassSearch(
     rawResponse: allRawResponses.join("\n\n---\n\n"),
   };
 
+  // Categorize results with URL de-duplication
+  const categorizedResults = categorizeResults(accumulatedSources);
+  const categorizedStats = getCategorizedResultsStats(categorizedResults);
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
+  console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
 
   return {
     finalResult,
+    categorizedResults,
+    categorizedStats,
     passesExecuted: passResults.length,
     passResults,
     stoppedEarly,
