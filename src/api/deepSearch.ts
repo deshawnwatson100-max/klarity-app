@@ -384,8 +384,7 @@ export interface DeepSearchSource {
   url?: string;
   summary: string;
   relevantDetails: string[];
-  isVerified: boolean;
-  confidence?: "high" | "medium" | "low";
+  isVerified?: boolean; // Optional, not displayed to user
 }
 
 // ============================================================================
@@ -527,92 +526,110 @@ export function parseDeepSearchResponse(
   // Generate unique ID
   const id = `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+  console.log("[DeepSearch Parser] Raw response length:", response.length);
+  console.log("[DeepSearch Parser] Raw response preview:", response.slice(0, 500));
+
   const sources: DeepSearchSource[] = [];
 
-  // Enhanced platform detection for all 9 categories
-  const platformPatterns: Array<{
-    regex: RegExp;
-    type: DeepSearchSource["type"];
-    platform: string;
-  }> = [
-    // Dating
-    { regex: /\*\*Dating\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "dating", platform: "Dating" },
-    { regex: /(?:Tinder|Bumble|Hinge|OkCupid|Match\.com|POF)[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "dating", platform: "Dating Profile" },
+  // Extract ALL URLs from the response with their surrounding context
+  const urlPattern = /(?:^|\n)([^\n]*)(https?:\/\/[^\s\)\]\>]+)([^\n]*)/g;
+  let urlMatch;
+  const seenUrls = new Set<string>();
 
-    // Social Media
-    { regex: /\*\*Social Media\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "social", platform: "Social Media" },
-    { regex: /LinkedIn[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "professional", platform: "LinkedIn" },
-    { regex: /Instagram[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "social", platform: "Instagram" },
-    { regex: /Facebook[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "social", platform: "Facebook" },
-    { regex: /(?:Twitter|X\.com|X)[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "social", platform: "Twitter/X" },
-    { regex: /TikTok[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "social", platform: "TikTok" },
-    { regex: /Reddit[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "social", platform: "Reddit" },
+  while ((urlMatch = urlPattern.exec(response)) !== null) {
+    const beforeUrl = urlMatch[1] || "";
+    const url = urlMatch[2];
+    const afterUrl = urlMatch[3] || "";
+    const fullLine = `${beforeUrl}${url}${afterUrl}`.trim();
 
-    // Legal & Public Records
-    { regex: /\*\*Legal.*Public Records?\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "legal", platform: "Legal Records" },
-    { regex: /(?:Court|Lawsuit|Arrest|Booking|Criminal|Civil)[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "legal", platform: "Public Records" },
+    // Skip duplicate URLs
+    if (seenUrls.has(url)) continue;
+    seenUrls.add(url);
 
-    // Professional
-    { regex: /\*\*Professional\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "professional", platform: "Professional" },
-    { regex: /(?:Business|Company|License)[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "professional", platform: "Business Records" },
+    // Determine platform from URL
+    const platform = getPlatformFromUrl(url);
+    const type = getTypeFromPlatform(platform);
 
-    // Username/Alias
-    { regex: /\*\*Username.*Alias.*\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "username", platform: "Username Matches" },
+    // Get context around the URL (look for description in surrounding lines)
+    const urlIndex = response.indexOf(url);
+    const contextStart = Math.max(0, urlIndex - 200);
+    const contextEnd = Math.min(response.length, urlIndex + 200);
+    const context = response.slice(contextStart, contextEnd);
 
-    // Images
-    { regex: /\*\*Images?\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "images", platform: "Images" },
+    // Extract a summary from context
+    const summary = extractSummaryFromContext(context, url);
 
-    // Public Writing
-    { regex: /\*\*Public Writing\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "writing", platform: "Public Writing" },
-    { regex: /Medium[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "writing", platform: "Medium" },
-    { regex: /Quora[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "writing", platform: "Quora" },
+    sources.push({
+      type,
+      platform,
+      url,
+      summary,
+      relevantDetails: [],
+      isVerified: true,
+    });
+  }
 
-    // Location
-    { regex: /\*\*Location.*\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "location", platform: "Location Signals" },
+  // If no URLs found, try to extract markdown links [text](url)
+  if (sources.length === 0) {
+    const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+    let mdMatch;
+    while ((mdMatch = markdownLinkPattern.exec(response)) !== null) {
+      const linkText = mdMatch[1];
+      const url = mdMatch[2];
 
-    // Archived
-    { regex: /\*\*Archived.*Cached?\*\*[:\s]*([\s\S]*?)(?=\n\*\*|$)/gi, type: "archived", platform: "Archived Pages" },
-    { regex: /(?:Wayback|Archive\.org|Cached)[:\s]+([\s\S]*?)(?=\n(?:[A-Z][a-z]+:|$))/gi, type: "archived", platform: "Web Archive" },
-  ];
+      if (seenUrls.has(url)) continue;
+      seenUrls.add(url);
 
-  for (const pattern of platformPatterns) {
-    const matches = response.matchAll(pattern.regex);
-    for (const match of matches) {
-      const content = match[1]?.trim();
-      if (content && content.length > 10) {
-        // Extract URL from content if present
-        const urlMatch = content.match(/https?:\/\/[^\s)]+/);
-        const url = urlMatch ? urlMatch[0] : undefined;
+      const platform = getPlatformFromUrl(url);
+      const type = getTypeFromPlatform(platform);
 
-        sources.push({
-          type: pattern.type,
-          platform: pattern.platform,
-          url,
-          summary: content.slice(0, 300),
-          relevantDetails: extractBulletPoints(content),
-          isVerified: false,
-          confidence: "medium",
-        });
+      sources.push({
+        type,
+        platform: linkText || platform,
+        url,
+        summary: linkText,
+        relevantDetails: [],
+        isVerified: true,
+      });
+    }
+  }
+
+  // If still no sources, parse the response as general findings
+  if (sources.length === 0) {
+    // Look for platform mentions even without URLs
+    const platformMentions = [
+      { pattern: /linkedin/i, platform: "LinkedIn", type: "professional" as const },
+      { pattern: /instagram/i, platform: "Instagram", type: "social" as const },
+      { pattern: /facebook/i, platform: "Facebook", type: "social" as const },
+      { pattern: /twitter|x\.com/i, platform: "Twitter/X", type: "social" as const },
+      { pattern: /tiktok/i, platform: "TikTok", type: "social" as const },
+      { pattern: /tinder|bumble|hinge|okcupid|match\.com/i, platform: "Dating Profile", type: "dating" as const },
+    ];
+
+    for (const { pattern, platform, type } of platformMentions) {
+      if (pattern.test(response)) {
+        // Extract the section about this platform
+        const sectionPattern = new RegExp(`(${pattern.source}[^\\n]*(?:\\n[^\\n]*){0,3})`, "i");
+        const sectionMatch = response.match(sectionPattern);
+        if (sectionMatch) {
+          sources.push({
+            type,
+            platform,
+            summary: sectionMatch[1].slice(0, 200),
+            relevantDetails: [],
+            isVerified: true,
+          });
+        }
       }
     }
   }
 
-  // Extract alignment notes
-  const alignmentNotes: string[] = [];
-
-  // Extract uncertainties - look for "possible match" or "could not verify" phrases
-  const uncertainties: string[] = [];
-  const uncertaintyPattern = /(?:possible match|could not verify|unclear|uncertain|may be|might be)[^.]*\./gi;
-  let uncertaintyMatch;
-  while ((uncertaintyMatch = uncertaintyPattern.exec(response)) !== null) {
-    uncertainties.push(uncertaintyMatch[0].trim());
-  }
+  console.log("[DeepSearch Parser] Found sources:", sources.length);
 
   // Generate summary (first paragraph or first 2-3 sentences)
-  const paragraphs = response.split("\n\n");
+  const paragraphs = response.split("\n\n").filter(p => p.trim());
   let summary = paragraphs[0] || "Search completed.";
   if (summary.length > 400) {
-    // Find a good cutoff point
     const sentences = summary.match(/[^.!?]+[.!?]+/g) || [];
     summary = sentences.slice(0, 3).join(" ");
   }
@@ -624,24 +641,72 @@ export function parseDeepSearchResponse(
     searchQuery,
     sources,
     summary,
-    alignmentNotes,
-    uncertainties,
+    alignmentNotes: [],
+    uncertainties: [],
     rawResponse: response,
   };
 }
 
-// Helper to extract bullet points from text
-function extractBulletPoints(text: string): string[] {
-  const bullets: string[] = [];
-  const bulletPattern = /[-•]\s*(.+?)(?=\n[-•]|\n\n|$)/g;
-  let match;
-  while ((match = bulletPattern.exec(text)) !== null) {
-    const point = match[1]?.trim();
-    if (point && point.length > 5 && point.length < 200) {
-      bullets.push(point);
+// Helper to determine platform from URL
+function getPlatformFromUrl(url: string): string {
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes("linkedin.com")) return "LinkedIn";
+  if (lowerUrl.includes("instagram.com")) return "Instagram";
+  if (lowerUrl.includes("facebook.com")) return "Facebook";
+  if (lowerUrl.includes("twitter.com") || lowerUrl.includes("x.com")) return "Twitter/X";
+  if (lowerUrl.includes("tiktok.com")) return "TikTok";
+  if (lowerUrl.includes("reddit.com")) return "Reddit";
+  if (lowerUrl.includes("youtube.com")) return "YouTube";
+  if (lowerUrl.includes("github.com")) return "GitHub";
+  if (lowerUrl.includes("medium.com")) return "Medium";
+  if (lowerUrl.includes("quora.com")) return "Quora";
+  if (lowerUrl.includes("tinder.com")) return "Tinder";
+  if (lowerUrl.includes("bumble.com")) return "Bumble";
+  if (lowerUrl.includes("hinge.co")) return "Hinge";
+  if (lowerUrl.includes("okcupid.com")) return "OkCupid";
+  if (lowerUrl.includes("match.com")) return "Match.com";
+  if (lowerUrl.includes("court") || lowerUrl.includes(".gov")) return "Public Records";
+  if (lowerUrl.includes("archive.org")) return "Web Archive";
+
+  // Extract domain name as platform
+  try {
+    const domain = new URL(url).hostname.replace("www.", "");
+    return domain;
+  } catch {
+    return "Web";
+  }
+}
+
+// Helper to determine type from platform
+function getTypeFromPlatform(platform: string): DeepSearchSource["type"] {
+  const lower = platform.toLowerCase();
+  if (["linkedin"].some(p => lower.includes(p))) return "professional";
+  if (["instagram", "facebook", "twitter", "x", "tiktok", "reddit", "youtube"].some(p => lower.includes(p))) return "social";
+  if (["tinder", "bumble", "hinge", "okcupid", "match"].some(p => lower.includes(p))) return "dating";
+  if (["court", "gov", "public records", "arrest", "jail"].some(p => lower.includes(p))) return "legal";
+  if (["medium", "quora", "blog"].some(p => lower.includes(p))) return "writing";
+  if (["archive"].some(p => lower.includes(p))) return "archived";
+  return "other";
+}
+
+// Helper to extract summary from context around URL
+function extractSummaryFromContext(context: string, url: string): string {
+  // Try to find a description near the URL
+  const lines = context.split("\n").filter(l => l.trim());
+
+  // Find the line with the URL
+  const urlLineIndex = lines.findIndex(l => l.includes(url));
+
+  // Get surrounding lines for context
+  const relevantLines: string[] = [];
+  for (let i = Math.max(0, urlLineIndex - 1); i <= Math.min(lines.length - 1, urlLineIndex + 1); i++) {
+    const line = lines[i]?.replace(url, "").trim();
+    if (line && line.length > 5) {
+      relevantLines.push(line);
     }
   }
-  return bullets.slice(0, 5);
+
+  return relevantLines.join(" ").slice(0, 200) || "Found profile";
 }
 
 // ============================================================================

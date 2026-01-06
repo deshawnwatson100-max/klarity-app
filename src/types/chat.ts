@@ -279,8 +279,7 @@ export interface DeepSearchResultMessage extends Message {
       url?: string;
       summary: string;
       relevantDetails: string[];
-      isVerified: boolean;
-      confidence?: "high" | "medium" | "low";
+      isVerified?: boolean;
     }>;
     summary: string;
     alignmentNotes: string[];
