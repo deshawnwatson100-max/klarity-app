@@ -1,5 +1,5 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
-import { View, TextInput, Pressable, Keyboard, Image, Text } from "react-native";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
+import { View, TextInput, Pressable, Keyboard, Image, Text, Animated, Dimensions, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -51,6 +51,106 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const screenWidth = Dimensions.get("window").width;
+
+  // Animation values for sliding placeholders
+  const replyPlaceholderX = useRef(new Animated.Value(0)).current;
+  const decodePlaceholderX = useRef(new Animated.Value(0)).current;
+  const replyOpacity = useRef(new Animated.Value(0)).current;
+  const decodeOpacity = useRef(new Animated.Value(0)).current;
+
+  // Track if this is the first render to skip animation
+  const isFirstRender = useRef(true);
+  const currentMode = useRef(inputMode);
+
+  // Set initial positions based on inputMode (no animation on first render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      // First render - set positions immediately without animation
+      if (inputMode === "understand") {
+        replyPlaceholderX.setValue(-screenWidth);
+        replyOpacity.setValue(0);
+        decodePlaceholderX.setValue(0);
+        decodeOpacity.setValue(1);
+      } else {
+        replyPlaceholderX.setValue(0);
+        replyOpacity.setValue(1);
+        decodePlaceholderX.setValue(screenWidth);
+        decodeOpacity.setValue(0);
+      }
+      currentMode.current = inputMode;
+      isFirstRender.current = false;
+      return;
+    }
+
+    // Skip if mode hasn't changed
+    if (currentMode.current === inputMode) {
+      return;
+    }
+    currentMode.current = inputMode;
+
+    // Animate the transition
+    const SLIDE_DURATION = 300;
+    const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
+
+    if (inputMode === "rewrite") {
+      // Slide reply in, decode out
+      Animated.parallel([
+        Animated.timing(replyPlaceholderX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(replyOpacity, {
+          toValue: 1,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodePlaceholderX, {
+          toValue: screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodeOpacity, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Slide decode in, reply out
+      Animated.parallel([
+        Animated.timing(replyPlaceholderX, {
+          toValue: -screenWidth,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(replyOpacity, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodePlaceholderX, {
+          toValue: 0,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decodeOpacity, {
+          toValue: 1,
+          duration: SLIDE_DURATION,
+          easing: SLIDE_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [inputMode, screenWidth]);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -205,7 +305,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               overflow: "hidden",
             }}
           >
-            {/* Placeholder - show only one based on current mode */}
+            {/* Sliding Placeholder Container */}
             {showSlidingPlaceholders && !isFocused && (
               <View
                 style={{
@@ -215,19 +315,35 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                   top: 0,
                   bottom: 0,
                   justifyContent: "center",
+                  overflow: "hidden",
                 }}
                 pointerEvents="none"
               >
-                <Text
+                {/* Reply Placeholder */}
+                <Animated.Text
                   style={{
+                    position: "absolute",
                     color: "#6B7280",
                     fontSize: 16,
+                    opacity: replyOpacity,
+                    transform: [{ translateX: replyPlaceholderX }],
                   }}
                 >
-                  {inputMode === "rewrite"
-                    ? "Type how you want to reply..."
-                    : "Paste the message to decode..."}
-                </Text>
+                  Type how you want to reply...
+                </Animated.Text>
+
+                {/* Decode Placeholder */}
+                <Animated.Text
+                  style={{
+                    position: "absolute",
+                    color: "#6B7280",
+                    fontSize: 16,
+                    opacity: decodeOpacity,
+                    transform: [{ translateX: decodePlaceholderX }],
+                  }}
+                >
+                  Paste the message to decode...
+                </Animated.Text>
               </View>
             )}
 
