@@ -131,8 +131,8 @@ interface LLMCallParams {
 }
 
 /**
- * Calls the LLM with web search capability
- * This uses the chat completion API with web search tools enabled
+ * Calls the OpenAI Responses API with web search capability
+ * This uses the newer Responses API with built-in web_search tool
  */
 async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> {
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
@@ -145,14 +145,83 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
   }
 
   try {
-    // For Deep Search, we use a model that supports web browsing
-    // In production, this would use Perplexity API or similar
-    // For now, we simulate with the standard chat completion
+    // Use OpenAI Responses API with web_search tool for real internet search
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        instructions: `${systemPrompt}\n\n${developerPrompt}`,
+        input: `${userPrompt}\n\nSearch queries to use: ${searchQueries.join(", ")}`,
+        tools: [
+          {
+            type: "web_search",
+          },
+        ],
+      }),
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Deep Search API error:", errorData);
+
+      // Fallback to chat completions if responses API fails
+      console.log("Falling back to chat completions API...");
+      return await callDeepSearchLLMFallback(params);
+    }
+
+    const data = await response.json();
+
+    // Extract the text content from the response
+    // The Responses API returns output in a different format
+    if (data.output) {
+      // Handle array of output items
+      if (Array.isArray(data.output)) {
+        const textContent = data.output
+          .filter((item: { type: string }) => item.type === "message")
+          .map((item: { content: Array<{ type: string; text: string }> }) => {
+            if (Array.isArray(item.content)) {
+              return item.content
+                .filter((c) => c.type === "output_text" || c.type === "text")
+                .map((c) => c.text)
+                .join("");
+            }
+            return "";
+          })
+          .join("\n");
+        return textContent || null;
+      }
+      return typeof data.output === "string" ? data.output : null;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Deep Search LLM call failed:", error);
+    // Try fallback
+    return await callDeepSearchLLMFallback(params);
+  }
+}
+
+/**
+ * Fallback to Chat Completions API if Responses API is not available
+ */
+async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string | null> {
+  const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
+
+  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
+
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
     const messages = [
       {
         role: "system",
-        content: systemPrompt,
+        content: `${systemPrompt}\n\nIMPORTANT: You must search the internet to find real, current information about this person. Do not make up or hallucinate any information. Only report what you can actually find through web search.`,
       },
       {
         role: "developer",
@@ -160,7 +229,7 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
       },
       {
         role: "user",
-        content: `${userPrompt}\n\nSearch queries to use: ${searchQueries.join(", ")}`,
+        content: `${userPrompt}\n\nSearch queries to use: ${searchQueries.join(", ")}\n\nPlease search the web for this person and report what you find. Include actual URLs to profiles you discover.`,
       },
     ];
 
@@ -171,23 +240,44 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-2024-11-20",
+        model: "gpt-4o-search-preview",
         messages,
         temperature: 0.7,
         max_tokens: 2000,
+        web_search_options: {
+          search_context_size: "medium",
+        },
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Deep Search API error:", errorData);
-      return null;
+      // If search preview model fails, try regular model
+      const regularResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-2024-11-20",
+          messages,
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!regularResponse.ok) {
+        return null;
+      }
+
+      const data = await regularResponse.json();
+      return data.choices?.[0]?.message?.content || null;
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || null;
   } catch (error) {
-    console.error("Deep Search LLM call failed:", error);
+    console.error("Deep Search fallback failed:", error);
     return null;
   }
 }
@@ -308,8 +398,6 @@ export function formatDeepSearchForChat(result: DeepSearchResult): string {
       output += `• ${note}\n`;
     }
   }
-
-  output += "\n---\nHow does this sit with you?";
 
   return output;
 }
