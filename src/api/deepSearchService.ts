@@ -17,6 +17,7 @@ import {
   NO_RESULTS_RESPONSE,
   SearchCategory,
 } from "./deepSearch";
+import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
 // ============================================================================
 // DEEP SEARCH EXECUTION
@@ -51,12 +52,18 @@ export async function executeDeepSearch(
 ): Promise<DeepSearchResponse> {
   const { personContext, focusAreas, onProgress } = options;
 
+  // Initialize logger
+  const logger = new DeepSearchLogger(personContext.id);
+  logger.logInputs(personContext);
+
   try {
     // Step 1: Safety check
     onProgress?.("Checking safety...");
     const safetyCheck = checkDeepSearchSafety(personContext);
 
     if (!safetyCheck.isSafe) {
+      logger.logSafetyBlock(safetyCheck.reason || "unknown");
+      logger.finalize();
       return {
         success: false,
         safetyBlock: {
@@ -69,6 +76,7 @@ export async function executeDeepSearch(
     // Step 2: Build search queries
     onProgress?.("Building search queries...");
     const searchQueries = buildSearchQueries(personContext);
+    logger.logQueries(searchQueries);
 
     // Step 3: Build the user prompt
     const userPrompt = buildDeepSearchUserPrompt({
@@ -88,13 +96,17 @@ export async function executeDeepSearch(
     });
 
     if (!response) {
+      logger.logError("No response from API", "api_call");
+      const result = parseDeepSearchResponse(
+        NO_RESULTS_RESPONSE,
+        personContext.id,
+        searchQueries.join(", ")
+      );
+      logger.logResults(result);
+      logger.finalize();
       return {
         success: true,
-        result: parseDeepSearchResponse(
-          NO_RESULTS_RESPONSE,
-          personContext.id,
-          searchQueries.join(", ")
-        ),
+        result,
       };
     }
 
@@ -106,12 +118,24 @@ export async function executeDeepSearch(
       searchQueries.join(", ")
     );
 
+    // Log results
+    logger.logResults(result);
+
+    // Check for identity ambiguity
+    const ambiguity = detectIdentityAmbiguity(response);
+    logger.logIdentityAmbiguity(ambiguity.detected, ambiguity.signals);
+
+    // Finalize log
+    logger.finalize();
+
     return {
       success: true,
       result,
     };
   } catch (error) {
     console.error("Deep Search error:", error);
+    logger.logError(error instanceof Error ? error.message : "Unknown error", "unknown");
+    logger.finalize();
     return {
       success: false,
       error: error instanceof Error ? error.message : "Search failed",

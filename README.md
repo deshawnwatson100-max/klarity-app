@@ -1223,11 +1223,29 @@ When a user completes adding person context info from the Input Screen:
 **Files:**
 - `src/api/deepSearch.ts` - Prompts, types, search categories, and parsing
 - `src/api/deepSearchService.ts` - Orchestration and LLM calls
+- `src/api/deepSearchLogger.ts` - Internal developer logging for debugging
 - `src/components/DeepSearchResultBubble.tsx` - Chat UI component
 - `src/types/chat.ts` - DeepSearchLoadingMessage, DeepSearchResultMessage types
 - `src/types/personContext.ts` - DeepSearchExtendedContext interface
 - `src/screens/ChatScreen.tsx` - Auto-trigger logic and message rendering
 - `src/screens/InputScreen.tsx` - Navigation with triggerDeepSearch param
+
+**Developer Logging:**
+Deep Search includes comprehensive internal logging for debugging. Every search run records:
+- Person ID and timestamp
+- Inputs provided (name, location, username, anchor type)
+- Number and list of queries executed
+- Categories attempted (dating, social, legal, professional, etc.)
+- Number of results returned per category
+- Whether identity ambiguity was detected
+- Performance metrics (duration in ms)
+- Errors with stage information
+
+Logs are stored in memory (last 50 entries) and can be accessed via:
+- `getDeepSearchLogs()` - Get all stored logs
+- `getLastDeepSearchLog()` - Get most recent log entry
+- `clearDeepSearchLogs()` - Clear all stored logs
+- `formatLogForConsole(entry)` - Format log for readable console output
 
 ## Development
 
