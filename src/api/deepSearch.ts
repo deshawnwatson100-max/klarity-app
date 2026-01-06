@@ -388,102 +388,242 @@ export interface DeepSearchSource {
 }
 
 // ============================================================================
-// SEARCH QUERIES BUILDER - Multi-pass strategy for all 9 categories
+// SEARCH QUERIES BUILDER - Generates 10+ query variations automatically
 // ============================================================================
 
-export function buildSearchQueries(personContext: PersonContext): string[] {
+export interface QueryGeneratorInput {
+  name: string;
+  location?: string;
+  username?: string;
+  anchor?: {
+    type: "workplace" | "school" | "dating_app" | "username";
+    value: string;
+  };
+  ageRange?: string;
+  middleInitial?: string;
+  aliases?: string[];
+  county?: string;
+  previousLocation?: string;
+}
+
+/**
+ * Generates at least 10 search query variations for Deep Search.
+ *
+ * Priority order:
+ * 1. Username-only queries (if username exists)
+ * 2. Name + location queries
+ * 3. Platform-targeted queries (site: filters)
+ * 4. Dating-focused queries
+ * 5. Archive/cached queries
+ *
+ * Queries are de-duplicated and kept short/human-like.
+ */
+export function generateSearchQueries(input: QueryGeneratorInput): string[] {
   const queries: string[] = [];
-  const name = personContext.name || "";
+  const { name, location, username, anchor, ageRange, middleInitial, aliases, county, previousLocation } = input;
 
   // Guard against empty name
-  if (!name.trim()) {
+  if (!name?.trim()) {
     return ["person search"];
   }
 
-  const nameParts = name.split(" ");
+  const nameParts = name.trim().split(/\s+/);
   const firstName = nameParts[0] || "";
   const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+  const cleanUsername = username?.replace(/^@/, "");
 
-  // Build name with middle name/initial if available
-  let fullNameWithMiddle = name;
-  if (personContext.extendedContext?.middleNameOrInitial) {
-    const middle = personContext.extendedContext.middleNameOrInitial;
-    if (nameParts.length >= 2) {
-      fullNameWithMiddle = `${firstName} ${middle} ${lastName}`;
+  // Build name with middle initial if available
+  const fullNameWithMiddle = middleInitial && nameParts.length >= 2
+    ? `${firstName} ${middleInitial} ${lastName}`
+    : null;
+
+  // ==========================================================================
+  // PRIORITY 1: Username-only queries (highest priority if username exists)
+  // ==========================================================================
+  if (cleanUsername) {
+    // Username across major platforms
+    queries.push(`@${cleanUsername}`);
+    queries.push(`"${cleanUsername}" profile`);
+    queries.push(`${cleanUsername} site:instagram.com`);
+    queries.push(`${cleanUsername} site:twitter.com`);
+    queries.push(`${cleanUsername} site:tiktok.com`);
+    queries.push(`${cleanUsername} site:reddit.com`);
+    queries.push(`${cleanUsername} site:linkedin.com`);
+    queries.push(`${cleanUsername} dating`);
+  }
+
+  // Also search any known aliases
+  if (aliases?.length) {
+    for (const alias of aliases.slice(0, 3)) {
+      const cleanAlias = alias.replace(/^@/, "");
+      queries.push(`@${cleanAlias}`);
+      queries.push(`"${cleanAlias}" profile`);
     }
   }
 
-  // === PASS 1: Basic name queries ===
+  // ==========================================================================
+  // PRIORITY 2: Name + location queries
+  // ==========================================================================
+  if (location) {
+    queries.push(`"${name}" ${location}`);
+    queries.push(`${firstName} ${lastName} ${location}`);
+  }
+
+  if (county) {
+    queries.push(`"${name}" ${county}`);
+  }
+
+  if (previousLocation) {
+    queries.push(`"${name}" ${previousLocation}`);
+  }
+
+  // Name with middle initial + location
+  if (fullNameWithMiddle && location) {
+    queries.push(`"${fullNameWithMiddle}" ${location}`);
+  }
+
+  // ==========================================================================
+  // PRIORITY 3: Platform-targeted queries (site: filters)
+  // ==========================================================================
+  // Social media
+  queries.push(`"${name}" site:linkedin.com`);
+  queries.push(`"${name}" site:facebook.com`);
+  queries.push(`"${name}" site:instagram.com`);
+  queries.push(`"${name}" site:twitter.com`);
+  queries.push(`"${name}" site:tiktok.com`);
+
+  // With location for better targeting
+  if (location) {
+    queries.push(`"${name}" ${location} site:linkedin.com`);
+    queries.push(`"${name}" ${location} site:facebook.com`);
+  }
+
+  // Professional
+  if (anchor?.type === "workplace" && anchor.value) {
+    queries.push(`"${name}" ${anchor.value}`);
+    queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
+  }
+
+  // School
+  if (anchor?.type === "school" && anchor.value) {
+    queries.push(`"${name}" ${anchor.value}`);
+    queries.push(`"${name}" ${anchor.value} alumni`);
+  }
+
+  // Username anchor (different from known username - this is contextual)
+  if (anchor?.type === "username" && anchor.value) {
+    const anchorUsername = anchor.value.replace(/^@/, "");
+    queries.push(`@${anchorUsername}`);
+    queries.push(`"${anchorUsername}" profile`);
+    queries.push(`${anchorUsername} site:instagram.com`);
+    queries.push(`${anchorUsername} site:twitter.com`);
+  }
+
+  // Public records
+  queries.push(`"${name}" site:courtlistener.com`);
+  if (county) {
+    queries.push(`"${name}" ${county} court`);
+    queries.push(`"${name}" ${county} arrest`);
+  }
+
+  // ==========================================================================
+  // PRIORITY 4: Dating-focused queries
+  // ==========================================================================
+  queries.push(`"${name}" tinder`);
+  queries.push(`"${name}" bumble`);
+  queries.push(`"${name}" hinge`);
+  queries.push(`"${name}" dating profile`);
+
+  // If met on specific dating app
+  if (anchor?.type === "dating_app" && anchor.value) {
+    queries.push(`"${name}" ${anchor.value}`);
+    queries.push(`"${name}" ${anchor.value} profile`);
+  }
+
+  // Dating + location (more specific)
+  if (location) {
+    queries.push(`"${name}" ${location} dating`);
+  }
+
+  // Age-based dating search
+  if (ageRange) {
+    queries.push(`"${name}" ${ageRange} dating`);
+  }
+
+  // ==========================================================================
+  // PRIORITY 5: Archive/cached queries
+  // ==========================================================================
+  queries.push(`"${name}" site:web.archive.org`);
+  if (cleanUsername) {
+    queries.push(`${cleanUsername} site:web.archive.org`);
+  }
+  queries.push(`"${name}" cached`);
+
+  // ==========================================================================
+  // BONUS: Additional useful queries
+  // ==========================================================================
+  // Basic name search
   queries.push(`"${name}"`);
-  if (fullNameWithMiddle !== name) {
+  if (fullNameWithMiddle) {
     queries.push(`"${fullNameWithMiddle}"`);
   }
 
-  // === PASS 2: Name + Location combinations ===
-  if (personContext.location) {
-    queries.push(`"${name}" ${personContext.location}`);
-  }
-  if (personContext.extendedContext?.countyOrRegion) {
-    queries.push(`"${name}" ${personContext.extendedContext.countyOrRegion}`);
-  }
-  if (personContext.extendedContext?.previousLocation) {
-    queries.push(`"${name}" ${personContext.extendedContext.previousLocation}`);
-  }
-
-  // === PASS 3: Social Media Platform searches ===
-  queries.push(`"${name}" site:linkedin.com`);
-  queries.push(`"${name}" site:instagram.com`);
-  queries.push(`"${name}" site:facebook.com`);
-  queries.push(`"${name}" site:twitter.com OR site:x.com`);
-  queries.push(`"${name}" site:tiktok.com`);
+  // Reddit/forums
   queries.push(`"${name}" site:reddit.com`);
 
-  // === PASS 4: Dating platforms ===
-  queries.push(`"${name}" dating profile`);
-  queries.push(`"${name}" tinder OR bumble OR hinge OR okcupid OR match`);
-  if (personContext.contextAnchor?.type === "dating_app" && personContext.contextAnchor.value) {
-    queries.push(`"${name}" ${personContext.contextAnchor.value}`);
-  }
+  // Public writing
+  queries.push(`"${name}" site:medium.com`);
 
-  // === PASS 5: Legal and public records ===
-  queries.push(`"${name}" court case OR lawsuit`);
-  queries.push(`"${name}" arrest OR booking record`);
-  if (personContext.extendedContext?.countyOrRegion) {
-    queries.push(`"${name}" ${personContext.extendedContext.countyOrRegion} court records`);
-  }
-  queries.push(`"${name}" site:*.gov`);
+  // Images
+  queries.push(`"${name}" profile photo`);
 
-  // === PASS 6: Professional searches ===
-  if (personContext.extendedContext?.professionalInfo) {
-    queries.push(`"${name}" ${personContext.extendedContext.professionalInfo}`);
-  }
-  if (personContext.contextAnchor?.type === "workplace" && personContext.contextAnchor.value) {
-    queries.push(`"${name}" ${personContext.contextAnchor.value}`);
-  }
-  queries.push(`"${name}" business license OR professional directory`);
+  // ==========================================================================
+  // De-duplicate and return
+  // ==========================================================================
+  const uniqueQueries = [...new Set(queries)]
+    .map(q => q.trim())
+    .filter(q => q.length > 0);
 
-  // === PASS 7: Username/Alias searches ===
-  if (personContext.knownUsername) {
-    const username = personContext.knownUsername.replace("@", "");
-    queries.push(`"${username}" OR @${username}`);
-    queries.push(`${username} site:instagram.com`);
-    queries.push(`${username} site:twitter.com OR site:x.com`);
-    queries.push(`${username} site:reddit.com`);
-  }
-  if (personContext.extendedContext?.knownAliases) {
-    for (const alias of personContext.extendedContext.knownAliases.slice(0, 3)) {
-      const cleanAlias = alias.replace("@", "");
-      queries.push(`"${cleanAlias}" OR @${cleanAlias}`);
+  // Ensure we have at least 10 queries
+  if (uniqueQueries.length < 10) {
+    // Add fallback queries
+    const fallbacks = [
+      `${firstName} ${lastName}`,
+      `"${name}" social media`,
+      `"${name}" online`,
+      `"${name}" profile`,
+      `${name}`,
+    ];
+    for (const fb of fallbacks) {
+      if (!uniqueQueries.includes(fb)) {
+        uniqueQueries.push(fb);
+      }
+      if (uniqueQueries.length >= 10) break;
     }
   }
 
-  // === PASS 8: Public writing ===
-  queries.push(`"${name}" site:medium.com`);
-  queries.push(`"${name}" site:quora.com`);
-  queries.push(`"${name}" blog OR article`);
+  return uniqueQueries;
+}
 
-  // === PASS 9: Archived/cached pages ===
-  queries.push(`"${name}" site:web.archive.org`);
+/**
+ * Wrapper that extracts QueryGeneratorInput from PersonContext
+ * and calls generateSearchQueries
+ */
+export function buildSearchQueries(personContext: PersonContext): string[] {
+  const input: QueryGeneratorInput = {
+    name: personContext.name || "",
+    location: personContext.location,
+    username: personContext.knownUsername,
+    anchor: personContext.contextAnchor,
+    ageRange: personContext.approximateAge,
+    middleInitial: personContext.extendedContext?.middleNameOrInitial,
+    aliases: personContext.extendedContext?.knownAliases,
+    county: personContext.extendedContext?.countyOrRegion,
+    previousLocation: personContext.extendedContext?.previousLocation,
+  };
+
+  // Start with the generator
+  const queries = generateSearchQueries(input);
 
   // Extract additional context from notes
   const notesText = (personContext.notes || [])
@@ -493,26 +633,91 @@ export function buildSearchQueries(personContext: PersonContext): string[] {
   // Extract potential location mentions from notes
   const locationPatterns = /(?:in|from|lives in|based in|works at|at|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g;
   let match;
-  const locations: string[] = [];
   while ((match = locationPatterns.exec(notesText)) !== null) {
-    locations.push(match[1]);
-  }
-  for (const location of locations.slice(0, 2)) {
-    queries.push(`"${name}" ${location}`);
+    const extractedLocation = match[1];
+    const query = `"${personContext.name}" ${extractedLocation}`;
+    if (!queries.includes(query)) {
+      queries.push(query);
+    }
   }
 
   // Extract potential usernames from notes
   const usernamePatterns = /@([a-zA-Z0-9_]+)|username[:\s]+([a-zA-Z0-9_]+)/gi;
   while ((match = usernamePatterns.exec(notesText)) !== null) {
-    const username = match[1] || match[2];
-    if (username && username !== name && username.length > 2) {
-      queries.push(`"${username}" OR @${username}`);
+    const extractedUsername = match[1] || match[2];
+    if (extractedUsername && extractedUsername !== personContext.name && extractedUsername.length > 2) {
+      const query = `@${extractedUsername}`;
+      if (!queries.includes(query)) {
+        queries.push(query);
+      }
     }
   }
 
-  // Remove duplicates and return
-  return [...new Set(queries)];
+  return queries;
 }
+
+// ============================================================================
+// EXAMPLE OUTPUTS (for documentation)
+// ============================================================================
+/*
+EXAMPLE 1: Username exists
+Input: {
+  name: "Sarah Johnson",
+  location: "Austin, TX",
+  username: "sarahj_92"
+}
+
+Generated queries (17):
+1.  @sarahj_92
+2.  "sarahj_92" profile
+3.  sarahj_92 site:instagram.com
+4.  sarahj_92 site:twitter.com
+5.  sarahj_92 site:tiktok.com
+6.  sarahj_92 site:reddit.com
+7.  sarahj_92 site:linkedin.com
+8.  sarahj_92 dating
+9.  "Sarah Johnson" Austin, TX
+10. Sarah Johnson Austin, TX
+11. "Sarah Johnson" site:linkedin.com
+12. "Sarah Johnson" site:facebook.com
+13. "Sarah Johnson" site:instagram.com
+14. "Sarah Johnson" site:twitter.com
+15. "Sarah Johnson" site:tiktok.com
+16. "Sarah Johnson" Austin, TX site:linkedin.com
+17. "Sarah Johnson" Austin, TX site:facebook.com
+... (plus dating, archive, etc.)
+
+---
+
+EXAMPLE 2: No username, dating context
+Input: {
+  name: "Mike Chen",
+  location: "Seattle",
+  anchor: { type: "dating_app", value: "Hinge" },
+  county: "King County"
+}
+
+Generated queries (18):
+1.  "Mike Chen" Seattle
+2.  Mike Chen Seattle
+3.  "Mike Chen" King County
+4.  "Mike Chen" site:linkedin.com
+5.  "Mike Chen" site:facebook.com
+6.  "Mike Chen" site:instagram.com
+7.  "Mike Chen" site:twitter.com
+8.  "Mike Chen" site:tiktok.com
+9.  "Mike Chen" Seattle site:linkedin.com
+10. "Mike Chen" Seattle site:facebook.com
+11. "Mike Chen" site:courtlistener.com
+12. "Mike Chen" King County court
+13. "Mike Chen" King County arrest
+14. "Mike Chen" tinder
+15. "Mike Chen" bumble
+16. "Mike Chen" hinge
+17. "Mike Chen" dating profile
+18. "Mike Chen" Hinge
+... (plus archive queries, etc.)
+*/
 
 // ============================================================================
 // RESULT PARSER
