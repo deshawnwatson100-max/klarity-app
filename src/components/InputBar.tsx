@@ -1,4 +1,4 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, useLayoutEffect } from "react";
 import { View, TextInput, Pressable, Keyboard, Image, Dimensions, Animated, Easing, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -54,24 +54,41 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   const screenWidth = Dimensions.get("window").width;
 
   // Animation values for sliding placeholders - using React Native Animated
-  // Initialize with correct positions based on initial inputMode
-  const replyPlaceholderX = useRef(
-    new Animated.Value(inputMode === "rewrite" ? 0 : -screenWidth)
-  ).current;
-  const decodePlaceholderX = useRef(
-    new Animated.Value(inputMode === "understand" ? 0 : screenWidth)
-  ).current;
+  const replyPlaceholderX = useRef(new Animated.Value(0)).current;
+  const decodePlaceholderX = useRef(new Animated.Value(0)).current;
 
-  // Track previous mode for animation triggering
-  const prevModeRef = useRef(inputMode);
+  // Track previous mode for detecting user-initiated vs navigation-based changes
+  const prevModeRef = useRef<InputMode | null>(null);
+  const isUserToggle = useRef(false);
 
-  // Animate placeholders when mode changes
+  // Set positions immediately on mount/navigation (before paint)
+  useLayoutEffect(() => {
+    // If this is the first render or mode is different from what we last animated to,
+    // set positions immediately without animation
+    if (prevModeRef.current === null || prevModeRef.current !== inputMode) {
+      if (inputMode === "understand") {
+        replyPlaceholderX.setValue(-screenWidth);
+        decodePlaceholderX.setValue(0);
+      } else {
+        replyPlaceholderX.setValue(0);
+        decodePlaceholderX.setValue(screenWidth);
+      }
+      prevModeRef.current = inputMode;
+    }
+  }, [inputMode, screenWidth]);
+
+  // Handle animated transitions when user toggles mode (not on navigation)
   useEffect(() => {
-    // Skip if mode hasn't changed (prevents animation on mount)
+    // Skip first render - handled by useLayoutEffect
+    if (!isUserToggle.current) {
+      isUserToggle.current = true;
+      return;
+    }
+
+    // Skip if mode hasn't changed
     if (prevModeRef.current === inputMode) {
       return;
     }
-    prevModeRef.current = inputMode;
 
     const SLIDE_DURATION = 300;
     const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
@@ -107,6 +124,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
         }),
       ]).start();
     }
+
+    prevModeRef.current = inputMode;
   }, [inputMode, screenWidth]);
 
   useImperativeHandle(ref, () => ({
