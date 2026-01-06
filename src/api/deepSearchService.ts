@@ -3,6 +3,9 @@
  *
  * Orchestrates the Deep Search flow - triggered when Person Context is created
  * or when user explicitly requests a search in the chat loop.
+ *
+ * Uses a multi-pass search strategy that continues until strong results are found
+ * or all passes are exhausted.
  */
 
 import { PersonContext } from "../types/personContext";
@@ -14,10 +17,595 @@ import {
   checkDeepSearchSafety,
   buildSearchQueries,
   DeepSearchResult,
+  DeepSearchSource,
   NO_RESULTS_RESPONSE,
   SearchCategory,
+  QueryGeneratorInput,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
+
+// ============================================================================
+// MULTI-PASS SEARCH CONFIGURATION
+// ============================================================================
+
+/**
+ * Search passes executed in order. Each pass focuses on specific query types.
+ * The search continues until strong results are found or all passes complete.
+ */
+export enum SearchPass {
+  NAME_LOCATION = 1,        // Pass 1: name + location
+  PLATFORM_TARGETED = 2,    // Pass 2: social + professional site: queries
+  USERNAME_FOCUSED = 3,     // Pass 3: username-only + username platform-targeted
+  DATING_MIRRORS = 4,       // Pass 4: dating keywords + mirrors/caches
+  LEGAL_RECORDS = 5,        // Pass 5: legal/public records portal discovery
+  ARCHIVED_CACHED = 6,      // Pass 6: archived/cached pages
+}
+
+export interface PassConfig {
+  pass: SearchPass;
+  name: string;
+  description: string;
+  generateQueries: (input: QueryGeneratorInput) => string[];
+}
+
+/**
+ * Configuration for each search pass
+ */
+const PASS_CONFIGS: PassConfig[] = [
+  {
+    pass: SearchPass.NAME_LOCATION,
+    name: "Name + Location",
+    description: "Basic name and location combinations",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { name, location, county, previousLocation, middleInitial } = input;
+      if (!name) return queries;
+
+      const nameParts = name.split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+
+      // Basic name
+      queries.push(`"${name}"`);
+
+      // With middle initial
+      if (middleInitial && nameParts.length >= 2) {
+        queries.push(`"${firstName} ${middleInitial} ${lastName}"`);
+      }
+
+      // Name + location combinations
+      if (location) {
+        queries.push(`"${name}" ${location}`);
+        queries.push(`${firstName} ${lastName} ${location}`);
+      }
+      if (county) {
+        queries.push(`"${name}" ${county}`);
+      }
+      if (previousLocation) {
+        queries.push(`"${name}" ${previousLocation}`);
+      }
+
+      return queries;
+    },
+  },
+  {
+    pass: SearchPass.PLATFORM_TARGETED,
+    name: "Platform Targeted",
+    description: "Social media and professional site-specific searches",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { name, location, anchor } = input;
+      if (!name) return queries;
+
+      // Social media platforms
+      queries.push(`"${name}" site:linkedin.com`);
+      queries.push(`"${name}" site:facebook.com`);
+      queries.push(`"${name}" site:instagram.com`);
+      queries.push(`"${name}" site:twitter.com`);
+      queries.push(`"${name}" site:tiktok.com`);
+      queries.push(`"${name}" site:reddit.com`);
+
+      // With location for better targeting
+      if (location) {
+        queries.push(`"${name}" ${location} site:linkedin.com`);
+        queries.push(`"${name}" ${location} site:facebook.com`);
+      }
+
+      // Professional anchors
+      if (anchor?.type === "workplace" && anchor.value) {
+        queries.push(`"${name}" ${anchor.value}`);
+        queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
+      }
+      if (anchor?.type === "school" && anchor.value) {
+        queries.push(`"${name}" ${anchor.value}`);
+        queries.push(`"${name}" ${anchor.value} alumni`);
+      }
+
+      // Public writing
+      queries.push(`"${name}" site:medium.com`);
+      queries.push(`"${name}" site:quora.com`);
+
+      return queries;
+    },
+  },
+  {
+    pass: SearchPass.USERNAME_FOCUSED,
+    name: "Username Focused",
+    description: "Username-only and username platform-targeted searches",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { username, aliases, anchor } = input;
+
+      // Primary username
+      if (username) {
+        const cleanUsername = username.replace(/^@/, "");
+        queries.push(`@${cleanUsername}`);
+        queries.push(`"${cleanUsername}"`);
+        queries.push(`"${cleanUsername}" profile`);
+        queries.push(`${cleanUsername} site:instagram.com`);
+        queries.push(`${cleanUsername} site:twitter.com`);
+        queries.push(`${cleanUsername} site:tiktok.com`);
+        queries.push(`${cleanUsername} site:reddit.com`);
+        queries.push(`${cleanUsername} site:linkedin.com`);
+        queries.push(`${cleanUsername} site:youtube.com`);
+        queries.push(`${cleanUsername} site:github.com`);
+      }
+
+      // Username anchor
+      if (anchor?.type === "username" && anchor.value) {
+        const anchorUsername = anchor.value.replace(/^@/, "");
+        if (anchorUsername !== username?.replace(/^@/, "")) {
+          queries.push(`@${anchorUsername}`);
+          queries.push(`"${anchorUsername}" profile`);
+          queries.push(`${anchorUsername} site:instagram.com`);
+          queries.push(`${anchorUsername} site:twitter.com`);
+        }
+      }
+
+      // Known aliases
+      if (aliases?.length) {
+        for (const alias of aliases.slice(0, 3)) {
+          const cleanAlias = alias.replace(/^@/, "");
+          queries.push(`@${cleanAlias}`);
+          queries.push(`"${cleanAlias}" profile`);
+          queries.push(`${cleanAlias} site:instagram.com`);
+        }
+      }
+
+      return queries;
+    },
+  },
+  {
+    pass: SearchPass.DATING_MIRRORS,
+    name: "Dating & Mirrors",
+    description: "Dating platforms, profile mirrors, and caches",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { name, location, username, anchor, ageRange } = input;
+      if (!name) return queries;
+
+      // Dating platforms individually
+      queries.push(`"${name}" tinder`);
+      queries.push(`"${name}" bumble`);
+      queries.push(`"${name}" hinge`);
+      queries.push(`"${name}" okcupid`);
+      queries.push(`"${name}" match.com`);
+      queries.push(`"${name}" plenty of fish`);
+      queries.push(`"${name}" dating profile`);
+
+      // Specific dating app anchor
+      if (anchor?.type === "dating_app" && anchor.value) {
+        queries.push(`"${name}" ${anchor.value}`);
+        queries.push(`"${name}" ${anchor.value} profile`);
+      }
+
+      // Dating + location
+      if (location) {
+        queries.push(`"${name}" ${location} dating`);
+        queries.push(`"${name}" ${location} tinder`);
+      }
+
+      // Dating + age
+      if (ageRange) {
+        queries.push(`"${name}" ${ageRange} dating`);
+      }
+
+      // Profile mirrors and aggregators
+      queries.push(`"${name}" dating profile screenshot`);
+      queries.push(`"${name}" profile screenshot`);
+
+      // Username on dating
+      if (username) {
+        const cleanUsername = username.replace(/^@/, "");
+        queries.push(`${cleanUsername} dating`);
+        queries.push(`${cleanUsername} tinder`);
+      }
+
+      return queries;
+    },
+  },
+  {
+    pass: SearchPass.LEGAL_RECORDS,
+    name: "Legal & Public Records",
+    description: "Court records, arrests, and public filings",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { name, location, county } = input;
+      if (!name) return queries;
+
+      // General legal searches
+      queries.push(`"${name}" court case`);
+      queries.push(`"${name}" lawsuit`);
+      queries.push(`"${name}" arrest`);
+      queries.push(`"${name}" criminal record`);
+      queries.push(`"${name}" mugshot`);
+
+      // Court record sites
+      queries.push(`"${name}" site:courtlistener.com`);
+      queries.push(`"${name}" site:unicourt.com`);
+      queries.push(`"${name}" site:judyrecords.com`);
+
+      // County-specific
+      if (county) {
+        queries.push(`"${name}" ${county} court`);
+        queries.push(`"${name}" ${county} arrest`);
+        queries.push(`"${name}" ${county} case`);
+        queries.push(`"${name}" ${county} inmate`);
+      }
+
+      // State-level (extract state from location)
+      if (location) {
+        queries.push(`"${name}" ${location} court records`);
+        queries.push(`"${name}" ${location} arrest records`);
+      }
+
+      // Government sites
+      queries.push(`"${name}" site:gov`);
+
+      // Business records
+      queries.push(`"${name}" business license`);
+      queries.push(`"${name}" LLC`);
+      queries.push(`"${name}" corporation`);
+
+      return queries;
+    },
+  },
+  {
+    pass: SearchPass.ARCHIVED_CACHED,
+    name: "Archived & Cached",
+    description: "Wayback Machine, cached pages, and deleted content",
+    generateQueries: (input) => {
+      const queries: string[] = [];
+      const { name, username } = input;
+      if (!name) return queries;
+
+      // Archive.org
+      queries.push(`"${name}" site:web.archive.org`);
+
+      // Cached pages
+      queries.push(`"${name}" cached`);
+      queries.push(`"${name}" cache:`);
+
+      // Deleted content signals
+      queries.push(`"${name}" deleted profile`);
+      queries.push(`"${name}" old profile`);
+      queries.push(`"${name}" previous account`);
+
+      // Username archives
+      if (username) {
+        const cleanUsername = username.replace(/^@/, "");
+        queries.push(`${cleanUsername} site:web.archive.org`);
+        queries.push(`${cleanUsername} cached`);
+        queries.push(`${cleanUsername} deleted`);
+      }
+
+      // Alternative archive sites
+      queries.push(`"${name}" site:archive.is`);
+      queries.push(`"${name}" site:archive.ph`);
+
+      return queries;
+    },
+  },
+];
+
+// ============================================================================
+// THIN RESULTS HEURISTIC
+// ============================================================================
+
+export interface ResultStrength {
+  isStrong: boolean;
+  totalSources: number;
+  urlCount: number;
+  categoriesCovered: number;
+  reasons: string[];
+}
+
+/**
+ * Evaluates if the current results are "thin" and more passes should run.
+ *
+ * Strong results criteria:
+ * - At least 3 sources with URLs
+ * - At least 2 different categories covered
+ * - OR at least 5 total sources (even without URLs)
+ */
+export function evaluateResultStrength(result: DeepSearchResult): ResultStrength {
+  const reasons: string[] = [];
+
+  // Count sources with URLs
+  const urlCount = result.sources.filter(s => s.url).length;
+
+  // Count unique categories
+  const categories = new Set(result.sources.map(s => s.type));
+  const categoriesCovered = categories.size;
+
+  // Determine if strong
+  let isStrong = false;
+
+  if (urlCount >= 3 && categoriesCovered >= 2) {
+    isStrong = true;
+    reasons.push("Good URL coverage across categories");
+  } else if (result.sources.length >= 5) {
+    isStrong = true;
+    reasons.push("Sufficient total sources found");
+  } else if (urlCount >= 2 && categoriesCovered >= 3) {
+    isStrong = true;
+    reasons.push("Diverse category coverage");
+  }
+
+  // Reasons why it's thin
+  if (!isStrong) {
+    if (urlCount < 2) {
+      reasons.push(`Only ${urlCount} sources with URLs`);
+    }
+    if (categoriesCovered < 2) {
+      reasons.push(`Only ${categoriesCovered} category covered`);
+    }
+    if (result.sources.length < 3) {
+      reasons.push(`Only ${result.sources.length} total sources`);
+    }
+  }
+
+  return {
+    isStrong,
+    totalSources: result.sources.length,
+    urlCount,
+    categoriesCovered,
+    reasons,
+  };
+}
+
+// ============================================================================
+// MULTI-PASS SEARCH RUNNER
+// ============================================================================
+
+export interface MultiPassResult {
+  finalResult: DeepSearchResult;
+  passesExecuted: number;
+  passResults: PassResult[];
+  stoppedEarly: boolean;
+  stopReason?: string;
+}
+
+export interface PassResult {
+  pass: SearchPass;
+  passName: string;
+  queriesUsed: string[];
+  sourcesFound: number;
+  urlsFound: number;
+  newSourcesAdded: number;
+  resultStrength: ResultStrength;
+}
+
+/**
+ * Executes a multi-pass Deep Search that continues until strong results
+ * are found or all passes are exhausted.
+ */
+export async function executeMultiPassSearch(
+  input: QueryGeneratorInput,
+  personContextId: string,
+  onProgress?: (status: string, passNumber: number, totalPasses: number) => void
+): Promise<MultiPassResult> {
+  const passResults: PassResult[] = [];
+  let accumulatedSources: DeepSearchSource[] = [];
+  let allRawResponses: string[] = [];
+  let stoppedEarly = false;
+  let stopReason: string | undefined;
+
+  const totalPasses = PASS_CONFIGS.length;
+
+  // Determine which passes to run based on input
+  const passesToRun = PASS_CONFIGS.filter(config => {
+    // Skip username pass if no username
+    if (config.pass === SearchPass.USERNAME_FOCUSED) {
+      return !!(input.username || input.aliases?.length || input.anchor?.type === "username");
+    }
+    return true;
+  });
+
+  console.log(`[MultiPass] Starting ${passesToRun.length} passes for "${input.name}"`);
+
+  for (const passConfig of passesToRun) {
+    const passNumber = passConfig.pass;
+    onProgress?.(`Pass ${passNumber}: ${passConfig.name}...`, passNumber, totalPasses);
+
+    console.log(`[MultiPass] === PASS ${passNumber}: ${passConfig.name} ===`);
+
+    // Generate queries for this pass
+    const passQueries = passConfig.generateQueries(input);
+
+    if (passQueries.length === 0) {
+      console.log(`[MultiPass] Pass ${passNumber} generated no queries, skipping`);
+      continue;
+    }
+
+    // De-duplicate queries
+    const uniqueQueries = [...new Set(passQueries)];
+    console.log(`[MultiPass] Pass ${passNumber} queries (${uniqueQueries.length}):`, uniqueQueries.slice(0, 5));
+
+    // Execute search for this pass
+    const passResponse = await callPassSearch(uniqueQueries, input.name);
+
+    if (passResponse) {
+      allRawResponses.push(passResponse);
+
+      // Parse this pass's results
+      const passResult = parseDeepSearchResponse(
+        passResponse,
+        personContextId,
+        uniqueQueries.join(", ")
+      );
+
+      // Count new sources (not already found)
+      const existingUrls = new Set(accumulatedSources.map(s => s.url).filter(Boolean));
+      const newSources = passResult.sources.filter(s => !s.url || !existingUrls.has(s.url));
+
+      // Add new sources to accumulated results
+      accumulatedSources = [...accumulatedSources, ...newSources];
+
+      // Create accumulated result for strength evaluation
+      const accumulatedResult: DeepSearchResult = {
+        id: `ds_multipass_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        personContextId,
+        searchQuery: uniqueQueries.join(", "),
+        sources: accumulatedSources,
+        summary: "",
+        alignmentNotes: [],
+        uncertainties: [],
+        rawResponse: allRawResponses.join("\n\n---\n\n"),
+      };
+
+      // Evaluate result strength
+      const strength = evaluateResultStrength(accumulatedResult);
+
+      // Log pass result
+      const passResultLog: PassResult = {
+        pass: passNumber,
+        passName: passConfig.name,
+        queriesUsed: uniqueQueries,
+        sourcesFound: passResult.sources.length,
+        urlsFound: passResult.sources.filter(s => s.url).length,
+        newSourcesAdded: newSources.length,
+        resultStrength: strength,
+      };
+      passResults.push(passResultLog);
+
+      console.log(`[MultiPass] Pass ${passNumber} results:`, {
+        sourcesFound: passResult.sources.length,
+        newSourcesAdded: newSources.length,
+        totalAccumulated: accumulatedSources.length,
+        isStrong: strength.isStrong,
+        reasons: strength.reasons,
+      });
+
+      // Check if we should stop early
+      if (strength.isStrong) {
+        stoppedEarly = true;
+        stopReason = `Strong results after Pass ${passNumber}: ${strength.reasons.join(", ")}`;
+        console.log(`[MultiPass] Stopping early: ${stopReason}`);
+        break;
+      }
+    } else {
+      console.log(`[MultiPass] Pass ${passNumber} returned no response`);
+      passResults.push({
+        pass: passNumber,
+        passName: passConfig.name,
+        queriesUsed: uniqueQueries,
+        sourcesFound: 0,
+        urlsFound: 0,
+        newSourcesAdded: 0,
+        resultStrength: {
+          isStrong: false,
+          totalSources: accumulatedSources.length,
+          urlCount: accumulatedSources.filter(s => s.url).length,
+          categoriesCovered: new Set(accumulatedSources.map(s => s.type)).size,
+          reasons: ["Pass returned no response"],
+        },
+      });
+    }
+  }
+
+  // Build final result
+  const finalResult: DeepSearchResult = {
+    id: `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString(),
+    personContextId,
+    searchQuery: passResults.flatMap(p => p.queriesUsed).join(", "),
+    sources: accumulatedSources,
+    summary: accumulatedSources.length > 0
+      ? `Found ${accumulatedSources.length} results across ${new Set(accumulatedSources.map(s => s.type)).size} categories.`
+      : "No results found after comprehensive search.",
+    alignmentNotes: [],
+    uncertainties: [],
+    rawResponse: allRawResponses.join("\n\n---\n\n"),
+  };
+
+  console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
+
+  return {
+    finalResult,
+    passesExecuted: passResults.length,
+    passResults,
+    stoppedEarly,
+    stopReason,
+  };
+}
+
+/**
+ * Executes a single pass search with the given queries
+ */
+async function callPassSearch(queries: string[], personName: string): Promise<string | null> {
+  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const prompt = `Search for "${personName}" using these specific queries: ${queries.join(", ")}
+
+For each query, search and report what you find. Include:
+- Platform/source name
+- Direct URL if found
+- Brief description of what was found
+
+Be thorough but concise. Only report actual findings, not speculation.`;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-search-preview",
+        messages: [
+          {
+            role: "system",
+            content: "You are a research assistant that searches the web for publicly available information. Report only what you actually find through web search. Include URLs when available.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+        web_search_options: {
+          search_context_size: "high",
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.log(`[PassSearch] API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (error) {
+    console.error("[PassSearch] Error:", error);
+    return null;
+  }
+}
 
 // ============================================================================
 // DEEP SEARCH EXECUTION
