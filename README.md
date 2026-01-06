@@ -1113,6 +1113,14 @@ Deep Search performs multiple search passes covering all of the following areas:
    - Publicly indexed dating profiles
    - SEO mirrors, cached pages, archived snapshots
    - Reused usernames or photos associated with dating platforms
+   - **Dating Presence Discovery** (enhanced):
+     - Direct profile keyword searches ("dating profile", "tinder bio", "hinge profile", "bumble profile")
+     - Platform-specific searches (Tinder, Bumble, Hinge, OkCupid, Match, POF, eHarmony, Coffee Meets Bagel, The League, Raya, Feeld, Grindr, Her, Taimi)
+     - "Met on" style indirect mentions ("met on tinder", "matched on bumble")
+     - Screenshot and mirror searches
+     - Archive/cache discovery (web.archive.org, archive.is, archive.ph)
+     - Deleted/old profile searches
+   - **Important**: Does not claim accounts are active, only surfaces links and preview text
 
 2. **Social Media Presence**
    - Major platforms (Instagram, Facebook, X/Twitter, TikTok, LinkedIn)

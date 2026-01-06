@@ -30,6 +30,9 @@ import {
   CategorizedResults,
   generateUsernameVariations,
   generateUsernameFirstQueries,
+  generateDatingQueries,
+  generateDatingArchiveQueries,
+  DATING_KEYWORDS,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -232,50 +235,35 @@ const PASS_CONFIGS: PassConfig[] = [
   {
     pass: SearchPass.DATING_MIRRORS,
     name: "Dating & Mirrors",
-    description: "Dating platforms, profile mirrors, and caches",
+    description: "Dating platforms, profile mirrors, caches, and indirect mentions",
     generateQueries: (input) => {
       const queries: string[] = [];
       const { name, location, username, anchor, ageRange } = input;
       if (!name) return queries;
 
-      // Dating platforms individually
-      queries.push(`"${name}" tinder`);
-      queries.push(`"${name}" bumble`);
-      queries.push(`"${name}" hinge`);
-      queries.push(`"${name}" okcupid`);
-      queries.push(`"${name}" match.com`);
-      queries.push(`"${name}" plenty of fish`);
-      queries.push(`"${name}" dating profile`);
+      // Use the comprehensive dating query generator
+      queries.push(...generateDatingQueries(name, location, username));
 
-      // Specific dating app anchor
+      // Specific dating app anchor gets priority searches
       if (anchor?.type === "dating_app" && anchor.value) {
         queries.push(`"${name}" ${anchor.value}`);
         queries.push(`"${name}" ${anchor.value} profile`);
+        queries.push(`"${name}" ${anchor.value} bio`);
+        queries.push(`"${name}" met on ${anchor.value}`);
       }
 
-      // Dating + location
-      if (location) {
-        queries.push(`"${name}" ${location} dating`);
-        queries.push(`"${name}" ${location} tinder`);
-      }
-
-      // Dating + age
+      // Dating + age (age-targeted dating searches)
       if (ageRange) {
         queries.push(`"${name}" ${ageRange} dating`);
+        queries.push(`"${name}" ${ageRange} tinder`);
+        queries.push(`"${name}" ${ageRange} bumble`);
       }
 
-      // Profile mirrors and aggregators
-      queries.push(`"${name}" dating profile screenshot`);
-      queries.push(`"${name}" profile screenshot`);
+      // Add archive/cache queries for dating
+      queries.push(...generateDatingArchiveQueries(name, username));
 
-      // Username on dating
-      if (username) {
-        const cleanUsername = username.replace(/^@/, "");
-        queries.push(`${cleanUsername} dating`);
-        queries.push(`${cleanUsername} tinder`);
-      }
-
-      return queries;
+      // De-duplicate
+      return [...new Set(queries)];
     },
   },
   {

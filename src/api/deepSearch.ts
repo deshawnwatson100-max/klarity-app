@@ -385,7 +385,7 @@ export interface DeepSearchSource {
   summary: string;
   relevantDetails: string[];
   isVerified?: boolean; // Optional, not displayed to user
-  category?: "socialPresence" | "professionalFootprint" | "publicWriting" | "datingProfiles" | "legalRecords" | "archived" | "other";
+  category?: "socialPresence" | "professionalFootprint" | "publicWriting" | "datingPresence" | "legalRecords" | "archived" | "other";
 }
 
 // ============================================================================
@@ -588,6 +588,281 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
     queryVariants: (name) => [`"${name}" site:blogger.com`],
   },
 ];
+
+// ============================================================================
+// DATING PLATFORM CONFIGURATION
+// ============================================================================
+
+/**
+ * Dating-specific keywords for comprehensive dating presence discovery.
+ * These keywords are used to find:
+ * - Direct dating profiles
+ * - Screenshots and mentions of dating profiles
+ * - Indirect references to dating activity
+ */
+export const DATING_KEYWORDS = {
+  // Direct profile keywords
+  profileKeywords: [
+    "dating profile",
+    "tinder bio",
+    "hinge profile",
+    "bumble profile",
+    "dating app profile",
+    "profile screenshot",
+  ],
+  // "Met on" keywords (indirect mentions)
+  metOnKeywords: [
+    "met on tinder",
+    "met on hinge",
+    "met on bumble",
+    "met on dating app",
+    "matched on tinder",
+    "matched on hinge",
+    "matched on bumble",
+  ],
+  // Platform names for general search
+  platformNames: [
+    "tinder",
+    "bumble",
+    "hinge",
+    "okcupid",
+    "match.com",
+    "plenty of fish",
+    "pof",
+    "eharmony",
+    "coffee meets bagel",
+    "cmb",
+    "the league",
+    "raya",
+    "feeld",
+    "grindr",
+    "her",
+    "taimi",
+  ],
+} as const;
+
+/**
+ * Dating platform configuration for targeted searches
+ */
+export interface DatingPlatformConfig {
+  name: string;
+  searchTerms: string[];
+  archiveDomains?: string[];
+}
+
+export const DATING_PLATFORM_CONFIGS: DatingPlatformConfig[] = [
+  {
+    name: "Tinder",
+    searchTerms: ["tinder", "tinder profile", "tinder bio", "swipe right"],
+    archiveDomains: ["tinder.com", "gotinder.com"],
+  },
+  {
+    name: "Bumble",
+    searchTerms: ["bumble", "bumble profile", "bumble bio", "bumble date"],
+    archiveDomains: ["bumble.com"],
+  },
+  {
+    name: "Hinge",
+    searchTerms: ["hinge", "hinge profile", "hinge prompts", "designed to be deleted"],
+    archiveDomains: ["hinge.co"],
+  },
+  {
+    name: "OkCupid",
+    searchTerms: ["okcupid", "okcupid profile", "okc profile"],
+    archiveDomains: ["okcupid.com"],
+  },
+  {
+    name: "Match.com",
+    searchTerms: ["match.com", "match profile", "match dating"],
+    archiveDomains: ["match.com"],
+  },
+  {
+    name: "Plenty of Fish",
+    searchTerms: ["plenty of fish", "pof", "pof profile", "pof dating"],
+    archiveDomains: ["pof.com"],
+  },
+  {
+    name: "eHarmony",
+    searchTerms: ["eharmony", "eharmony profile"],
+    archiveDomains: ["eharmony.com"],
+  },
+  {
+    name: "Coffee Meets Bagel",
+    searchTerms: ["coffee meets bagel", "cmb", "cmb profile"],
+    archiveDomains: ["coffeemeetsbagel.com"],
+  },
+];
+
+/**
+ * Generate dating-focused queries for a person.
+ * Covers:
+ * - Direct profile keywords
+ * - Platform-specific searches
+ * - "Met on" style indirect mentions
+ * - Screenshot/mirror searches
+ *
+ * @param name Person's name
+ * @param location Optional location for geo-targeted dating searches
+ * @param username Optional username for cross-platform dating searches
+ * @returns Array of dating-focused search queries
+ */
+export function generateDatingQueries(
+  name: string,
+  location?: string,
+  username?: string
+): string[] {
+  const queries: string[] = [];
+
+  if (!name?.trim()) return queries;
+
+  // 1. Direct profile keyword searches
+  for (const keyword of DATING_KEYWORDS.profileKeywords) {
+    queries.push(`"${name}" ${keyword}`);
+  }
+
+  // 2. Platform-specific searches
+  for (const platform of DATING_KEYWORDS.platformNames) {
+    queries.push(`"${name}" ${platform}`);
+  }
+
+  // 3. "Met on" style indirect mentions
+  for (const keyword of DATING_KEYWORDS.metOnKeywords) {
+    queries.push(`"${name}" ${keyword}`);
+  }
+
+  // 4. Location + dating (more targeted)
+  if (location) {
+    queries.push(`"${name}" ${location} dating`);
+    queries.push(`"${name}" ${location} tinder`);
+    queries.push(`"${name}" ${location} bumble`);
+    queries.push(`"${name}" ${location} hinge`);
+    queries.push(`"${name}" dating ${location}`);
+  }
+
+  // 5. Username on dating platforms
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    queries.push(`${cleanUsername} dating profile`);
+    queries.push(`${cleanUsername} tinder`);
+    queries.push(`${cleanUsername} bumble`);
+    queries.push(`${cleanUsername} hinge`);
+    queries.push(`${cleanUsername} dating app`);
+  }
+
+  // 6. Screenshot and mirror searches
+  queries.push(`"${name}" dating profile screenshot`);
+  queries.push(`"${name}" tinder screenshot`);
+  queries.push(`"${name}" dating app screenshot`);
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+/**
+ * Generate cache/archive queries specifically for dating pages.
+ * Searches:
+ * - web.archive.org (Wayback Machine)
+ * - Google cached pages
+ * - Archive.is / Archive.ph mirrors
+ *
+ * @param name Person's name
+ * @param username Optional username
+ * @returns Array of archive-focused dating queries
+ */
+export function generateDatingArchiveQueries(
+  name: string,
+  username?: string
+): string[] {
+  const queries: string[] = [];
+
+  if (!name?.trim()) return queries;
+
+  // 1. Wayback Machine searches for dating content
+  queries.push(`"${name}" dating site:web.archive.org`);
+  queries.push(`"${name}" tinder site:web.archive.org`);
+  queries.push(`"${name}" dating profile site:web.archive.org`);
+
+  // 2. Archive.is / Archive.ph searches
+  queries.push(`"${name}" dating site:archive.is`);
+  queries.push(`"${name}" dating site:archive.ph`);
+  queries.push(`"${name}" tinder site:archive.is`);
+
+  // 3. Cached page style queries
+  queries.push(`"${name}" dating profile cached`);
+  queries.push(`"${name}" tinder cached`);
+  queries.push(`cache:"${name}" dating`);
+
+  // 4. Dating platform archive searches
+  for (const platform of DATING_PLATFORM_CONFIGS) {
+    for (const domain of platform.archiveDomains || []) {
+      queries.push(`"${name}" site:web.archive.org/${domain}`);
+    }
+  }
+
+  // 5. Username archive searches
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    queries.push(`${cleanUsername} site:web.archive.org dating`);
+    queries.push(`${cleanUsername} tinder site:web.archive.org`);
+    queries.push(`${cleanUsername} dating cached`);
+  }
+
+  // 6. Deleted/old profile searches
+  queries.push(`"${name}" deleted tinder`);
+  queries.push(`"${name}" old dating profile`);
+  queries.push(`"${name}" previous dating profile`);
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+// ============================================================================
+// EXAMPLE: Dating Queries Generated
+// ============================================================================
+/*
+EXAMPLE 1: Name + Location (no username)
+Input: { name: "Sarah Johnson", location: "Austin, TX" }
+
+Generated Dating Queries (~40):
+1.  "Sarah Johnson" dating profile
+2.  "Sarah Johnson" tinder bio
+3.  "Sarah Johnson" hinge profile
+4.  "Sarah Johnson" bumble profile
+5.  "Sarah Johnson" dating app profile
+6.  "Sarah Johnson" profile screenshot
+7.  "Sarah Johnson" tinder
+8.  "Sarah Johnson" bumble
+9.  "Sarah Johnson" hinge
+10. "Sarah Johnson" okcupid
+11. "Sarah Johnson" match.com
+12. "Sarah Johnson" plenty of fish
+13. "Sarah Johnson" met on tinder
+14. "Sarah Johnson" met on hinge
+15. "Sarah Johnson" matched on bumble
+16. "Sarah Johnson" Austin, TX dating
+17. "Sarah Johnson" Austin, TX tinder
+18. "Sarah Johnson" Austin, TX bumble
+19. "Sarah Johnson" Austin, TX hinge
+20. "Sarah Johnson" dating profile screenshot
+... (plus archive queries)
+
+EXAMPLE 2: Username-based dating search
+Input: { name: "Mike Chen", username: "mikechen92" }
+
+Generated Dating Queries (~45):
+1.  "Mike Chen" dating profile
+2.  "Mike Chen" tinder bio
+... (name-based queries)
+15. mikechen92 dating profile
+16. mikechen92 tinder
+17. mikechen92 bumble
+18. mikechen92 hinge
+19. mikechen92 dating app
+... (archive queries with username)
+25. mikechen92 site:web.archive.org dating
+26. mikechen92 tinder site:web.archive.org
+27. mikechen92 dating cached
+*/
 
 /**
  * Generate platform-targeted queries for all configured platforms
@@ -1411,9 +1686,9 @@ function getCategoryFromPlatform(platform: string): DeepSearchSource["category"]
     return "publicWriting";
   }
 
-  // Dating Profiles
-  if (["tinder", "bumble", "hinge", "okcupid", "match", "plenty", "pof", "eharmony", "coffee meets bagel"].some(p => lower.includes(p))) {
-    return "datingProfiles";
+  // Dating Presence (direct profiles + indirect mentions)
+  if (["tinder", "bumble", "hinge", "okcupid", "match", "plenty", "pof", "eharmony", "coffee meets bagel", "cmb", "dating", "swipe", "the league", "raya", "feeld", "grindr", "her", "taimi"].some(p => lower.includes(p))) {
+    return "datingPresence";
   }
 
   // Legal Records
@@ -1437,7 +1712,7 @@ export interface CategorizedResults {
   socialPresence: DeepSearchSource[];
   professionalFootprint: DeepSearchSource[];
   publicWriting: DeepSearchSource[];
-  datingProfiles: DeepSearchSource[];
+  datingPresence: DeepSearchSource[];
   legalRecords: DeepSearchSource[];
   archived: DeepSearchSource[];
   other: DeepSearchSource[];
@@ -1452,7 +1727,7 @@ export function categorizeResults(sources: DeepSearchSource[]): CategorizedResul
     socialPresence: [],
     professionalFootprint: [],
     publicWriting: [],
-    datingProfiles: [],
+    datingPresence: [],
     legalRecords: [],
     archived: [],
     other: [],
@@ -1480,8 +1755,8 @@ export function categorizeResults(sources: DeepSearchSource[]): CategorizedResul
       case "publicWriting":
         results.publicWriting.push(enrichedSource);
         break;
-      case "datingProfiles":
-        results.datingProfiles.push(enrichedSource);
+      case "datingPresence":
+        results.datingPresence.push(enrichedSource);
         break;
       case "legalRecords":
         results.legalRecords.push(enrichedSource);
@@ -1509,7 +1784,7 @@ export function getCategorizedResultsStats(categorized: CategorizedResults): {
     socialPresence: categorized.socialPresence.length,
     professionalFootprint: categorized.professionalFootprint.length,
     publicWriting: categorized.publicWriting.length,
-    datingProfiles: categorized.datingProfiles.length,
+    datingPresence: categorized.datingPresence.length,
     legalRecords: categorized.legalRecords.length,
     archived: categorized.archived.length,
     other: categorized.other.length,
