@@ -144,6 +144,8 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
     return null;
   }
 
+  console.log("[DeepSearch] Starting search with queries:", searchQueries.slice(0, 5));
+
   try {
     // Use OpenAI Responses API with web_search tool for real internet search
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -164,22 +166,26 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
       }),
     });
 
+    console.log("[DeepSearch] Responses API status:", response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Deep Search API error:", errorData);
+      console.error("[DeepSearch] Responses API error:", JSON.stringify(errorData));
 
       // Fallback to chat completions if responses API fails
-      console.log("Falling back to chat completions API...");
+      console.log("[DeepSearch] Falling back to chat completions API...");
       return await callDeepSearchLLMFallback(params);
     }
 
     const data = await response.json();
+    console.log("[DeepSearch] Responses API response keys:", Object.keys(data));
 
     // Extract the text content from the response
     // The Responses API returns output in a different format
     if (data.output) {
       // Handle array of output items
       if (Array.isArray(data.output)) {
+        console.log("[DeepSearch] Output is array with", data.output.length, "items");
         const textContent = data.output
           .filter((item: { type: string }) => item.type === "message")
           .map((item: { content: Array<{ type: string; text: string }> }) => {
@@ -192,14 +198,31 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
             return "";
           })
           .join("\n");
-        return textContent || null;
+
+        if (textContent) {
+          console.log("[DeepSearch] Extracted text content length:", textContent.length);
+          return textContent;
+        }
       }
-      return typeof data.output === "string" ? data.output : null;
+
+      if (typeof data.output === "string") {
+        console.log("[DeepSearch] Output is string, length:", data.output.length);
+        return data.output;
+      }
     }
 
-    return null;
+    // Try alternative response formats
+    if (data.choices?.[0]?.message?.content) {
+      console.log("[DeepSearch] Found content in choices format");
+      return data.choices[0].message.content;
+    }
+
+    console.log("[DeepSearch] Could not extract content, full response:", JSON.stringify(data).slice(0, 500));
+
+    // Fallback if we couldn't parse the response
+    return await callDeepSearchLLMFallback(params);
   } catch (error) {
-    console.error("Deep Search LLM call failed:", error);
+    console.error("[DeepSearch] LLM call failed:", error);
     // Try fallback
     return await callDeepSearchLLMFallback(params);
   }
@@ -217,15 +240,13 @@ async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string 
     return null;
   }
 
+  console.log("[DeepSearch Fallback] Attempting with gpt-4o-search-preview...");
+
   try {
     const messages = [
       {
         role: "system",
-        content: `${systemPrompt}\n\nIMPORTANT: You must search the internet to find real, current information about this person. Do not make up or hallucinate any information. Only report what you can actually find through web search.`,
-      },
-      {
-        role: "developer",
-        content: developerPrompt,
+        content: `${systemPrompt}\n\nIMPORTANT: You must search the internet to find real, current information about this person. Do not make up or hallucinate any information. Only report what you can actually find through web search. Include actual URLs to profiles you discover.`,
       },
       {
         role: "user",
@@ -233,6 +254,7 @@ async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string 
       },
     ];
 
+    // Try gpt-4o-search-preview first
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -243,41 +265,54 @@ async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string 
         model: "gpt-4o-search-preview",
         messages,
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 4000,
         web_search_options: {
-          search_context_size: "medium",
+          search_context_size: "high",
         },
       }),
     });
 
-    if (!response.ok) {
-      // If search preview model fails, try regular model
-      const regularResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-2024-11-20",
-          messages,
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
+    console.log("[DeepSearch Fallback] gpt-4o-search-preview status:", response.status);
 
-      if (!regularResponse.ok) {
-        return null;
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        console.log("[DeepSearch Fallback] Got response, length:", content.length);
+        return content;
       }
-
-      const data = await regularResponse.json();
-      return data.choices?.[0]?.message?.content || null;
     }
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
+    // If search preview fails, try with regular gpt-4o
+    console.log("[DeepSearch Fallback] Trying regular gpt-4o...");
+    const regularResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages,
+        temperature: 0.7,
+        max_tokens: 4000,
+      }),
+    });
+
+    console.log("[DeepSearch Fallback] gpt-4o status:", regularResponse.status);
+
+    if (!regularResponse.ok) {
+      const errorData = await regularResponse.json();
+      console.error("[DeepSearch Fallback] Error:", JSON.stringify(errorData));
+      return null;
+    }
+
+    const data = await regularResponse.json();
+    const content = data.choices?.[0]?.message?.content;
+    console.log("[DeepSearch Fallback] Got response from gpt-4o, length:", content?.length || 0);
+    return content || null;
   } catch (error) {
-    console.error("Deep Search fallback failed:", error);
+    console.error("[DeepSearch Fallback] Failed:", error);
     return null;
   }
 }
