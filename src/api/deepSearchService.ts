@@ -33,6 +33,11 @@ import {
   generateDatingQueries,
   generateDatingArchiveQueries,
   DATING_KEYWORDS,
+  generateLegalPortalQueries,
+  parseLegalPortalResults,
+  LegalPortalResult,
+  extractStateFromLocation,
+  extractCounty,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -269,45 +274,25 @@ const PASS_CONFIGS: PassConfig[] = [
   {
     pass: SearchPass.LEGAL_RECORDS,
     name: "Legal & Public Records",
-    description: "Court records, arrests, and public filings",
+    description: "Court records, jail rosters, state DOC, and official portal discovery",
     generateQueries: (input) => {
-      const queries: string[] = [];
-      const { name, location, county } = input;
-      if (!name) return queries;
+      const { name, location, county, middleInitial, ageRange } = input;
+      if (!name) return [];
 
-      // General legal searches
-      queries.push(`"${name}" court case`);
-      queries.push(`"${name}" lawsuit`);
-      queries.push(`"${name}" arrest`);
-      queries.push(`"${name}" criminal record`);
-      queries.push(`"${name}" mugshot`);
-
-      // Court record sites
-      queries.push(`"${name}" site:courtlistener.com`);
-      queries.push(`"${name}" site:unicourt.com`);
-      queries.push(`"${name}" site:judyrecords.com`);
-
-      // County-specific
-      if (county) {
-        queries.push(`"${name}" ${county} court`);
-        queries.push(`"${name}" ${county} arrest`);
-        queries.push(`"${name}" ${county} case`);
-        queries.push(`"${name}" ${county} inmate`);
-      }
-
-      // State-level (extract state from location)
-      if (location) {
-        queries.push(`"${name}" ${location} court records`);
-        queries.push(`"${name}" ${location} arrest records`);
-      }
-
-      // Government sites
-      queries.push(`"${name}" site:gov`);
-
-      // Business records
-      queries.push(`"${name}" business license`);
-      queries.push(`"${name}" LLC`);
-      queries.push(`"${name}" corporation`);
+      // Use the comprehensive legal portal query generator
+      // This includes:
+      // - County clerk / court case search
+      // - State judiciary case lookup
+      // - Jail roster / inmate search
+      // - State DOC inmate lookup
+      // - .gov domain preference
+      const queries = generateLegalPortalQueries({
+        name,
+        location,
+        county,
+        middleInitial,
+        ageRange,
+      });
 
       return queries;
     },
@@ -438,6 +423,8 @@ export interface MultiPassResult {
   passResults: PassResult[];
   stoppedEarly: boolean;
   stopReason?: string;
+  // Legal portal results (link-first output for user to explore)
+  legalPortals: LegalPortalResult[];
 }
 
 export interface PassResult {
@@ -599,8 +586,16 @@ export async function executeMultiPassSearch(
   const categorizedResults = categorizeResults(accumulatedSources);
   const categorizedStats = getCategorizedResultsStats(categorizedResults);
 
+  // Extract legal portal results from raw responses
+  // Build jurisdiction string from input
+  const state = extractStateFromLocation(input.location);
+  const countyName = extractCounty(input.county, input.location);
+  const jurisdiction = [countyName, state].filter(Boolean).join(", ") || undefined;
+  const legalPortals = parseLegalPortalResults(allRawResponses.join("\n"), jurisdiction);
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
   console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
+  console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
 
   return {
     finalResult,
@@ -610,6 +605,7 @@ export async function executeMultiPassSearch(
     passResults,
     stoppedEarly,
     stopReason,
+    legalPortals,
   };
 }
 

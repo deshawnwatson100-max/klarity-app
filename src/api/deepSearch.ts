@@ -817,6 +817,439 @@ export function generateDatingArchiveQueries(
 }
 
 // ============================================================================
+// LEGAL & PUBLIC RECORDS PORTAL CONFIGURATION
+// ============================================================================
+
+/**
+ * Legal portal types for different record categories
+ */
+export type LegalPortalType =
+  | "county_clerk"
+  | "circuit_court"
+  | "district_court"
+  | "state_judiciary"
+  | "jail_roster"
+  | "inmate_search"
+  | "state_doc"
+  | "federal_court"
+  | "aggregator";
+
+/**
+ * A legal/public records portal result
+ * These are returned as links the user can open
+ */
+export interface LegalPortalResult {
+  portalType: LegalPortalType;
+  portalName: string;
+  url: string;
+  jurisdiction: string; // e.g., "Harris County, TX" or "State of California"
+  description: string;
+  isGovDomain: boolean; // True for .gov domains
+  note?: string; // e.g., "This is the official search portal for Harris County."
+  searchable: boolean; // True if portal allows name search, false if index-only
+}
+
+/**
+ * US State abbreviations for legal portal queries
+ */
+export const US_STATES: Record<string, string> = {
+  "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+  "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+  "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+  "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+  "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+  "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+  "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+  "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+  "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+  "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+  "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+  "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+  "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+};
+
+/**
+ * Legal portal query templates for different portal types
+ */
+export const LEGAL_PORTAL_QUERY_TEMPLATES = {
+  // County-level court searches
+  countyClerk: [
+    "{county} county clerk court records",
+    "{county} county clerk case search",
+    "{county} county civil court records search",
+    "{county} county criminal court records",
+  ],
+  // Circuit/District court searches
+  circuitCourt: [
+    "{county} circuit court case lookup",
+    "{county} district court records search",
+    "{county} court case search portal",
+  ],
+  // State judiciary searches
+  stateJudiciary: [
+    "{state} judiciary case search",
+    "{state} court case lookup",
+    "{state} state courts case search",
+    "{state} judicial branch case search site:*.gov",
+  ],
+  // Jail roster / booking searches
+  jailRoster: [
+    "{county} jail roster",
+    "{county} county jail inmate search",
+    "{county} sheriff inmate lookup",
+    "{county} booking records",
+    "{county} who is in jail",
+  ],
+  // State DOC / prison searches
+  stateDOC: [
+    "{state} department of corrections inmate search",
+    "{state} DOC inmate lookup",
+    "{state} prison inmate search",
+    "{state} offender search site:*.gov",
+  ],
+  // Federal court searches
+  federalCourt: [
+    "PACER {state} federal court",
+    "{state} federal district court case search",
+    "federal court {state} case lookup",
+  ],
+} as const;
+
+/**
+ * Known legal record aggregator sites
+ * These are useful fallbacks but user should verify
+ */
+export const LEGAL_AGGREGATOR_SITES = [
+  { name: "CourtListener", domain: "courtlistener.com", type: "federal_state_appeals" },
+  { name: "UniCourt", domain: "unicourt.com", type: "multi_state" },
+  { name: "Judyrecords", domain: "judyrecords.com", type: "multi_state" },
+  { name: "CaseText", domain: "casetext.com", type: "case_law" },
+  { name: "RECAP Archive", domain: "free.law", type: "federal" },
+] as const;
+
+/**
+ * Extract state from location string
+ * @param location Location string like "Austin, TX" or "California"
+ * @returns State name in lowercase or undefined
+ */
+export function extractStateFromLocation(location?: string): string | undefined {
+  if (!location) return undefined;
+
+  const normalized = location.toLowerCase().trim();
+
+  // Check if it's a full state name
+  if (US_STATES[normalized]) {
+    return normalized;
+  }
+
+  // Check for state abbreviation (e.g., "Austin, TX")
+  const abbrevMatch = location.match(/,\s*([A-Z]{2})\s*$/i);
+  if (abbrevMatch) {
+    const abbrev = abbrevMatch[1].toUpperCase();
+    const stateName = Object.entries(US_STATES).find(([_, ab]) => ab === abbrev)?.[0];
+    if (stateName) return stateName;
+  }
+
+  // Check if location contains a state name
+  for (const stateName of Object.keys(US_STATES)) {
+    if (normalized.includes(stateName)) {
+      return stateName;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Extract county from location or county field
+ * @param county Direct county input
+ * @param location Location string that might contain county
+ * @returns County name or undefined
+ */
+export function extractCounty(county?: string, location?: string): string | undefined {
+  // Use direct county if provided
+  if (county) {
+    // Remove "county" suffix if present for normalization
+    return county.replace(/\s+county$/i, "").trim();
+  }
+
+  // Try to extract from location (e.g., "Harris County, TX")
+  if (location) {
+    const countyMatch = location.match(/([A-Za-z\s]+)\s+county/i);
+    if (countyMatch) {
+      return countyMatch[1].trim();
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Generate legal portal discovery queries
+ * These queries help find official court/records portals
+ *
+ * @param input Query generator input with optional state/county/age
+ * @returns Array of search queries focused on finding legal portals
+ */
+export function generateLegalPortalQueries(input: {
+  name: string;
+  location?: string;
+  county?: string;
+  state?: string;
+  middleInitial?: string;
+  ageRange?: string;
+  birthYear?: string;
+}): string[] {
+  const queries: string[] = [];
+  const { name, location, county, middleInitial, ageRange, birthYear } = input;
+
+  // Extract state and county from inputs
+  const stateFromLocation = extractStateFromLocation(location);
+  const state = input.state?.toLowerCase() || stateFromLocation;
+  const countyName = extractCounty(county, location);
+
+  // Build name variations
+  const nameParts = name.split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+  const fullNameWithMiddle = middleInitial && nameParts.length >= 2
+    ? `${firstName} ${middleInitial} ${lastName}`
+    : null;
+
+  // ========================================================================
+  // PASS 1: Portal Discovery Queries (find the official search portals)
+  // ========================================================================
+
+  // County-level portal discovery
+  if (countyName) {
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.countyClerk) {
+      queries.push(template.replace("{county}", countyName));
+    }
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.circuitCourt) {
+      queries.push(template.replace("{county}", countyName));
+    }
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.jailRoster) {
+      queries.push(template.replace("{county}", countyName));
+    }
+  }
+
+  // State-level portal discovery
+  if (state) {
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.stateJudiciary) {
+      queries.push(template.replace("{state}", state));
+    }
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.stateDOC) {
+      queries.push(template.replace("{state}", state));
+    }
+    for (const template of LEGAL_PORTAL_QUERY_TEMPLATES.federalCourt) {
+      queries.push(template.replace("{state}", state));
+    }
+  }
+
+  // ========================================================================
+  // PASS 2: Direct Name Searches on Common Aggregators
+  // ========================================================================
+
+  // Person-specific searches on known aggregator sites
+  queries.push(`"${name}" site:courtlistener.com`);
+  queries.push(`"${name}" site:unicourt.com`);
+  queries.push(`"${name}" site:judyrecords.com`);
+
+  // With location for better targeting
+  if (state) {
+    queries.push(`"${name}" ${state} court records`);
+    queries.push(`"${name}" ${state} case search`);
+  }
+  if (countyName) {
+    queries.push(`"${name}" ${countyName} county court`);
+    queries.push(`"${name}" ${countyName} county case`);
+  }
+
+  // ========================================================================
+  // PASS 3: Government Domain Preference Queries
+  // ========================================================================
+
+  // .gov domain searches (highest trust)
+  queries.push(`"${name}" site:*.gov court`);
+  queries.push(`"${name}" site:*.gov case`);
+
+  if (state) {
+    queries.push(`"${name}" site:*.${US_STATES[state]?.toLowerCase() || state}.gov`);
+    queries.push(`"${name}" ${state} site:*.gov`);
+  }
+
+  // ========================================================================
+  // PASS 4: Specific Record Type Searches
+  // ========================================================================
+
+  // Court case searches
+  queries.push(`"${name}" court case`);
+  queries.push(`"${name}" lawsuit`);
+  queries.push(`"${name}" defendant`);
+  queries.push(`"${name}" plaintiff`);
+
+  // Criminal/arrest searches
+  queries.push(`"${name}" arrest record`);
+  queries.push(`"${name}" mugshot`);
+  queries.push(`"${name}" criminal record`);
+  queries.push(`"${name}" booking`);
+
+  // Inmate/jail searches
+  queries.push(`"${name}" inmate`);
+  queries.push(`"${name}" jail`);
+  queries.push(`"${name}" prison`);
+
+  // With middle initial for disambiguation
+  if (fullNameWithMiddle) {
+    queries.push(`"${fullNameWithMiddle}" court case`);
+    queries.push(`"${fullNameWithMiddle}" arrest`);
+    if (state) {
+      queries.push(`"${fullNameWithMiddle}" ${state} court`);
+    }
+    if (countyName) {
+      queries.push(`"${fullNameWithMiddle}" ${countyName} county`);
+    }
+  }
+
+  // ========================================================================
+  // PASS 5: Age/Birth Year Disambiguation (if available)
+  // ========================================================================
+
+  if (birthYear) {
+    queries.push(`"${name}" ${birthYear} court`);
+    queries.push(`"${name}" DOB ${birthYear}`);
+    if (state) {
+      queries.push(`"${name}" ${birthYear} ${state}`);
+    }
+  } else if (ageRange) {
+    // Try to derive approximate birth year from age range
+    const currentYear = new Date().getFullYear();
+    const ageMatch = ageRange.match(/(\d+)/);
+    if (ageMatch) {
+      const approxBirthYear = currentYear - parseInt(ageMatch[1]);
+      queries.push(`"${name}" ${approxBirthYear} court`);
+      queries.push(`"${name}" born ${approxBirthYear}`);
+    }
+  }
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+/**
+ * Parse legal portal results from search response
+ * Identifies .gov domains and categorizes portal types
+ *
+ * @param responseText Raw response from search
+ * @param jurisdiction Default jurisdiction context
+ * @returns Array of parsed legal portal results
+ */
+export function parseLegalPortalResults(
+  responseText: string,
+  jurisdiction?: string
+): LegalPortalResult[] {
+  const results: LegalPortalResult[] = [];
+  const seenUrls = new Set<string>();
+
+  // URL extraction pattern
+  const urlPattern = /(https?:\/\/[^\s\)\]\>]+)/g;
+  let match;
+
+  while ((match = urlPattern.exec(responseText)) !== null) {
+    const url = match[1];
+    if (seenUrls.has(url)) continue;
+    seenUrls.add(url);
+
+    const lowerUrl = url.toLowerCase();
+
+    // Determine if this is a legal/court-related URL
+    const isLegalUrl = (
+      lowerUrl.includes("court") ||
+      lowerUrl.includes("judiciary") ||
+      lowerUrl.includes("case") ||
+      lowerUrl.includes("inmate") ||
+      lowerUrl.includes("jail") ||
+      lowerUrl.includes("sheriff") ||
+      lowerUrl.includes("corrections") ||
+      lowerUrl.includes("doc.") ||
+      lowerUrl.includes("pacer") ||
+      lowerUrl.includes("clerk") ||
+      lowerUrl.includes("docket") ||
+      LEGAL_AGGREGATOR_SITES.some(agg => lowerUrl.includes(agg.domain))
+    );
+
+    if (!isLegalUrl) continue;
+
+    // Determine portal type
+    let portalType: LegalPortalType = "aggregator";
+    if (lowerUrl.includes("clerk")) {
+      portalType = "county_clerk";
+    } else if (lowerUrl.includes("circuit")) {
+      portalType = "circuit_court";
+    } else if (lowerUrl.includes("district") && !lowerUrl.includes("fed")) {
+      portalType = "district_court";
+    } else if (lowerUrl.includes("judiciary") || lowerUrl.includes("courts.")) {
+      portalType = "state_judiciary";
+    } else if (lowerUrl.includes("jail") || lowerUrl.includes("roster") || lowerUrl.includes("booking")) {
+      portalType = "jail_roster";
+    } else if (lowerUrl.includes("inmate")) {
+      portalType = "inmate_search";
+    } else if (lowerUrl.includes("corrections") || lowerUrl.includes("doc.")) {
+      portalType = "state_doc";
+    } else if (lowerUrl.includes("pacer") || lowerUrl.includes("uscourts")) {
+      portalType = "federal_court";
+    }
+
+    // Check if .gov domain
+    const isGovDomain = lowerUrl.includes(".gov");
+
+    // Extract portal name from URL
+    let portalName = "Court Records Portal";
+    try {
+      const domain = new URL(url).hostname.replace("www.", "");
+      portalName = domain;
+    } catch {
+      // Keep default
+    }
+
+    // Get context around URL for description
+    const urlIndex = responseText.indexOf(url);
+    const contextStart = Math.max(0, urlIndex - 100);
+    const contextEnd = Math.min(responseText.length, urlIndex + url.length + 100);
+    const context = responseText.slice(contextStart, contextEnd);
+
+    // Extract description from context
+    const description = context
+      .replace(url, "")
+      .replace(/[\n\r]+/g, " ")
+      .trim()
+      .slice(0, 150) || `${portalType.replace(/_/g, " ")} portal`;
+
+    results.push({
+      portalType,
+      portalName,
+      url,
+      jurisdiction: jurisdiction || "Unknown",
+      description,
+      isGovDomain,
+      note: isGovDomain
+        ? "Official government search portal"
+        : "Third-party records aggregator",
+      searchable: true, // Assume searchable unless we know otherwise
+    });
+  }
+
+  // Sort by priority: .gov domains first, then by portal type
+  results.sort((a, b) => {
+    if (a.isGovDomain && !b.isGovDomain) return -1;
+    if (!a.isGovDomain && b.isGovDomain) return 1;
+    return 0;
+  });
+
+  return results;
+}
+
+// ============================================================================
 // EXAMPLE: Dating Queries Generated
 // ============================================================================
 /*

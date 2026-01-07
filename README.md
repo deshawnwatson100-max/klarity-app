@@ -1134,6 +1134,20 @@ Deep Search performs multiple search passes covering all of the following areas:
    - State or federal inmate/DOC lookup pages
    - Publicly available press releases or news articles
    - Official .gov sources when available
+   - **Legal Portal Discovery** (enhanced):
+     - County clerk / court case search portals
+     - State judiciary case lookup portals
+     - Jail roster / inmate search portals
+     - State DOC (Department of Corrections) inmate lookup
+     - Federal court (PACER) search portals
+     - **Results returned as clickable links** the user can open directly
+     - **.gov domains prioritized** and marked as official portals
+     - If a portal is found but cases are not easily indexed, the portal link is still surfaced with a note like: "This is the official search portal for [county/state]."
+   - **Inputs that improve legal/public records pass:**
+     - State (extracted from location or provided directly)
+     - County/region (for county-level court searches)
+     - Middle initial (for name disambiguation)
+     - Age range/birth year (for narrowing results)
 
 4. **Professional and Business Footprint**
    - Company websites and staff bios
