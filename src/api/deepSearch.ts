@@ -1250,6 +1250,465 @@ export function parseLegalPortalResults(
 }
 
 // ============================================================================
+// IMAGES & VISUAL FOOTPRINT CONFIGURATION
+// ============================================================================
+
+/**
+ * Image source types for categorizing where images were found
+ */
+export type ImageSourceType =
+  | "profile_photo"
+  | "social_media"
+  | "news_article"
+  | "professional"
+  | "dating_platform"
+  | "public_directory"
+  | "reverse_image"
+  | "cached_archive"
+  | "other";
+
+/**
+ * An image search result card
+ * Link-first output so user can open sources
+ */
+export interface ImageSearchResult {
+  thumbnailUrl: string; // URL to thumbnail/preview image
+  sourcePageUrl: string; // URL to the page where image was found
+  title?: string; // Page title or image alt text
+  snippet?: string; // Context snippet around the image
+  sourceType: ImageSourceType; // Category of image source
+  sourceDomain: string; // Domain where image was found
+  dimensions?: { width: number; height: number }; // If available
+  similarity?: number; // 0-1 score for dedup (1 = identical)
+  isVerified: boolean; // True if confirmed to match the person
+}
+
+/**
+ * Image search query templates
+ */
+export const IMAGE_SEARCH_QUERY_TEMPLATES = {
+  // Direct name + image searches
+  nameImage: [
+    '"{name}" photo',
+    '"{name}" profile photo',
+    '"{name}" profile picture',
+    '"{name}" headshot',
+    '"{name}" picture',
+  ],
+  // Name + location image searches
+  nameLocationImage: [
+    '"{name}" {location} photo',
+    '"{name}" {location} profile',
+    '"{name}" {location} picture',
+  ],
+  // Username image searches
+  usernameImage: [
+    "{username} profile photo",
+    "{username} profile picture",
+    "{username} avatar",
+    "{username} photo",
+  ],
+  // Platform-specific image searches
+  platformImage: [
+    '"{name}" linkedin photo',
+    '"{name}" facebook profile picture',
+    '"{name}" instagram photo',
+    '"{name}" twitter profile',
+    '"{name}" tiktok profile',
+  ],
+  // Professional/news image searches
+  professionalImage: [
+    '"{name}" speaker photo',
+    '"{name}" company photo',
+    '"{name}" team photo',
+    '"{name}" staff photo',
+    '"{name}" press photo',
+  ],
+  // Dating platform image searches
+  datingImage: [
+    '"{name}" dating profile photo',
+    '"{name}" tinder photo',
+    '"{name}" bumble profile',
+    '"{name}" hinge photo',
+  ],
+} as const;
+
+/**
+ * Known image hosting domains for source type detection
+ */
+export const IMAGE_SOURCE_DOMAINS: Record<string, ImageSourceType> = {
+  // Social media
+  "instagram.com": "social_media",
+  "fbcdn.net": "social_media",
+  "facebook.com": "social_media",
+  "twitter.com": "social_media",
+  "twimg.com": "social_media",
+  "tiktok.com": "social_media",
+  // Professional
+  "linkedin.com": "professional",
+  "licdn.com": "professional",
+  "glassdoor.com": "professional",
+  // Dating
+  "tinder.com": "dating_platform",
+  "bumble.com": "dating_platform",
+  "hinge.co": "dating_platform",
+  "okcupid.com": "dating_platform",
+  "match.com": "dating_platform",
+  // News/media
+  "getty": "news_article",
+  "reuters": "news_article",
+  "ap.org": "news_article",
+  // Archives
+  "archive.org": "cached_archive",
+  "web.archive.org": "cached_archive",
+  "archive.is": "cached_archive",
+  "archive.ph": "cached_archive",
+};
+
+/**
+ * Generate image search queries
+ * Uses name, location, and username for comprehensive image discovery
+ *
+ * @param input Query generator input
+ * @returns Array of image-focused search queries
+ */
+export function generateImageSearchQueries(input: {
+  name: string;
+  location?: string;
+  username?: string;
+  workplace?: string;
+}): string[] {
+  const queries: string[] = [];
+  const { name, location, username, workplace } = input;
+
+  // ========================================================================
+  // PASS 1: Direct Name + Image Searches
+  // ========================================================================
+
+  for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.nameImage) {
+    queries.push(template.replace("{name}", name));
+  }
+
+  // ========================================================================
+  // PASS 2: Name + Location Image Searches
+  // ========================================================================
+
+  if (location) {
+    for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.nameLocationImage) {
+      queries.push(
+        template.replace("{name}", name).replace("{location}", location)
+      );
+    }
+  }
+
+  // ========================================================================
+  // PASS 3: Username Image Searches
+  // ========================================================================
+
+  if (username) {
+    for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.usernameImage) {
+      queries.push(template.replace("{username}", username));
+    }
+
+    // Username variations
+    const variations = generateUsernameVariations(username);
+    for (const variation of variations.slice(0, 3)) {
+      queries.push(`${variation} profile photo`);
+      queries.push(`${variation} avatar`);
+    }
+  }
+
+  // ========================================================================
+  // PASS 4: Platform-Specific Image Searches
+  // ========================================================================
+
+  for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.platformImage) {
+    queries.push(template.replace("{name}", name));
+  }
+
+  // ========================================================================
+  // PASS 5: Professional/News Image Searches
+  // ========================================================================
+
+  for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.professionalImage) {
+    queries.push(template.replace("{name}", name));
+  }
+
+  // Workplace-specific searches
+  if (workplace) {
+    queries.push(`"${name}" ${workplace} photo`);
+    queries.push(`"${name}" ${workplace} headshot`);
+    queries.push(`"${name}" ${workplace} team`);
+  }
+
+  // ========================================================================
+  // PASS 6: Dating Platform Image Searches
+  // ========================================================================
+
+  for (const template of IMAGE_SEARCH_QUERY_TEMPLATES.datingImage) {
+    queries.push(template.replace("{name}", name));
+  }
+
+  // ========================================================================
+  // PASS 7: Archive/Cached Image Searches
+  // ========================================================================
+
+  queries.push(`"${name}" photo site:web.archive.org`);
+  queries.push(`"${name}" profile picture cached`);
+  if (username) {
+    queries.push(`${username} photo site:web.archive.org`);
+    queries.push(`${username} profile cached`);
+  }
+
+  // ========================================================================
+  // PASS 8: Reverse Image Search Pointers
+  // ========================================================================
+
+  // These won't directly do reverse image search but can find discussions about it
+  queries.push(`"${name}" reverse image`);
+  queries.push(`"${name}" image search results`);
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+/**
+ * Detect image source type from URL
+ */
+export function detectImageSourceType(url: string): ImageSourceType {
+  const lowerUrl = url.toLowerCase();
+
+  // Check known domains
+  for (const [domain, sourceType] of Object.entries(IMAGE_SOURCE_DOMAINS)) {
+    if (lowerUrl.includes(domain)) {
+      return sourceType;
+    }
+  }
+
+  // Heuristic detection
+  if (lowerUrl.includes("profile") || lowerUrl.includes("avatar")) {
+    return "profile_photo";
+  }
+  if (lowerUrl.includes("news") || lowerUrl.includes("article")) {
+    return "news_article";
+  }
+  if (lowerUrl.includes("dating") || lowerUrl.includes("tinder") || lowerUrl.includes("bumble")) {
+    return "dating_platform";
+  }
+  if (lowerUrl.includes("linkedin") || lowerUrl.includes("company") || lowerUrl.includes("corporate")) {
+    return "professional";
+  }
+
+  return "other";
+}
+
+/**
+ * Extract domain from URL
+ */
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace("www.", "");
+  } catch {
+    // Try to extract domain from malformed URL
+    const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^\/\s]+)/i);
+    return match ? match[1] : "unknown";
+  }
+}
+
+/**
+ * Simple image URL similarity check based on URL structure
+ * Returns a similarity score 0-1
+ */
+function calculateImageSimilarity(url1: string, url2: string): number {
+  const lower1 = url1.toLowerCase();
+  const lower2 = url2.toLowerCase();
+
+  // Exact match
+  if (lower1 === lower2) return 1.0;
+
+  // Same domain + similar path
+  const domain1 = extractDomain(url1);
+  const domain2 = extractDomain(url2);
+
+  if (domain1 !== domain2) return 0;
+
+  // Extract image filename
+  const filename1 = url1.split("/").pop()?.split("?")[0] || "";
+  const filename2 = url2.split("/").pop()?.split("?")[0] || "";
+
+  if (filename1 === filename2) return 0.95;
+
+  // Check for resized versions (common patterns)
+  const baseFilename1 = filename1.replace(/[-_]\d+x\d+/g, "").replace(/[-_](small|medium|large|thumb)/gi, "");
+  const baseFilename2 = filename2.replace(/[-_]\d+x\d+/g, "").replace(/[-_](small|medium|large|thumb)/gi, "");
+
+  if (baseFilename1 === baseFilename2) return 0.9;
+
+  return 0;
+}
+
+/**
+ * Parse image search results from search response
+ * Extracts image URLs, source pages, and metadata
+ * De-duplicates near-identical images
+ *
+ * @param responseText Raw response from search
+ * @param personName Name being searched for context
+ * @returns Array of parsed image results
+ */
+export function parseImageSearchResults(
+  responseText: string,
+  personName: string
+): ImageSearchResult[] {
+  const results: ImageSearchResult[] = [];
+  const seenImageUrls = new Set<string>();
+
+  // Pattern to find image URLs (common image extensions and CDN patterns)
+  const imageUrlPattern = /(https?:\/\/[^\s\)\]\>]+\.(?:jpg|jpeg|png|gif|webp|bmp)(?:\?[^\s\)\]\>]*)?)/gi;
+
+  // Pattern to find page URLs that might contain images
+  const pageUrlPattern = /(https?:\/\/[^\s\)\]\>]+)/g;
+
+  // Extract direct image URLs
+  let match;
+  while ((match = imageUrlPattern.exec(responseText)) !== null) {
+    const imageUrl = match[1];
+    if (seenImageUrls.has(imageUrl.toLowerCase())) continue;
+
+    // Check similarity with existing results
+    let isDuplicate = false;
+    for (const existing of results) {
+      const similarity = calculateImageSimilarity(imageUrl, existing.thumbnailUrl);
+      if (similarity > 0.85) {
+        isDuplicate = true;
+        break;
+      }
+    }
+
+    if (isDuplicate) continue;
+    seenImageUrls.add(imageUrl.toLowerCase());
+
+    // Get context around the URL
+    const urlIndex = responseText.indexOf(imageUrl);
+    const contextStart = Math.max(0, urlIndex - 150);
+    const contextEnd = Math.min(responseText.length, urlIndex + imageUrl.length + 150);
+    const context = responseText.slice(contextStart, contextEnd);
+
+    // Try to extract title from context
+    const titleMatch = context.match(/(?:title|alt|caption)[:\s]*["']?([^"'\n]+)["']?/i);
+    const title = titleMatch ? titleMatch[1].trim().slice(0, 100) : undefined;
+
+    // Extract snippet (text around the URL)
+    const snippet = context
+      .replace(imageUrl, "")
+      .replace(/[\n\r]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 200) || undefined;
+
+    const sourceDomain = extractDomain(imageUrl);
+    const sourceType = detectImageSourceType(imageUrl);
+
+    // Check if image appears to be verified (name mentioned in context)
+    const nameParts = personName.toLowerCase().split(/\s+/);
+    const contextLower = context.toLowerCase();
+    const isVerified = nameParts.some(part => part.length > 2 && contextLower.includes(part));
+
+    results.push({
+      thumbnailUrl: imageUrl,
+      sourcePageUrl: imageUrl, // Will be updated if we find the page URL
+      title,
+      snippet,
+      sourceType,
+      sourceDomain,
+      isVerified,
+    });
+  }
+
+  // Also look for page URLs that might be image sources
+  const pageUrls: string[] = [];
+  while ((match = pageUrlPattern.exec(responseText)) !== null) {
+    const url = match[1];
+    // Skip if it's already an image URL
+    if (/\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(url)) continue;
+
+    // Check if this looks like an image source page
+    const lowerUrl = url.toLowerCase();
+    const isImagePage = (
+      lowerUrl.includes("photo") ||
+      lowerUrl.includes("image") ||
+      lowerUrl.includes("picture") ||
+      lowerUrl.includes("profile") ||
+      lowerUrl.includes("gallery") ||
+      lowerUrl.includes("/p/") || // Instagram pattern
+      lowerUrl.includes("/status/") // Twitter pattern
+    );
+
+    if (isImagePage && !seenImageUrls.has(url.toLowerCase())) {
+      pageUrls.push(url);
+    }
+  }
+
+  // Add page URLs as potential image sources (without direct thumbnail)
+  for (const pageUrl of pageUrls.slice(0, 10)) {
+    const sourceDomain = extractDomain(pageUrl);
+    const sourceType = detectImageSourceType(pageUrl);
+
+    // Get context
+    const urlIndex = responseText.indexOf(pageUrl);
+    const contextStart = Math.max(0, urlIndex - 100);
+    const contextEnd = Math.min(responseText.length, urlIndex + pageUrl.length + 100);
+    const context = responseText.slice(contextStart, contextEnd);
+
+    const snippet = context
+      .replace(pageUrl, "")
+      .replace(/[\n\r]+/g, " ")
+      .trim()
+      .slice(0, 150) || undefined;
+
+    const nameParts = personName.toLowerCase().split(/\s+/);
+    const contextLower = context.toLowerCase();
+    const isVerified = nameParts.some(part => part.length > 2 && contextLower.includes(part));
+
+    results.push({
+      thumbnailUrl: "", // No direct thumbnail available
+      sourcePageUrl: pageUrl,
+      title: `Image source on ${sourceDomain}`,
+      snippet,
+      sourceType,
+      sourceDomain,
+      isVerified,
+    });
+  }
+
+  // Sort results: verified first, then by source type priority
+  const sourceTypePriority: Record<ImageSourceType, number> = {
+    profile_photo: 1,
+    professional: 2,
+    social_media: 3,
+    dating_platform: 4,
+    news_article: 5,
+    public_directory: 6,
+    reverse_image: 7,
+    cached_archive: 8,
+    other: 9,
+  };
+
+  results.sort((a, b) => {
+    // Verified images first
+    if (a.isVerified && !b.isVerified) return -1;
+    if (!a.isVerified && b.isVerified) return 1;
+
+    // Then by source type priority
+    return (sourceTypePriority[a.sourceType] || 10) - (sourceTypePriority[b.sourceType] || 10);
+  });
+
+  // Limit to top results
+  return results.slice(0, 20);
+}
+
+// ============================================================================
 // EXAMPLE: Dating Queries Generated
 // ============================================================================
 /*
@@ -1605,6 +2064,7 @@ export interface QueryGeneratorInput {
   aliases?: string[];
   county?: string;
   previousLocation?: string;
+  professionalInfo?: string; // Company, business, or professional role
 }
 
 /**

@@ -38,6 +38,9 @@ import {
   LegalPortalResult,
   extractStateFromLocation,
   extractCounty,
+  generateImageSearchQueries,
+  parseImageSearchResults,
+  ImageSearchResult,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -59,7 +62,8 @@ export enum SearchPass {
   USERNAME_EXPANDED = 4,      // Pass 4: username variations + additional platforms
   DATING_MIRRORS = 5,         // Pass 5: dating keywords + mirrors/caches
   LEGAL_RECORDS = 6,          // Pass 6: legal/public records portal discovery
-  ARCHIVED_CACHED = 7,        // Pass 7: archived/cached pages
+  IMAGES_VISUAL = 7,          // Pass 7: images & visual footprint
+  ARCHIVED_CACHED = 8,        // Pass 8: archived/cached pages
 }
 
 export interface PassConfig {
@@ -80,7 +84,8 @@ export interface PassConfig {
  * 4. USERNAME_EXPANDED - Username variations and additional platforms
  * 5. DATING_MIRRORS - Dating-focused
  * 6. LEGAL_RECORDS - Court and public records
- * 7. ARCHIVED_CACHED - Archive.org and cached pages
+ * 7. IMAGES_VISUAL - Images & visual footprint
+ * 8. ARCHIVED_CACHED - Archive.org and cached pages
  */
 const PASS_CONFIGS: PassConfig[] = [
   {
@@ -298,6 +303,33 @@ const PASS_CONFIGS: PassConfig[] = [
     },
   },
   {
+    pass: SearchPass.IMAGES_VISUAL,
+    name: "Images & Visual Footprint",
+    description: "Profile photos, image search, visual presence across platforms",
+    generateQueries: (input) => {
+      const { name, location, username, professionalInfo } = input;
+      if (!name) return [];
+
+      // Use the comprehensive image search query generator
+      // This includes:
+      // - Direct name + image searches
+      // - Name + location image searches
+      // - Username image searches
+      // - Platform-specific image searches (LinkedIn, Facebook, Instagram, etc.)
+      // - Professional/news image searches
+      // - Dating platform image searches
+      // - Archive/cached image searches
+      const queries = generateImageSearchQueries({
+        name,
+        location,
+        username,
+        workplace: professionalInfo,
+      });
+
+      return queries;
+    },
+  },
+  {
     pass: SearchPass.ARCHIVED_CACHED,
     name: "Archived & Cached",
     description: "Wayback Machine, cached pages, and deleted content",
@@ -425,6 +457,8 @@ export interface MultiPassResult {
   stopReason?: string;
   // Legal portal results (link-first output for user to explore)
   legalPortals: LegalPortalResult[];
+  // Image search results (link-first with thumbnails for preview)
+  imageResults: ImageSearchResult[];
 }
 
 export interface PassResult {
@@ -593,9 +627,13 @@ export async function executeMultiPassSearch(
   const jurisdiction = [countyName, state].filter(Boolean).join(", ") || undefined;
   const legalPortals = parseLegalPortalResults(allRawResponses.join("\n"), jurisdiction);
 
+  // Extract image search results from raw responses
+  const imageResults = parseImageSearchResults(allRawResponses.join("\n"), input.name);
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
   console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
   console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
+  console.log(`[MultiPass] Image results found:`, imageResults.length);
 
   return {
     finalResult,
@@ -606,6 +644,7 @@ export async function executeMultiPassSearch(
     stoppedEarly,
     stopReason,
     legalPortals,
+    imageResults,
   };
 }
 

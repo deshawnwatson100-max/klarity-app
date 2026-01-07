@@ -1164,6 +1164,21 @@ Deep Search performs multiple search passes covering all of the following areas:
    - Public profile photos reused across platforms
    - Image search results and thumbnails
    - Archived or cached image pages
+   - **Image Search Discovery** (enhanced):
+     - Direct name + image searches (profile photo, headshot, picture)
+     - Name + location image searches
+     - Username/handle image searches with variations
+     - Platform-specific image searches (LinkedIn, Facebook, Instagram, Twitter, TikTok)
+     - Professional/news image searches (speaker photo, company photo, press photo)
+     - Dating platform image searches (Tinder, Bumble, Hinge photos)
+     - Archive/cached image searches
+     - **Results returned as image cards** with:
+       - Thumbnail URL (when available)
+       - Source page URL (link-first for user to open)
+       - Title/snippet if available
+       - Source type categorization (profile_photo, social_media, professional, dating_platform, etc.)
+     - **Near-duplicate image detection** to reduce redundant results
+     - Images sorted by: verified matches first, then by source type priority
 
 7. **Public Writing and Comments**
    - Blog posts, Medium articles, guest posts
