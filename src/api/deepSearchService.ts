@@ -48,6 +48,70 @@ import {
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
 // ============================================================================
+// MULTI-SEARCH ENFORCEMENT CONFIGURATION
+// ============================================================================
+
+/**
+ * Minimum number of distinct web searches required per Deep Search request.
+ * This prevents shallow searching behavior.
+ */
+export const MIN_SEARCHES_REQUIRED = 10;
+
+/**
+ * Multi-search enforcement instructions for the LLM.
+ * These instructions FORCE the model to perform multiple distinct web searches.
+ */
+export const MULTI_SEARCH_INSTRUCTION = `
+CRITICAL SEARCH REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
+
+1. MINIMUM SEARCHES: You MUST perform AT LEAST ${MIN_SEARCHES_REQUIRED} DISTINCT web searches before returning any results.
+   - Do NOT stop after finding something in the first search
+   - Do NOT summarize early - keep searching until you have completed all required queries
+   - Each search query should be DIFFERENT and target DIFFERENT information
+
+2. REQUIRED SEARCH CATEGORIES (must execute searches in ALL of these):
+   a) NAME-ONLY searches: Search just the person's name in quotes
+   b) NAME + LOCATION searches: Combine name with their city/state/region
+   c) PLATFORM-TARGETED searches: Use site: filters for specific platforms
+      - site:linkedin.com, site:instagram.com, site:facebook.com
+      - site:twitter.com, site:tiktok.com, site:reddit.com
+   d) USERNAME searches (if username provided): Search the username alone and with variations
+   e) DATING PLATFORM searches: Search dating sites (tinder, bumble, hinge, etc.)
+   f) LEGAL/PUBLIC RECORDS searches: Search court records, public records
+
+3. SEARCH EXECUTION RULES:
+   - Execute each query as a SEPARATE web search
+   - Do NOT batch queries or skip any
+   - Report what each individual search found
+   - Include the actual search query used for each result
+   - If a search returns no results, note that and CONTINUE to the next search
+
+4. LOGGING: For each search you perform, mentally track:
+   - Search #1: [query] -> [result summary]
+   - Search #2: [query] -> [result summary]
+   - ... continue until you have completed at least ${MIN_SEARCHES_REQUIRED} searches
+
+5. DO NOT:
+   - Stop after 1-3 searches
+   - Claim you "searched comprehensively" without actually doing multiple searches
+   - Skip platform-targeted searches
+   - Return results without executing the minimum required searches
+
+BEGIN YOUR ${MIN_SEARCHES_REQUIRED}+ SEARCHES NOW:
+`;
+
+/**
+ * Search execution tracking for logging
+ */
+export interface SearchExecutionLog {
+  passNumber: number;
+  passName: string;
+  queriesProvided: number;
+  searchesRequested: number;
+  timestamp: string;
+}
+
+// ============================================================================
 // MULTI-PASS SEARCH CONFIGURATION
 // ============================================================================
 
@@ -506,8 +570,16 @@ export async function executeMultiPassSearch(
     const uniqueQueries = [...new Set(passQueries)];
     console.log(`[MultiPass] Pass ${passNumber} queries (${uniqueQueries.length}):`, uniqueQueries.slice(0, 5));
 
-    // Execute search for this pass
-    const passResponse = await callPassSearch(uniqueQueries, input.name);
+    // Execute search for this pass (with multi-search enforcement)
+    const passSearchResult = await callPassSearch(uniqueQueries, input.name, passConfig.name);
+    const passResponse = passSearchResult.content;
+
+    // Log search execution metrics
+    console.log(`[MultiPass] Pass ${passNumber} search metrics:`, {
+      queriesProvided: uniqueQueries.length,
+      searchesExecuted: passSearchResult.searchesExecuted,
+      meetsMinimum: passSearchResult.searchesExecuted >= MIN_SEARCHES_REQUIRED,
+    });
 
     if (passResponse) {
       allRawResponses.push(passResponse);
@@ -642,20 +714,62 @@ export async function executeMultiPassSearch(
 }
 
 /**
- * Executes a single pass search with the given queries
+ * Executes a single pass search with the given queries.
+ * ENFORCES multi-search behavior - the model MUST execute multiple distinct searches.
+ *
+ * @param queries - Array of search queries to execute
+ * @param personName - Name of the person being searched
+ * @param passName - Name of the current pass (for logging)
+ * @returns Search results or null if failed
  */
-async function callPassSearch(queries: string[], personName: string): Promise<string | null> {
+async function callPassSearch(
+  queries: string[],
+  personName: string,
+  passName: string = "Search"
+): Promise<{ content: string | null; searchesExecuted: number }> {
   const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { content: null, searchesExecuted: 0 };
 
-  const prompt = `Search for "${personName}" using these specific queries: ${queries.join(", ")}
+  // Ensure we have at least MIN_SEARCHES_REQUIRED queries
+  const minQueries = Math.max(queries.length, MIN_SEARCHES_REQUIRED);
 
-For each query, search and report what you find. Include:
-- Platform/source name
-- Direct URL if found
-- Brief description of what was found
+  // Log search execution start
+  console.log(`[PassSearch:${passName}] Starting with ${queries.length} queries (min required: ${MIN_SEARCHES_REQUIRED})`);
 
-Be thorough but concise. Only report actual findings, not speculation.`;
+  // Build numbered query list for explicit execution tracking
+  const numberedQueries = queries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
+
+  const multiSearchPrompt = `You are performing a Deep Search for "${personName}".
+
+${MULTI_SEARCH_INSTRUCTION}
+
+HERE ARE YOUR REQUIRED SEARCH QUERIES - YOU MUST EXECUTE EACH ONE:
+${numberedQueries}
+
+EXECUTION INSTRUCTIONS:
+1. Execute EACH numbered query above as a SEPARATE web search
+2. For EACH search, report:
+   - The query number and text
+   - What you found (or "No results" if nothing found)
+   - Any URLs discovered
+3. Do NOT skip any queries
+4. Do NOT stop early - complete ALL ${queries.length} searches
+5. After completing all searches, provide a summary organized by category
+
+IMPORTANT: Your response should show evidence of executing each search. Format like:
+
+=== SEARCH RESULTS ===
+
+[Query 1: "${queries[0] || "name search"}"]
+Results: [what you found]
+
+[Query 2: "${queries[1] || "location search"}"]
+Results: [what you found]
+
+... continue for ALL queries ...
+
+=== SUMMARY ===
+[Organized findings by category]`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -669,15 +783,19 @@ Be thorough but concise. Only report actual findings, not speculation.`;
         messages: [
           {
             role: "system",
-            content: "You are a research assistant that searches the web for publicly available information. Report only what you actually find through web search. Include URLs when available.",
+            content: `You are a thorough research assistant that MUST perform multiple distinct web searches.
+You are NOT allowed to stop after one search. You MUST execute at least ${MIN_SEARCHES_REQUIRED} different search queries.
+Each search should target different information: name variations, locations, specific platforms, usernames, etc.
+Report what each individual search found. Include actual URLs when available.
+DO NOT make up or hallucinate information - only report what you actually find.`,
           },
           {
             role: "user",
-            content: prompt,
+            content: multiSearchPrompt,
           },
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 4000, // Increased to accommodate multiple search results
         web_search_options: {
           search_context_size: "high",
         },
@@ -685,16 +803,72 @@ Be thorough but concise. Only report actual findings, not speculation.`;
     });
 
     if (!response.ok) {
-      console.log(`[PassSearch] API error: ${response.status}`);
-      return null;
+      const errorText = await response.text();
+      console.log(`[PassSearch:${passName}] API error: ${response.status}`, errorText);
+      return { content: null, searchesExecuted: 0 };
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
+    const content = data.choices?.[0]?.message?.content || null;
+
+    // Estimate searches executed by counting query references in response
+    const searchesExecuted = estimateSearchesExecuted(content, queries);
+
+    console.log(`[PassSearch:${passName}] Completed. Estimated searches executed: ${searchesExecuted}/${queries.length}`);
+
+    if (searchesExecuted < MIN_SEARCHES_REQUIRED) {
+      console.warn(`[PassSearch:${passName}] WARNING: Only ${searchesExecuted} searches detected, minimum is ${MIN_SEARCHES_REQUIRED}`);
+    }
+
+    return { content, searchesExecuted };
   } catch (error) {
-    console.error("[PassSearch] Error:", error);
-    return null;
+    console.error(`[PassSearch:${passName}] Error:`, error);
+    return { content: null, searchesExecuted: 0 };
   }
+}
+
+/**
+ * Estimates how many searches were actually executed based on response content.
+ * Looks for query patterns, result markers, and URL counts.
+ */
+function estimateSearchesExecuted(content: string | null, queries: string[]): number {
+  if (!content) return 0;
+
+  let count = 0;
+
+  // Count explicit query references (e.g., "[Query 1:", "Search #1:")
+  const queryPatterns = [
+    /\[Query \d+/gi,
+    /Search #\d+/gi,
+    /Query \d+:/gi,
+    /\d+\.\s*[""][^""]+[""]/g, // Numbered quoted queries
+  ];
+
+  for (const pattern of queryPatterns) {
+    const matches = content.match(pattern);
+    if (matches) {
+      count = Math.max(count, matches.length);
+    }
+  }
+
+  // Also count how many of the original queries are mentioned
+  let queryMentions = 0;
+  for (const query of queries) {
+    // Check for key parts of the query (first few words)
+    const keyPart = query.split(" ").slice(0, 3).join(" ").toLowerCase();
+    if (content.toLowerCase().includes(keyPart)) {
+      queryMentions++;
+    }
+  }
+
+  // Count URLs found (indicates actual searches)
+  const urlMatches = content.match(/https?:\/\/[^\s\)\]\>]+/g);
+  const urlCount = urlMatches ? urlMatches.length : 0;
+
+  // Use the highest indicator
+  const estimated = Math.max(count, queryMentions, Math.ceil(urlCount / 2));
+
+  return estimated;
 }
 
 // ============================================================================
@@ -835,6 +1009,7 @@ interface LLMCallParams {
 /**
  * Calls the OpenAI Responses API with web search capability
  * This uses the newer Responses API with built-in web_search tool
+ * ENFORCES multi-search behavior through explicit instructions
  */
 async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> {
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
@@ -846,7 +1021,27 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
     return null;
   }
 
-  console.log("[DeepSearch] Starting search with queries:", searchQueries.slice(0, 5));
+  // Build numbered query list for explicit multi-search enforcement
+  const numberedQueries = searchQueries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
+
+  console.log(`[DeepSearch] Starting search with ${searchQueries.length} queries (min required: ${MIN_SEARCHES_REQUIRED})`);
+  console.log("[DeepSearch] Sample queries:", searchQueries.slice(0, 5));
+
+  // Enhanced instructions with multi-search enforcement
+  const enhancedInstructions = `${systemPrompt}
+
+${developerPrompt}
+
+${MULTI_SEARCH_INSTRUCTION}`;
+
+  // Enhanced input with explicit query list
+  const enhancedInput = `${userPrompt}
+
+=== REQUIRED SEARCH QUERIES (EXECUTE ALL) ===
+${numberedQueries}
+
+IMPORTANT: Execute EACH query above as a separate web search. Do not stop after finding something - complete ALL searches.
+Total searches required: ${Math.max(searchQueries.length, MIN_SEARCHES_REQUIRED)}`;
 
   try {
     // Use OpenAI Responses API with web_search tool for real internet search
@@ -858,8 +1053,8 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        instructions: `${systemPrompt}\n\n${developerPrompt}`,
-        input: `${userPrompt}\n\nSearch queries to use: ${searchQueries.join(", ")}`,
+        instructions: enhancedInstructions,
+        input: enhancedInput,
         tools: [
           {
             type: "web_search",
@@ -903,6 +1098,9 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
 
         if (textContent) {
           console.log("[DeepSearch] Extracted text content length:", textContent.length);
+          // Log estimated searches executed
+          const searchesExecuted = estimateSearchesExecuted(textContent, searchQueries);
+          console.log(`[DeepSearch] Estimated searches executed: ${searchesExecuted}/${searchQueries.length}`);
           return textContent;
         }
       }
@@ -932,6 +1130,7 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
 
 /**
  * Fallback to Chat Completions API if Responses API is not available
+ * ENFORCES multi-search behavior through explicit instructions
  */
 async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string | null> {
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
@@ -942,17 +1141,47 @@ async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string 
     return null;
   }
 
-  console.log("[DeepSearch Fallback] Attempting with gpt-4o-search-preview...");
+  // Build numbered query list for explicit multi-search enforcement
+  const numberedQueries = searchQueries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
+
+  console.log(`[DeepSearch Fallback] Attempting with gpt-4o-search-preview... (${searchQueries.length} queries)`);
 
   try {
+    // Enhanced system prompt with multi-search enforcement
+    const enhancedSystemPrompt = `${systemPrompt}
+
+${MULTI_SEARCH_INSTRUCTION}
+
+IMPORTANT: You must search the internet to find real, current information about this person.
+Do not make up or hallucinate any information. Only report what you can actually find through web search.
+Include actual URLs to profiles you discover.
+You MUST execute at least ${MIN_SEARCHES_REQUIRED} distinct web searches before responding.`;
+
+    // Enhanced user prompt with explicit query list
+    const enhancedUserPrompt = `${userPrompt}
+
+=== REQUIRED SEARCH QUERIES (EXECUTE ALL) ===
+${numberedQueries}
+
+INSTRUCTIONS:
+1. Execute EACH numbered query above as a SEPARATE web search
+2. Do NOT stop after 1-3 searches - complete ALL queries
+3. For each search, report what you found or "No results found"
+4. Include actual URLs to profiles you discover
+5. After completing all searches, organize findings by category
+
+Total searches required: ${Math.max(searchQueries.length, MIN_SEARCHES_REQUIRED)}
+
+BEGIN SEARCHING NOW:`;
+
     const messages = [
       {
         role: "system",
-        content: `${systemPrompt}\n\nIMPORTANT: You must search the internet to find real, current information about this person. Do not make up or hallucinate any information. Only report what you can actually find through web search. Include actual URLs to profiles you discover.`,
+        content: enhancedSystemPrompt,
       },
       {
         role: "user",
-        content: `${userPrompt}\n\nSearch queries to use: ${searchQueries.join(", ")}\n\nPlease search the web for this person and report what you find. Include actual URLs to profiles you discover.`,
+        content: enhancedUserPrompt,
       },
     ];
 
@@ -981,6 +1210,9 @@ async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string 
       const content = data.choices?.[0]?.message?.content;
       if (content) {
         console.log("[DeepSearch Fallback] Got response, length:", content.length);
+        // Log estimated searches executed
+        const searchesExecuted = estimateSearchesExecuted(content, searchQueries);
+        console.log(`[DeepSearch Fallback] Estimated searches executed: ${searchesExecuted}/${searchQueries.length}`);
         return content;
       }
     }

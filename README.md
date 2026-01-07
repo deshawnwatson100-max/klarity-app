@@ -1230,6 +1230,29 @@ The search uses multiple query variations:
 - Each known username independently
 - Aliases if provided
 
+**Multi-Search Enforcement (Prevents Shallow Searching):**
+Deep Search is configured to REQUIRE multiple distinct web searches per request:
+- **Minimum 10 searches** required per search pass
+- **Required search categories** per pass:
+  - Name-only searches
+  - Name + location searches
+  - Platform-targeted searches (using site: filters)
+  - Username-only searches (if username provided)
+  - Dating platform searches
+  - Legal/public records searches
+- **Search execution logging** tracks:
+  - Number of queries provided
+  - Estimated searches executed
+  - Whether minimum threshold was met
+- **Explicit instructions** prevent the model from:
+  - Stopping after 1-3 searches
+  - Claiming "comprehensive search" without executing queries
+  - Skipping platform-targeted searches
+- **Console logging** shows search metrics:
+  - `[PassSearch:PassName] Starting with X queries (min required: 10)`
+  - `[PassSearch:PassName] Completed. Estimated searches executed: X/Y`
+  - `[MultiPass] Pass N search metrics: { queriesProvided, searchesExecuted, meetsMinimum }`
+
 **Key Framing Rules:**
 - Finding something does not mean it is bad
 - Not finding something does not mean it does not exist
