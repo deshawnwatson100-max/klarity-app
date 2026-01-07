@@ -1709,6 +1709,515 @@ export function parseImageSearchResults(
 }
 
 // ============================================================================
+// ARCHIVED PAGE TYPES
+// ============================================================================
+
+/**
+ * Archive source type - which archive service provided the snapshot
+ */
+export type ArchiveSourceType =
+  | "wayback_machine" // web.archive.org
+  | "archive_is" // archive.is / archive.ph
+  | "google_cache" // webcache.googleusercontent.com
+  | "cached_page" // generic cached/mirror
+  | "other";
+
+/**
+ * An archived/cached page result card
+ * Link-first output - provides direct links to archived snapshots
+ * Results are labeled as "archived snapshots" to distinguish from live pages
+ */
+export interface ArchivedPageResult {
+  archiveUrl: string; // Direct link to the archived page (Wayback, archive.is, etc.)
+  originalUrl: string; // The original URL that was archived
+  snapshotDate?: string; // When the snapshot was taken (ISO date if available)
+  snapshotLabel: string; // Human-readable label, e.g., "Archived snapshot from March 2023"
+  title?: string; // Page title if available
+  description?: string; // Brief description of what was found
+  archiveSource: ArchiveSourceType; // Which archive service
+  contentType?: "profile" | "post" | "article" | "page" | "image" | "other"; // What kind of content
+  isVerified: boolean; // True if content appears to match the search subject
+}
+
+/**
+ * Archive-focused query templates
+ */
+export const ARCHIVE_SEARCH_QUERY_TEMPLATES = {
+  // Wayback Machine searches
+  waybackMachine: [
+    '"{name}" site:web.archive.org',
+    '"{name}" {location} site:web.archive.org',
+    "{username} site:web.archive.org",
+  ],
+  // Archive.is / Archive.ph searches
+  archiveIs: [
+    '"{name}" site:archive.is',
+    '"{name}" site:archive.ph',
+    "{username} site:archive.is",
+    "{username} site:archive.ph",
+  ],
+  // General cached/archive searches
+  cachedSearches: [
+    '"{name}" cached profile',
+    '"{name}" archived profile',
+    '"{name}" deleted profile',
+    "{username} cached",
+    "{username} archived",
+    "{username} deleted",
+  ],
+  // Profile URL archive searches (when known URLs are discovered)
+  profileArchive: [
+    "site:web.archive.org/{profileUrl}",
+    "site:archive.is/{profileUrl}",
+  ],
+} as const;
+
+/**
+ * Known archive service domains for source detection
+ */
+export const ARCHIVE_SERVICE_DOMAINS: Record<string, ArchiveSourceType> = {
+  "web.archive.org": "wayback_machine",
+  "archive.org": "wayback_machine",
+  "archive.is": "archive_is",
+  "archive.ph": "archive_is",
+  "archive.today": "archive_is",
+  "archive.li": "archive_is",
+  "archive.vn": "archive_is",
+  "archive.md": "archive_is",
+  "webcache.googleusercontent.com": "google_cache",
+  "cachedview.com": "cached_page",
+  "cachedpages.com": "cached_page",
+};
+
+/**
+ * Generate archive search queries
+ * Searches web.archive.org, archive.is, and other archive services
+ * for snapshots of pages related to the person
+ *
+ * @param input Query generator input with name, location, username, and optional discovered URLs
+ * @returns Array of archive-focused search queries
+ */
+export function generateArchiveSearchQueries(input: {
+  name: string;
+  location?: string;
+  username?: string;
+  discoveredProfileUrls?: string[]; // URLs discovered in earlier passes
+}): string[] {
+  const queries: string[] = [];
+  const { name, location, username, discoveredProfileUrls } = input;
+
+  // ========================================================================
+  // PASS 1: Wayback Machine Searches
+  // ========================================================================
+
+  // Name + site:web.archive.org
+  queries.push(`"${name}" site:web.archive.org`);
+
+  // Name + location + Wayback
+  if (location) {
+    queries.push(`"${name}" ${location} site:web.archive.org`);
+  }
+
+  // Username + Wayback
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    queries.push(`${cleanUsername} site:web.archive.org`);
+    queries.push(`"${cleanUsername}" profile site:web.archive.org`);
+  }
+
+  // ========================================================================
+  // PASS 2: Archive.is / Archive.ph Searches
+  // ========================================================================
+
+  queries.push(`"${name}" site:archive.is`);
+  queries.push(`"${name}" site:archive.ph`);
+
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    queries.push(`${cleanUsername} site:archive.is`);
+    queries.push(`${cleanUsername} site:archive.ph`);
+  }
+
+  // ========================================================================
+  // PASS 3: General Cached/Archived Page Searches
+  // ========================================================================
+
+  queries.push(`"${name}" cached profile`);
+  queries.push(`"${name}" archived profile`);
+  queries.push(`"${name}" deleted profile`);
+  queries.push(`"${name}" old profile`);
+
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    queries.push(`${cleanUsername} cached`);
+    queries.push(`${cleanUsername} archived`);
+    queries.push(`${cleanUsername} deleted account`);
+  }
+
+  // ========================================================================
+  // PASS 4: Discovered Profile URL Archive Searches
+  // ========================================================================
+
+  if (discoveredProfileUrls && discoveredProfileUrls.length > 0) {
+    // For each discovered URL, search for archived versions
+    for (const url of discoveredProfileUrls.slice(0, 5)) {
+      // Limit to first 5
+      // Extract domain and path for archive searches
+      try {
+        const urlObj = new URL(url);
+        const pathForSearch = urlObj.hostname + urlObj.pathname;
+
+        // Search Wayback Machine for this specific URL
+        queries.push(`site:web.archive.org "${pathForSearch}"`);
+        queries.push(`site:web.archive.org/${urlObj.hostname}${urlObj.pathname}`);
+
+        // Search archive.is for this URL
+        queries.push(`site:archive.is "${pathForSearch}"`);
+      } catch {
+        // If URL parsing fails, use as-is
+        queries.push(`"${url}" site:web.archive.org`);
+      }
+    }
+  }
+
+  // ========================================================================
+  // PASS 5: Platform-Specific Archive Searches
+  // ========================================================================
+
+  // Social media archives
+  const socialPlatforms = [
+    "instagram.com",
+    "facebook.com",
+    "twitter.com",
+    "linkedin.com",
+    "tiktok.com",
+  ];
+
+  for (const platform of socialPlatforms) {
+    queries.push(`"${name}" site:web.archive.org/${platform}`);
+  }
+
+  // Dating platform archives
+  const datingPlatforms = [
+    "tinder.com",
+    "bumble.com",
+    "hinge.co",
+    "okcupid.com",
+    "match.com",
+  ];
+
+  for (const platform of datingPlatforms) {
+    queries.push(`"${name}" site:web.archive.org/${platform}`);
+  }
+
+  if (username) {
+    const cleanUsername = username.replace(/^@/, "");
+    for (const platform of [...socialPlatforms, ...datingPlatforms].slice(0, 5)) {
+      queries.push(`${cleanUsername} site:web.archive.org/${platform}`);
+    }
+  }
+
+  // De-duplicate
+  return [...new Set(queries)];
+}
+
+/**
+ * Detect archive source type from URL
+ */
+function detectArchiveSourceType(url: string): ArchiveSourceType {
+  const lowerUrl = url.toLowerCase();
+
+  for (const [domain, sourceType] of Object.entries(ARCHIVE_SERVICE_DOMAINS)) {
+    if (lowerUrl.includes(domain)) {
+      return sourceType;
+    }
+  }
+
+  // Check for other archive indicators
+  if (lowerUrl.includes("cache") || lowerUrl.includes("cached")) {
+    return "cached_page";
+  }
+
+  return "other";
+}
+
+/**
+ * Extract original URL from an archive URL
+ * e.g., "https://web.archive.org/web/20230315/https://example.com/profile" -> "https://example.com/profile"
+ */
+function extractOriginalUrlFromArchive(archiveUrl: string): string {
+  // Wayback Machine format: web.archive.org/web/TIMESTAMP/ORIGINAL_URL
+  const waybackMatch = archiveUrl.match(
+    /web\.archive\.org\/web\/\d+\/(.+)/i
+  );
+  if (waybackMatch) {
+    return waybackMatch[1];
+  }
+
+  // Archive.is format varies - try to extract
+  const archiveIsMatch = archiveUrl.match(
+    /archive\.(is|ph|today|li|vn|md)\/[^\/]+\/(.+)/i
+  );
+  if (archiveIsMatch) {
+    return archiveIsMatch[2];
+  }
+
+  // Google cache format
+  const googleCacheMatch = archiveUrl.match(
+    /webcache\.googleusercontent\.com\/search\?q=cache:[^:]+:([^&+]+)/i
+  );
+  if (googleCacheMatch) {
+    return decodeURIComponent(googleCacheMatch[1]);
+  }
+
+  return archiveUrl;
+}
+
+/**
+ * Extract snapshot date from archive URL
+ * e.g., "https://web.archive.org/web/20230315120000/..." -> "2023-03-15"
+ */
+function extractSnapshotDate(archiveUrl: string): string | undefined {
+  // Wayback Machine timestamp format: YYYYMMDDHHMMSS
+  const waybackMatch = archiveUrl.match(
+    /web\.archive\.org\/web\/(\d{4})(\d{2})(\d{2})/i
+  );
+  if (waybackMatch) {
+    return `${waybackMatch[1]}-${waybackMatch[2]}-${waybackMatch[3]}`;
+  }
+
+  return undefined;
+}
+
+/**
+ * Format a snapshot date into a human-readable label
+ */
+function formatSnapshotLabel(
+  snapshotDate: string | undefined,
+  archiveSource: ArchiveSourceType
+): string {
+  const sourceLabels: Record<ArchiveSourceType, string> = {
+    wayback_machine: "Wayback Machine",
+    archive_is: "Archive.is",
+    google_cache: "Google Cache",
+    cached_page: "Cached page",
+    other: "Archived page",
+  };
+
+  const sourceLabel = sourceLabels[archiveSource];
+
+  if (snapshotDate) {
+    try {
+      const date = new Date(snapshotDate);
+      const monthYear = date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+      return `Archived snapshot from ${monthYear} (${sourceLabel})`;
+    } catch {
+      return `Archived snapshot (${sourceLabel})`;
+    }
+  }
+
+  return `Archived snapshot (${sourceLabel})`;
+}
+
+/**
+ * Detect content type from URL patterns
+ */
+function detectArchiveContentType(
+  url: string
+): ArchivedPageResult["contentType"] {
+  const lowerUrl = url.toLowerCase();
+
+  if (
+    lowerUrl.includes("/profile") ||
+    lowerUrl.includes("/user/") ||
+    lowerUrl.includes("/u/") ||
+    lowerUrl.includes("/people/") ||
+    lowerUrl.includes("/in/")
+  ) {
+    return "profile";
+  }
+
+  if (
+    lowerUrl.includes("/post") ||
+    lowerUrl.includes("/status/") ||
+    lowerUrl.includes("/p/")
+  ) {
+    return "post";
+  }
+
+  if (
+    lowerUrl.includes("/article") ||
+    lowerUrl.includes("/news/") ||
+    lowerUrl.includes("/blog/")
+  ) {
+    return "article";
+  }
+
+  if (
+    lowerUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i) ||
+    lowerUrl.includes("/photo") ||
+    lowerUrl.includes("/image")
+  ) {
+    return "image";
+  }
+
+  return "page";
+}
+
+/**
+ * Parse archived page results from raw response text
+ * Extracts archive URLs, original URLs, snapshot dates, and labels results
+ *
+ * @param responseText Raw response text containing archive URLs
+ * @param personName Name of the person being searched (for verification)
+ * @returns Array of parsed ArchivedPageResult objects
+ */
+export function parseArchivedPageResults(
+  responseText: string,
+  personName: string
+): ArchivedPageResult[] {
+  const results: ArchivedPageResult[] = [];
+  const seenArchiveUrls = new Set<string>();
+
+  // Pattern to find archive URLs
+  const archiveUrlPattern =
+    /(https?:\/\/(?:web\.archive\.org|archive\.(?:is|ph|today|li|vn|md)|webcache\.googleusercontent\.com)[^\s\)\]\>]+)/gi;
+
+  // Also look for mentions of archived/cached content with URLs
+  const cachedMentionPattern =
+    /(?:cached|archived|snapshot|wayback)[:\s]*(?:version|copy|page)?[:\s]*(https?:\/\/[^\s\)\]\>]+)/gi;
+
+  let match;
+
+  // Extract direct archive URLs
+  while ((match = archiveUrlPattern.exec(responseText)) !== null) {
+    const archiveUrl = match[1].replace(/[.,;:!?]+$/, ""); // Clean trailing punctuation
+
+    if (seenArchiveUrls.has(archiveUrl.toLowerCase())) continue;
+    seenArchiveUrls.add(archiveUrl.toLowerCase());
+
+    const archiveSource = detectArchiveSourceType(archiveUrl);
+    const originalUrl = extractOriginalUrlFromArchive(archiveUrl);
+    const snapshotDate = extractSnapshotDate(archiveUrl);
+    const snapshotLabel = formatSnapshotLabel(snapshotDate, archiveSource);
+    const contentType = detectArchiveContentType(originalUrl);
+
+    // Get context around the URL
+    const urlIndex = responseText.indexOf(archiveUrl);
+    const contextStart = Math.max(0, urlIndex - 150);
+    const contextEnd = Math.min(
+      responseText.length,
+      urlIndex + archiveUrl.length + 150
+    );
+    const context = responseText.slice(contextStart, contextEnd);
+
+    // Try to extract title from context
+    const titleMatch = context.match(
+      /(?:title|name|profile)[:\s]*["']?([^"'\n]{5,80})["']?/i
+    );
+    const title = titleMatch ? titleMatch[1].trim() : undefined;
+
+    // Extract description from surrounding context
+    const description = context
+      .replace(archiveUrl, "")
+      .replace(/[\n\r]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 200) || undefined;
+
+    // Check if content appears to match the person
+    const nameParts = personName.toLowerCase().split(/\s+/);
+    const contextLower = (context + originalUrl).toLowerCase();
+    const isVerified = nameParts.some(
+      (part) => part.length > 2 && contextLower.includes(part)
+    );
+
+    results.push({
+      archiveUrl,
+      originalUrl,
+      snapshotDate,
+      snapshotLabel,
+      title,
+      description,
+      archiveSource,
+      contentType,
+      isVerified,
+    });
+  }
+
+  // Also look for cached mentions with regular URLs
+  while ((match = cachedMentionPattern.exec(responseText)) !== null) {
+    const url = match[1].replace(/[.,;:!?]+$/, "");
+
+    // Skip if it's already an archive URL or we've seen it
+    if (
+      url.includes("archive.org") ||
+      url.includes("archive.is") ||
+      seenArchiveUrls.has(url.toLowerCase())
+    ) {
+      continue;
+    }
+
+    seenArchiveUrls.add(url.toLowerCase());
+
+    // This is a cached mention of a regular URL
+    const urlIndex = responseText.indexOf(url);
+    const contextStart = Math.max(0, urlIndex - 100);
+    const contextEnd = Math.min(responseText.length, urlIndex + url.length + 100);
+    const context = responseText.slice(contextStart, contextEnd);
+
+    const nameParts = personName.toLowerCase().split(/\s+/);
+    const contextLower = (context + url).toLowerCase();
+    const isVerified = nameParts.some(
+      (part) => part.length > 2 && contextLower.includes(part)
+    );
+
+    results.push({
+      archiveUrl: url, // The cached reference
+      originalUrl: url,
+      snapshotDate: undefined,
+      snapshotLabel: "Cached/archived reference",
+      title: undefined,
+      description: context
+        .replace(url, "")
+        .replace(/[\n\r]+/g, " ")
+        .trim()
+        .slice(0, 150) || undefined,
+      archiveSource: "cached_page",
+      contentType: detectArchiveContentType(url),
+      isVerified,
+    });
+  }
+
+  // Sort results: verified first, then Wayback Machine, then others
+  const sourceTypePriority: Record<ArchiveSourceType, number> = {
+    wayback_machine: 1,
+    archive_is: 2,
+    google_cache: 3,
+    cached_page: 4,
+    other: 5,
+  };
+
+  results.sort((a, b) => {
+    // Verified results first
+    if (a.isVerified && !b.isVerified) return -1;
+    if (!a.isVerified && b.isVerified) return 1;
+
+    // Then by archive source priority
+    return (
+      (sourceTypePriority[a.archiveSource] || 10) -
+      (sourceTypePriority[b.archiveSource] || 10)
+    );
+  });
+
+  // Limit to top results
+  return results.slice(0, 15);
+}
+
+// ============================================================================
 // EXAMPLE: Dating Queries Generated
 // ============================================================================
 /*

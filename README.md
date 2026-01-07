@@ -1194,6 +1194,22 @@ Deep Search performs multiple search passes covering all of the following areas:
    - Wayback Machine snapshots
    - Cached search results
    - Deleted but still indexed pages
+   - **Archived Page Discovery** (enhanced):
+     - Wayback Machine searches (web.archive.org) for name, location, and username
+     - Archive.is / Archive.ph searches
+     - General cached/archived page searches (deleted profiles, old profiles)
+     - Platform-specific archive searches (social media and dating platform archives)
+     - **Discovered profile URL archive searches** - When profile URLs are found in earlier passes, searches for archived versions of those specific URLs
+     - **Results returned as archived page cards** with:
+       - Archive URL (direct link to the archived snapshot)
+       - Original URL (the URL that was archived)
+       - Snapshot date (when available, extracted from archive URL)
+       - **Snapshot label** - Human-readable label like "Archived snapshot from March 2023 (Wayback Machine)"
+       - Title and description if available
+       - Archive source type (wayback_machine, archive_is, google_cache, cached_page)
+       - Content type categorization (profile, post, article, page, image)
+     - **Results labeled as "archived snapshots"** to clearly distinguish from live pages
+     - Results sorted by: verified matches first, then by archive source priority (Wayback Machine → Archive.is → Google Cache → Other)
 
 **Optional Inputs for Better Results:**
 The Person Context Card includes optional fields to improve Deep Search accuracy:

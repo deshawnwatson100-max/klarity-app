@@ -41,6 +41,9 @@ import {
   generateImageSearchQueries,
   parseImageSearchResults,
   ImageSearchResult,
+  generateArchiveSearchQueries,
+  parseArchivedPageResults,
+  ArchivedPageResult,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
 
@@ -332,41 +335,24 @@ const PASS_CONFIGS: PassConfig[] = [
   {
     pass: SearchPass.ARCHIVED_CACHED,
     name: "Archived & Cached",
-    description: "Wayback Machine, cached pages, and deleted content",
+    description: "Wayback Machine, archive.is, cached pages, and deleted content",
     generateQueries: (input) => {
-      const queries: string[] = [];
-      const { name, username } = input;
-      if (!name) return queries;
+      const { name, location, username } = input;
+      if (!name) return [];
 
-      // Archive.org
-      queries.push(`"${name}" site:web.archive.org`);
-
-      // Cached pages
-      queries.push(`"${name}" cached`);
-      queries.push(`"${name}" cache:`);
-
-      // Deleted content signals
-      queries.push(`"${name}" deleted profile`);
-      queries.push(`"${name}" old profile`);
-      queries.push(`"${name}" previous account`);
-
-      // Username archives
-      if (username) {
-        const cleanUsername = username.replace(/^@/, "");
-        queries.push(`${cleanUsername} site:web.archive.org`);
-        queries.push(`${cleanUsername} cached`);
-        queries.push(`${cleanUsername} deleted`);
-
-        // Also search username variations in archives
-        const variations = generateUsernameVariations(username);
-        for (const v of variations.slice(0, 3)) {
-          queries.push(`${v.username} site:web.archive.org`);
-        }
-      }
-
-      // Alternative archive sites
-      queries.push(`"${name}" site:archive.is`);
-      queries.push(`"${name}" site:archive.ph`);
+      // Use the comprehensive archive search query generator
+      // This covers:
+      // - Wayback Machine searches (web.archive.org)
+      // - Archive.is / Archive.ph searches
+      // - General cached/archived page searches
+      // - Platform-specific archive searches (social media, dating)
+      const queries = generateArchiveSearchQueries({
+        name,
+        location,
+        username,
+        // Note: discoveredProfileUrls can be passed in from earlier passes
+        // if we collect them during the search process
+      });
 
       return queries;
     },
@@ -459,6 +445,8 @@ export interface MultiPassResult {
   legalPortals: LegalPortalResult[];
   // Image search results (link-first with thumbnails for preview)
   imageResults: ImageSearchResult[];
+  // Archived page results (labeled as "archived snapshots" with direct links)
+  archivedPages: ArchivedPageResult[];
 }
 
 export interface PassResult {
@@ -630,10 +618,14 @@ export async function executeMultiPassSearch(
   // Extract image search results from raw responses
   const imageResults = parseImageSearchResults(allRawResponses.join("\n"), input.name);
 
+  // Extract archived page results from raw responses
+  const archivedPages = parseArchivedPageResults(allRawResponses.join("\n"), input.name);
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
   console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
   console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
   console.log(`[MultiPass] Image results found:`, imageResults.length);
+  console.log(`[MultiPass] Archived pages found:`, archivedPages.length);
 
   return {
     finalResult,
@@ -645,6 +637,7 @@ export async function executeMultiPassSearch(
     stopReason,
     legalPortals,
     imageResults,
+    archivedPages,
   };
 }
 
