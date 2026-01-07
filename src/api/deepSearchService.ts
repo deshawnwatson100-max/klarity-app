@@ -52,9 +52,13 @@ import {
   fetchMultiplePages,
   prepareSecondWaveInput,
   generateSecondWaveQueries,
+  generatePrioritizedSecondWaveQueries,
   PageFetchResult,
   SecondWaveInput,
   ExtractedIdentifier,
+  SecondWaveQueryPriority,
+  SecondWaveQueryResult,
+  PrioritizedQuery,
 } from "./deepSearchPageFetcher";
 
 // ============================================================================
@@ -434,6 +438,36 @@ export function evaluateResultStrength(result: DeepSearchResult): ResultStrength
 }
 
 /**
+ * Checks if two text strings are similar enough to be considered duplicates.
+ * Uses a simple word overlap comparison.
+ */
+function isSimilarText(text1: string, text2: string): boolean {
+  // If texts are identical, they're similar
+  if (text1 === text2) return true;
+
+  // If one is a substring of the other (and reasonably long), they're similar
+  if (text1.length > 20 && text2.length > 20) {
+    if (text1.includes(text2) || text2.includes(text1)) return true;
+  }
+
+  // Word overlap comparison
+  const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 3));
+  const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 3));
+
+  if (words1.size === 0 || words2.size === 0) return false;
+
+  // Count overlapping words
+  let overlap = 0;
+  for (const word of words1) {
+    if (words2.has(word)) overlap++;
+  }
+
+  // If more than 60% of words overlap, consider similar
+  const overlapRatio = overlap / Math.min(words1.size, words2.size);
+  return overlapRatio > 0.6;
+}
+
+/**
  * Maximum number of retry attempts per pass when results are thin.
  */
 const MAX_RETRY_ATTEMPTS = 1;
@@ -601,6 +635,19 @@ export interface MultiPassResult {
   jsHeavyPages: string[];
   /** All extracted identifiers from page fetching */
   extractedIdentifiers: ExtractedIdentifier[];
+  /** Second-wave query statistics by priority */
+  secondWaveQueryStats?: {
+    usernameOnly: number;
+    usernamePlatform: number;
+    profileLookup: number;
+    forumMentions: number;
+    archiveMentions: number;
+    domainSearches: number;
+    connectionVerify: number;
+    total: number;
+  };
+  /** Detailed second-wave query list with priorities */
+  secondWaveQueries?: PrioritizedQuery[];
 }
 
 export interface PassResult {
@@ -893,6 +940,8 @@ export async function executeMultiPassSearch(
   let secondWaveSources = 0;
   let jsHeavyPages: string[] = [];
   let allExtractedIdentifiers: ExtractedIdentifier[] = [];
+  let secondWaveQueries: PrioritizedQuery[] | undefined;
+  let secondWaveQueryStats: MultiPassResult["secondWaveQueryStats"];
 
   if (urlsToFetch.length > 0) {
     onProgress?.("Fetching page content...", passResults.length + 1, totalPasses + 2);
@@ -934,35 +983,68 @@ export async function executeMultiPassSearch(
       if (hasNewIdentifiers) {
         onProgress?.("Running second-wave search...", passResults.length + 2, totalPasses + 2);
         console.log(`[MultiPass] Executing second-wave search with discovered identifiers`);
+        console.log(`[MultiPass] Second-wave input:`, {
+          usernames: secondWaveInput.discoveredUsernames,
+          socialLinks: secondWaveInput.discoveredSocialLinks.length,
+          domains: secondWaveInput.discoveredDomains,
+        });
 
-        const secondWaveQueries = generateSecondWaveQueries(secondWaveInput, input.name);
+        // Generate prioritized queries for second-wave
+        const secondWaveQueryResult = generatePrioritizedSecondWaveQueries(secondWaveInput, input.name);
+        secondWaveQueries = secondWaveQueryResult.prioritizedQueries;
+        secondWaveQueryStats = secondWaveQueryResult.stats;
 
-        if (secondWaveQueries.length > 0) {
-          const secondWaveResult = await callPassSearch(
-            secondWaveQueries,
+        console.log(`[MultiPass] Second-wave query stats:`, secondWaveQueryStats);
+
+        if (secondWaveQueryResult.queries.length > 0) {
+          // Execute second-wave search with prioritized queries
+          const secondWaveSearchResult = await callPassSearch(
+            secondWaveQueryResult.queries,
             input.name,
             "Second Wave"
           );
 
-          if (secondWaveResult.content) {
-            allRawResponses.push(secondWaveResult.content);
+          if (secondWaveSearchResult.content) {
+            allRawResponses.push(secondWaveSearchResult.content);
 
             const secondWaveParsed = parseDeepSearchResponse(
-              secondWaveResult.content,
+              secondWaveSearchResult.content,
               personContextId,
-              secondWaveQueries.join(", ")
+              secondWaveQueryResult.queries.join(", ")
             );
 
-            // Add new sources from second wave
+            // Merge and deduplicate results
             const existingUrlSet = new Set(accumulatedSources.map(s => s.url).filter(Boolean));
-            const newSecondWaveSources = secondWaveParsed.sources.filter(
-              s => !s.url || !existingUrlSet.has(s.url)
+            const existingSummarySet = new Set(
+              accumulatedSources.map(s => s.summary?.toLowerCase()).filter(Boolean)
             );
+
+            // Smart deduplication: check URL AND summary/platform similarity
+            const newSecondWaveSources = secondWaveParsed.sources.filter(source => {
+              // Skip if exact URL match
+              if (source.url && existingUrlSet.has(source.url)) {
+                return false;
+              }
+
+              // Skip if very similar summary exists (fuzzy dedup)
+              if (source.summary) {
+                const normalizedSummary = source.summary.toLowerCase();
+                for (const existingSummary of existingSummarySet) {
+                  if (existingSummary && isSimilarText(normalizedSummary, existingSummary)) {
+                    return false;
+                  }
+                }
+              }
+
+              return true;
+            });
 
             if (newSecondWaveSources.length > 0) {
               accumulatedSources = [...accumulatedSources, ...newSecondWaveSources];
               secondWaveSources = newSecondWaveSources.length;
-              console.log(`[MultiPass] Second-wave added ${secondWaveSources} new sources`);
+              console.log(`[MultiPass] Second-wave added ${secondWaveSources} new sources (deduplicated from ${secondWaveParsed.sources.length})`);
+            } else {
+              console.log(`[MultiPass] Second-wave found ${secondWaveParsed.sources.length} sources but all were duplicates`);
             }
 
             secondWaveExecuted = true;
@@ -998,6 +1080,9 @@ export async function executeMultiPassSearch(
   console.log(`[MultiPass] Minimum passes met: ${minimumPassesMet} (${passResults.length}/${MIN_PASSES_BEFORE_STOP})`);
   console.log(`[MultiPass] Page fetching: ${pageFetchResults.length} pages, ${jsHeavyPages.length} JS-heavy`);
   console.log(`[MultiPass] Second-wave: executed=${secondWaveExecuted}, newSources=${secondWaveSources}`);
+  if (secondWaveQueryStats) {
+    console.log(`[MultiPass] Second-wave query breakdown:`, secondWaveQueryStats);
+  }
   console.log(`[MultiPass] Extracted identifiers: ${allExtractedIdentifiers.length}`);
   console.log(`[MultiPass] Categorized results:`, updatedCategorizedStats.byCategory);
   console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
@@ -1024,6 +1109,8 @@ export async function executeMultiPassSearch(
     secondWaveSources,
     jsHeavyPages,
     extractedIdentifiers: allExtractedIdentifiers,
+    secondWaveQueryStats,
+    secondWaveQueries,
   };
 }
 

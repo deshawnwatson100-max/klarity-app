@@ -1295,12 +1295,90 @@ After initial search passes complete, Deep Search automatically:
 - OpenGraph metadata (og:title, og:description)
 - Twitter Card metadata (twitter:site, twitter:creator)
 
-**Second-Wave Search Queries:**
-When new identifiers are discovered:
-- Direct username search: `"newusername"`
-- Cross-platform verification: `newusername site:instagram.com`
-- Connection confirmation: `"newusername" "personname"`
-- Domain-specific searches: `"personname" site:discovered-domain.com`
+**Second-Wave Search Flow:**
+Deep Search uses a three-stage pipeline:
+
+```
+First Wave (8 passes) → Page Extraction → Second Wave (prioritized queries)
+```
+
+**Stage 1: First Wave Search**
+- Executes 8 ordered search passes (NAME_LOCATION, PLATFORM_TARGETED, etc.)
+- Collects URLs and sources from web search results
+- Minimum 4 passes required before early stopping
+
+**Stage 2: Page Fetching & Extraction**
+- Fetches top 10 result URLs in parallel
+- Extracts identifiers from HTML content:
+  - Usernames and @handles
+  - Social profile links
+  - Email addresses
+  - OpenGraph/JSON-LD metadata
+- Marks JS-heavy pages for special handling
+
+**Stage 3: Second Wave Search (Prioritized)**
+When new identifiers are discovered, generates prioritized queries across 7 levels:
+
+| Priority | Category | Example Query |
+|----------|----------|---------------|
+| 1 (Highest) | Username Only | `"newusername123"` |
+| 2 | Username + Platform | `newusername123 site:instagram.com` |
+| 3 | Profile URL Lookup | `instagram.com/newusername123` |
+| 4 | Forum Mentions | `"newusername123" site:reddit.com` |
+| 5 | Archive Mentions | `"newusername123" site:web.archive.org` |
+| 6 | Domain Searches | `"personname" site:discovered-domain.com` |
+| 7 (Lowest) | Connection Verify | `"newusername123" "personname"` |
+
+**Second-Wave Query Categories:**
+
+1. **Username-Only Queries** (Priority 1)
+   - Direct quoted username search
+   - Finds any mention of the exact username
+
+2. **Username + Platform Queries** (Priority 2)
+   - Platform-specific site: searches
+   - Covers: Instagram, Twitter/X, Facebook, LinkedIn, TikTok, YouTube, Pinterest, Snapchat, Reddit, GitHub, Medium, Tumblr, Discord, Twitch, Telegram, WhatsApp
+
+3. **Profile URL Lookups** (Priority 3)
+   - Direct profile URL pattern searches
+   - Constructs platform-specific URL patterns
+
+4. **Forum Mention Searches** (Priority 4)
+   - Searches discussion platforms for username mentions
+   - Covers: Reddit, Quora, Stack Overflow, Hacker News, Discord, Telegram, 4chan, KiwiFarms, Lipstick Alley, Tattle.life, Guru Gossip, Fishbowl, Blind
+
+5. **Archive Mention Searches** (Priority 5)
+   - Searches archive sites for preserved content
+   - Covers: web.archive.org, archive.is, archive.ph, archive.today, Google cache, ghostarchive.org
+
+6. **Domain-Specific Searches** (Priority 6)
+   - Searches discovered domains for person mentions
+   - Uses domains extracted from first-wave results
+
+7. **Connection Verification Queries** (Priority 7)
+   - Confirms links between discovered usernames and original person
+   - Uses both username and person name together
+
+**Second-Wave Result Merging:**
+- Results from second-wave are merged with first-wave sources
+- Smart deduplication removes near-duplicate entries:
+  - Exact URL matches removed
+  - Similar summaries (>60% word overlap) consolidated
+  - Original source preserved when duplicates found
+
+**MultiPassResult Second-Wave Stats:**
+```typescript
+secondWaveQueryStats: {
+  usernameOnly: number;      // Priority 1 queries generated
+  usernamePlatform: number;  // Priority 2 queries generated
+  profileLookup: number;     // Priority 3 queries generated
+  forumMentions: number;     // Priority 4 queries generated
+  archiveMentions: number;   // Priority 5 queries generated
+  domainSearches: number;    // Priority 6 queries generated
+  connectionVerify: number;  // Priority 7 queries generated
+  total: number;             // Total second-wave queries
+}
+```
 
 **JS-Heavy Page Handling:**
 Pages from these domains are marked as requiring special handling:

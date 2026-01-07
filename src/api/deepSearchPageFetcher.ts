@@ -661,47 +661,379 @@ export function prepareSecondWaveInput(
   return secondWaveInput;
 }
 
+// ============================================================================
+// SECOND-WAVE QUERY GENERATION (PRIORITIZED)
+// ============================================================================
+
 /**
- * Generates search queries based on second-wave discovered identifiers.
+ * Query priority levels for second-wave searches.
+ * Lower number = higher priority (executed first).
+ */
+export enum SecondWaveQueryPriority {
+  USERNAME_ONLY = 1,           // Highest priority: direct username searches
+  USERNAME_PLATFORM = 2,       // Username + platform site: queries
+  PROFILE_URL_LOOKUP = 3,      // Profile URL lookups and verification
+  FORUM_MENTIONS = 4,          // Forum and discussion mentions
+  ARCHIVE_MENTIONS = 5,        // Archive and cached page mentions
+  DOMAIN_SEARCHES = 6,         // Domain-specific searches
+  CONNECTION_VERIFY = 7,       // Connection verification (username + person name)
+}
+
+/**
+ * A prioritized query with metadata for tracking.
+ */
+export interface PrioritizedQuery {
+  query: string;
+  priority: SecondWaveQueryPriority;
+  category: string;
+  sourceIdentifier: string;
+}
+
+/**
+ * Result of second-wave query generation with prioritization.
+ */
+export interface SecondWaveQueryResult {
+  queries: string[];
+  prioritizedQueries: PrioritizedQuery[];
+  stats: {
+    usernameOnly: number;
+    usernamePlatform: number;
+    profileLookup: number;
+    forumMentions: number;
+    archiveMentions: number;
+    domainSearches: number;
+    connectionVerify: number;
+    total: number;
+  };
+}
+
+/** Forum and discussion platforms for username mentions */
+const FORUM_PLATFORMS = [
+  "reddit.com",
+  "quora.com",
+  "stackoverflow.com",
+  "hackernews.com",
+  "news.ycombinator.com",
+  "discord.com",
+  "telegram.org",
+  "4chan.org",
+  "kiwifarms.net",
+  "lipstickalley.com",
+  "tattle.life",
+  "guru-gossip.com",
+  "fishbowlapp.com",
+  "blind.com",
+];
+
+/** Archive and cache sites for historical lookups */
+const ARCHIVE_SITES = [
+  "web.archive.org",
+  "archive.is",
+  "archive.ph",
+  "archive.today",
+  "webcache.googleusercontent.com",
+  "cachedview.com",
+  "ghostarchive.org",
+];
+
+/**
+ * Generates prioritized search queries based on second-wave discovered identifiers.
+ *
+ * Priority order:
+ * 1. Username-only queries (highest signal)
+ * 2. Username + platform site: queries
+ * 3. Profile URL lookups
+ * 4. Forum and discussion mentions
+ * 5. Archive mentions
+ * 6. Domain searches
+ * 7. Connection verification
  */
 export function generateSecondWaveQueries(
   input: SecondWaveInput,
   personName: string
 ): string[] {
-  const queries: string[] = [];
+  const result = generatePrioritizedSecondWaveQueries(input, personName);
+  return result.queries;
+}
 
-  // Username-based queries
+/**
+ * Generates prioritized second-wave queries with full metadata.
+ * Returns queries sorted by priority.
+ */
+export function generatePrioritizedSecondWaveQueries(
+  input: SecondWaveInput,
+  personName: string
+): SecondWaveQueryResult {
+  const prioritizedQueries: PrioritizedQuery[] = [];
+  const seenQueries = new Set<string>();
+
+  const addQuery = (query: string, priority: SecondWaveQueryPriority, category: string, sourceIdentifier: string) => {
+    const normalizedQuery = query.toLowerCase().trim();
+    if (!seenQueries.has(normalizedQuery)) {
+      seenQueries.add(normalizedQuery);
+      prioritizedQueries.push({ query, priority, category, sourceIdentifier });
+    }
+  };
+
+  // ============================================================
+  // PRIORITY 1: Username-only queries (highest priority)
+  // ============================================================
+  for (const username of input.discoveredUsernames.slice(0, 8)) {
+    // Exact username in quotes
+    addQuery(`"${username}"`, SecondWaveQueryPriority.USERNAME_ONLY, "username_exact", username);
+
+    // Username without quotes (catches variations)
+    addQuery(username, SecondWaveQueryPriority.USERNAME_ONLY, "username_bare", username);
+
+    // @username format
+    addQuery(`"@${username}"`, SecondWaveQueryPriority.USERNAME_ONLY, "username_at", username);
+  }
+
+  // ============================================================
+  // PRIORITY 2: Username + platform site: queries
+  // ============================================================
+  const primaryPlatforms = [
+    "instagram.com",
+    "twitter.com",
+    "x.com",
+    "facebook.com",
+    "linkedin.com",
+    "tiktok.com",
+    "github.com",
+    "youtube.com",
+  ];
+
+  const secondaryPlatforms = [
+    "pinterest.com",
+    "tumblr.com",
+    "reddit.com",
+    "snapchat.com",
+    "threads.net",
+    "mastodon.social",
+    "twitch.tv",
+    "soundcloud.com",
+    "spotify.com",
+    "behance.net",
+    "dribbble.com",
+    "medium.com",
+  ];
+
   for (const username of input.discoveredUsernames.slice(0, 5)) {
-    // Direct username search
-    queries.push(`"${username}"`);
-
-    // Username on various platforms
-    for (const platform of ["instagram.com", "twitter.com", "facebook.com", "linkedin.com", "tiktok.com"]) {
-      queries.push(`${username} site:${platform}`);
+    // Primary platforms (most likely to have profiles)
+    for (const platform of primaryPlatforms) {
+      addQuery(
+        `"${username}" site:${platform}`,
+        SecondWaveQueryPriority.USERNAME_PLATFORM,
+        "username_primary_platform",
+        username
+      );
     }
 
-    // Username + person name (to confirm connection)
-    queries.push(`"${username}" "${personName}"`);
+    // Secondary platforms
+    for (const platform of secondaryPlatforms.slice(0, 6)) {
+      addQuery(
+        `${username} site:${platform}`,
+        SecondWaveQueryPriority.USERNAME_PLATFORM,
+        "username_secondary_platform",
+        username
+      );
+    }
   }
 
-  // Social link verification queries
-  for (const socialLink of input.discoveredSocialLinks.slice(0, 5)) {
-    const domain = extractDomain(socialLink);
+  // ============================================================
+  // PRIORITY 3: Profile URL lookups
+  // ============================================================
+  for (const socialLink of input.discoveredSocialLinks.slice(0, 8)) {
     const username = extractUsernameFromSocialUrl(socialLink);
+    const domain = extractDomain(socialLink);
+    const platform = detectPlatformFromUrl(socialLink);
+
     if (username) {
-      queries.push(`"${username}" ${domain}`);
-      queries.push(`"${username}" "${personName}"`);
+      // Search for the profile URL directly
+      addQuery(
+        `"${socialLink}"`,
+        SecondWaveQueryPriority.PROFILE_URL_LOOKUP,
+        "profile_url_direct",
+        socialLink
+      );
+
+      // Username on the specific platform
+      if (domain) {
+        addQuery(
+          `"${username}" site:${domain}`,
+          SecondWaveQueryPriority.PROFILE_URL_LOOKUP,
+          "profile_username_site",
+          socialLink
+        );
+      }
+
+      // Profile verification with platform name
+      if (platform) {
+        addQuery(
+          `"${username}" ${platform} profile`,
+          SecondWaveQueryPriority.PROFILE_URL_LOOKUP,
+          "profile_platform_verify",
+          socialLink
+        );
+      }
     }
   }
 
-  // Domain-based queries
-  for (const domain of input.discoveredDomains.slice(0, 3)) {
-    queries.push(`"${personName}" site:${domain}`);
-    queries.push(`"${personName}" "${domain}"`);
+  // ============================================================
+  // PRIORITY 4: Forum and discussion mentions
+  // ============================================================
+  for (const username of input.discoveredUsernames.slice(0, 4)) {
+    // Reddit mentions
+    addQuery(
+      `"${username}" site:reddit.com`,
+      SecondWaveQueryPriority.FORUM_MENTIONS,
+      "forum_reddit",
+      username
+    );
+    addQuery(
+      `"u/${username}" OR "/u/${username}"`,
+      SecondWaveQueryPriority.FORUM_MENTIONS,
+      "forum_reddit_user",
+      username
+    );
+
+    // Other forum platforms
+    for (const forum of FORUM_PLATFORMS.slice(1, 6)) {
+      addQuery(
+        `"${username}" site:${forum}`,
+        SecondWaveQueryPriority.FORUM_MENTIONS,
+        "forum_general",
+        username
+      );
+    }
+
+    // General forum/discussion mentions
+    addQuery(
+      `"${username}" forum OR discussion OR thread`,
+      SecondWaveQueryPriority.FORUM_MENTIONS,
+      "forum_general_search",
+      username
+    );
   }
 
-  // De-duplicate
-  return [...new Set(queries)];
+  // ============================================================
+  // PRIORITY 5: Archive and cached page mentions
+  // ============================================================
+  for (const username of input.discoveredUsernames.slice(0, 3)) {
+    // Wayback Machine
+    addQuery(
+      `"${username}" site:web.archive.org`,
+      SecondWaveQueryPriority.ARCHIVE_MENTIONS,
+      "archive_wayback",
+      username
+    );
+
+    // Archive.is / archive.ph
+    addQuery(
+      `"${username}" site:archive.is OR site:archive.ph`,
+      SecondWaveQueryPriority.ARCHIVE_MENTIONS,
+      "archive_is",
+      username
+    );
+
+    // General cached/archived mentions
+    addQuery(
+      `"${username}" cached OR archived OR snapshot`,
+      SecondWaveQueryPriority.ARCHIVE_MENTIONS,
+      "archive_general",
+      username
+    );
+  }
+
+  // Archive lookups for discovered social links
+  for (const socialLink of input.discoveredSocialLinks.slice(0, 3)) {
+    addQuery(
+      `"${socialLink}" site:web.archive.org`,
+      SecondWaveQueryPriority.ARCHIVE_MENTIONS,
+      "archive_url_wayback",
+      socialLink
+    );
+  }
+
+  // ============================================================
+  // PRIORITY 6: Domain-specific searches
+  // ============================================================
+  for (const domain of input.discoveredDomains.slice(0, 4)) {
+    // Person name on discovered domain
+    addQuery(
+      `"${personName}" site:${domain}`,
+      SecondWaveQueryPriority.DOMAIN_SEARCHES,
+      "domain_person",
+      domain
+    );
+
+    // Domain mentioned with person name
+    addQuery(
+      `"${personName}" "${domain}"`,
+      SecondWaveQueryPriority.DOMAIN_SEARCHES,
+      "domain_mention",
+      domain
+    );
+
+    // Discovered usernames on domain
+    for (const username of input.discoveredUsernames.slice(0, 2)) {
+      addQuery(
+        `"${username}" site:${domain}`,
+        SecondWaveQueryPriority.DOMAIN_SEARCHES,
+        "domain_username",
+        `${domain}:${username}`
+      );
+    }
+  }
+
+  // ============================================================
+  // PRIORITY 7: Connection verification (lowest priority)
+  // ============================================================
+  for (const username of input.discoveredUsernames.slice(0, 5)) {
+    // Username + person name (to confirm connection)
+    addQuery(
+      `"${username}" "${personName}"`,
+      SecondWaveQueryPriority.CONNECTION_VERIFY,
+      "connection_name",
+      username
+    );
+
+    // Username + person name variations
+    const nameParts = personName.split(/\s+/);
+    if (nameParts.length >= 2) {
+      const firstName = nameParts[0];
+      const lastName = nameParts[nameParts.length - 1];
+      addQuery(
+        `"${username}" ${firstName} ${lastName}`,
+        SecondWaveQueryPriority.CONNECTION_VERIFY,
+        "connection_name_parts",
+        username
+      );
+    }
+  }
+
+  // Sort by priority
+  prioritizedQueries.sort((a, b) => a.priority - b.priority);
+
+  // Calculate stats
+  const stats = {
+    usernameOnly: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.USERNAME_ONLY).length,
+    usernamePlatform: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.USERNAME_PLATFORM).length,
+    profileLookup: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.PROFILE_URL_LOOKUP).length,
+    forumMentions: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.FORUM_MENTIONS).length,
+    archiveMentions: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.ARCHIVE_MENTIONS).length,
+    domainSearches: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.DOMAIN_SEARCHES).length,
+    connectionVerify: prioritizedQueries.filter(q => q.priority === SecondWaveQueryPriority.CONNECTION_VERIFY).length,
+    total: prioritizedQueries.length,
+  };
+
+  console.log("[SecondWave] Query generation stats:", stats);
+
+  return {
+    queries: prioritizedQueries.map(q => q.query),
+    prioritizedQueries,
+    stats,
+  };
 }
 
 // ============================================================================
@@ -898,4 +1230,6 @@ export {
   MAX_PAGES_TO_FETCH,
   SOCIAL_PLATFORMS,
   JS_HEAVY_DOMAINS,
+  FORUM_PLATFORMS,
+  ARCHIVE_SITES,
 };
