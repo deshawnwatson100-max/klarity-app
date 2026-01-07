@@ -134,6 +134,9 @@ export interface PersonContext {
   relationshipContext: RelationshipContextType;
   customRelationshipLabel?: string; // If "other", user can specify
 
+  // Profile image for Deep Search (optional)
+  profileImageUri?: string; // Local file URI or base64 data URI
+
   // Deep Search context fields
   location?: string; // Approximate location (city or area)
   contextAnchor?: {

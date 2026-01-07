@@ -1214,6 +1214,7 @@ Deep Search performs multiple search passes covering all of the following areas:
 **Optional Inputs for Better Results:**
 The Person Context Card includes optional fields to improve Deep Search accuracy:
 
+- **Profile photo** - Add a photo of the person to help with visual matching and image search
 - **County or region** - Helps with court and public record searches
 - **Middle name or initial** - Helps distinguish people with similar names
 - **Approximate age range** - Used only to narrow public matches

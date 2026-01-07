@@ -12,9 +12,12 @@ import {
   Animated,
   Dimensions,
   Switch,
+  Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import {
   usePersonContextStore,
 } from "../state/personContextStore";
@@ -110,6 +113,7 @@ export function PersonContextModal({
   const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [profileImageUri, setProfileImageUri] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (visible) {
@@ -145,6 +149,7 @@ export function PersonContextModal({
     setShowBoost(false);
     setKnownUsername("");
     setApproximateAge("");
+    setProfileImageUri(undefined);
   };
 
   const handleClose = () => {
@@ -153,6 +158,39 @@ export function PersonContextModal({
   };
 
   const isFormValid = name.trim().length > 0 && relationshipContext !== null;
+
+  // Image picker function
+  const handlePickImage = async () => {
+    Haptics.selectionAsync();
+
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "Please allow access to your photos to add a profile image."
+      );
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setProfileImageUri(result.assets[0].uri);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    Haptics.selectionAsync();
+    setProfileImageUri(undefined);
+  };
 
   const handleSave = () => {
     if (!isFormValid) return;
@@ -163,6 +201,7 @@ export function PersonContextModal({
       contextAnchor?: { type: ContextAnchorType; value: string };
       knownUsername?: string;
       approximateAge?: string;
+      profileImageUri?: string;
     } = {};
 
     if (location.trim()) {
@@ -179,6 +218,9 @@ export function PersonContextModal({
     }
     if (approximateAge.trim()) {
       deepSearchContext.approximateAge = approximateAge.trim();
+    }
+    if (profileImageUri) {
+      deepSearchContext.profileImageUri = profileImageUri;
     }
 
     const newId = createPersonContext(
@@ -276,6 +318,49 @@ export function PersonContextModal({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 20 }}
       >
+        {/* Profile Image Picker */}
+        <View style={{ marginBottom: 24, alignItems: "center" }}>
+          <Text style={{ fontSize: 15, color: COLORS.text, marginBottom: 4, alignSelf: "flex-start" }}>
+            Profile photo
+          </Text>
+          <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 12, alignSelf: "flex-start" }}>
+            Add a photo to help with visual matching.
+          </Text>
+          <Pressable
+            onPress={handlePickImage}
+            style={({ pressed }) => ({
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              backgroundColor: profileImageUri ? "transparent" : COLORS.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            {profileImageUri ? (
+              <Image
+                source={{ uri: profileImageUri }}
+                style={{ width: 100, height: 100, borderRadius: 50 }}
+              />
+            ) : (
+              <View style={{ alignItems: "center" }}>
+                <Ionicons name="camera-outline" size={28} color={COLORS.textMuted} />
+                <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>Add photo</Text>
+              </View>
+            )}
+          </Pressable>
+          {profileImageUri && (
+            <Pressable
+              onPress={handleRemoveImage}
+              style={{ marginTop: 8, paddingVertical: 6, paddingHorizontal: 12 }}
+            >
+              <Text style={{ fontSize: 13, color: COLORS.error }}>Remove</Text>
+            </Pressable>
+          )}
+        </View>
+
         {/* 1. Name (required) */}
         <ChatBubbleInput
           label="Name"
@@ -513,17 +598,29 @@ export function PersonContextModal({
             opacity: isContextPaused ? 0.6 : 1,
           }}>
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-              <View style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: COLORS.accentBg,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 14,
-              }}>
-                <Ionicons name="person" size={22} color={COLORS.accent} />
-              </View>
+              {activePersonContext.profileImageUri ? (
+                <Image
+                  source={{ uri: activePersonContext.profileImageUri }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    marginRight: 14,
+                  }}
+                />
+              ) : (
+                <View style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: COLORS.accentBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 14,
+                }}>
+                  <Ionicons name="person" size={22} color={COLORS.accent} />
+                </View>
+              )}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 17, fontWeight: "600", color: COLORS.text }}>
                   {activePersonContext.name}
@@ -535,8 +632,16 @@ export function PersonContextModal({
             </View>
 
             {/* Context details */}
-            {(activePersonContext.location || activePersonContext.contextAnchor || activePersonContext.knownUsername || activePersonContext.approximateAge) && (
+            {(activePersonContext.location || activePersonContext.contextAnchor || activePersonContext.knownUsername || activePersonContext.approximateAge || activePersonContext.profileImageUri) && (
               <View style={{ marginTop: 8 }}>
+                {activePersonContext.profileImageUri && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="image-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 6 }}>
+                      Photo added for search
+                    </Text>
+                  </View>
+                )}
                 {activePersonContext.location && (
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                     <Ionicons name="location-outline" size={14} color={COLORS.textMuted} />

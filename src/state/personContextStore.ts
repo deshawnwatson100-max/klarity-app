@@ -72,14 +72,16 @@ interface PersonContextState {
       knownUsername?: string;
       approximateAge?: string;
       extendedContext?: DeepSearchExtendedContext;
+      profileImageUri?: string;
     }
   ) => string; // Returns new ID
   updatePersonContext: (
     id: string,
     updates: Partial<
-      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent" | "location" | "contextAnchor" | "knownUsername" | "approximateAge" | "extendedContext">
+      Pick<PersonContext, "name" | "relationshipContext" | "customRelationshipLabel" | "userIntent" | "location" | "contextAnchor" | "knownUsername" | "approximateAge" | "extendedContext" | "profileImageUri">
     >
   ) => void;
+  updatePersonContextImage: (id: string, imageUri: string | undefined) => void;
   deletePersonContext: (id: string) => void;
   archivePersonContext: (id: string) => void;
   unarchivePersonContext: (id: string) => void;
@@ -175,6 +177,7 @@ export const usePersonContextStore = create<PersonContextState>()(
           knownUsername?: string;
           approximateAge?: string;
           extendedContext?: DeepSearchExtendedContext;
+          profileImageUri?: string;
         }
       ) => {
         const newContext = createPersonContext(name, relationshipContext);
@@ -197,6 +200,9 @@ export const usePersonContextStore = create<PersonContextState>()(
           if (deepSearchContext.extendedContext) {
             newContext.extendedContext = deepSearchContext.extendedContext;
           }
+          if (deepSearchContext.profileImageUri) {
+            newContext.profileImageUri = deepSearchContext.profileImageUri;
+          }
         }
 
         set((state) => ({
@@ -211,6 +217,16 @@ export const usePersonContextStore = create<PersonContextState>()(
           personContexts: state.personContexts.map((pc) =>
             pc.id === id
               ? { ...pc, ...updates, updatedAt: new Date().toISOString() }
+              : pc
+          ),
+        }));
+      },
+
+      updatePersonContextImage: (id: string, imageUri: string | undefined) => {
+        set((state) => ({
+          personContexts: state.personContexts.map((pc) =>
+            pc.id === id
+              ? { ...pc, profileImageUri: imageUri, updatedAt: new Date().toISOString() }
               : pc
           ),
         }));
