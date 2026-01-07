@@ -5,9 +5,12 @@ import {
   Pressable,
   TextInput,
   Keyboard,
+  Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import {
   usePersonContextStore,
 } from "../state/personContextStore";
@@ -121,6 +124,7 @@ export const PersonContextCard = memo(function PersonContextCard({
   const [showBoost, setShowBoost] = useState(false);
   const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
+  const [profileImageUri, setProfileImageUri] = useState<string | undefined>(undefined);
 
   // Extended context fields for more thorough searches
   const [showExtendedDetails, setShowExtendedDetails] = useState(false);
@@ -137,6 +141,39 @@ export const PersonContextCard = memo(function PersonContextCard({
 
   const isFormValid = name.trim().length > 0 && relationshipContext !== null;
 
+  // Image picker function
+  const handlePickImage = async () => {
+    Haptics.selectionAsync();
+
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "Please allow access to your photos to add a profile image."
+      );
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setProfileImageUri(result.assets[0].uri);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    Haptics.selectionAsync();
+    setProfileImageUri(undefined);
+  };
+
   const handleSave = () => {
     if (!isFormValid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -148,6 +185,7 @@ export const PersonContextCard = memo(function PersonContextCard({
       knownUsername?: string;
       approximateAge?: string;
       extendedContext?: DeepSearchExtendedContext;
+      profileImageUri?: string;
     } = {};
 
     if (location.trim()) {
@@ -164,6 +202,9 @@ export const PersonContextCard = memo(function PersonContextCard({
     }
     if (approximateAge.trim()) {
       deepSearchContext.approximateAge = approximateAge.trim();
+    }
+    if (profileImageUri) {
+      deepSearchContext.profileImageUri = profileImageUri;
     }
 
     // Build extended context if any fields are filled
@@ -280,6 +321,49 @@ export const PersonContextCard = memo(function PersonContextCard({
         {onDismiss && (
           <Pressable onPress={onDismiss} hitSlop={12}>
             <Ionicons name="close" size={20} color={COLORS.textMuted} />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Profile Image Picker */}
+      <View style={{ marginBottom: 20, alignItems: "center" }}>
+        <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3, alignSelf: "flex-start" }}>
+          Profile photo
+        </Text>
+        <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10, alignSelf: "flex-start" }}>
+          Add a photo to help with visual matching.
+        </Text>
+        <Pressable
+          onPress={handlePickImage}
+          style={({ pressed }) => ({
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: profileImageUri ? "transparent" : COLORS.surface,
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          {profileImageUri ? (
+            <Image
+              source={{ uri: profileImageUri }}
+              style={{ width: 80, height: 80, borderRadius: 40 }}
+            />
+          ) : (
+            <View style={{ alignItems: "center" }}>
+              <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
+              <Text style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2 }}>Add photo</Text>
+            </View>
+          )}
+        </Pressable>
+        {profileImageUri && (
+          <Pressable
+            onPress={handleRemoveImage}
+            style={{ marginTop: 6, paddingVertical: 4, paddingHorizontal: 10 }}
+          >
+            <Text style={{ fontSize: 12, color: COLORS.error }}>Remove</Text>
           </Pressable>
         )}
       </View>
