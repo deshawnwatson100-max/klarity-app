@@ -1222,7 +1222,30 @@ The Person Context Card includes optional fields to improve Deep Search accuracy
 - **Known aliases or past usernames** - Any usernames they have used before, even if old
 
 **Multi-Pass Search Strategy:**
-The search uses multiple query variations:
+The search executes passes in a specific order to ensure thorough coverage:
+1. **NAME_LOCATION** - Name + location combinations (always runs first)
+2. **PLATFORM_TARGETED** - Social media and professional site-specific searches
+3. **USERNAME_FIRST** - Username-based searches (if username available)
+4. **DATING_MIRRORS** - Dating platforms, profile mirrors, and indirect mentions
+5. **LEGAL_RECORDS** - Court records, jail rosters, state DOC, .gov portals
+6. **ARCHIVED_CACHED** - Wayback Machine, archive.is, cached pages
+7. **IMAGES_VISUAL** - Profile photos, image search results (bonus pass)
+8. **USERNAME_EXPANDED** - Username variations and niche platforms (bonus pass)
+
+**Minimum Passes Requirement:**
+- **At least 4 passes** must complete before early stopping is allowed
+- Search does NOT stop early just because an earlier pass returned nothing
+- Ensures thorough coverage even when early results look sparse
+
+**Weak-Result Detection with Retry Logic:**
+When a pass returns thin results (0 new sources), the system automatically:
+1. Generates expanded retry queries based on pass type
+2. Includes name variations, location parts, aliases
+3. Adds pass-specific expansions (e.g., additional platforms, search terms)
+4. Executes retry search with expanded queries
+5. Merges any new sources found into accumulated results
+
+Query variations used:
 - Exact name in quotes
 - Name + location combinations
 - Name + county if provided

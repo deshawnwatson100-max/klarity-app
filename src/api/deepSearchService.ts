@@ -116,21 +116,36 @@ export interface SearchExecutionLog {
 // ============================================================================
 
 /**
+ * Minimum number of passes that MUST run before considering early stop.
+ * This ensures thorough searching even if early passes return results.
+ */
+export const MIN_PASSES_BEFORE_STOP = 4;
+
+/**
  * Search passes executed in order. Each pass focuses on specific query types.
- * The search continues until strong results are found or all passes complete.
  *
- * IMPORTANT: If a username is provided, USERNAME_FIRST runs as Pass 1 (highest priority).
- * This ensures username-based discovery happens early, not as an afterthought.
+ * IMPORTANT: The search MUST NOT stop early just because an earlier pass returned nothing.
+ * All passes run in sequence, with weak-result detection triggering automatic retry.
+ *
+ * Pass order (per requirements):
+ * 1. NAME_LOCATION - Basic name + location (always runs first)
+ * 2. PLATFORM_TARGETED - site: queries for social/professional
+ * 3. USERNAME_FIRST - Username searches (if username exists)
+ * 4. DATING_MIRRORS - Dating-focused searches
+ * 5. LEGAL_RECORDS - Court and public records
+ * 6. ARCHIVED_CACHED - Archive.org and cached pages
+ * 7. IMAGES_VISUAL - Images & visual footprint (bonus pass)
+ * 8. USERNAME_EXPANDED - Username variations (bonus pass, if username exists)
  */
 export enum SearchPass {
-  USERNAME_FIRST = 1,         // Pass 1: Username-first (runs early if username exists)
-  NAME_LOCATION = 2,          // Pass 2: name + location
-  PLATFORM_TARGETED = 3,      // Pass 3: social + professional site: queries
-  USERNAME_EXPANDED = 4,      // Pass 4: username variations + additional platforms
-  DATING_MIRRORS = 5,         // Pass 5: dating keywords + mirrors/caches
-  LEGAL_RECORDS = 6,          // Pass 6: legal/public records portal discovery
+  NAME_LOCATION = 1,          // Pass 1: name + location (always first)
+  PLATFORM_TARGETED = 2,      // Pass 2: social + professional site: queries
+  USERNAME_FIRST = 3,         // Pass 3: Username-first searches
+  DATING_MIRRORS = 4,         // Pass 4: dating keywords + mirrors/caches
+  LEGAL_RECORDS = 5,          // Pass 5: legal/public records portal discovery
+  ARCHIVED_CACHED = 6,        // Pass 6: archived/cached pages
   IMAGES_VISUAL = 7,          // Pass 7: images & visual footprint
-  ARCHIVED_CACHED = 8,        // Pass 8: archived/cached pages
+  USERNAME_EXPANDED = 8,      // Pass 8: username variations + additional platforms
 }
 
 export interface PassConfig {
@@ -138,46 +153,29 @@ export interface PassConfig {
   name: string;
   description: string;
   requiresUsername?: boolean; // If true, skip if no username
+  isRequired?: boolean; // If true, this pass must always run (no early skip)
   generateQueries: (input: QueryGeneratorInput) => string[];
 }
 
 /**
  * Configuration for each search pass
  *
- * Pass order is critical:
- * 1. USERNAME_FIRST - If username exists, search it immediately
- * 2. NAME_LOCATION - Basic name + location
- * 3. PLATFORM_TARGETED - site: queries for social/professional
- * 4. USERNAME_EXPANDED - Username variations and additional platforms
- * 5. DATING_MIRRORS - Dating-focused
- * 6. LEGAL_RECORDS - Court and public records
+ * Pass order is critical for thorough searching:
+ * 1. NAME_LOCATION - Basic name + location (required, always runs)
+ * 2. PLATFORM_TARGETED - site: queries for social/professional (required)
+ * 3. USERNAME_FIRST - Username searches (required if username exists)
+ * 4. DATING_MIRRORS - Dating-focused (required)
+ * 5. LEGAL_RECORDS - Court and public records (required)
+ * 6. ARCHIVED_CACHED - Archive.org and cached pages (required)
  * 7. IMAGES_VISUAL - Images & visual footprint
- * 8. ARCHIVED_CACHED - Archive.org and cached pages
+ * 8. USERNAME_EXPANDED - Username variations
  */
 const PASS_CONFIGS: PassConfig[] = [
-  {
-    pass: SearchPass.USERNAME_FIRST,
-    name: "Username First",
-    description: "Priority username search with variations - runs early",
-    requiresUsername: true,
-    generateQueries: (input) => {
-      const { username, anchor } = input;
-      const queries: string[] = [];
-
-      // Get the primary username
-      const primaryUsername = username || (anchor?.type === "username" ? anchor.value : null);
-      if (!primaryUsername) return queries;
-
-      // Use the comprehensive username-first query generator with variations
-      queries.push(...generateUsernameFirstQueries(primaryUsername, true));
-
-      return queries;
-    },
-  },
   {
     pass: SearchPass.NAME_LOCATION,
     name: "Name + Location",
     description: "Basic name and location combinations",
+    isRequired: true,
     generateQueries: (input) => {
       const queries: string[] = [];
       const { name, location, county, previousLocation, middleInitial } = input;
@@ -214,154 +212,72 @@ const PASS_CONFIGS: PassConfig[] = [
     pass: SearchPass.PLATFORM_TARGETED,
     name: "Platform Targeted",
     description: "Social media and professional site-specific searches",
+    isRequired: true,
     generateQueries: (input) => {
-      const { name, location, username, anchor } = input;
+      const { name, username, location } = input;
       if (!name) return [];
-
-      // Use the centralized platform query generators
-      const queries: string[] = [];
-
-      // Social platforms (Instagram, Facebook, Twitter/X, TikTok, Reddit)
-      queries.push(...generateSocialPlatformQueries(name, username, location));
-
-      // Professional platforms (LinkedIn, GitHub, Behance, Dribbble)
-      queries.push(...generateProfessionalPlatformQueries(name, username, location));
-
-      // Public writing platforms (Medium, Substack, Quora, WordPress, Blogger)
-      queries.push(...generateWritingPlatformQueries(name, username));
-
-      // Professional anchors (additional queries)
-      if (anchor?.type === "workplace" && anchor.value) {
-        queries.push(`"${name}" ${anchor.value}`);
-        queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
-      }
-      if (anchor?.type === "school" && anchor.value) {
-        queries.push(`"${name}" ${anchor.value}`);
-        queries.push(`"${name}" ${anchor.value} alumni`);
-        queries.push(`"${name}" ${anchor.value} site:linkedin.com`);
-      }
-
-      // De-duplicate
-      return [...new Set(queries)];
+      return generatePlatformTargetedQueries(name, username, location);
     },
   },
   {
-    pass: SearchPass.USERNAME_EXPANDED,
-    name: "Username Expanded",
-    description: "Username variations and additional platform searches",
+    pass: SearchPass.USERNAME_FIRST,
+    name: "Username First",
+    description: "Priority username search with variations",
     requiresUsername: true,
+    isRequired: true, // Required if username exists
     generateQueries: (input) => {
+      const { username, anchor } = input;
       const queries: string[] = [];
-      const { username, aliases, anchor } = input;
 
-      // Collect all usernames to expand
-      const usernamesToSearch: string[] = [];
+      // Get the primary username
+      const primaryUsername = username || (anchor?.type === "username" ? anchor.value : null);
+      if (!primaryUsername) return queries;
 
-      if (username) {
-        usernamesToSearch.push(username);
-      }
-      if (anchor?.type === "username" && anchor.value) {
-        const anchorUsername = anchor.value.replace(/^@/, "");
-        if (!usernamesToSearch.includes(anchorUsername)) {
-          usernamesToSearch.push(anchorUsername);
-        }
-      }
-      if (aliases?.length) {
-        for (const alias of aliases.slice(0, 3)) {
-          const cleanAlias = alias.replace(/^@/, "");
-          if (!usernamesToSearch.includes(cleanAlias)) {
-            usernamesToSearch.push(cleanAlias);
-          }
-        }
-      }
+      // Use the comprehensive username-first query generator with variations
+      queries.push(...generateUsernameFirstQueries(primaryUsername, true));
 
-      // For each username, generate variations and search additional platforms
-      for (const u of usernamesToSearch) {
-        const variations = generateUsernameVariations(u);
-
-        // Additional niche platforms not covered in USERNAME_FIRST
-        const nichePlatforms = [
-          "medium.com",
-          "quora.com",
-          "tumblr.com",
-          "soundcloud.com",
-          "spotify.com",
-          "venmo.com",
-          "cashapp.com",
-          "discord.com",
-          "telegram.org",
-        ];
-
-        // Search variations on niche platforms
-        for (const variation of variations.slice(0, 5)) {
-          for (const platform of nichePlatforms) {
-            queries.push(`${variation.username} site:${platform}`);
-          }
-        }
-
-        // Dating platforms with username
-        queries.push(`${u} dating profile`);
-        queries.push(`${u} tinder`);
-        queries.push(`${u} bumble`);
-      }
-
-      // De-duplicate
-      return [...new Set(queries)];
+      return queries;
     },
   },
   {
     pass: SearchPass.DATING_MIRRORS,
-    name: "Dating & Mirrors",
-    description: "Dating platforms, profile mirrors, caches, and indirect mentions",
+    name: "Dating Mirrors",
+    description: "Dating platforms, mirrors, and cached dating profiles",
+    isRequired: true,
     generateQueries: (input) => {
-      const queries: string[] = [];
-      const { name, location, username, anchor, ageRange } = input;
-      if (!name) return queries;
+      const { name, location, username } = input;
+      if (!name) return [];
 
-      // Use the comprehensive dating query generator
+      const queries: string[] = [];
+
+      // Dating platform queries
       queries.push(...generateDatingQueries(name, location, username));
 
-      // Specific dating app anchor gets priority searches
-      if (anchor?.type === "dating_app" && anchor.value) {
-        queries.push(`"${name}" ${anchor.value}`);
-        queries.push(`"${name}" ${anchor.value} profile`);
-        queries.push(`"${name}" ${anchor.value} bio`);
-        queries.push(`"${name}" met on ${anchor.value}`);
-      }
-
-      // Dating + age (age-targeted dating searches)
-      if (ageRange) {
-        queries.push(`"${name}" ${ageRange} dating`);
-        queries.push(`"${name}" ${ageRange} tinder`);
-        queries.push(`"${name}" ${ageRange} bumble`);
-      }
-
-      // Add archive/cache queries for dating
+      // Dating archive queries
       queries.push(...generateDatingArchiveQueries(name, username));
 
-      // De-duplicate
-      return [...new Set(queries)];
+      return queries;
     },
   },
   {
     pass: SearchPass.LEGAL_RECORDS,
-    name: "Legal & Public Records",
-    description: "Court records, jail rosters, state DOC, and official portal discovery",
+    name: "Legal Records",
+    description: "Court records, public records, and legal portal discovery",
+    isRequired: true,
     generateQueries: (input) => {
       const { name, location, county, middleInitial, ageRange } = input;
       if (!name) return [];
 
-      // Use the comprehensive legal portal query generator
-      // This includes:
-      // - County clerk / court case search
-      // - State judiciary case lookup
-      // - Jail roster / inmate search
-      // - State DOC inmate lookup
-      // - .gov domain preference
+      // Extract state from location
+      const state = extractStateFromLocation(location);
+      const countyName = extractCounty(county, location);
+
+      // Generate comprehensive legal portal queries
       const queries = generateLegalPortalQueries({
         name,
         location,
-        county,
+        county: countyName,
+        state,
         middleInitial,
         ageRange,
       });
@@ -370,22 +286,32 @@ const PASS_CONFIGS: PassConfig[] = [
     },
   },
   {
+    pass: SearchPass.ARCHIVED_CACHED,
+    name: "Archived & Cached",
+    description: "Wayback Machine, archive.is, cached pages, and deleted content",
+    isRequired: true,
+    generateQueries: (input) => {
+      const { name, location, username } = input;
+      if (!name) return [];
+
+      // Use the comprehensive archive search query generator
+      const queries = generateArchiveSearchQueries({
+        name,
+        location,
+        username,
+      });
+
+      return queries;
+    },
+  },
+  {
     pass: SearchPass.IMAGES_VISUAL,
-    name: "Images & Visual Footprint",
-    description: "Profile photos, image search, visual presence across platforms",
+    name: "Images & Visual",
+    description: "Profile photos, image searches, and visual footprint",
     generateQueries: (input) => {
       const { name, location, username, professionalInfo } = input;
       if (!name) return [];
 
-      // Use the comprehensive image search query generator
-      // This includes:
-      // - Direct name + image searches
-      // - Name + location image searches
-      // - Username image searches
-      // - Platform-specific image searches (LinkedIn, Facebook, Instagram, etc.)
-      // - Professional/news image searches
-      // - Dating platform image searches
-      // - Archive/cached image searches
       const queries = generateImageSearchQueries({
         name,
         location,
@@ -397,26 +323,34 @@ const PASS_CONFIGS: PassConfig[] = [
     },
   },
   {
-    pass: SearchPass.ARCHIVED_CACHED,
-    name: "Archived & Cached",
-    description: "Wayback Machine, archive.is, cached pages, and deleted content",
+    pass: SearchPass.USERNAME_EXPANDED,
+    name: "Username Expanded",
+    description: "Username variations and additional platform searches",
+    requiresUsername: true,
     generateQueries: (input) => {
-      const { name, location, username } = input;
-      if (!name) return [];
+      const { username, name, location, anchor } = input;
+      const queries: string[] = [];
 
-      // Use the comprehensive archive search query generator
-      // This covers:
-      // - Wayback Machine searches (web.archive.org)
-      // - Archive.is / Archive.ph searches
-      // - General cached/archived page searches
-      // - Platform-specific archive searches (social media, dating)
-      const queries = generateArchiveSearchQueries({
-        name,
-        location,
-        username,
-        // Note: discoveredProfileUrls can be passed in from earlier passes
-        // if we collect them during the search process
-      });
+      const primaryUsername = username || (anchor?.type === "username" ? anchor.value : null);
+      if (!primaryUsername) return queries;
+
+      // Generate username variations
+      const variations = generateUsernameVariations(primaryUsername);
+
+      // Search each variation across platforms
+      for (const v of variations.slice(0, 5)) {
+        queries.push(`"${v.username}"`);
+        queries.push(`${v.username} site:instagram.com`);
+        queries.push(`${v.username} site:twitter.com`);
+        queries.push(`${v.username} site:tiktok.com`);
+        queries.push(`${v.username} site:reddit.com`);
+        if (name) {
+          queries.push(`${v.username} "${name}"`);
+        }
+        if (location) {
+          queries.push(`${v.username} ${location}`);
+        }
+      }
 
       return queries;
     },
@@ -489,6 +423,134 @@ export function evaluateResultStrength(result: DeepSearchResult): ResultStrength
   };
 }
 
+/**
+ * Maximum number of retry attempts per pass when results are thin.
+ */
+const MAX_RETRY_ATTEMPTS = 1;
+
+/**
+ * Generates expanded queries for retry when initial pass results are thin.
+ * Adds variations, aliases, and broader search terms.
+ */
+function generateRetryQueries(
+  input: QueryGeneratorInput,
+  originalQueries: string[],
+  passType: SearchPass
+): string[] {
+  const retryQueries: string[] = [];
+  const { name, location, username, aliases, middleInitial, county } = input;
+
+  if (!name) return [];
+
+  const nameParts = name.split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+
+  // Add name variations not in original queries
+  const nameVariations = [
+    `"${firstName} ${lastName}"`, // First + Last only
+    `${firstName} ${lastName}`, // Without quotes
+    `"${lastName}, ${firstName}"`, // Reversed format
+  ];
+
+  if (middleInitial) {
+    nameVariations.push(`"${firstName} ${middleInitial}. ${lastName}"`);
+    nameVariations.push(`"${firstName} ${middleInitial} ${lastName}"`);
+  }
+
+  // Add location variations
+  if (location) {
+    const locationParts = location.split(",").map(p => p.trim());
+    for (const variation of nameVariations) {
+      retryQueries.push(`${variation} ${location}`);
+      // Try just city or just state
+      for (const part of locationParts) {
+        if (part && !originalQueries.some(q => q.includes(part))) {
+          retryQueries.push(`${variation} ${part}`);
+        }
+      }
+    }
+  }
+
+  // Add county if available and not already searched
+  if (county && !originalQueries.some(q => q.toLowerCase().includes(county.toLowerCase()))) {
+    retryQueries.push(`"${name}" ${county}`);
+  }
+
+  // Add aliases/username variations for retry
+  if (aliases?.length) {
+    for (const alias of aliases.slice(0, 3)) {
+      if (!originalQueries.some(q => q.includes(alias))) {
+        retryQueries.push(`"${alias}"`);
+        if (location) {
+          retryQueries.push(`"${alias}" ${location}`);
+        }
+      }
+    }
+  }
+
+  // Pass-specific retry expansions
+  switch (passType) {
+    case SearchPass.NAME_LOCATION:
+      // Try broader geographic searches
+      retryQueries.push(`"${name}" profile`);
+      retryQueries.push(`"${name}" contact`);
+      retryQueries.push(`"${name}" about`);
+      break;
+
+    case SearchPass.PLATFORM_TARGETED:
+      // Try additional platforms not in original
+      const additionalPlatforms = ["pinterest.com", "snapchat.com", "threads.net", "mastodon.social"];
+      for (const platform of additionalPlatforms) {
+        if (!originalQueries.some(q => q.includes(platform))) {
+          retryQueries.push(`"${name}" site:${platform}`);
+        }
+      }
+      break;
+
+    case SearchPass.USERNAME_FIRST:
+      // Try username with common suffixes/prefixes
+      if (username) {
+        const usernameSuffixes = ["_", "1", "2", "official", "real"];
+        for (const suffix of usernameSuffixes) {
+          retryQueries.push(`${username}${suffix}`);
+          retryQueries.push(`${suffix}${username}`);
+        }
+      }
+      break;
+
+    case SearchPass.DATING_MIRRORS:
+      // Try additional dating-related terms
+      retryQueries.push(`"${name}" relationship`);
+      retryQueries.push(`"${name}" single`);
+      retryQueries.push(`"${name}" looking for`);
+      break;
+
+    case SearchPass.LEGAL_RECORDS:
+      // Try additional legal search terms
+      retryQueries.push(`"${name}" arrest`);
+      retryQueries.push(`"${name}" warrant`);
+      retryQueries.push(`"${name}" lawsuit`);
+      break;
+
+    case SearchPass.ARCHIVED_CACHED:
+      // Try additional archive sources
+      retryQueries.push(`"${name}" cached`);
+      retryQueries.push(`"${name}" snapshot`);
+      retryQueries.push(`"${name}" site:webcache.googleusercontent.com`);
+      break;
+  }
+
+  // Filter out queries that were already in the original set
+  const originalSet = new Set(originalQueries.map(q => q.toLowerCase()));
+  const uniqueRetryQueries = retryQueries.filter(
+    q => !originalSet.has(q.toLowerCase())
+  );
+
+  console.log(`[MultiPass] Generated ${uniqueRetryQueries.length} retry queries for pass ${passType}`);
+  return [...new Set(uniqueRetryQueries)];
+}
+
 // ============================================================================
 // MULTI-PASS SEARCH RUNNER
 // ============================================================================
@@ -511,6 +573,12 @@ export interface MultiPassResult {
   imageResults: ImageSearchResult[];
   // Archived page results (labeled as "archived snapshots" with direct links)
   archivedPages: ArchivedPageResult[];
+  /** Total number of retry attempts across all passes */
+  totalRetryAttempts: number;
+  /** Number of passes that were retried */
+  passesRetried: number;
+  /** Whether minimum passes requirement was met */
+  minimumPassesMet: boolean;
 }
 
 export interface PassResult {
@@ -521,6 +589,10 @@ export interface PassResult {
   urlsFound: number;
   newSourcesAdded: number;
   resultStrength: ResultStrength;
+  /** Number of retry attempts for this pass (0 = first attempt succeeded) */
+  retryAttempts?: number;
+  /** Whether this pass was retried due to thin results */
+  wasRetried?: boolean;
 }
 
 /**
@@ -634,29 +706,114 @@ export async function executeMultiPassSearch(
         reasons: strength.reasons,
       });
 
-      // Check if we should stop early
-      if (strength.isStrong) {
+      // Check if we should stop early - BUT only after minimum passes have run
+      // Per requirements: search must NOT stop early just because an earlier pass returned nothing
+      const passesCompletedCount = passResults.length;
+      const canStopEarly = passesCompletedCount >= MIN_PASSES_BEFORE_STOP;
+
+      if (strength.isStrong && canStopEarly) {
         stoppedEarly = true;
-        stopReason = `Strong results after Pass ${passNumber}: ${strength.reasons.join(", ")}`;
+        stopReason = `Strong results after Pass ${passNumber} (${passesCompletedCount} passes completed): ${strength.reasons.join(", ")}`;
         console.log(`[MultiPass] Stopping early: ${stopReason}`);
         break;
+      } else if (strength.isStrong && !canStopEarly) {
+        console.log(`[MultiPass] Results are strong but minimum passes not met (${passesCompletedCount}/${MIN_PASSES_BEFORE_STOP}). Continuing...`);
+      } else if (!strength.isStrong && newSources.length === 0) {
+        // Thin results - attempt retry with expanded queries
+        console.log(`[MultiPass] Pass ${passNumber} produced thin results. Attempting retry...`);
+
+        const retryQueries = generateRetryQueries(input, uniqueQueries, passNumber);
+
+        if (retryQueries.length > 0) {
+          console.log(`[MultiPass] Retry with ${retryQueries.length} expanded queries`);
+          onProgress?.(`Pass ${passNumber}: Retrying with expanded queries...`, passNumber, totalPasses);
+
+          const retrySearchResult = await callPassSearch(retryQueries, input.name, `${passConfig.name} (Retry)`);
+          const retryResponse = retrySearchResult.content;
+
+          if (retryResponse) {
+            allRawResponses.push(retryResponse);
+
+            const retryResult = parseDeepSearchResponse(
+              retryResponse,
+              personContextId,
+              retryQueries.join(", ")
+            );
+
+            // Count new sources from retry
+            const existingUrlsAfterRetry = new Set(accumulatedSources.map(s => s.url).filter(Boolean));
+            const newRetrySourcesFound = retryResult.sources.filter(s => !s.url || !existingUrlsAfterRetry.has(s.url));
+
+            if (newRetrySourcesFound.length > 0) {
+              accumulatedSources = [...accumulatedSources, ...newRetrySourcesFound];
+              console.log(`[MultiPass] Retry found ${newRetrySourcesFound.length} new sources`);
+
+              // Update the pass result to reflect retry
+              const lastPassResult = passResults[passResults.length - 1];
+              if (lastPassResult) {
+                lastPassResult.queriesUsed = [...lastPassResult.queriesUsed, ...retryQueries];
+                lastPassResult.newSourcesAdded += newRetrySourcesFound.length;
+                lastPassResult.sourcesFound += retryResult.sources.length;
+                lastPassResult.urlsFound += retryResult.sources.filter(s => s.url).length;
+                lastPassResult.retryAttempts = 1;
+                lastPassResult.wasRetried = true;
+              }
+            } else {
+              console.log(`[MultiPass] Retry did not find additional sources`);
+            }
+          }
+        }
       }
     } else {
       console.log(`[MultiPass] Pass ${passNumber} returned no response`);
+
+      // Attempt retry even when main pass returned no response
+      const retryQueries = generateRetryQueries(input, uniqueQueries, passNumber);
+      let retrySourcesFound = 0;
+
+      if (retryQueries.length > 0) {
+        console.log(`[MultiPass] Attempting retry for failed pass ${passNumber} with ${retryQueries.length} queries`);
+        onProgress?.(`Pass ${passNumber}: Retrying after no response...`, passNumber, totalPasses);
+
+        const retrySearchResult = await callPassSearch(retryQueries, input.name, `${passConfig.name} (Retry)`);
+        const retryResponse = retrySearchResult.content;
+
+        if (retryResponse) {
+          allRawResponses.push(retryResponse);
+
+          const retryResult = parseDeepSearchResponse(
+            retryResponse,
+            personContextId,
+            retryQueries.join(", ")
+          );
+
+          const existingUrlsForRetry = new Set(accumulatedSources.map(s => s.url).filter(Boolean));
+          const newSourcesFromRetry = retryResult.sources.filter(s => !s.url || !existingUrlsForRetry.has(s.url));
+
+          if (newSourcesFromRetry.length > 0) {
+            accumulatedSources = [...accumulatedSources, ...newSourcesFromRetry];
+            retrySourcesFound = newSourcesFromRetry.length;
+            console.log(`[MultiPass] Retry recovered ${newSourcesFromRetry.length} sources`);
+          }
+        }
+      }
+
       passResults.push({
         pass: passNumber,
         passName: passConfig.name,
-        queriesUsed: uniqueQueries,
-        sourcesFound: 0,
+        queriesUsed: [...uniqueQueries, ...retryQueries],
+        sourcesFound: retrySourcesFound,
         urlsFound: 0,
-        newSourcesAdded: 0,
+        newSourcesAdded: retrySourcesFound,
         resultStrength: {
           isStrong: false,
           totalSources: accumulatedSources.length,
           urlCount: accumulatedSources.filter(s => s.url).length,
           categoriesCovered: new Set(accumulatedSources.map(s => s.type)).size,
-          reasons: ["Pass returned no response"],
+          reasons: retrySourcesFound > 0 ? ["Recovered via retry"] : ["Pass returned no response"],
         },
+        retryAttempts: retryQueries.length > 0 ? 1 : 0,
+        wasRetried: retryQueries.length > 0,
       });
     }
   }
@@ -693,7 +850,14 @@ export async function executeMultiPassSearch(
   // Extract archived page results from raw responses
   const archivedPages = parseArchivedPageResults(allRawResponses.join("\n"), input.name);
 
+  // Calculate retry statistics
+  const totalRetryAttempts = passResults.reduce((sum, p) => sum + (p.retryAttempts || 0), 0);
+  const passesRetried = passResults.filter(p => p.wasRetried).length;
+  const minimumPassesMet = passResults.length >= MIN_PASSES_BEFORE_STOP;
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
+  console.log(`[MultiPass] Retry stats: ${totalRetryAttempts} retries across ${passesRetried} passes`);
+  console.log(`[MultiPass] Minimum passes met: ${minimumPassesMet} (${passResults.length}/${MIN_PASSES_BEFORE_STOP})`);
   console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
   console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
   console.log(`[MultiPass] Image results found:`, imageResults.length);
@@ -710,6 +874,9 @@ export async function executeMultiPassSearch(
     legalPortals,
     imageResults,
     archivedPages,
+    totalRetryAttempts,
+    passesRetried,
+    minimumPassesMet,
   };
 }
 
