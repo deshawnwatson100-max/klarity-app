@@ -30,6 +30,7 @@ import {
   DeepSearchResultBubble,
   DeepSearchLoading,
 } from "./DeepSearchResultBubble";
+import { ChatLoadingBubble } from "./ChatLoadingBubble";
 
 // ChatGPT-style colors
 const COLORS = {
@@ -620,7 +621,11 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
         entering={FadeIn.duration(300)}
         layout={Layout.springify()}
       >
-        <DeepSearchLoading />
+        <ChatLoadingBubble
+          type="deep-search"
+          state="loading"
+          customAction={existingPersonContext ? `Searching for ${existingPersonContext.name}` : "Running deep search"}
+        />
       </Animated.View>
     );
   }

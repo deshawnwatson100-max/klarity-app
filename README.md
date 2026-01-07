@@ -524,6 +524,7 @@ Each loop stores:
 │   │   ├── FaceScanPromptBubble.tsx     # Tappable prompt for face scan
 │   │   ├── EmotionalFaceScanBubble.tsx  # Expandable face scan card with minimize
 │   │   ├── DeepSearchSuggestionCard.tsx # Suggestion card for Deep Search
+│   │   ├── ChatLoadingBubble.tsx    # Unified loading indicator with timer
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -765,6 +766,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Rewrite Mode** - Toggle between Understand and Rewrite modes in the input bar
 ✅ **Mid-Loop Image Continuation** - Add new screenshots during a chat loop without resetting analysis
 ✅ **Deep Search Suggestion Card** - Suggested inline when user mentions a person or expresses uncertainty about someone
+✅ **ChatLoadingBubble** - Unified loading indicator with elapsed timer and rotating status updates
 
 ### NEW: Mid-Loop Image Continuation Feature
 When you add a new image during an active chat loop, Klarity treats it as a continuation of the same conversation rather than starting fresh.
@@ -819,6 +821,44 @@ A second input mode that lets you polish your own replies with AI assistance.
 - You want to set a boundary but need help with the wording
 - You want to respond calmly but your draft feels too reactive
 - You want clarity without the full analysis
+
+### NEW: ChatLoadingBubble (AI Working Indicator)
+A unified loading indicator that shows users the app is working, with elapsed time and rotating status updates.
+
+#### Design
+- **ChatGPT-style aesthetic** - Minimal, calm, dark surface card
+- **Pulsing green dot** - Indicates active processing
+- **Elapsed timer** - Shows mm:ss format updating every second
+- **Action line** - Dynamic text like "Thinking of a reply" or "Running deep search"
+- **Rotating status** - Changes every 2-3 seconds to show progress
+
+#### Status Sets
+
+**For normal chat replies:**
+- "Reading the details..."
+- "Thinking through options..."
+- "Writing a response..."
+- "Polishing it..."
+
+**For Deep Search:**
+- "Searching the web..."
+- "Opening a few results..."
+- "Gathering links..."
+- "Organizing results..."
+
+#### Time-Based Reassurance
+- After 8-12 seconds: "This can take a moment."
+- After 20+ seconds: "Still working—almost done."
+
+#### States
+- **Loading** - Shows timer, status rotation, optional Cancel button
+- **Error** - Shows error message with "Try again" button
+- **Cancelled** - Shows "Stopped" with "Run again" button
+
+#### Integration
+Used automatically for:
+1. **Normal chat replies** - When generating AI responses in Understand mode
+2. **Deep Search** - When searching across 9 categories for a person
 
 ### NEW: Decode Mode (Conversational Exploration)
 A collaborative thinking space where users can freely brainstorm and talk through confusion, concern, or uncertainty about social situations.

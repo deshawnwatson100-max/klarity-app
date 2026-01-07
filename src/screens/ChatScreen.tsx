@@ -32,6 +32,7 @@ import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextCard } from "../components/PersonContextCard";
 import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
+import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -70,6 +71,7 @@ import {
   PersonContextCardMessage,
   DeepSearchSuggestionMessage,
   DeepSearchSuggestionState,
+  ChatLoadingMessage,
   MessageMode,
 } from "../types/chat";
 
@@ -471,14 +473,16 @@ export function ChatScreen({ navigation, route }: Props) {
 
     console.log("[DeepSearch] Starting search for:", personContext.name);
 
-    // Add loading message
+    // Add loading message with ChatLoadingBubble
     const loadingMsgId = `deep-search-loading-${Date.now()}`;
-    const loadingMessage: DeepSearchLoadingMessage = {
+    const loadingMessage: ChatLoadingMessage = {
       id: loadingMsgId,
-      role: "deep-search-loading",
+      role: "chat-loading",
       content: "",
       timestamp: Date.now(),
-      personName: personContext.name,
+      loadingType: "deep-search",
+      loadingState: "loading",
+      customAction: `Searching for ${personContext.name}`,
       mode: "understand",
     };
     addMessageToActiveLoopRaw(loadingMessage);
@@ -516,24 +520,30 @@ export function ChatScreen({ navigation, route }: Props) {
         addMessageToActiveLoopRaw(resultMessage);
         setActiveLoopDeepSearchCompleted(true);
       } else if (result.safetyBlock) {
-        // Safety block - show resources if needed
-        const safetyMessage: ChatMessage = {
+        // Safety block - show error with appropriate message
+        const errorMessage: ChatLoadingMessage = {
           id: `deep-search-safety-${Date.now()}`,
-          role: "assistant",
-          content: result.safetyBlock.reason === "safety_concern"
-            ? "I noticed some safety concerns. Your well-being comes first. If you feel unsafe, please reach out to someone who can help."
-            : "I am not able to search in this case. The request seems to be about monitoring or surveillance.",
+          role: "chat-loading",
+          content: "",
           timestamp: Date.now(),
+          loadingType: "deep-search",
+          loadingState: "error",
+          errorMessage: result.safetyBlock.reason === "safety_concern"
+            ? "I noticed some safety concerns. Your well-being comes first."
+            : "This search cannot be completed.",
           mode: "understand",
         };
-        addMessageToActiveLoopRaw(safetyMessage);
+        addMessageToActiveLoopRaw(errorMessage);
       } else if (result.error) {
         // Error message
-        const errorMessage: ChatMessage = {
+        const errorMessage: ChatLoadingMessage = {
           id: `deep-search-error-${Date.now()}`,
-          role: "assistant",
-          content: "I was not able to complete the search right now. You can ask me to try again later.",
+          role: "chat-loading",
+          content: "",
           timestamp: Date.now(),
+          loadingType: "deep-search",
+          loadingState: "error",
+          errorMessage: "Could not complete the search right now. Please try again.",
           mode: "understand",
         };
         addMessageToActiveLoopRaw(errorMessage);
@@ -543,11 +553,14 @@ export function ChatScreen({ navigation, route }: Props) {
       removeMessageFromActiveLoop(loadingMsgId);
 
       // Show error message
-      const errorMessage: ChatMessage = {
+      const errorMessage: ChatLoadingMessage = {
         id: `deep-search-error-${Date.now()}`,
-        role: "assistant",
-        content: "Something went wrong while searching. You can ask me to try again.",
+        role: "chat-loading",
+        content: "",
         timestamp: Date.now(),
+        loadingType: "deep-search",
+        loadingState: "error",
+        errorMessage: "Something went wrong while searching. Please try again.",
         mode: "understand",
       };
       addMessageToActiveLoopRaw(errorMessage);
@@ -1244,23 +1257,30 @@ export function ChatScreen({ navigation, route }: Props) {
     setIsProcessing(true);
     setIsLoading(true);
 
+    // Generate a unique ID for the loading bubble
+    const loadingMsgId = `chat-loading-${Date.now()}`;
+
     try {
       // Check if user is requesting a deep search
       if (isDeepSearchRequest(userMessage.content)) {
-        // Show typing indicator briefly
-        const typingMsg: TypingMessage = {
-          id: Date.now().toString() + "_typing",
-          role: "typing",
+        // Show loading bubble briefly
+        const loadingMsg: ChatLoadingMessage = {
+          id: loadingMsgId,
+          role: "chat-loading",
           content: "",
           timestamp: Date.now(),
+          loadingType: "chat",
+          loadingState: "loading",
+          customAction: "Processing request",
+          mode: "understand",
         };
-        addMessageToActiveLoop(typingMsg);
+        addMessageToActiveLoopRaw(loadingMsg);
 
         // Brief delay for natural feel
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Remove typing indicator
-        removeMessageFromActiveLoop(typingMsg.id);
+        // Remove loading bubble
+        removeMessageFromActiveLoop(loadingMsgId);
 
         // Add assistant message explaining deep search
         const assistantMsg: ChatMessage = {
@@ -1291,14 +1311,22 @@ export function ChatScreen({ navigation, route }: Props) {
         return;
       }
 
-      // Show typing indicator
-      const typingMsg: TypingMessage = {
-        id: Date.now().toString() + "_typing",
-        role: "typing",
+      // Show chat loading bubble
+      const loadingMsg: ChatLoadingMessage = {
+        id: loadingMsgId,
+        role: "chat-loading",
         content: "",
         timestamp: Date.now(),
+        loadingType: "chat",
+        loadingState: "loading",
+        mode: "understand",
       };
-      addMessageToActiveLoop(typingMsg);
+      addMessageToActiveLoopRaw(loadingMsg);
+
+      // Scroll to show loading bubble
+      setTimeout(() => {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
 
       // Build conversation history from decode messages for context
       const conversationHistory = decodeMessages
@@ -1314,8 +1342,8 @@ export function ChatScreen({ navigation, route }: Props) {
         conversationHistory
       );
 
-      // Remove typing indicator
-      removeMessageFromActiveLoop(typingMsg.id);
+      // Remove loading bubble
+      removeMessageFromActiveLoop(loadingMsgId);
 
       // Add assistant response as a regular message bubble
       const assistantMsg: ChatMessage = {
@@ -1361,16 +1389,21 @@ export function ChatScreen({ navigation, route }: Props) {
       }
     } catch (error) {
       console.error("Error processing decode message:", error);
-      // Remove typing indicator if it exists
-      const typingMsgId = Date.now().toString() + "_typing";
-      removeMessageFromActiveLoop(typingMsgId);
+      // Remove loading bubble if it exists
+      removeMessageFromActiveLoop(loadingMsgId);
 
-      addMessageToActiveLoop({
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "I want to make sure I understand. What part of this situation feels most unclear to you?",
+      // Show error in loading bubble style
+      const errorMsg: ChatLoadingMessage = {
+        id: `chat-error-${Date.now()}`,
+        role: "chat-loading",
+        content: "",
         timestamp: Date.now(),
-      });
+        loadingType: "chat",
+        loadingState: "error",
+        errorMessage: "Could not generate a response. Please try again.",
+        mode: "understand",
+      };
+      addMessageToActiveLoopRaw(errorMsg);
     } finally {
       setIsLoading(false);
       setIsProcessing(false);
@@ -1495,6 +1528,24 @@ export function ChatScreen({ navigation, route }: Props) {
   const renderDecodeMessage = (message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
+    }
+
+    // Chat loading bubble (new unified loading indicator)
+    if (message.role === "chat-loading") {
+      const loadingMsg = message as ChatLoadingMessage;
+      return (
+        <ChatLoadingBubble
+          key={message.id}
+          type={loadingMsg.loadingType}
+          state={loadingMsg.loadingState}
+          customAction={loadingMsg.customAction}
+          errorMessage={loadingMsg.errorMessage}
+          onRetry={() => {
+            // Remove error message and let user try again
+            removeMessageFromActiveLoop(message.id);
+          }}
+        />
+      );
     }
 
     // Deep Search loading state

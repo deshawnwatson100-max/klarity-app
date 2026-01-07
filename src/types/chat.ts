@@ -31,7 +31,8 @@ export type MessageRole =
   | "deep-search-loading"
   | "deep-search-result"
   | "person-context-card"
-  | "deep-search-suggestion";
+  | "deep-search-suggestion"
+  | "chat-loading";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -304,6 +305,17 @@ export interface DeepSearchSuggestionMessage extends Message {
   errorMessage?: string; // Error message if failed
 }
 
+export type ChatLoadingType = "chat" | "deep-search";
+export type ChatLoadingState = "loading" | "success" | "error" | "cancelled";
+
+export interface ChatLoadingMessage extends Message {
+  role: "chat-loading";
+  loadingType: ChatLoadingType;
+  loadingState: ChatLoadingState;
+  customAction?: string; // Override the action line
+  errorMessage?: string; // Error message if failed
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -336,4 +348,5 @@ export type ChatMessage =
   | DeepSearchLoadingMessage
   | DeepSearchResultMessage
   | PersonContextCardMessage
-  | DeepSearchSuggestionMessage;
+  | DeepSearchSuggestionMessage
+  | ChatLoadingMessage;
