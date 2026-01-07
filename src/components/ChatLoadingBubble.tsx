@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { View, Text, Pressable } from "react-native";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-  Easing,
-} from "react-native-reanimated";
+import { View, Text, Pressable, Animated, Easing } from "react-native";
 import * as Haptics from "expo-haptics";
 
 // ChatGPT-style colors
@@ -68,25 +58,42 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pulsing dot animation
-  const pulseOpacity = useSharedValue(0.4);
+  // Pulsing dot animation using RN Animated
+  const pulseOpacity = useRef(new Animated.Value(0.4)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Fade in effect
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  // Pulse animation
   useEffect(() => {
     if (state === "loading") {
-      pulseOpacity.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.4, { duration: 800, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        false
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseOpacity, {
+            toValue: 1,
+            duration: 800,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseOpacity, {
+            toValue: 0.4,
+            duration: 800,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
       );
+      pulseAnimation.start();
+      return () => pulseAnimation.stop();
     }
   }, [state, pulseOpacity]);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseOpacity.value,
-  }));
 
   // Get status texts based on type
   const statusTexts = type === "deep-search" ? DEEP_SEARCH_STATUSES : CHAT_STATUSES;
@@ -155,10 +162,10 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   if (state === "loading") {
     return (
       <Animated.View
-        entering={FadeIn.duration(200)}
         style={{
           marginVertical: 8,
           paddingHorizontal: 4,
+          opacity: fadeAnim,
         }}
       >
         <View
@@ -182,16 +189,14 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               {/* Pulsing dot */}
               <Animated.View
-                style={[
-                  {
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: COLORS.accent,
-                    marginRight: 10,
-                  },
-                  pulseStyle,
-                ]}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: COLORS.accent,
+                  marginRight: 10,
+                  opacity: pulseOpacity,
+                }}
               />
               <Text
                 style={{
@@ -283,10 +288,10 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   if (state === "error") {
     return (
       <Animated.View
-        entering={FadeIn.duration(200)}
         style={{
           marginVertical: 8,
           paddingHorizontal: 4,
+          opacity: fadeAnim,
         }}
       >
         <View
@@ -349,10 +354,10 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   if (state === "cancelled") {
     return (
       <Animated.View
-        entering={FadeIn.duration(200)}
         style={{
           marginVertical: 8,
           paddingHorizontal: 4,
+          opacity: fadeAnim,
         }}
       >
         <View
