@@ -31,6 +31,7 @@ import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextCard } from "../components/PersonContextCard";
+import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -67,6 +68,8 @@ import {
   DeepSearchLoadingMessage,
   DeepSearchResultMessage,
   PersonContextCardMessage,
+  DeepSearchSuggestionMessage,
+  DeepSearchSuggestionState,
   MessageMode,
 } from "../types/chat";
 
@@ -1179,6 +1182,63 @@ export function ChatScreen({ navigation, route }: Props) {
     return deepSearchPhrases.some((phrase) => lowerMessage.includes(phrase));
   };
 
+  // Helper function to detect if Deep Search should be SUGGESTED (not explicitly requested)
+  // This triggers the suggestion card, not the immediate deep search flow
+  const shouldSuggestDeepSearch = (message: string, conversationHistory: { role: string; content: string }[]): boolean => {
+    const lowerMessage = message.toLowerCase();
+
+    // Skip if user explicitly requested deep search (handled separately)
+    if (isDeepSearchRequest(message)) {
+      return false;
+    }
+
+    // Patterns that suggest the user is talking about a specific person
+    const personReferencePatterns = [
+      // Names - mentions "him", "her", "them" implying a specific person
+      /\b(him|her|them|he|she|they)\b/i,
+      // Dating/relationship context
+      /\b(dating|met|matched|talking to|seeing|went out|going out|date|texting|messaged|met someone|new guy|new girl|this guy|this girl|this person)\b/i,
+      // Meeting someone new
+      /\b(just met|recently met|started talking|matched with|connected with|met on|met through)\b/i,
+      // Uncertainty about a person
+      /\b(who is|should i trust|is this real|is he|is she|are they|can i trust|what do you think of|seem like|seems like a|red flag|concerned about|suspicious|worried about|not sure about|unsure about)\b/i,
+      // Verification context
+      /\b(legit|legitimate|catfish|scam|real person|fake|verify|verification|check out|look into)\b/i,
+    ];
+
+    const hasPersonReference = personReferencePatterns.some((pattern) => pattern.test(message));
+
+    // Also check if conversation history mentions a specific person by name
+    // This helps when user says "what about him?" after mentioning a name earlier
+    const conversationHasNameMention = conversationHistory.some((msg) => {
+      // Simple heuristic: check for capitalized words that might be names
+      const possibleNames = msg.content.match(/\b[A-Z][a-z]+\b/g);
+      return possibleNames && possibleNames.length > 0;
+    });
+
+    // Check for explicit questions about someone
+    const questionPatterns = [
+      /what.*think.*about/i,
+      /should.*trust/i,
+      /is.*real/i,
+      /who.*is/i,
+      /can.*find.*about/i,
+      /know.*anything.*about/i,
+    ];
+
+    const hasExplicitQuestion = questionPatterns.some((pattern) => pattern.test(message));
+
+    // Trigger suggestion if:
+    // 1. User mentions person pronouns/references AND has explicit question
+    // 2. OR user is in dating/meeting context with uncertainty language
+    // 3. OR conversation has name mention and user asks about "them"
+    return (
+      (hasPersonReference && hasExplicitQuestion) ||
+      (lowerMessage.includes("dating") && /\b(trust|real|suspicious|worried|red flag|concerned)\b/i.test(lowerMessage)) ||
+      (conversationHasNameMention && /\b(him|her|them|this person|this guy|this girl)\b/i.test(lowerMessage) && hasExplicitQuestion)
+    );
+  };
+
   // Process message in Decode mode - conversational exploration for clarity
   const processDecodeMessage = async (userMessage: ChatMessage) => {
     setIsProcessing(true);
@@ -1265,6 +1325,40 @@ export function ChatScreen({ navigation, route }: Props) {
         timestamp: Date.now(),
       };
       addMessageToActiveLoop(assistantMsg);
+
+      // Check if we should suggest Deep Search after the assistant response
+      // Only suggest if no deep search has been completed in this loop
+      const activeLoop = getActiveLoop();
+      const deepSearchAlreadyCompleted = activeLoop?.deepSearchCompleted || false;
+      const hasSuggestionCardAlready = decodeMessages.some(
+        (msg) => msg.role === "deep-search-suggestion"
+      );
+
+      if (
+        !deepSearchAlreadyCompleted &&
+        !hasSuggestionCardAlready &&
+        shouldSuggestDeepSearch(userMessage.content, conversationHistory)
+      ) {
+        // Small delay before showing suggestion
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
+        // Add the Deep Search suggestion card
+        const suggestionMsg: DeepSearchSuggestionMessage = {
+          id: `deep-search-suggestion-${Date.now()}`,
+          role: "deep-search-suggestion",
+          content: "",
+          timestamp: Date.now(),
+          suggestionState: "collapsed",
+          personContextId: activeLoopPersonContextId || undefined,
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(suggestionMsg);
+
+        // Scroll to show the suggestion
+        setTimeout(() => {
+          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     } catch (error) {
       console.error("Error processing decode message:", error);
       // Remove typing indicator if it exists
@@ -1435,6 +1529,93 @@ export function ChatScreen({ navigation, route }: Props) {
           onDismiss={() => {
             // Remove the card from chat when dismissed via X button
             removeMessageFromActiveLoop(message.id);
+          }}
+        />
+      );
+    }
+
+    // Deep Search Suggestion Card - suggested inline in chat
+    if (message.role === "deep-search-suggestion") {
+      const suggestionMsg = message as DeepSearchSuggestionMessage;
+      return (
+        <DeepSearchSuggestionCard
+          key={message.id}
+          messageId={message.id}
+          initialState={suggestionMsg.suggestionState}
+          existingPersonContextId={suggestionMsg.personContextId}
+          searchResult={suggestionMsg.searchResult}
+          errorMessage={suggestionMsg.errorMessage}
+          onRunDeepSearch={async (personContextId) => {
+            // Update the suggestion card state to running
+            updateMessageInActiveLoop(message.id, {
+              ...suggestionMsg,
+              suggestionState: "running",
+              personContextId,
+            } as DeepSearchSuggestionMessage);
+
+            try {
+              const personContext = getPersonContextById(personContextId);
+              if (!personContext) {
+                throw new Error("Person context not found");
+              }
+
+              // Execute Deep Search
+              const result = await executeDeepSearch({
+                personContext: personContext,
+                onProgress: (status) => {
+                  console.log("[DeepSearch Suggestion] Progress:", status);
+                },
+              });
+
+              if (result.success && result.result) {
+                // Update the card with results
+                updateMessageInActiveLoop(message.id, {
+                  ...suggestionMsg,
+                  suggestionState: "results",
+                  personContextId,
+                  searchResult: result.result,
+                } as DeepSearchSuggestionMessage);
+                setActiveLoopDeepSearchCompleted(true);
+              } else if (result.safetyBlock) {
+                // Safety block - show error state
+                updateMessageInActiveLoop(message.id, {
+                  ...suggestionMsg,
+                  suggestionState: "error",
+                  personContextId,
+                  errorMessage: result.safetyBlock.reason === "safety_concern"
+                    ? "I noticed some safety concerns. Your well-being comes first."
+                    : "This search cannot be completed.",
+                } as DeepSearchSuggestionMessage);
+              } else if (result.error) {
+                // Error state
+                updateMessageInActiveLoop(message.id, {
+                  ...suggestionMsg,
+                  suggestionState: "error",
+                  personContextId,
+                  errorMessage: result.error,
+                } as DeepSearchSuggestionMessage);
+              }
+            } catch (error) {
+              console.error("[DeepSearch Suggestion] Error:", error);
+              // Update to error state
+              updateMessageInActiveLoop(message.id, {
+                ...suggestionMsg,
+                suggestionState: "error",
+                personContextId,
+                errorMessage: "Something went wrong while searching. Please try again.",
+              } as DeepSearchSuggestionMessage);
+            }
+          }}
+          onDismiss={() => {
+            // Remove the suggestion card when dismissed
+            removeMessageFromActiveLoop(message.id);
+          }}
+          onUpdateState={(newState) => {
+            // Update the suggestion state in the message
+            updateMessageInActiveLoop(message.id, {
+              ...suggestionMsg,
+              suggestionState: newState,
+            } as DeepSearchSuggestionMessage);
           }}
         />
       );

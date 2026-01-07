@@ -523,6 +523,7 @@ Each loop stores:
 │   │   ├── VoiceEmotionScanBubble.tsx   # NEW: Voice emotion analysis result card
 │   │   ├── FaceScanPromptBubble.tsx     # Tappable prompt for face scan
 │   │   ├── EmotionalFaceScanBubble.tsx  # Expandable face scan card with minimize
+│   │   ├── DeepSearchSuggestionCard.tsx # Suggestion card for Deep Search
 │   │   └── LoopHistoryPanel.tsx    # Past loops drawer
 │   ├── navigation/
 │   │   └── RootNavigator.tsx       # Stack navigation (no tabs)
@@ -763,6 +764,7 @@ API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
 ✅ **Clean Message UI** - User messages in subtle bubbles, assistant messages as floating paragraphs
 ✅ **Rewrite Mode** - Toggle between Understand and Rewrite modes in the input bar
 ✅ **Mid-Loop Image Continuation** - Add new screenshots during a chat loop without resetting analysis
+✅ **Deep Search Suggestion Card** - Suggested inline when user mentions a person or expresses uncertainty about someone
 
 ### NEW: Mid-Loop Image Continuation Feature
 When you add a new image during an active chat loop, Klarity treats it as a continuation of the same conversation rather than starting fresh.
@@ -1485,6 +1487,27 @@ When standard HTTP fetch returns minimal content from JS-heavy pages, Deep Searc
 - "What can you find about..."
 - "Do a deep search"
 - "Check their online presence"
+
+**Suggestion Card Trigger (NEW):**
+Deep Search can now be SUGGESTED naturally in conversation when:
+- User mentions a person by name or "him/her/them" implying a specific person
+- User is dating or considering someone new
+- User expresses uncertainty about who the person is
+- User asks questions like "who is this person", "is this real", "should I trust"
+
+When triggered, a **suggestion card** appears in chat:
+- **Collapsed state:** "Deep Search this person?" with "Run Deep Search" and "Not now" buttons
+- **Input state:** If no Person Context exists, expands to inline form with:
+  - Name (required)
+  - Approx location (optional)
+  - Context anchor (workplace/school/dating app/username)
+  - Optional boost (username, age range)
+  - "Start Deep Search" button
+- **Running state:** Shows loading animation with progress
+- **Results state:** Displays categorized results inline
+- **Error state:** "Deep Search is not available right now" with "Try again" and "Edit details" buttons
+
+The suggestion card does NOT auto-run Deep Search. It waits for user to choose to run it.
 
 **Auto-Trigger Flow:**
 When a user completes adding person context info from the Input Screen:

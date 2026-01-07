@@ -30,7 +30,8 @@ export type MessageRole =
   | "image-continuation"
   | "deep-search-loading"
   | "deep-search-result"
-  | "person-context-card";
+  | "person-context-card"
+  | "deep-search-suggestion";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -293,6 +294,16 @@ export interface PersonContextCardMessage extends Message {
   role: "person-context-card";
 }
 
+export type DeepSearchSuggestionState = "collapsed" | "input" | "running" | "results" | "error";
+
+export interface DeepSearchSuggestionMessage extends Message {
+  role: "deep-search-suggestion";
+  suggestionState: DeepSearchSuggestionState;
+  personContextId?: string; // If person context already exists
+  searchResult?: DeepSearchResultMessage["searchResult"]; // Results when complete
+  errorMessage?: string; // Error message if failed
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -324,4 +335,5 @@ export type ChatMessage =
   | ImageContinuationMessage
   | DeepSearchLoadingMessage
   | DeepSearchResultMessage
-  | PersonContextCardMessage;
+  | PersonContextCardMessage
+  | DeepSearchSuggestionMessage;
