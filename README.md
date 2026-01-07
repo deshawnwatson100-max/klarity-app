@@ -1386,6 +1386,64 @@ Pages from these domains are marked as requiring special handling:
 - tiktok.com, linkedin.com, snapchat.com, threads.net
 These pages return minimal content without JavaScript execution.
 
+**Headless Browser Fallback (JS-Heavy Pages):**
+When standard HTTP fetch returns minimal content from JS-heavy pages, Deep Search automatically attempts fallback methods to extract content:
+
+1. **Detection Phase:**
+   - Analyzes page content for JS framework indicators (React, Vue, Angular, Next.js, Nuxt)
+   - Checks for empty body patterns, noscript warnings, minimal text content
+   - Assigns priority score (1-10) based on domain and content analysis
+   - Determines recommended fallback method
+
+2. **Fallback Methods (tried in order of likelihood):**
+   | Method | Description | Best For |
+   |--------|-------------|----------|
+   | `mobile_user_agent` | Re-fetch with mobile UA | Sites serving simpler mobile pages |
+   | `google_cache` | Fetch from Google Cache | Recently indexed pages |
+   | `archive_snapshot` | Fetch from Wayback Machine | Older or deleted content |
+   | `api_render_service` | External render API (if configured) | Critical pages |
+
+3. **Performance Controls:**
+   - Maximum 5 pages rendered per search (configurable)
+   - 2 concurrent renders to limit load
+   - 15 second timeout per render
+   - 2 second page settle time for dynamic content
+
+4. **Content Extraction from Rendered Pages:**
+   - Visible text extraction (scripts/styles removed)
+   - Username and @handle detection
+   - Social profile URL extraction
+   - Email address detection
+   - OpenGraph/Twitter Card metadata
+
+5. **Result Merging:**
+   - Headless results merged back into original fetch results
+   - New identifiers deduplicated and added to extraction pool
+   - Second-wave search uses combined identifier set
+
+**JS-Heavy Detection Indicators:**
+```typescript
+// High confidence (weight 10):
+- <div id="__next"></div>  // Next.js
+- <div id="root"></div>    // React SPA
+- <noscript>enable javascript</noscript>
+
+// Medium confidence (weight 7-9):
+- __NEXT_DATA__
+- __NUXT__
+- data-reactroot
+- ng-version
+
+// Low confidence (weight 5-6):
+- High script tag count with low text content
+- window.__INITIAL_STATE__
+```
+
+**MultiPassResult Headless Fields:**
+- `headlessRenderResults` - Detailed results from each headless render attempt
+- `headlessRenderedCount` - Number of pages successfully rendered
+- `headlessExtractedIdentifiers` - Identifiers found only through headless rendering
+
 **MultiPassResult Enhanced Fields:**
 - `pageFetchResults` - Detailed results from each fetched page
 - `secondWaveInput` - Discovered identifiers that triggered second-wave
@@ -1441,6 +1499,7 @@ When a user completes adding person context info from the Input Screen:
 - `src/api/deepSearch.ts` - Prompts, types, search categories, and parsing
 - `src/api/deepSearchService.ts` - Orchestration, multi-pass runner, and LLM calls
 - `src/api/deepSearchPageFetcher.ts` - Page fetching, identifier extraction, second-wave input
+- `src/api/deepSearchHeadlessFetcher.ts` - Headless browser fallback for JS-heavy pages
 - `src/api/deepSearchLogger.ts` - Internal developer logging for debugging
 - `src/components/DeepSearchResultBubble.tsx` - Chat UI component
 - `src/types/chat.ts` - DeepSearchLoadingMessage, DeepSearchResultMessage types

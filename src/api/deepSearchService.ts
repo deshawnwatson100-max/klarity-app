@@ -60,6 +60,15 @@ import {
   SecondWaveQueryResult,
   PrioritizedQuery,
 } from "./deepSearchPageFetcher";
+import {
+  detectJsHeavyPage,
+  selectPagesForHeadlessRender,
+  renderMultipleJsHeavyPages,
+  mergeHeadlessResults,
+  HeadlessRenderResult,
+  JsHeavyDetectionResult,
+  HEADLESS_CONFIG,
+} from "./deepSearchHeadlessFetcher";
 
 // ============================================================================
 // MULTI-SEARCH ENFORCEMENT CONFIGURATION
@@ -648,6 +657,12 @@ export interface MultiPassResult {
   };
   /** Detailed second-wave query list with priorities */
   secondWaveQueries?: PrioritizedQuery[];
+  /** Headless render results for JS-heavy pages */
+  headlessRenderResults?: HeadlessRenderResult[];
+  /** Number of pages successfully rendered with headless fallback */
+  headlessRenderedCount: number;
+  /** Additional identifiers extracted from headless-rendered pages */
+  headlessExtractedIdentifiers: ExtractedIdentifier[];
 }
 
 export interface PassResult {
@@ -942,6 +957,9 @@ export async function executeMultiPassSearch(
   let allExtractedIdentifiers: ExtractedIdentifier[] = [];
   let secondWaveQueries: PrioritizedQuery[] | undefined;
   let secondWaveQueryStats: MultiPassResult["secondWaveQueryStats"];
+  let headlessRenderResults: HeadlessRenderResult[] = [];
+  let headlessRenderedCount = 0;
+  let headlessExtractedIdentifiers: ExtractedIdentifier[] = [];
 
   if (urlsToFetch.length > 0) {
     onProgress?.("Fetching page content...", passResults.length + 1, totalPasses + 2);
@@ -965,6 +983,56 @@ export async function executeMultiPassSearch(
         jsHeavy: jsHeavyPages.length,
         identifiersFound: allExtractedIdentifiers.length,
       });
+
+      // ============================================================================
+      // HEADLESS RENDER FALLBACK FOR JS-HEAVY PAGES
+      // ============================================================================
+
+      // Select high-value JS-heavy pages for headless rendering
+      if (jsHeavyPages.length > 0) {
+        onProgress?.("Rendering JS-heavy pages...", passResults.length + 1, totalPasses + 3);
+        console.log(`[MultiPass] Attempting headless render for ${jsHeavyPages.length} JS-heavy pages`);
+
+        try {
+          // Select top N pages for headless rendering based on priority
+          const pagesToRender = selectPagesForHeadlessRender(pageFetchResults, HEADLESS_CONFIG);
+
+          if (pagesToRender.length > 0) {
+            console.log(`[MultiPass] Selected ${pagesToRender.length} pages for headless rendering`);
+
+            // Render pages with headless fallback methods
+            headlessRenderResults = await renderMultipleJsHeavyPages(pagesToRender, 2);
+
+            // Count successful renders
+            headlessRenderedCount = headlessRenderResults.filter(r => r.success).length;
+
+            // Extract identifiers from headless-rendered pages
+            headlessExtractedIdentifiers = headlessRenderResults
+              .filter(r => r.success)
+              .flatMap(r => r.extractedIdentifiers);
+
+            // Merge headless results back into page fetch results
+            if (headlessRenderedCount > 0) {
+              pageFetchResults = mergeHeadlessResults(pageFetchResults, headlessRenderResults);
+
+              // Update all extracted identifiers with headless results
+              const existingIdentifierValues = new Set(allExtractedIdentifiers.map(i => i.value));
+              const newHeadlessIdentifiers = headlessExtractedIdentifiers.filter(
+                i => !existingIdentifierValues.has(i.value)
+              );
+              allExtractedIdentifiers = [...allExtractedIdentifiers, ...newHeadlessIdentifiers];
+
+              console.log(`[MultiPass] Headless render complete:`, {
+                rendered: headlessRenderedCount,
+                newIdentifiers: newHeadlessIdentifiers.length,
+                totalIdentifiers: allExtractedIdentifiers.length,
+              });
+            }
+          }
+        } catch (error) {
+          console.error("[MultiPass] Headless render error:", error);
+        }
+      }
 
       // Prepare second-wave input
       const existingUsernames = new Set(
@@ -1079,6 +1147,7 @@ export async function executeMultiPassSearch(
   console.log(`[MultiPass] Retry stats: ${totalRetryAttempts} retries across ${passesRetried} passes`);
   console.log(`[MultiPass] Minimum passes met: ${minimumPassesMet} (${passResults.length}/${MIN_PASSES_BEFORE_STOP})`);
   console.log(`[MultiPass] Page fetching: ${pageFetchResults.length} pages, ${jsHeavyPages.length} JS-heavy`);
+  console.log(`[MultiPass] Headless render: ${headlessRenderedCount} pages rendered, ${headlessExtractedIdentifiers.length} identifiers extracted`);
   console.log(`[MultiPass] Second-wave: executed=${secondWaveExecuted}, newSources=${secondWaveSources}`);
   if (secondWaveQueryStats) {
     console.log(`[MultiPass] Second-wave query breakdown:`, secondWaveQueryStats);
@@ -1111,6 +1180,9 @@ export async function executeMultiPassSearch(
     extractedIdentifiers: allExtractedIdentifiers,
     secondWaveQueryStats,
     secondWaveQueries,
+    headlessRenderResults,
+    headlessRenderedCount,
+    headlessExtractedIdentifiers,
   };
 }
 
