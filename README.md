@@ -1276,6 +1276,46 @@ Deep Search is configured to REQUIRE multiple distinct web searches per request:
   - `[PassSearch:PassName] Completed. Estimated searches executed: X/Y`
   - `[MultiPass] Pass N search metrics: { queriesProvided, searchesExecuted, meetsMinimum }`
 
+**Page Fetching & Identifier Extraction (Second-Wave Search):**
+After initial search passes complete, Deep Search automatically:
+1. **Fetches top result pages** - Retrieves HTML content from up to 10 discovered URLs
+2. **Extracts identifiers** from each page:
+   - Usernames and @handles
+   - Social profile links (Instagram, Twitter, LinkedIn, etc.)
+   - Email addresses
+   - Structured metadata (OpenGraph, JSON-LD)
+   - Outbound links to other profiles
+3. **Detects JS-heavy pages** - Pages that require JavaScript rendering are marked for later handling
+4. **Triggers second-wave search** - New usernames/links are fed back into the search runner
+
+**Identifier Extraction Patterns:**
+- `@username` mentions in page content
+- Platform-specific URL patterns (twitter.com/user, instagram.com/user, etc.)
+- JSON-LD structured data (Person schema, ProfilePage schema)
+- OpenGraph metadata (og:title, og:description)
+- Twitter Card metadata (twitter:site, twitter:creator)
+
+**Second-Wave Search Queries:**
+When new identifiers are discovered:
+- Direct username search: `"newusername"`
+- Cross-platform verification: `newusername site:instagram.com`
+- Connection confirmation: `"newusername" "personname"`
+- Domain-specific searches: `"personname" site:discovered-domain.com`
+
+**JS-Heavy Page Handling:**
+Pages from these domains are marked as requiring special handling:
+- instagram.com, facebook.com, twitter.com, x.com
+- tiktok.com, linkedin.com, snapchat.com, threads.net
+These pages return minimal content without JavaScript execution.
+
+**MultiPassResult Enhanced Fields:**
+- `pageFetchResults` - Detailed results from each fetched page
+- `secondWaveInput` - Discovered identifiers that triggered second-wave
+- `secondWaveExecuted` - Whether second-wave search ran
+- `secondWaveSources` - Number of new sources from second-wave
+- `jsHeavyPages` - URLs marked as needing JS rendering
+- `extractedIdentifiers` - All usernames, links, emails found
+
 **Key Framing Rules:**
 - Finding something does not mean it is bad
 - Not finding something does not mean it does not exist
@@ -1321,7 +1361,8 @@ When a user completes adding person context info from the Input Screen:
 
 **Files:**
 - `src/api/deepSearch.ts` - Prompts, types, search categories, and parsing
-- `src/api/deepSearchService.ts` - Orchestration and LLM calls
+- `src/api/deepSearchService.ts` - Orchestration, multi-pass runner, and LLM calls
+- `src/api/deepSearchPageFetcher.ts` - Page fetching, identifier extraction, second-wave input
 - `src/api/deepSearchLogger.ts` - Internal developer logging for debugging
 - `src/components/DeepSearchResultBubble.tsx` - Chat UI component
 - `src/types/chat.ts` - DeepSearchLoadingMessage, DeepSearchResultMessage types

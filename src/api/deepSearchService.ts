@@ -6,6 +6,8 @@
  *
  * Uses a multi-pass search strategy that continues until strong results are found
  * or all passes are exhausted.
+ *
+ * ENHANCED: Now includes page fetching and second-wave search triggers.
  */
 
 import { PersonContext } from "../types/personContext";
@@ -46,6 +48,14 @@ import {
   ArchivedPageResult,
 } from "./deepSearch";
 import { DeepSearchLogger, detectIdentityAmbiguity } from "./deepSearchLogger";
+import {
+  fetchMultiplePages,
+  prepareSecondWaveInput,
+  generateSecondWaveQueries,
+  PageFetchResult,
+  SecondWaveInput,
+  ExtractedIdentifier,
+} from "./deepSearchPageFetcher";
 
 // ============================================================================
 // MULTI-SEARCH ENFORCEMENT CONFIGURATION
@@ -579,6 +589,18 @@ export interface MultiPassResult {
   passesRetried: number;
   /** Whether minimum passes requirement was met */
   minimumPassesMet: boolean;
+  /** Page fetch results with extracted identifiers */
+  pageFetchResults?: PageFetchResult[];
+  /** Second-wave search input (discovered identifiers) */
+  secondWaveInput?: SecondWaveInput;
+  /** Whether second-wave search was executed */
+  secondWaveExecuted: boolean;
+  /** Number of new sources found from second-wave search */
+  secondWaveSources: number;
+  /** Pages marked as JS-heavy (need special handling) */
+  jsHeavyPages: string[];
+  /** All extracted identifiers from page fetching */
+  extractedIdentifiers: ExtractedIdentifier[];
 }
 
 export interface PassResult {
@@ -855,18 +877,137 @@ export async function executeMultiPassSearch(
   const passesRetried = passResults.filter(p => p.wasRetried).length;
   const minimumPassesMet = passResults.length >= MIN_PASSES_BEFORE_STOP;
 
+  // ============================================================================
+  // PAGE FETCHING & SECOND-WAVE SEARCH
+  // ============================================================================
+
+  // Collect URLs from accumulated sources for page fetching
+  const urlsToFetch = accumulatedSources
+    .filter(s => s.url && s.url.startsWith("http"))
+    .map(s => s.url as string)
+    .slice(0, 10); // Limit to top 10 URLs
+
+  let pageFetchResults: PageFetchResult[] = [];
+  let secondWaveInput: SecondWaveInput | undefined;
+  let secondWaveExecuted = false;
+  let secondWaveSources = 0;
+  let jsHeavyPages: string[] = [];
+  let allExtractedIdentifiers: ExtractedIdentifier[] = [];
+
+  if (urlsToFetch.length > 0) {
+    onProgress?.("Fetching page content...", passResults.length + 1, totalPasses + 2);
+    console.log(`[MultiPass] Fetching ${urlsToFetch.length} pages for identifier extraction`);
+
+    try {
+      // Fetch pages and extract identifiers
+      pageFetchResults = await fetchMultiplePages(urlsToFetch, 3);
+
+      // Collect JS-heavy pages
+      jsHeavyPages = pageFetchResults
+        .filter(r => r.isJsHeavy)
+        .map(r => r.url);
+
+      // Collect all extracted identifiers
+      allExtractedIdentifiers = pageFetchResults.flatMap(r => r.extractedIdentifiers);
+
+      console.log(`[MultiPass] Page fetch complete:`, {
+        fetched: pageFetchResults.length,
+        successful: pageFetchResults.filter(r => r.success).length,
+        jsHeavy: jsHeavyPages.length,
+        identifiersFound: allExtractedIdentifiers.length,
+      });
+
+      // Prepare second-wave input
+      const existingUsernames = new Set(
+        [input.username, ...(input.aliases || [])].filter(Boolean).map(u => u!.toLowerCase())
+      );
+      const existingUrls = new Set(accumulatedSources.map(s => s.url).filter(Boolean) as string[]);
+
+      secondWaveInput = prepareSecondWaveInput(pageFetchResults, existingUsernames, existingUrls);
+
+      // Execute second-wave search if we found new identifiers
+      const hasNewIdentifiers =
+        secondWaveInput.discoveredUsernames.length > 0 ||
+        secondWaveInput.discoveredSocialLinks.length > 0 ||
+        secondWaveInput.discoveredDomains.length > 0;
+
+      if (hasNewIdentifiers) {
+        onProgress?.("Running second-wave search...", passResults.length + 2, totalPasses + 2);
+        console.log(`[MultiPass] Executing second-wave search with discovered identifiers`);
+
+        const secondWaveQueries = generateSecondWaveQueries(secondWaveInput, input.name);
+
+        if (secondWaveQueries.length > 0) {
+          const secondWaveResult = await callPassSearch(
+            secondWaveQueries,
+            input.name,
+            "Second Wave"
+          );
+
+          if (secondWaveResult.content) {
+            allRawResponses.push(secondWaveResult.content);
+
+            const secondWaveParsed = parseDeepSearchResponse(
+              secondWaveResult.content,
+              personContextId,
+              secondWaveQueries.join(", ")
+            );
+
+            // Add new sources from second wave
+            const existingUrlSet = new Set(accumulatedSources.map(s => s.url).filter(Boolean));
+            const newSecondWaveSources = secondWaveParsed.sources.filter(
+              s => !s.url || !existingUrlSet.has(s.url)
+            );
+
+            if (newSecondWaveSources.length > 0) {
+              accumulatedSources = [...accumulatedSources, ...newSecondWaveSources];
+              secondWaveSources = newSecondWaveSources.length;
+              console.log(`[MultiPass] Second-wave added ${secondWaveSources} new sources`);
+            }
+
+            secondWaveExecuted = true;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("[MultiPass] Page fetching error:", error);
+    }
+  }
+
+  // Rebuild final result with second-wave sources
+  const updatedFinalResult: DeepSearchResult = {
+    id: `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString(),
+    personContextId,
+    searchQuery: passResults.flatMap(p => p.queriesUsed).join(", "),
+    sources: accumulatedSources,
+    summary: accumulatedSources.length > 0
+      ? `Found ${accumulatedSources.length} results across ${new Set(accumulatedSources.map(s => s.type)).size} categories.`
+      : "No results found after comprehensive search.",
+    alignmentNotes: [],
+    uncertainties: [],
+    rawResponse: allRawResponses.join("\n\n---\n\n"),
+  };
+
+  // Rebuild categorized results with updated sources
+  const updatedCategorizedResults = categorizeResults(accumulatedSources);
+  const updatedCategorizedStats = getCategorizedResultsStats(updatedCategorizedResults);
+
   console.log(`[MultiPass] Complete. Passes: ${passResults.length}, Sources: ${accumulatedSources.length}, Stopped early: ${stoppedEarly}`);
   console.log(`[MultiPass] Retry stats: ${totalRetryAttempts} retries across ${passesRetried} passes`);
   console.log(`[MultiPass] Minimum passes met: ${minimumPassesMet} (${passResults.length}/${MIN_PASSES_BEFORE_STOP})`);
-  console.log(`[MultiPass] Categorized results:`, categorizedStats.byCategory);
+  console.log(`[MultiPass] Page fetching: ${pageFetchResults.length} pages, ${jsHeavyPages.length} JS-heavy`);
+  console.log(`[MultiPass] Second-wave: executed=${secondWaveExecuted}, newSources=${secondWaveSources}`);
+  console.log(`[MultiPass] Extracted identifiers: ${allExtractedIdentifiers.length}`);
+  console.log(`[MultiPass] Categorized results:`, updatedCategorizedStats.byCategory);
   console.log(`[MultiPass] Legal portals found:`, legalPortals.length);
   console.log(`[MultiPass] Image results found:`, imageResults.length);
   console.log(`[MultiPass] Archived pages found:`, archivedPages.length);
 
   return {
-    finalResult,
-    categorizedResults,
-    categorizedStats,
+    finalResult: updatedFinalResult,
+    categorizedResults: updatedCategorizedResults,
+    categorizedStats: updatedCategorizedStats,
     passesExecuted: passResults.length,
     passResults,
     stoppedEarly,
@@ -877,6 +1018,12 @@ export async function executeMultiPassSearch(
     totalRetryAttempts,
     passesRetried,
     minimumPassesMet,
+    pageFetchResults,
+    secondWaveInput,
+    secondWaveExecuted,
+    secondWaveSources,
+    jsHeavyPages,
+    extractedIdentifiers: allExtractedIdentifiers,
   };
 }
 
