@@ -9,33 +9,34 @@ import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
 
 /**
- * Klarity Logo Icon - Abstract geometric outline shapes
- * Similar to ChatGPT's minimalist hexagonal style
+ * Klarity Logo Icon - Abstract geometric outline with curves and edges
+ * Minimalist style with organic and angular elements
  */
-function KlarityLogoIcon({ size = 20, color = "#818CF8" }: { size?: number; color?: string }) {
+function KlarityLogoIcon({ size = 20, color = "#FFFFFF" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Outer hexagon outline */}
+      {/* Outer rounded hexagon with soft corners */}
       <Path
-        d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z"
+        d="M12 2C12 2 18 5 20 8C22 11 22 13 20 16C18 19 12 22 12 22C12 22 6 19 4 16C2 13 2 11 4 8C6 5 12 2 12 2Z"
         stroke={color}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Inner diamond/rhombus */}
+      {/* Inner angular crystal shape */}
       <Path
-        d="M12 6L17 12L12 18L7 12L12 6Z"
+        d="M12 6L16.5 10L14 12L16.5 14L12 18L7.5 14L10 12L7.5 10L12 6Z"
         stroke={color}
-        strokeWidth={1.5}
+        strokeWidth={1.4}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Center dot */}
+      {/* Center curved element */}
       <Path
-        d="M12 10.5C12.8284 10.5 13.5 11.1716 13.5 12C13.5 12.8284 12.8284 13.5 12 13.5C11.1716 13.5 10.5 12.8284 10.5 12C10.5 11.1716 11.1716 10.5 12 10.5Z"
+        d="M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12Z"
         stroke={color}
         strokeWidth={1.2}
+        strokeLinecap="round"
       />
     </Svg>
   );
@@ -140,20 +141,20 @@ export function Header({
         {/* Left - Menu Button and Klarity text */}
         <View className="flex-row items-center">
           {renderLeftMenu()}
+          <View style={{ marginLeft: 10 }}>
+            <KlarityLogoIcon size={22} color="#FFFFFF" />
+          </View>
           <Text
             style={{
               fontSize: 18,
               fontWeight: "600",
               color: "#EDEDED",
-              marginLeft: 12,
+              marginLeft: 6,
               letterSpacing: 0.5,
             }}
           >
             Klarity
           </Text>
-          <View style={{ marginLeft: 8 }}>
-            <KlarityLogoIcon size={20} color="#818CF8" />
-          </View>
         </View>
 
 
