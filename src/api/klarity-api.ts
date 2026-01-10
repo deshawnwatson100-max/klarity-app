@@ -693,7 +693,10 @@ Respond with valid JSON only containing:
 - conversationTone: One word describing the overall tone (empty string if invalid)
 - labels: array of { tag: string, description: string } for any notable dynamics (empty array if invalid)
 - emotionalImpact: 1-2 sentences on how this conversation might feel (for invalid: can be empty or general)
-- suggestedResponse: A natural reply (for invalid: empty string - do NOT generate a reply for invalid input)`;
+- suggestedResponse: A natural reply (for invalid: empty string - do NOT generate a reply for invalid input)
+- acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic].")
+- responseContext: A brief context phrase to complete "How do you want to respond to..." (e.g., "their question about meeting up" or "this apology" or "what they shared")`;
+
 
   try {
     console.log("[analyzeImageToxicity] Starting image analysis, base64 length:", imageBase64?.length);
@@ -772,6 +775,8 @@ Respond with valid JSON only containing:
       suggestedResponse: parsed.isInvalidInput ? "" : (parsed.suggestedResponse || ""),
       isInvalidInput: Boolean(parsed.isInvalidInput),
       lastMessage: parsed.lastMessage || "",
+      acknowledgment: parsed.acknowledgment || "",
+      responseContext: parsed.responseContext || "",
     };
   } catch (error: any) {
     console.warn("[analyzeImageToxicity] Analysis failed, using fallback response");

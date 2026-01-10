@@ -191,9 +191,17 @@ It helps users:
 **Invalid Input Handling:**
 - When the input is not a valid conversation (e.g., random image, unclear text), the system:
   - Still provides the communication summary when possible
-  - Does NOT generate a suggested reply
-  - Instead shows a prompt asking "How do you want to respond?"
+  - Shows an AI acknowledgment of what was observed in the image
+  - Asks "How do you want to respond to [context]?" where context is based on what was observed
+  - Does NOT generate a suggested reply for invalid input
   - This allows the user to guide the conversation naturally
+
+**Valid Image Input Handling:**
+- When a valid conversation screenshot is analyzed:
+  - Shows an AI acknowledgment of what is in the image (e.g., "I can see this conversation about...")
+  - Asks "How do you want to respond to [context]?" as floating text
+  - Then displays the suggested reply card without a header
+  - The suggested reply directly responds to the last message in the conversation
 
 **Navigation Guidance Note Examples:**
 - "In situations like this, keeping communication brief and factual works best."

@@ -89,6 +89,8 @@ export interface ImageAnalysis {
   suggestedResponse: string;
   isInvalidInput?: boolean; // True when input is not a valid conversation to analyze
   lastMessage?: string; // The last message from the conversation
+  acknowledgment?: string; // Kind acknowledgment of what is in the image
+  responseContext?: string; // Context for "How do you want to respond to [this]?"
 }
 
 export interface ImageAnalysisMessage extends Message {

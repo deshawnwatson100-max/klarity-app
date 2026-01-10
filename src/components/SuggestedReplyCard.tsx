@@ -533,27 +533,6 @@ export function SuggestedReplyCard({
           padding: 16,
         }}
       >
-        {/* Section header with teal accent */}
-        <View className="flex-row items-center mb-3">
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={14}
-            color="#5BA89A"
-            style={{ marginRight: 6 }}
-          />
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "500",
-              color: "#5BA89A",
-              letterSpacing: 0.3,
-              textTransform: "uppercase",
-            }}
-          >
-            Suggested Reply
-          </Text>
-        </View>
-
         {replies.map((reply) => (
           <ReplyItem
             key={reply.id}

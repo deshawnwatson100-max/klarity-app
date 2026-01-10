@@ -33,7 +33,6 @@ import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextCard } from "../components/PersonContextCard";
 import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
 import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
-import { ResponsePromptCard } from "../components/ResponsePromptCard";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -74,7 +73,6 @@ import {
   DeepSearchSuggestionState,
   ChatLoadingMessage,
   MessageMode,
-  ResponsePromptMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -727,17 +725,22 @@ export function ChatScreen({ navigation, route }: Props) {
       const isInvalidInput = imageAnalysisResult?.isInvalidInput === true;
 
       if (isInvalidInput) {
-        // Invalid input - show response prompt instead of suggested reply
+        // Invalid input - show acknowledgment and response prompt
         removeMessageFromActiveLoop(typingMsg2.id);
 
-        const responsePromptMsg: ResponsePromptMessage = {
-          id: Date.now().toString() + "_response_prompt",
-          role: "response-prompt",
-          content: "",
+        // Build the acknowledgment + question message
+        const acknowledgment = imageAnalysisResult?.acknowledgment || "I see what you shared.";
+        const responseContext = imageAnalysisResult?.responseContext || "this";
+        const promptMessage = `${acknowledgment}\n\nHow do you want to respond to ${responseContext}?`;
+
+        // Show as assistant message (floating text)
+        const assistantMsg: ChatMessage = {
+          id: Date.now().toString() + "_prompt_assistant",
+          role: "assistant",
+          content: promptMessage,
           timestamp: Date.now(),
-          promptText: "How do you want to respond?",
         };
-        addMessageToActiveLoop(responsePromptMsg);
+        addMessageToActiveLoop(assistantMsg);
 
         // Save conversation context without a reply
         setConversationContext({
@@ -748,7 +751,7 @@ export function ChatScreen({ navigation, route }: Props) {
           lastMessageFromOther: undefined,
         });
       } else {
-        // Valid input - generate suggested reply
+        // Valid input - show acknowledgment + question, then suggested reply
         let suggestedReply;
 
         if (imageAnalysisResult?.suggestedResponse) {
@@ -767,6 +770,24 @@ export function ChatScreen({ navigation, route }: Props) {
         }
 
         removeMessageFromActiveLoop(typingMsg2.id);
+
+        // For image input, show acknowledgment + question as floating text
+        if (imageAnalysisResult) {
+          const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
+          const responseContext = imageAnalysisResult.responseContext || "this message";
+          const promptMessage = `${acknowledgment}\n\nHow do you want to respond to ${responseContext}?`;
+
+          const assistantMsg: ChatMessage = {
+            id: Date.now().toString() + "_prompt_assistant",
+            role: "assistant",
+            content: promptMessage,
+            timestamp: Date.now(),
+          };
+          addMessageToActiveLoop(assistantMsg);
+
+          // Small delay before showing suggested reply
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
 
         const replyMsg: SuggestedReplyCardMessage = {
           id: Date.now().toString() + "_reply",
@@ -1781,16 +1802,6 @@ export function ChatScreen({ navigation, route }: Props) {
           onModifyLength={handleModifyReplyLength}
           onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
           onAddEmoji={handleAddEmojiToReply}
-        />
-      );
-    }
-
-    if (message.role === "response-prompt") {
-      const msg = message as ResponsePromptMessage;
-      return (
-        <ResponsePromptCard
-          key={message.id}
-          promptText={msg.promptText}
         />
       );
     }
