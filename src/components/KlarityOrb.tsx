@@ -1,129 +1,42 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-  Easing,
-  cancelAnimation,
-} from "react-native-reanimated";
 
 interface KlarityOrbProps {
   size?: "small" | "medium" | "large";
   isAnalyzing?: boolean;
 }
 
-export function KlarityOrb({ size = "medium", isAnalyzing = false }: KlarityOrbProps) {
-  const glowOpacity = useSharedValue(0.6);
-  const rotation = useSharedValue(0);
-
+/**
+ * Static orb component - no animations to avoid reanimated initialization issues
+ */
+export function KlarityOrb({ size = "medium" }: KlarityOrbProps) {
   // Size configurations
   const sizeConfig = {
-    small: { diameter: 32, glowRadius: 40 },
-    medium: { diameter: 40, glowRadius: 50 },
-    large: { diameter: 60, glowRadius: 70 },
+    small: { diameter: 32 },
+    medium: { diameter: 40 },
+    large: { diameter: 60 },
   };
 
-  const { diameter, glowRadius } = sizeConfig[size];
-
-  useEffect(() => {
-    // Breathing glow animation (5-second cycle) - always active
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.8, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.6, { duration: 2500, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
-  }, []);
-
-  // Rotation animation - only when analyzing
-  useEffect(() => {
-    if (isAnalyzing) {
-      // Start rotation when analyzing (3-second cycle for faster, noticeable spin)
-      rotation.value = withRepeat(
-        withTiming(360, { duration: 3000, easing: Easing.linear }),
-        -1,
-        false
-      );
-    } else {
-      // Stop rotation and smoothly return to 0
-      cancelAnimation(rotation);
-      // Smoothly animate back to nearest 0 position
-      const currentRotation = rotation.value % 360;
-      if (currentRotation !== 0) {
-        // Animate to 0 or 360 depending on which is closer
-        const targetRotation = currentRotation > 180 ? 360 : 0;
-        rotation.value = withTiming(targetRotation, {
-          duration: 300,
-          easing: Easing.out(Easing.ease),
-        });
-      }
-    }
-  }, [isAnalyzing]);
-
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
-  const rotationAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
+  const { diameter } = sizeConfig[size];
 
   return (
     <View
       style={{
-        width: glowRadius,
-        height: glowRadius,
+        width: diameter,
+        height: diameter,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      {/* Outer glow - breathing animation */}
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            width: glowRadius,
-            height: glowRadius,
-            borderRadius: glowRadius / 2,
-            backgroundColor: "transparent",
-          },
-          glowAnimatedStyle,
-        ]}
-      >
-        <LinearGradient
-          colors={[
-            "rgba(181, 255, 75, 0.3)", // Lime
-            "rgba(125, 211, 192, 0.3)", // Teal
-            "rgba(184, 163, 232, 0.3)", // Purple
-            "rgba(255, 179, 198, 0.3)", // Rose
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: glowRadius / 2,
-          }}
-        />
-      </Animated.View>
-
-      {/* Main orb with rotating gradient */}
-      <Animated.View
-        style={[
-          {
-            width: diameter,
-            height: diameter,
-            borderRadius: diameter / 2,
-            overflow: "hidden",
-          },
-          rotationAnimatedStyle,
-        ]}
+      {/* Main orb */}
+      <View
+        style={{
+          width: diameter,
+          height: diameter,
+          borderRadius: diameter / 2,
+          overflow: "hidden",
+        }}
       >
         <LinearGradient
           colors={[
@@ -131,11 +44,9 @@ export function KlarityOrb({ size = "medium", isAnalyzing = false }: KlarityOrbP
             "#7DD3C0", // Teal
             "#B8A3E8", // Purple
             "#FFB3C6", // Rose
-            "#FFFFFF", // White
           ]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          locations={[0, 0.25, 0.5, 0.75, 1]}
           style={{
             width: "100%",
             height: "100%",
@@ -168,7 +79,7 @@ export function KlarityOrb({ size = "medium", isAnalyzing = false }: KlarityOrbP
             transform: [{ rotate: "-45deg" }],
           }}
         />
-      </Animated.View>
+      </View>
     </View>
   );
 }
