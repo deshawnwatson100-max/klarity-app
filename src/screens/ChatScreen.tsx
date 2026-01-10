@@ -1922,7 +1922,87 @@ export function ChatScreen({ navigation, route }: Props) {
             inputMode={inputMode}
             onModeChange={handleModeChangeWithAnimation}
             onPersonContextPress={() => {
-              // Add person context card to the chat loop
+              const activeLoop = getActiveLoop();
+              const messages = activeLoop?.messages || [];
+
+              // Check if there's an active person context linked
+              if (activeLoopPersonContextId && activePersonContext) {
+                // Find any existing deep search results for this person context
+                const deepSearchResultIndex = messages.findIndex(
+                  (msg) =>
+                    msg.role === "deep-search-result" &&
+                    (msg as DeepSearchResultMessage).searchResult?.personContextId === activeLoopPersonContextId
+                );
+
+                // Also check for results in deep-search-suggestion messages
+                const suggestionWithResultIndex = messages.findIndex(
+                  (msg) =>
+                    msg.role === "deep-search-suggestion" &&
+                    (msg as DeepSearchSuggestionMessage).searchResult &&
+                    (msg as DeepSearchSuggestionMessage).personContextId === activeLoopPersonContextId
+                );
+
+                const hasExistingResult = deepSearchResultIndex !== -1 || suggestionWithResultIndex !== -1;
+
+                if (hasExistingResult) {
+                  // Check if results are recent (within last 5 messages)
+                  const resultIndex = deepSearchResultIndex !== -1 ? deepSearchResultIndex : suggestionWithResultIndex;
+                  const isRecent = messages.length - resultIndex <= 5;
+
+                  if (isRecent) {
+                    // Results are recent, just scroll to them
+                    Haptics.selectionAsync();
+                    setTimeout(() => {
+                      decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                    return;
+                  }
+
+                  // Results exist but not recent - re-add them to show again
+                  const existingResultMsg = deepSearchResultIndex !== -1
+                    ? messages[deepSearchResultIndex] as DeepSearchResultMessage
+                    : null;
+                  const existingSuggestionMsg = suggestionWithResultIndex !== -1
+                    ? messages[suggestionWithResultIndex] as DeepSearchSuggestionMessage
+                    : null;
+
+                  if (existingResultMsg?.searchResult) {
+                    // Re-add the deep search result
+                    const newResultMessage: DeepSearchResultMessage = {
+                      id: `deep-search-result-${Date.now()}`,
+                      role: "deep-search-result",
+                      content: "",
+                      timestamp: Date.now(),
+                      searchResult: existingResultMsg.searchResult,
+                      showSafetyResources: false,
+                      mode: "understand",
+                    };
+                    addMessageToActiveLoopRaw(newResultMessage);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } else if (existingSuggestionMsg?.searchResult) {
+                    // Re-add the deep search result from suggestion
+                    const newResultMessage: DeepSearchResultMessage = {
+                      id: `deep-search-result-${Date.now()}`,
+                      role: "deep-search-result",
+                      content: "",
+                      timestamp: Date.now(),
+                      searchResult: existingSuggestionMsg.searchResult,
+                      showSafetyResources: false,
+                      mode: "understand",
+                    };
+                    addMessageToActiveLoopRaw(newResultMessage);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+
+                  // Scroll to bottom to show the results
+                  setTimeout(() => {
+                    decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                  return;
+                }
+              }
+
+              // No linked person context or no results yet - show person context card
               const personContextCardMsg: PersonContextCardMessage = {
                 id: `person-context-card-${Date.now()}`,
                 role: "person-context-card",
