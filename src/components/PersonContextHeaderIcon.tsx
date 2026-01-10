@@ -37,7 +37,7 @@ export function PersonContextHeaderIcon({
     >
       {hasActivePerson ? (
         <View style={{ position: "relative" }}>
-          <Ionicons name="person-circle" size={24} color="#818CF8" />
+          <Ionicons name="search" size={24} color="#818CF8" />
           {/* Active indicator dot */}
           <View
             style={{
@@ -54,7 +54,7 @@ export function PersonContextHeaderIcon({
           />
         </View>
       ) : (
-        <Ionicons name="person-add-outline" size={22} color="#6B7280" />
+        <Ionicons name="search-outline" size={22} color="#6B7280" />
       )}
     </Pressable>
   );
