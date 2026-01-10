@@ -1643,7 +1643,8 @@ export function ChatScreen({ navigation, route }: Props) {
       return (
         <PersonContextCard
           key={message.id}
-          onPersonContextCreated={(personContextId) => {
+          showLinkOption={true}
+          onPersonContextCreated={(personContextId, linkedToChat) => {
             // Card stays visible with completed state - don't remove
             // Trigger deep search for the new person context
             setTimeout(() => {
@@ -1669,7 +1670,8 @@ export function ChatScreen({ navigation, route }: Props) {
           existingPersonContextId={suggestionMsg.personContextId}
           searchResult={suggestionMsg.searchResult}
           errorMessage={suggestionMsg.errorMessage}
-          onRunDeepSearch={async (personContextId) => {
+          showLinkOption={true}
+          onRunDeepSearch={async (personContextId, linkedToChat) => {
             // Update the suggestion card state to running
             updateMessageInActiveLoop(message.id, {
               ...suggestionMsg,

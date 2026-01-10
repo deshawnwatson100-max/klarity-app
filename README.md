@@ -973,6 +973,13 @@ Save context about people you interact with so Klarity can provide more grounded
 - Select relationship type: Dating, Romantic, Work, Family, Friend, Other
 - Optional: Choose your goal - Feel steady, Make a decision, Handle conflict, Set a boundary, Improve things, Other
 
+**Link to Chat Option:**
+When creating person context, users can now choose whether to link the context to the current chat loop:
+- **Toggle visible:** "Link to chat" with description "Use this context to inform AI responses in chat"
+- **Enabled (default):** Context is linked and AI uses it when responding
+- **Disabled:** Context is saved but NOT used in AI responses - useful when you want to run Deep Search without affecting chat behavior
+- Completed state shows "Linked to chat" indicator when enabled
+
 **Step 2 - What to Keep in Mind:**
 - Select relevant context chips:
   - Power imbalance

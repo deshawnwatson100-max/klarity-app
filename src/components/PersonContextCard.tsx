@@ -104,13 +104,16 @@ const ChatBubbleInput = memo(function ChatBubbleInput({
 });
 
 interface PersonContextCardProps {
-  onPersonContextCreated?: (personContextId: string) => void;
+  onPersonContextCreated?: (personContextId: string, linkedToChat: boolean) => void;
   onDismiss?: () => void;
+  /** If true, shows toggle for user to choose whether to link context to chat. Default: false (auto-links) */
+  showLinkOption?: boolean;
 }
 
 export const PersonContextCard = memo(function PersonContextCard({
   onPersonContextCreated,
   onDismiss,
+  showLinkOption = false,
 }: PersonContextCardProps) {
   const createPersonContext = usePersonContextStore((s) => s.createPersonContext);
   const setActiveLoopPersonContext = useLoopsStore((s) => s.setActiveLoopPersonContext);
@@ -134,10 +137,14 @@ export const PersonContextCard = memo(function PersonContextCard({
   const [professionalInfo, setProfessionalInfo] = useState("");
   const [knownAliases, setKnownAliases] = useState("");
 
+  // Link to chat toggle state - default to true (linked)
+  const [linkToChat, setLinkToChat] = useState(true);
+
   // Completed state
   const [isCompleted, setIsCompleted] = useState(false);
   const [savedName, setSavedName] = useState("");
   const [savedRelationship, setSavedRelationship] = useState<RelationshipContextType | null>(null);
+  const [savedLinkedToChat, setSavedLinkedToChat] = useState(true);
 
   const isFormValid = name.trim().length > 0 && relationshipContext !== null;
 
@@ -243,14 +250,19 @@ export const PersonContextCard = memo(function PersonContextCard({
       Object.keys(deepSearchContext).length > 0 ? deepSearchContext : undefined
     );
 
-    setActiveLoopPersonContext(newId);
+    // Only link to chat loop if showLinkOption is false (auto-link) or user chose to link
+    const shouldLink = !showLinkOption || linkToChat;
+    if (shouldLink) {
+      setActiveLoopPersonContext(newId);
+    }
 
     // Save info for completed state display
     setSavedName(name.trim());
     setSavedRelationship(relationshipContext);
+    setSavedLinkedToChat(shouldLink);
     setIsCompleted(true);
 
-    onPersonContextCreated?.(newId);
+    onPersonContextCreated?.(newId, shouldLink);
   };
 
   // Completed state view
@@ -288,7 +300,7 @@ export const PersonContextCard = memo(function PersonContextCard({
                 {savedName}
               </Text>
               <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
-                {relationshipLabel} · Context saved
+                {relationshipLabel} · Context saved{savedLinkedToChat ? " · Linked to chat" : ""}
               </Text>
             </View>
           </View>
@@ -583,6 +595,56 @@ export const PersonContextCard = memo(function PersonContextCard({
             onChangeText={setKnownAliases}
           />
         </View>
+      )}
+
+      {/* Link to chat toggle - only show if showLinkOption is true */}
+      {showLinkOption && (
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setLinkToChat(!linkToChat);
+          }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: 14,
+            paddingHorizontal: 14,
+            backgroundColor: COLORS.surface,
+            borderRadius: 10,
+            marginTop: 8,
+            marginBottom: 8,
+          }}
+        >
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 2 }}>
+              Link to chat
+            </Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted }}>
+              Use this context to inform AI responses in chat
+            </Text>
+          </View>
+          <View
+            style={{
+              width: 44,
+              height: 26,
+              borderRadius: 13,
+              backgroundColor: linkToChat ? COLORS.accent : COLORS.surfaceHover,
+              justifyContent: "center",
+              paddingHorizontal: 2,
+            }}
+          >
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                backgroundColor: "#fff",
+                alignSelf: linkToChat ? "flex-end" : "flex-start",
+              }}
+            />
+          </View>
+        </Pressable>
       )}
 
       {/* Save button */}
