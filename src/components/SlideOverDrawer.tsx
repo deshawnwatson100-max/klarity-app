@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
   Pressable,
   Dimensions,
   BackHandler,
-  TextInput,
   ScrollView,
   Keyboard,
   Animated,
@@ -490,7 +489,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const navigation = useNavigation();
 
   // State
-  const [searchQuery, setSearchQuery] = useState("");
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
@@ -508,25 +506,10 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const ANIMATION_DURATION = 300;
   const EASING_BEZIER = Easing.bezier(0.32, 0.72, 0, 1);
 
-  // Filter loops based on search query
-  const filteredLoops = useMemo(() => {
-    if (!searchQuery.trim()) return loops;
-
-    const query = searchQuery.toLowerCase();
-    return loops.filter((loop) => {
-      if (loop.title.toLowerCase().includes(query)) return true;
-      return loop.messages.some(
-        (msg) =>
-          msg.role === "user" && msg.content.toLowerCase().includes(query)
-      );
-    });
-  }, [loops, searchQuery]);
-
-  // Reset search and account page when drawer closes
+  // Reset account page when drawer closes
   useEffect(() => {
     if (!visible) {
       setTimeout(() => {
-        setSearchQuery("");
         setShowAccountPage(false);
       }, 300);
     }
@@ -630,8 +613,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
     }, 100);
   };
 
-  const isSearching = searchQuery.trim().length > 0;
-
   // Drawer slides in from left
   const drawerTranslateX = drawerProgress.interpolate({
     inputRange: [0, 1],
@@ -679,26 +660,19 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
         </View>
 
         <View className="flex-row items-center">
-          <View
-            className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl"
+          <Pressable
+            onPress={handleDeepSearch}
+            className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl active:opacity-70"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
           >
             <Ionicons name="search" size={18} color="#6B7280" />
-            <TextInput
+            <Text
               className="flex-1 ml-2 text-base"
-              style={{ color: "#E5E7EB" }}
-              placeholder="Search chats..."
-              placeholderTextColor="#6B7280"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
-                <Ionicons name="close-circle" size={18} color="#6B7280" />
-              </Pressable>
-            )}
-          </View>
+              style={{ color: "#6B7280" }}
+            >
+              Deep Search...
+            </Text>
+          </Pressable>
 
           <Pressable
             onPress={handleNewChat}
@@ -723,88 +697,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
             </View>
           </Pressable>
         </View>
-
-        {/* Deep Search Section */}
-        <Pressable
-          onPress={handleDeepSearch}
-          className="active:opacity-70 mt-4"
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 4,
-            }}
-          >
-            <Ionicons name="search" size={18} color="#6B7280" style={{ marginRight: 10 }} />
-            <View style={{ flex: 1 }}>
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: "#E5E7EB" }}
-              >
-                Deep Search
-              </Text>
-              <Text className="text-xs" style={{ color: "#6B7280" }}>
-                Research someone across the web
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </View>
-        </Pressable>
       </View>
     );
   };
 
   // Render content
   const renderContent = () => {
-    if (isSearching) {
-      if (filteredLoops.length === 0) {
-        return (
-          <View className="flex-1 items-center justify-center px-8">
-            <Ionicons name="search-outline" size={48} color="#4B5563" />
-            <Text
-              className="text-base font-medium mt-4 text-center"
-              style={{ color: "#9CA3AF" }}
-            >
-              No chats found
-            </Text>
-            <Text
-              className="text-sm mt-2 text-center"
-              style={{ color: "#6B7280" }}
-            >
-              Try different keywords or phrases
-            </Text>
-          </View>
-        );
-      }
-
-      return (
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="px-5 py-3">
-            <Text className="text-xs font-medium" style={{ color: "#6B7280" }}>
-              {filteredLoops.length} result{filteredLoops.length !== 1 ? "s" : ""}
-            </Text>
-          </View>
-          {filteredLoops.map((loop, index) => (
-            <SwipeableChatListItem
-              key={loop.id}
-              loop={loop}
-              onPress={() => handleSelectChat(loop.id)}
-              onDelete={() => deleteLoop(loop.id)}
-              onArchive={() => archiveLoop(loop.id)}
-              isLast={index === filteredLoops.length - 1}
-            />
-          ))}
-          <View style={{ height: insets.bottom + 100 }} />
-        </ScrollView>
-      );
-    }
-
     return (
         <ScrollView
           className="flex-1"
@@ -1095,16 +993,15 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           <>
             {renderHeader()}
             <View style={{ flex: 1 }}>{renderContent()}</View>
-            {!isSearching && (
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: insets.bottom + 20,
-                  left: 0,
-                  right: 0,
-                  paddingHorizontal: 20,
-                }}
-              >
+            <View
+              style={{
+                position: "absolute",
+                bottom: insets.bottom + 20,
+                left: 0,
+                right: 0,
+                paddingHorizontal: 20,
+              }}
+            >
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1148,8 +1045,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     <Ionicons name="chevron-forward" size={18} color="#6B7280" />
                   </View>
                 </Pressable>
-              </View>
-            )}
+            </View>
           </>
         )}
       </Animated.View>
