@@ -4,9 +4,48 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
-import { KlarityOrb } from "./KlarityOrb";
+
+/**
+ * Simple static orb for header - no animations to avoid reanimated issues
+ */
+function HeaderOrb({ size = 24 }: { size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        overflow: "hidden",
+      }}
+    >
+      <LinearGradient
+        colors={["#B5FF4B", "#7DD3C0", "#B8A3E8", "#FFB3C6"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      />
+      {/* Glass highlight */}
+      <View
+        style={{
+          position: "absolute",
+          top: size * 0.15,
+          left: size * 0.2,
+          width: size * 0.35,
+          height: size * 0.25,
+          backgroundColor: "rgba(255, 255, 255, 0.4)",
+          borderRadius: size,
+          transform: [{ rotate: "-45deg" }],
+        }}
+      />
+    </View>
+  );
+}
 
 export type InputMode = "understand" | "rewrite";
 
@@ -108,7 +147,7 @@ export function Header({
         <View className="flex-row items-center">
           {renderLeftMenu()}
           <View style={{ marginLeft: 8 }}>
-            <KlarityOrb size="small" isAnalyzing={isAnalyzing} />
+            <HeaderOrb size={24} />
           </View>
           <Text
             style={{
