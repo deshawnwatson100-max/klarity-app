@@ -9,41 +9,46 @@ import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
 
 /**
- * Klarity Logo Icon - Abstract geometric outline with curves and edges
+ * Klarity Logo Icon - Represents clarity with an eye/lens and light rays
  * Minimalist style with organic and angular elements
  */
 function KlarityLogoIcon({ size = 20, color = "#FFFFFF" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Outer organic shield shape with curved top and angular bottom */}
+      {/* Outer eye/lens shape - curved organic form */}
       <Path
-        d="M12 2C8 2 4 4.5 4 9C4 14 8 19 12 22C16 19 20 14 20 9C20 4.5 16 2 12 2Z"
+        d="M2 12C2 12 6 5 12 5C18 5 22 12 22 12C22 12 18 19 12 19C6 19 2 12 2 12Z"
         stroke={color}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Inner flowing wave with sharp peaks */}
+      {/* Inner iris circle */}
       <Path
-        d="M8 10C9.5 8 10.5 9.5 12 8C13.5 6.5 14.5 10 16 9"
+        d="M12 8.5C13.933 8.5 15.5 10.067 15.5 12C15.5 13.933 13.933 15.5 12 15.5C10.067 15.5 8.5 13.933 8.5 12C8.5 10.067 10.067 8.5 12 8.5Z"
         stroke={color}
         strokeWidth={1.4}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
-      {/* Lower angular chevron */}
+      {/* Center pupil/focus point */}
       <Path
-        d="M8 14L12 11L16 14"
+        d="M12 10.5C12.8284 10.5 13.5 11.1716 13.5 12C13.5 12.8284 12.8284 13.5 12 13.5C11.1716 13.5 10.5 12.8284 10.5 12C10.5 11.1716 11.1716 10.5 12 10.5Z"
+        stroke={color}
+        strokeWidth={1.3}
+      />
+      {/* Light ray - top */}
+      <Path
+        d="M12 2V4"
         stroke={color}
         strokeWidth={1.4}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
-      {/* Center accent dot */}
+      {/* Light ray - bottom */}
       <Path
-        d="M12 15.5C12.5523 15.5 13 15.9477 13 16.5C13 17.0523 12.5523 17.5 12 17.5C11.4477 17.5 11 17.0523 11 16.5C11 15.9477 11.4477 15.5 12 15.5Z"
+        d="M12 20V22"
         stroke={color}
-        strokeWidth={1.2}
+        strokeWidth={1.4}
+        strokeLinecap="round"
       />
     </Svg>
   );
