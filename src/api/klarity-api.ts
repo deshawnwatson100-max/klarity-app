@@ -695,7 +695,14 @@ Respond with valid JSON only containing:
 - emotionalImpact: 1-2 sentences on how this conversation might feel (for invalid: can be empty or general)
 - suggestedResponse: A natural reply (for invalid: empty string - do NOT generate a reply for invalid input)
 - acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic].")
-- responseContext: A brief context phrase to complete "How do you want to respond to..." (e.g., "their question about meeting up" or "this apology" or "what they shared")`;
+- responseContext: A brief context phrase to complete "How do you want to respond to..." (e.g., "their question about meeting up" or "this apology" or "what they shared")
+
+## FOR INVALID INPUT
+
+When the image is invalid (not a conversation screenshot), use EXACTLY this message for acknowledgment:
+"It looks like that image might have been sent by accident. Can you let me know what you meant or what you'd like help with?"
+
+Do NOT generate a suggested reply for invalid input. Leave suggestedResponse empty.`;
 
 
   try {

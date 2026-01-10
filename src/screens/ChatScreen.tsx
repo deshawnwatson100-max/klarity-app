@@ -649,6 +649,39 @@ export function ChatScreen({ navigation, route }: Props) {
       if (userMessage.imageBase64) {
         // Image flow: analyze image first
         imageAnalysisResult = await analyzeImageToxicity(userMessage.imageBase64);
+
+        // Check for invalid input early - skip all analysis cards and just ask for clarification
+        if (imageAnalysisResult?.isInvalidInput === true) {
+          // Remove typing indicator
+          removeMessageFromActiveLoop(typingMsg.id);
+
+          // Use the specific clarification message for invalid input
+          const clarificationMessage = "It looks like that image might have been sent by accident. Can you let me know what you meant or what you'd like help with?";
+
+          // Show as assistant message (floating text)
+          const assistantMsg: ChatMessage = {
+            id: Date.now().toString() + "_clarification_assistant",
+            role: "assistant",
+            content: clarificationMessage,
+            timestamp: Date.now(),
+          };
+          addMessageToActiveLoop(assistantMsg);
+
+          // Save minimal context - awaiting user clarification
+          setConversationContext({
+            originalMessage: userMessage.content,
+            previousSummary: "",
+            previousPatterns: undefined,
+            previousReply: undefined,
+            lastMessageFromOther: undefined,
+          });
+
+          // Reset loading states and exit early - wait for user to clarify
+          setIsLoading(false);
+          setIsProcessing(false);
+          return;
+        }
+
         dysfunctionalSummary = await generateDysfunctionalCommunicationSummary(
           userMessage.content,
           imageAnalysisResult
@@ -719,21 +752,34 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(typingMsg2);
 
-      // STEP 2: Generate and show Suggested Reply OR Response Prompt for invalid input
+      // STEP 2: Generate and show Suggested Reply
+      // Note: Invalid input is already handled above with early return
 
-      // Check if the image analysis detected invalid input
-      const isInvalidInput = imageAnalysisResult?.isInvalidInput === true;
+      let suggestedReply;
 
-      if (isInvalidInput) {
-        // Invalid input - show acknowledgment and response prompt
-        removeMessageFromActiveLoop(typingMsg2.id);
+      if (imageAnalysisResult?.suggestedResponse) {
+        // Use the reply from image analysis directly - it already responds to the last message
+        suggestedReply = {
+          id: Date.now().toString(),
+          text: imageAnalysisResult.suggestedResponse,
+          guidanceNote: "This responds directly to the last message in the conversation.",
+        };
+      } else {
+        // Generate reply for text-only input
+        suggestedReply = await generateQuickSuggestedReply(
+          userMessage.content,
+          analysis || undefined
+        );
+      }
 
-        // Build the acknowledgment + question message
-        const acknowledgment = imageAnalysisResult?.acknowledgment || "I see what you shared.";
-        const responseContext = imageAnalysisResult?.responseContext || "this";
+      removeMessageFromActiveLoop(typingMsg2.id);
+
+      // For image input, show acknowledgment + question as floating text
+      if (imageAnalysisResult) {
+        const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
+        const responseContext = imageAnalysisResult.responseContext || "this message";
         const promptMessage = `${acknowledgment}\n\nHow do you want to respond to ${responseContext}?`;
 
-        // Show as assistant message (floating text)
         const assistantMsg: ChatMessage = {
           id: Date.now().toString() + "_prompt_assistant",
           role: "assistant",
@@ -742,72 +788,28 @@ export function ChatScreen({ navigation, route }: Props) {
         };
         addMessageToActiveLoop(assistantMsg);
 
-        // Save conversation context without a reply
-        setConversationContext({
-          originalMessage: userMessage.content,
-          previousSummary: dysfunctionalSummary.summary,
-          previousPatterns: dysfunctionalSummary.patterns,
-          previousReply: undefined,
-          lastMessageFromOther: undefined,
-        });
-      } else {
-        // Valid input - show acknowledgment + question, then suggested reply
-        let suggestedReply;
-
-        if (imageAnalysisResult?.suggestedResponse) {
-          // Use the reply from image analysis directly - it already responds to the last message
-          suggestedReply = {
-            id: Date.now().toString(),
-            text: imageAnalysisResult.suggestedResponse,
-            guidanceNote: "This responds directly to the last message in the conversation.",
-          };
-        } else {
-          // Generate reply for text-only input
-          suggestedReply = await generateQuickSuggestedReply(
-            userMessage.content,
-            analysis || undefined
-          );
-        }
-
-        removeMessageFromActiveLoop(typingMsg2.id);
-
-        // For image input, show acknowledgment + question as floating text
-        if (imageAnalysisResult) {
-          const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
-          const responseContext = imageAnalysisResult.responseContext || "this message";
-          const promptMessage = `${acknowledgment}\n\nHow do you want to respond to ${responseContext}?`;
-
-          const assistantMsg: ChatMessage = {
-            id: Date.now().toString() + "_prompt_assistant",
-            role: "assistant",
-            content: promptMessage,
-            timestamp: Date.now(),
-          };
-          addMessageToActiveLoop(assistantMsg);
-
-          // Small delay before showing suggested reply
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-
-        const replyMsg: SuggestedReplyCardMessage = {
-          id: Date.now().toString() + "_reply",
-          role: "suggested-reply-card",
-          content: "",
-          timestamp: Date.now(),
-          replies: [suggestedReply],
-          intention: "maintain", // Default neutral intention
-        };
-        addMessageToActiveLoop(replyMsg);
-
-        // Save conversation context for potential mid-loop image continuation
-        setConversationContext({
-          originalMessage: userMessage.content,
-          previousSummary: dysfunctionalSummary.summary,
-          previousPatterns: dysfunctionalSummary.patterns,
-          previousReply: suggestedReply.text,
-          lastMessageFromOther: imageAnalysisResult?.lastMessage,
-        });
+        // Small delay before showing suggested reply
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
+
+      const replyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_reply",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: [suggestedReply],
+        intention: "maintain", // Default neutral intention
+      };
+      addMessageToActiveLoop(replyMsg);
+
+      // Save conversation context for potential mid-loop image continuation
+      setConversationContext({
+        originalMessage: userMessage.content,
+        previousSummary: dysfunctionalSummary.summary,
+        previousPatterns: dysfunctionalSummary.patterns,
+        previousReply: suggestedReply.text,
+        lastMessageFromOther: imageAnalysisResult?.lastMessage,
+      });
 
     } catch (error) {
       console.error("Error processing message:", error);

@@ -189,12 +189,12 @@ It helps users:
 - Minimized replies show truncated preview with "Tap to expand"
 
 **Invalid Input Handling:**
-- When the input is not a valid conversation (e.g., random image, unclear text), the system:
-  - Still provides the communication summary when possible
-  - Shows an AI acknowledgment of what was observed in the image
-  - Asks "How do you want to respond to [context]?" where context is based on what was observed
-  - Does NOT generate a suggested reply for invalid input
-  - This allows the user to guide the conversation naturally
+- When the input is not a valid conversation (e.g., random image, meme, photo, unclear text), the system:
+  - Skips all analysis cards (communication summary, red flags)
+  - Shows a gentle clarification message: "It looks like that image might have been sent by accident. Can you let me know what you meant or what you'd like help with?"
+  - Waits for user to clarify or provide more context
+  - Once the user clarifies, continues with the normal flow to generate suggested replies
+  - This allows natural conversation to understand what help the user needs
 
 **Valid Image Input Handling:**
 - When a valid conversation screenshot is analyzed:
