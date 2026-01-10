@@ -32,7 +32,8 @@ export type MessageRole =
   | "deep-search-result"
   | "person-context-card"
   | "deep-search-suggestion"
-  | "chat-loading";
+  | "chat-loading"
+  | "response-prompt";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -86,6 +87,8 @@ export interface ImageAnalysis {
   labels: DysfunctionLabel[];
   emotionalImpact: string;
   suggestedResponse: string;
+  isInvalidInput?: boolean; // True when input is not a valid conversation to analyze
+  lastMessage?: string; // The last message from the conversation
 }
 
 export interface ImageAnalysisMessage extends Message {
@@ -316,6 +319,11 @@ export interface ChatLoadingMessage extends Message {
   errorMessage?: string; // Error message if failed
 }
 
+export interface ResponsePromptMessage extends Message {
+  role: "response-prompt";
+  promptText: string; // The question to ask the user, e.g., "How do you want to respond?"
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -349,4 +357,5 @@ export type ChatMessage =
   | DeepSearchResultMessage
   | PersonContextCardMessage
   | DeepSearchSuggestionMessage
-  | ChatLoadingMessage;
+  | ChatLoadingMessage
+  | ResponsePromptMessage;

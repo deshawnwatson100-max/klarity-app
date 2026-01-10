@@ -33,6 +33,7 @@ import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextCard } from "../components/PersonContextCard";
 import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
 import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
+import { ResponsePromptCard } from "../components/ResponsePromptCard";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -73,6 +74,7 @@ import {
   DeepSearchSuggestionState,
   ChatLoadingMessage,
   MessageMode,
+  ResponsePromptMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -719,44 +721,72 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(typingMsg2);
 
-      // STEP 2: Generate and show Suggested Reply
-      let suggestedReply;
+      // STEP 2: Generate and show Suggested Reply OR Response Prompt for invalid input
 
-      if (imageAnalysisResult?.suggestedResponse) {
-        // Use the reply from image analysis directly - it already responds to the last message
-        suggestedReply = {
-          id: Date.now().toString(),
-          text: imageAnalysisResult.suggestedResponse,
-          guidanceNote: "This responds directly to the last message in the conversation.",
+      // Check if the image analysis detected invalid input
+      const isInvalidInput = imageAnalysisResult?.isInvalidInput === true;
+
+      if (isInvalidInput) {
+        // Invalid input - show response prompt instead of suggested reply
+        removeMessageFromActiveLoop(typingMsg2.id);
+
+        const responsePromptMsg: ResponsePromptMessage = {
+          id: Date.now().toString() + "_response_prompt",
+          role: "response-prompt",
+          content: "",
+          timestamp: Date.now(),
+          promptText: "How do you want to respond?",
         };
+        addMessageToActiveLoop(responsePromptMsg);
+
+        // Save conversation context without a reply
+        setConversationContext({
+          originalMessage: userMessage.content,
+          previousSummary: dysfunctionalSummary.summary,
+          previousPatterns: dysfunctionalSummary.patterns,
+          previousReply: undefined,
+          lastMessageFromOther: undefined,
+        });
       } else {
-        // Generate reply for text-only input
-        suggestedReply = await generateQuickSuggestedReply(
-          userMessage.content,
-          analysis || undefined
-        );
+        // Valid input - generate suggested reply
+        let suggestedReply;
+
+        if (imageAnalysisResult?.suggestedResponse) {
+          // Use the reply from image analysis directly - it already responds to the last message
+          suggestedReply = {
+            id: Date.now().toString(),
+            text: imageAnalysisResult.suggestedResponse,
+            guidanceNote: "This responds directly to the last message in the conversation.",
+          };
+        } else {
+          // Generate reply for text-only input
+          suggestedReply = await generateQuickSuggestedReply(
+            userMessage.content,
+            analysis || undefined
+          );
+        }
+
+        removeMessageFromActiveLoop(typingMsg2.id);
+
+        const replyMsg: SuggestedReplyCardMessage = {
+          id: Date.now().toString() + "_reply",
+          role: "suggested-reply-card",
+          content: "",
+          timestamp: Date.now(),
+          replies: [suggestedReply],
+          intention: "maintain", // Default neutral intention
+        };
+        addMessageToActiveLoop(replyMsg);
+
+        // Save conversation context for potential mid-loop image continuation
+        setConversationContext({
+          originalMessage: userMessage.content,
+          previousSummary: dysfunctionalSummary.summary,
+          previousPatterns: dysfunctionalSummary.patterns,
+          previousReply: suggestedReply.text,
+          lastMessageFromOther: imageAnalysisResult?.lastMessage,
+        });
       }
-
-      removeMessageFromActiveLoop(typingMsg2.id);
-
-      const replyMsg: SuggestedReplyCardMessage = {
-        id: Date.now().toString() + "_reply",
-        role: "suggested-reply-card",
-        content: "",
-        timestamp: Date.now(),
-        replies: [suggestedReply],
-        intention: "maintain", // Default neutral intention
-      };
-      addMessageToActiveLoop(replyMsg);
-
-      // Save conversation context for potential mid-loop image continuation
-      setConversationContext({
-        originalMessage: userMessage.content,
-        previousSummary: dysfunctionalSummary.summary,
-        previousPatterns: dysfunctionalSummary.patterns,
-        previousReply: suggestedReply.text,
-        lastMessageFromOther: imageAnalysisResult?.lastMessage,
-      });
 
     } catch (error) {
       console.error("Error processing message:", error);
@@ -1751,6 +1781,16 @@ export function ChatScreen({ navigation, route }: Props) {
           onModifyLength={handleModifyReplyLength}
           onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
           onAddEmoji={handleAddEmojiToReply}
+        />
+      );
+    }
+
+    if (message.role === "response-prompt") {
+      const msg = message as ResponsePromptMessage;
+      return (
+        <ResponsePromptCard
+          key={message.id}
+          promptText={msg.promptText}
         />
       );
     }

@@ -662,35 +662,38 @@ export async function analyzeImageToxicity(
 
 ## YOUR JOB
 
-1. Read the conversation in the image carefully
-2. Identify the LAST MESSAGE that needs a reply
-3. Understand the context from previous messages
-4. Generate ONE suggested reply that DIRECTLY RESPONDS to the last message
+1. First, determine if the image contains a valid conversation that can be analyzed
+2. If valid: Read the conversation, identify the LAST MESSAGE, and provide analysis
+3. If invalid: Mark it as invalid and only provide what summary you can
 
-## CRITICAL RULES
+## WHAT COUNTS AS INVALID INPUT
+
+- The image is not a conversation screenshot (e.g., meme, photo, random image)
+- The conversation is too blurry or unclear to read
+- There is no clear last message to respond to
+- The image shows only one message with no context
+- The content is not a text conversation (e.g., email headers only, notifications)
+
+## FOR VALID CONVERSATIONS
 
 - The suggested reply must ACTUALLY RESPOND to what was said
 - Match the tone and energy of the conversation
-- If it's a casual conversation, respond casually
+- If it is a casual conversation, respond casually
 - If they asked a question, answer it
 - If they shared something, acknowledge it appropriately
 - Do NOT assume the conversation is toxic or problematic
 - Do NOT generate defensive or boundary-setting responses unless clearly needed
 
-## RESPONSE ASSESSMENT
-
-Look at the conversation objectively:
-- What is the other person actually saying/asking?
-- What tone are they using? (friendly, neutral, upset, etc.)
-- What would be an appropriate, natural response?
+## RESPONSE FORMAT
 
 Respond with valid JSON only containing:
-- summary: 2-3 sentences describing what's happening in this conversation (neutral, factual)
-- lastMessage: The exact text of the last message that needs a reply (transcribe it from the image)
-- conversationTone: One word describing the overall tone (friendly, tense, casual, formal, etc.)
-- labels: array of { tag: string, description: string } for any notable dynamics (can be empty if normal conversation)
-- emotionalImpact: 1-2 sentences on how this conversation might feel (be objective, not dramatic)
-- suggestedResponse: A natural reply to the LAST MESSAGE (1-2 sentences, ready to send)`;
+- isInvalidInput: boolean (true if not a valid conversation screenshot)
+- summary: 2-3 sentences describing what you see (for invalid: describe what the image shows and why it cannot be analyzed as a conversation)
+- lastMessage: The exact text of the last message that needs a reply (empty string if invalid)
+- conversationTone: One word describing the overall tone (empty string if invalid)
+- labels: array of { tag: string, description: string } for any notable dynamics (empty array if invalid)
+- emotionalImpact: 1-2 sentences on how this conversation might feel (for invalid: can be empty or general)
+- suggestedResponse: A natural reply (for invalid: empty string - do NOT generate a reply for invalid input)`;
 
   try {
     console.log("[analyzeImageToxicity] Starting image analysis, base64 length:", imageBase64?.length);
@@ -714,7 +717,7 @@ Respond with valid JSON only containing:
             },
             {
               type: "text",
-              text: "Read this conversation screenshot. Identify the last message and generate an appropriate reply. Return valid JSON only.",
+              text: "First determine if this is a valid conversation screenshot. If valid, identify the last message and generate an appropriate reply. If invalid, explain why. Return valid JSON only.",
             },
           ],
         },
@@ -730,10 +733,11 @@ Respond with valid JSON only containing:
     if (!content) {
       console.warn("[analyzeImageToxicity] Empty content from API, using fallback");
       return {
-        summary: "A conversation that needs a response.",
+        summary: "Unable to analyze this image.",
         labels: [],
-        emotionalImpact: "This is a normal conversation.",
-        suggestedResponse: "Thanks for that!",
+        emotionalImpact: "",
+        suggestedResponse: "",
+        isInvalidInput: true,
       };
     }
 
@@ -755,32 +759,31 @@ Respond with valid JSON only containing:
     // Validate structure
     if (
       typeof parsed.summary !== "string" ||
-      !Array.isArray(parsed.labels) ||
-      typeof parsed.emotionalImpact !== "string" ||
-      typeof parsed.suggestedResponse !== "string"
+      !Array.isArray(parsed.labels)
     ) {
       throw new Error("Invalid image analysis structure");
     }
 
-    return parsed as ImageAnalysis;
+    // Return with isInvalidInput flag
+    return {
+      summary: parsed.summary,
+      labels: parsed.labels,
+      emotionalImpact: parsed.emotionalImpact || "",
+      suggestedResponse: parsed.isInvalidInput ? "" : (parsed.suggestedResponse || ""),
+      isInvalidInput: Boolean(parsed.isInvalidInput),
+      lastMessage: parsed.lastMessage || "",
+    };
   } catch (error: any) {
     console.warn("[analyzeImageToxicity] Analysis failed, using fallback response");
 
     // Return fallback analysis - graceful degradation
     return {
       summary:
-        "This message appears to contain challenging communication patterns that may be affecting the relationship negatively.",
-      labels: [
-        {
-          tag: "Communication Issue",
-          description:
-            "Unable to fully analyze the specific patterns at this time.",
-        },
-      ],
-      emotionalImpact:
-        "Messages like this can create confusion, frustration, and emotional distance in relationships.",
-      suggestedResponse:
-        "I need some time to process this. Can we talk about this calmly when we are both ready?",
+        "Unable to analyze this image. Please share a clear screenshot of a text conversation.",
+      labels: [],
+      emotionalImpact: "",
+      suggestedResponse: "",
+      isInvalidInput: true,
     };
   }
 }

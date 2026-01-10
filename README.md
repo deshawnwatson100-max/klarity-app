@@ -188,6 +188,13 @@ It helps users:
 - Previous replies auto-minimize when new one is generated
 - Minimized replies show truncated preview with "Tap to expand"
 
+**Invalid Input Handling:**
+- When the input is not a valid conversation (e.g., random image, unclear text), the system:
+  - Still provides the communication summary when possible
+  - Does NOT generate a suggested reply
+  - Instead shows a prompt asking "How do you want to respond?"
+  - This allows the user to guide the conversation naturally
+
 **Navigation Guidance Note Examples:**
 - "In situations like this, keeping communication brief and factual works best."
 - "Matching the level of directness in the room can reduce friction."
