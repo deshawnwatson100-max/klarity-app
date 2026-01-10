@@ -4,55 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Svg, { Path } from "react-native-svg";
 import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
-
-/**
- * Klarity Logo Icon - Represents clarity with an eye/lens and light rays
- * Minimalist style with organic and angular elements
- */
-function KlarityLogoIcon({ size = 20, color = "#FFFFFF" }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Outer eye/lens shape - curved organic form */}
-      <Path
-        d="M2 12C2 12 6 5 12 5C18 5 22 12 22 12C22 12 18 19 12 19C6 19 2 12 2 12Z"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Inner iris circle */}
-      <Path
-        d="M12 8.5C13.933 8.5 15.5 10.067 15.5 12C15.5 13.933 13.933 15.5 12 15.5C10.067 15.5 8.5 13.933 8.5 12C8.5 10.067 10.067 8.5 12 8.5Z"
-        stroke={color}
-        strokeWidth={1.4}
-        strokeLinecap="round"
-      />
-      {/* Center pupil/focus point */}
-      <Path
-        d="M12 10.5C12.8284 10.5 13.5 11.1716 13.5 12C13.5 12.8284 12.8284 13.5 12 13.5C11.1716 13.5 10.5 12.8284 10.5 12C10.5 11.1716 11.1716 10.5 12 10.5Z"
-        stroke={color}
-        strokeWidth={1.3}
-      />
-      {/* Light ray - top */}
-      <Path
-        d="M12 2V4"
-        stroke={color}
-        strokeWidth={1.4}
-        strokeLinecap="round"
-      />
-      {/* Light ray - bottom */}
-      <Path
-        d="M12 20V22"
-        stroke={color}
-        strokeWidth={1.4}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
+import { KlarityOrb } from "./KlarityOrb";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -153,15 +107,15 @@ export function Header({
         {/* Left - Menu Button and Klarity text */}
         <View className="flex-row items-center">
           {renderLeftMenu()}
-          <View style={{ marginLeft: 10 }}>
-            <KlarityLogoIcon size={22} color="#FFFFFF" />
+          <View style={{ marginLeft: 8 }}>
+            <KlarityOrb size="small" isAnalyzing={isAnalyzing} />
           </View>
           <Text
             style={{
               fontSize: 18,
               fontWeight: "600",
               color: "#EDEDED",
-              marginLeft: 6,
+              marginLeft: 4,
               letterSpacing: 0.5,
             }}
           >
