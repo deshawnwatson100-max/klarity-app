@@ -15,28 +15,35 @@ import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
 function KlarityLogoIcon({ size = 20, color = "#FFFFFF" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Outer rounded hexagon with soft corners */}
+      {/* Outer organic shield shape with curved top and angular bottom */}
       <Path
-        d="M12 2C12 2 18 5 20 8C22 11 22 13 20 16C18 19 12 22 12 22C12 22 6 19 4 16C2 13 2 11 4 8C6 5 12 2 12 2Z"
+        d="M12 2C8 2 4 4.5 4 9C4 14 8 19 12 22C16 19 20 14 20 9C20 4.5 16 2 12 2Z"
         stroke={color}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Inner angular crystal shape */}
+      {/* Inner flowing wave with sharp peaks */}
       <Path
-        d="M12 6L16.5 10L14 12L16.5 14L12 18L7.5 14L10 12L7.5 10L12 6Z"
+        d="M8 10C9.5 8 10.5 9.5 12 8C13.5 6.5 14.5 10 16 9"
         stroke={color}
         strokeWidth={1.4}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Center curved element */}
+      {/* Lower angular chevron */}
       <Path
-        d="M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12Z"
+        d="M8 14L12 11L16 14"
+        stroke={color}
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Center accent dot */}
+      <Path
+        d="M12 15.5C12.5523 15.5 13 15.9477 13 16.5C13 17.0523 12.5523 17.5 12 17.5C11.4477 17.5 11 17.0523 11 16.5C11 15.9477 11.4477 15.5 12 15.5Z"
         stroke={color}
         strokeWidth={1.2}
-        strokeLinecap="round"
       />
     </Svg>
   );
