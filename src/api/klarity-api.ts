@@ -384,7 +384,12 @@ Respond with valid JSON first, then the notation block:
 ...
 [[/KLARITY_NOTES]]`;
 
-  const userPrompt = analysis
+  // Check if the user message includes "The other person said:" - this means we have the actual last message
+  const hasLastMessage = userMessage.includes("The other person said:");
+
+  const userPrompt = hasLastMessage
+    ? `${userMessage}\n\nGenerate a reply that DIRECTLY RESPONDS to what the other person said.${analysis ? ` Conversation tone: ${analysis.tone}` : ""}`
+    : analysis
     ? `Situation: ${userMessage}\n\nAnalysis detected: Tone: ${analysis.tone}, Pattern: ${analysis.pattern}`
     : `Situation: ${userMessage}`;
 
@@ -653,23 +658,39 @@ export async function analyzeImageToxicity(
 ): Promise<ImageAnalysis> {
   const client = getOpenAIClient();
 
-  const systemPrompt = `You are an expert in communication psychology and relationship dynamics. Analyze the image for signs of dysfunctional, toxic, or unhealthy communication patterns.
+  const systemPrompt = `You are Klarity — a communication assistant helping someone respond to a conversation shown in a screenshot.
 
-Identify patterns such as:
-- Gaslighting (denying someone's reality)
-- Blame shifting (refusing responsibility)
-- Invalidation (dismissing feelings)
-- Passive aggression
-- Manipulation
-- Contempt or criticism
-- Defensiveness
-- Stonewalling
+## YOUR JOB
+
+1. Read the conversation in the image carefully
+2. Identify the LAST MESSAGE that needs a reply
+3. Understand the context from previous messages
+4. Generate ONE suggested reply that DIRECTLY RESPONDS to the last message
+
+## CRITICAL RULES
+
+- The suggested reply must ACTUALLY RESPOND to what was said
+- Match the tone and energy of the conversation
+- If it's a casual conversation, respond casually
+- If they asked a question, answer it
+- If they shared something, acknowledge it appropriately
+- Do NOT assume the conversation is toxic or problematic
+- Do NOT generate defensive or boundary-setting responses unless clearly needed
+
+## RESPONSE ASSESSMENT
+
+Look at the conversation objectively:
+- What is the other person actually saying/asking?
+- What tone are they using? (friendly, neutral, upset, etc.)
+- What would be an appropriate, natural response?
 
 Respond with valid JSON only containing:
-- summary: 2-3 sentence high-level explanation of communication issues
-- labels: array of { tag: string, description: string } for each dysfunction found (2-4 items)
-- emotionalImpact: 2-3 sentences on how this communication makes people feel
-- suggestedResponse: a healthy, regulated reply the recipient could send (2-3 sentences)`;
+- summary: 2-3 sentences describing what's happening in this conversation (neutral, factual)
+- lastMessage: The exact text of the last message that needs a reply (transcribe it from the image)
+- conversationTone: One word describing the overall tone (friendly, tense, casual, formal, etc.)
+- labels: array of { tag: string, description: string } for any notable dynamics (can be empty if normal conversation)
+- emotionalImpact: 1-2 sentences on how this conversation might feel (be objective, not dramatic)
+- suggestedResponse: A natural reply to the LAST MESSAGE (1-2 sentences, ready to send)`;
 
   try {
     console.log("[analyzeImageToxicity] Starting image analysis, base64 length:", imageBase64?.length);
@@ -693,7 +714,7 @@ Respond with valid JSON only containing:
             },
             {
               type: "text",
-              text: "Analyze this image for toxic or dysfunctional communication patterns. Return valid JSON only.",
+              text: "Read this conversation screenshot. Identify the last message and generate an appropriate reply. Return valid JSON only.",
             },
           ],
         },
@@ -708,21 +729,11 @@ Respond with valid JSON only containing:
 
     if (!content) {
       console.warn("[analyzeImageToxicity] Empty content from API, using fallback");
-      // Return fallback instead of throwing
       return {
-        summary:
-          "This message appears to contain challenging communication patterns that may be affecting the relationship negatively.",
-        labels: [
-          {
-            tag: "Communication Issue",
-            description:
-              "Unable to fully analyze the specific patterns at this time.",
-          },
-        ],
-        emotionalImpact:
-          "Messages like this can create confusion, frustration, and emotional distance in relationships.",
-        suggestedResponse:
-          "I need some time to process this. Can we talk about this calmly when we are both ready?",
+        summary: "A conversation that needs a response.",
+        labels: [],
+        emotionalImpact: "This is a normal conversation.",
+        suggestedResponse: "Thanks for that!",
       };
     }
 

@@ -99,6 +99,7 @@ export function ChatScreen({ navigation, route }: Props) {
     previousSummary: string;
     previousPatterns?: string[];
     previousReply?: string;
+    lastMessageFromOther?: string; // The last message from the other person (for context)
   } | null>(null);
 
   // Content area animation values - using React Native Animated
@@ -643,25 +644,26 @@ export function ChatScreen({ navigation, route }: Props) {
 
       let dysfunctionalSummary: { summary: string; patterns?: string[] };
       let analysis: EmotionalAnalysis | null = null;
+      let imageAnalysisResult: any = null;
 
       if (userMessage.imageBase64) {
         // Image flow: analyze image first
-        const imageAnalysis = await analyzeImageToxicity(userMessage.imageBase64);
+        imageAnalysisResult = await analyzeImageToxicity(userMessage.imageBase64);
         dysfunctionalSummary = await generateDysfunctionalCommunicationSummary(
           userMessage.content,
-          imageAnalysis
+          imageAnalysisResult
         );
-        // Create mock analysis for reply generation
+        // Create analysis from image - use actual tone from analysis
         analysis = {
           emotionalClarity: 70,
-          detectedState: "Concerned",
+          detectedState: "Processing",
           relationshipRisk: "medium",
-          summary: imageAnalysis.summary,
-          tone: "Defensive",
-          pattern: "Dysfunctional Communication",
-          emotionalImpact: imageAnalysis.emotionalImpact,
-          coreIssue: "Communication Pattern",
-          fullAnalysis: imageAnalysis.summary,
+          summary: imageAnalysisResult.summary,
+          tone: imageAnalysisResult.conversationTone || "neutral",
+          pattern: "Conversation",
+          emotionalImpact: imageAnalysisResult.emotionalImpact,
+          coreIssue: "Communication",
+          fullAnalysis: imageAnalysisResult.summary,
         };
       } else {
         // Text flow: analyze text
@@ -718,10 +720,22 @@ export function ChatScreen({ navigation, route }: Props) {
       addMessageToActiveLoop(typingMsg2);
 
       // STEP 2: Generate and show Suggested Reply
-      const suggestedReply = await generateQuickSuggestedReply(
-        userMessage.content,
-        analysis || undefined
-      );
+      let suggestedReply;
+
+      if (imageAnalysisResult?.suggestedResponse) {
+        // Use the reply from image analysis directly - it already responds to the last message
+        suggestedReply = {
+          id: Date.now().toString(),
+          text: imageAnalysisResult.suggestedResponse,
+          guidanceNote: "This responds directly to the last message in the conversation.",
+        };
+      } else {
+        // Generate reply for text-only input
+        suggestedReply = await generateQuickSuggestedReply(
+          userMessage.content,
+          analysis || undefined
+        );
+      }
 
       removeMessageFromActiveLoop(typingMsg2.id);
 
@@ -741,6 +755,7 @@ export function ChatScreen({ navigation, route }: Props) {
         previousSummary: dysfunctionalSummary.summary,
         previousPatterns: dysfunctionalSummary.patterns,
         previousReply: suggestedReply.text,
+        lastMessageFromOther: imageAnalysisResult?.lastMessage,
       });
 
     } catch (error) {
@@ -809,8 +824,13 @@ export function ChatScreen({ navigation, route }: Props) {
     insertMessageAfter(currentMessageId, typingMsg);
 
     try {
+      // If we have the last message from the conversation, include it for better context
+      const contextForReply = conversationContext?.lastMessageFromOther
+        ? `The other person said: "${conversationContext.lastMessageFromOther}"\n\nContext: ${currentUserMessage}`
+        : currentUserMessage;
+
       const newReply = await generateQuickSuggestedReply(
-        currentUserMessage,
+        contextForReply,
         currentAnalysis
       );
 
