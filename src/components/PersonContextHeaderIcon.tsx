@@ -37,21 +37,23 @@ export function PersonContextHeaderIcon({
     >
       {hasActivePerson ? (
         <View style={{ position: "relative" }}>
-          <Ionicons name="search" size={24} color="#818CF8" />
-          {/* Active indicator dot */}
+          <Ionicons name="search" size={24} color="#FFFFFF" />
+          {/* Linked indicator - double checkmark */}
           <View
             style={{
               position: "absolute",
-              top: -1,
-              right: -1,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#34D399",
-              borderWidth: 1.5,
-              borderColor: "#111111",
+              top: -2,
+              right: -4,
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: "#111111",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
+          >
+            <Ionicons name="checkmark-done" size={10} color="#FFFFFF" />
+          </View>
         </View>
       ) : (
         <Ionicons name="search-outline" size={22} color="#6B7280" />
