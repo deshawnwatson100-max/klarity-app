@@ -203,7 +203,7 @@ export function ChatScreen({ navigation, route }: Props) {
     const SLIDE_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0);
 
     if (newMode === "rewrite") {
-      // Slide Reply in from left, Decode out to right
+      // Slide Reply in from right, Decode out to left
       Animated.parallel([
         Animated.timing(replySlideX, {
           toValue: 0,
@@ -212,17 +212,17 @@ export function ChatScreen({ navigation, route }: Props) {
           useNativeDriver: true,
         }),
         Animated.timing(decodeSlideX, {
-          toValue: screenWidth,
+          toValue: -screenWidth,
           duration: SLIDE_DURATION,
           easing: SLIDE_EASING,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
-      // Slide Decode in from right, Reply out to left
+      // Slide Decode in from left, Reply out to right
       Animated.parallel([
         Animated.timing(replySlideX, {
-          toValue: -screenWidth,
+          toValue: screenWidth,
           duration: SLIDE_DURATION,
           easing: SLIDE_EASING,
           useNativeDriver: true,
@@ -242,11 +242,13 @@ export function ChatScreen({ navigation, route }: Props) {
   // Initialize slide positions based on initial mode
   useEffect(() => {
     if (inputMode === "understand") {
-      replySlideX.setValue(-screenWidth);
+      // Decode mode: Decode at center, Reply off to the right
+      replySlideX.setValue(screenWidth);
       decodeSlideX.setValue(0);
     } else {
+      // Reply mode: Reply at center, Decode off to the left
       replySlideX.setValue(0);
-      decodeSlideX.setValue(screenWidth);
+      decodeSlideX.setValue(-screenWidth);
     }
   }, []);
 
