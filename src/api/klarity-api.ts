@@ -699,10 +699,11 @@ Respond with valid JSON only containing:
 
 ## FOR INVALID INPUT
 
-When the image is invalid (not a conversation screenshot), use EXACTLY this message for acknowledgment:
-"It looks like that image might have been sent by accident. Can you let me know what you meant or what you'd like help with?"
-
-Do NOT generate a suggested reply for invalid input. Leave suggestedResponse empty.`;
+When the image is invalid (not a conversation screenshot):
+- Use EXACTLY this message for acknowledgment: "I can see you have attached an image"
+- Use EXACTLY this message for summary: "It looks like that image might have been sent by accident. Can you let me know what you meant or what you'd like help with?"
+- Do NOT say "2 images" or mention the number of images - always say "an image" (singular)
+- Do NOT generate a suggested reply for invalid input. Leave suggestedResponse empty.`;
 
 
   try {
