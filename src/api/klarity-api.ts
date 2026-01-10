@@ -866,31 +866,56 @@ export async function generateIntentionBasedReplies(
 ): Promise<Array<{ id: string; text: string; guidanceNote: string }>> {
   const intentionContext: Record<typeof intention, string> = {
     improve:
-      "Generate responses that are warm, open to dialogue, and show willingness to work on the relationship",
+      "Generate a response that is warm, open to dialogue, and shows willingness to work on the relationship — while maintaining quiet self-respect",
     distance:
-      "Generate responses that are polite but create emotional space, set boundaries, and protect their peace",
+      "Generate a response that creates emotional space and sets boundaries with grace — firm but not cold, clear but not harsh",
     maintain:
-      "Generate responses that are neutral, observational, and do not escalate or de-escalate the situation",
+      "Generate a response that is steady and observational — grounded, unhurried, and self-possessed",
     clarity:
-      "Generate responses that ask for clarification, express feelings openly, and seek to understand better",
+      "Generate a response that seeks understanding with directness — curious but not desperate, open but not over-explaining",
   };
 
   const guidanceContext: Record<typeof intention, string> = {
     improve:
-      "This approach invites connection and shows openness, but may feel vulnerable if they are not receptive.",
+      "This invites connection while maintaining your ground — openness from a place of security.",
     distance:
-      "This approach protects your peace and sets boundaries, but may create more distance than intended.",
+      "This creates space with clarity — boundaries without drama or justification.",
     maintain:
-      "This approach keeps things balanced and neutral, but may not fully resolve the underlying issue.",
+      "This keeps things steady — grounded observation without pressure to resolve immediately.",
     clarity:
-      "This approach seeks understanding and opens dialogue, but may prolong the conversation if they are defensive.",
+      "This seeks understanding directly — curiosity without anxiety or over-investment.",
   };
 
   const systemPrompt = `You are Klarity AI. ${intentionContext[intention]}.
 
-Generate 1 suggested reply that fits this intention. The reply should be 1-2 sentences, healthy, and emotionally regulated.
+## VOICE REQUIREMENTS (MANDATORY)
 
-Also provide a brief guidance note (1 sentence) explaining how this reply might affect the recipient or the dynamic.
+### Core Tone: Mature, Emotionally Intelligent, Quiet Self-Respect
+- Grounded and steady — not reactive or defensive
+- Warm but boundaried — caring without being a pushover
+- Self-possessed — speaks from a place of knowing their own worth
+- Emotionally fluent — acknowledges feelings without drowning in them
+- Unhurried — no need to over-explain or justify
+
+Think: someone who has done their inner work. They do not need to prove anything.
+
+### Language Guidelines
+- Plain, adult language — no hedging, no excessive softening
+- Direct but not harsh — clear without being cold
+- Measured pacing — lets statements breathe
+- Quietly confident — does not ask for permission to exist
+- Self-respecting — does not apologize for having needs or limits
+
+### ABSOLUTE DO NOTs
+- Sound defensive or reactive
+- Over-explain or justify excessively
+- Apologize reflexively
+- Use passive-aggressive phrasing
+- Sound pleading or anxious
+
+Generate 1 suggested reply that fits this intention. The reply should be 1-2 sentences, emotionally intelligent, and carry quiet self-respect.
+
+Also provide a brief guidance note (1 sentence) — practical navigation advice, not emotional advice.
 
 Respond with valid JSON only containing:
 - replies: array of { id: string, text: string, guidanceNote: string }`;
@@ -941,28 +966,28 @@ Respond with valid JSON only containing:
       improve: [
         {
           id: "1",
-          text: "I hear what you are saying. Can we talk about this calmly and work through it together?",
+          text: "I hear you. I would like to work through this together when you are ready.",
           guidanceNote: guidanceContext.improve,
         },
       ],
       distance: [
         {
           id: "1",
-          text: "I hear you. I think I need a little space right now to process this.",
+          text: "I understand. I need some space to think this through.",
           guidanceNote: guidanceContext.distance,
         },
       ],
       maintain: [
         {
           id: "1",
-          text: "I see what you are saying. Let me think about that for a bit.",
+          text: "I hear you. Let me sit with that.",
           guidanceNote: guidanceContext.maintain,
         },
       ],
       clarity: [
         {
           id: "1",
-          text: "I am not sure I fully understand. Can you explain what you mean by that?",
+          text: "I want to understand. Can you say more about what you mean?",
           guidanceNote: guidanceContext.clarity,
         },
       ],
@@ -1117,40 +1142,51 @@ ${toneContext[modulationTone]}
 
 ## VOICE REQUIREMENTS (MANDATORY)
 
-### Tone
-- Calm and confident
-- Human and natural
-- Clear, not sharp
-- Firm, but easy to receive
+### Core Tone: Mature, Emotionally Intelligent, Quiet Self-Respect
+- Grounded and steady — not reactive or defensive
+- Warm but boundaried — caring without being a pushover
+- Self-possessed — speaks from a place of knowing their own worth
+- Unhurried — no need to over-explain or justify
 
-Think: quiet confidence, not dominance.
+Think: someone who has done their inner work. They do not need to prove anything.
 
 ### Language Guidelines
-- Plain, everyday language
-- Short to medium sentences
-- Gentle clarity over bluntness
-- Warm neutrality (never cold)
-- Soft openings are allowed
+- Plain, adult language — no hedging, no excessive softening
+- Direct but not harsh — clear without being cold
+- Measured pacing — lets statements breathe
+- Quietly confident — does not ask for permission to exist
+- Self-respecting — does not apologize for having needs or limits
+
+Examples of mature, self-respecting phrasing:
+- "I understand. And I need to be honest with you."
+- "I hear what you are saying. Here is where I am."
+- "That does not work for me."
+- "I am clear on what I need."
 
 ## ABSOLUTE DO NOTs
+- Sound defensive or reactive
 - Sound clinical or therapeutic
 - Label behavior ("toxic," "manipulative")
 - Over-explain or justify
 - Shame, threaten, or corner
 - Use sarcasm or sharp phrasing
+- Apologize reflexively
+- Sound pleading or anxious
 
 ## REPLY STRUCTURE
-Soft acknowledgment → Clear boundary or reality → Gentle direction
+Grounded acknowledgment → Clear, self-respecting position → Forward direction (optional)
 
 ## BOUNDARY STYLE
 Boundaries should feel steady, non-reactive, respectful, and complete.
 
-✅ "That's not something I can do, but I appreciate you asking."
+✅ "That is not something I can do."
+✅ "I am not available for that."
 ❌ "That makes me uncomfortable and stressed."
+❌ "I really need you to understand..."
 
 Generate ONE reply (1-3 sentences) that fits the ${modulationTone} tone.
 
-Also provide a brief guidance note (1 sentence) — grounded, practical.
+Also provide a brief guidance note (1 sentence) — practical navigation advice, not emotional advice.
 
 Respond with valid JSON only:
 {
@@ -1189,7 +1225,7 @@ Respond with valid JSON only:
 
     return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
-      text: item.text || "I hear you. That's not something I can take on right now.",
+      text: item.text || "I hear you. That is not something I can take on.",
       guidanceNote: item.guidanceNote || guidanceContext[modulationTone],
     }));
   } catch (error) {
@@ -1203,21 +1239,21 @@ Respond with valid JSON only:
       direct: [
         {
           id: "1",
-          text: "I hear you. That's not something I can do. Let's figure out another way.",
-          guidanceNote: "Clear and respectful. No ambiguity.",
+          text: "I hear you. That is not something I can do.",
+          guidanceNote: "Clear and grounded. No ambiguity.",
         },
       ],
       gentle: [
         {
           id: "1",
-          text: "I get where you're coming from. This isn't something I can take on, but I appreciate you bringing it up.",
-          guidanceNote: "Warm delivery while still holding the line.",
+          text: "I understand where you are coming from. This is not something I can take on.",
+          guidanceNote: "Warm but still holding your ground.",
         },
       ],
       neutral: [
         {
           id: "1",
-          text: "I understand. That doesn't work for me right now.",
+          text: "I understand. That does not work for me.",
           guidanceNote: "Clean and balanced. Says what needs to be said.",
         },
       ],
@@ -1448,34 +1484,46 @@ export async function modifyReplyLength(
 
   const actionInstructions = {
     shorten:
-      "Make this reply SHORTER and more concise while keeping the same emotional intelligence, tone, and intent. Remove unnecessary words but maintain clarity and warmth. Aim for about 50-70% of the original length.",
+      "Make this reply SHORTER and more concise while keeping the same mature, self-respecting tone. Remove unnecessary words but maintain clarity. Aim for about 50-70% of the original length.",
     lengthen:
-      "Make this reply LONGER and more elaborate while keeping the same emotional intelligence, tone, and intent. Add more context, nuance, or emotional detail without changing the core message. Aim for about 130-150% of the original length.",
+      "Make this reply LONGER with more measured context while keeping the same mature, self-respecting tone. Add nuance without over-explaining. Aim for about 130-150% of the original length.",
   };
 
   const intentionContext = {
     improve:
-      "This is for improving the relationship - keep the supportive, connecting tone.",
+      "This is for improving the relationship — keep it warm but grounded, open from a place of security.",
     distance:
-      "This is for creating healthy distance - keep the calm, protective boundary-setting tone.",
+      "This is for creating space — keep it clear and boundaried without being cold or defensive.",
     maintain:
-      "This is for maintaining the current dynamic - keep the neutral, observant tone.",
+      "This is for maintaining equilibrium — keep it steady and self-possessed.",
     clarity:
-      "This is for gaining clarity - keep the reflective, understanding tone.",
+      "This is for gaining understanding — keep it direct and curious without anxiety.",
   };
 
-  const systemPrompt = `You are an expert at modifying message length while preserving emotional intelligence and intent.
+  const systemPrompt = `You are an expert at modifying message length while preserving emotional intelligence and quiet self-respect.
 
 ${actionInstructions[action]}
 
+## VOICE REQUIREMENTS (MANDATORY)
+
+### Core Tone: Mature, Emotionally Intelligent, Quiet Self-Respect
+- Grounded and steady — not reactive or defensive
+- Self-possessed — speaks from a place of knowing their own worth
+- Unhurried — no need to over-explain or justify
+
+### ABSOLUTE DO NOTs
+- Sound defensive or reactive
+- Over-explain or justify
+- Apologize reflexively
+- Sound pleading or anxious
+
 Important:
-- Keep the EXACT same tone and emotional quality
+- Keep the EXACT same mature, self-respecting tone
 - Maintain the same relationship intention (${intention})
 - ${intentionContext[intention]}
 - Do NOT change the core message or meaning
-- Do NOT add new topics or change the subject
-- Keep natural, conversational language
-- Preserve any emotional validation or boundary-setting
+- Keep natural, adult language
+- Preserve any boundary-setting
 
 Return ONLY the modified reply text, nothing else.`;
 
@@ -2181,11 +2229,27 @@ The user has already shared a situation with you. Now they are adding a NEW scre
 - Assume the user wants to keep momentum, not start over
 - If the new message contradicts or complicates the prior approach, gently adjust and explain the shift in ONE short sentence
 
-## VOICE REQUIREMENTS
-- Calm and confident
-- Human and natural
-- Clear, not sharp
-- Plain, everyday language
+## VOICE REQUIREMENTS (MANDATORY)
+
+### Core Tone: Mature, Emotionally Intelligent, Quiet Self-Respect
+- Grounded and steady — not reactive or defensive
+- Warm but boundaried — caring without being a pushover
+- Self-possessed — speaks from a place of knowing their own worth
+- Unhurried — no need to over-explain or justify
+
+Think: someone who has done their inner work. They do not need to prove anything.
+
+### Language Guidelines
+- Plain, adult language — no hedging, no excessive softening
+- Direct but not harsh — clear without being cold
+- Quietly confident — does not ask for permission to exist
+- Self-respecting — does not apologize for having needs or limits
+
+### ABSOLUTE DO NOTs
+- Sound defensive or reactive
+- Over-explain or justify excessively
+- Apologize reflexively
+- Sound pleading or anxious
 
 Respond with valid JSON only:
 {
@@ -2313,30 +2377,38 @@ The rewritten reply should:
 
 ## VOICE REQUIREMENTS (MANDATORY)
 
-### Tone
-- Calm and confident
-- Human and natural
-- Clear, not sharp
-- Firm, but easy to receive
+### Core Tone: Mature, Emotionally Intelligent, Quiet Self-Respect
+- Grounded and steady — not reactive or defensive
+- Warm but boundaried — caring without being a pushover
+- Self-possessed — speaks from a place of knowing their own worth
+- Unhurried — no need to over-explain or justify
 
-Think: quiet confidence, not dominance.
+Think: someone who has done their inner work. They do not need to prove anything.
 
 ### Language Guidelines
-- Plain, everyday language
-- Short to medium sentences
-- Gentle clarity over bluntness
-- Warm neutrality (never cold)
-- Soft openings are allowed if they help delivery
+- Plain, adult language — no hedging, no excessive softening
+- Direct but not harsh — clear without being cold
+- Measured pacing — lets statements breathe
+- Quietly confident — does not ask for permission to exist
+- Self-respecting — does not apologize for having needs or limits
+
+Examples of mature, self-respecting phrasing:
+- "I am not available for that."
+- "That does not work for me."
+- "I need something different here."
+- "I am clear on what I need."
 
 ## ABSOLUTE DO NOTs
 - Do NOT change the core message or what the user wants to communicate
 - Do NOT add new topics or subjects
 - Do NOT make assumptions about what they should say
+- Sound defensive or reactive
 - Sound clinical or therapeutic
 - Label behavior (e.g. "toxic," "manipulative")
 - Over-explain or justify excessively
 - Use sarcasm or sharp phrasing
 - Apologize reflexively when user did not
+- Sound pleading or anxious
 
 ## QUALITY CHECK
 The rewritten reply should:
