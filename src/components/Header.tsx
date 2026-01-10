@@ -4,8 +4,42 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import Svg, { Path } from "react-native-svg";
 import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
+
+/**
+ * Klarity Logo Icon - Abstract geometric outline shapes
+ * Similar to ChatGPT's minimalist hexagonal style
+ */
+function KlarityLogoIcon({ size = 20, color = "#818CF8" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Outer hexagon outline */}
+      <Path
+        d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Inner diamond/rhombus */}
+      <Path
+        d="M12 6L17 12L12 18L7 12L12 6Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Center dot */}
+      <Path
+        d="M12 10.5C12.8284 10.5 13.5 11.1716 13.5 12C13.5 12.8284 12.8284 13.5 12 13.5C11.1716 13.5 10.5 12.8284 10.5 12C10.5 11.1716 11.1716 10.5 12 10.5Z"
+        stroke={color}
+        strokeWidth={1.2}
+      />
+    </Svg>
+  );
+}
 
 export type InputMode = "understand" | "rewrite";
 
@@ -117,6 +151,9 @@ export function Header({
           >
             Klarity
           </Text>
+          <View style={{ marginLeft: 8 }}>
+            <KlarityLogoIcon size={20} color="#818CF8" />
+          </View>
         </View>
 
 
