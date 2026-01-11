@@ -22,6 +22,20 @@ const COLORS = {
   errorBg: "rgba(242, 139, 130, 0.1)",
 };
 
+// Platform colors for visual distinction
+const PLATFORM_COLORS: Record<string, { bg: string; icon: string }> = {
+  instagram: { bg: "#E1306C20", icon: "#E1306C" },
+  facebook: { bg: "#1877F220", icon: "#1877F2" },
+  twitter: { bg: "#1DA1F220", icon: "#1DA1F2" },
+  "x.com": { bg: "#00000040", icon: "#FFFFFF" },
+  linkedin: { bg: "#0A66C220", icon: "#0A66C2" },
+  tiktok: { bg: "#00F2EA20", icon: "#00F2EA" },
+  youtube: { bg: "#FF000020", icon: "#FF0000" },
+  reddit: { bg: "#FF450020", icon: "#FF4500" },
+  github: { bg: "#FFFFFF15", icon: "#FFFFFF" },
+  default: { bg: "#8AB4F815", icon: "#8AB4F8" },
+};
+
 interface DeepSearchResultBubbleProps {
   result: DeepSearchResult;
   onAskFollowUp?: () => void;
@@ -29,35 +43,13 @@ interface DeepSearchResultBubbleProps {
 }
 
 /**
- * Google Search-style results display
- * Clean, link-forward, minimal explanation
+ * Enhanced search results display with profile cards
  */
 export function DeepSearchResultBubble({
   result,
   onAskFollowUp,
   showSafetyResources = false,
 }: DeepSearchResultBubbleProps) {
-  const getDomainFromUrl = (url: string): string => {
-    try {
-      const domain = new URL(url).hostname.replace("www.", "");
-      return domain;
-    } catch {
-      return url;
-    }
-  };
-
-  const getSourceIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
-    const lower = platform.toLowerCase();
-    if (lower.includes("linkedin")) return "logo-linkedin";
-    if (lower.includes("twitter") || lower.includes("x.com")) return "logo-twitter";
-    if (lower.includes("facebook")) return "logo-facebook";
-    if (lower.includes("instagram")) return "logo-instagram";
-    if (lower.includes("youtube")) return "logo-youtube";
-    if (lower.includes("reddit")) return "logo-reddit";
-    if (lower.includes("github")) return "logo-github";
-    return "globe-outline";
-  };
-
   return (
     <View style={{ marginVertical: 8, paddingHorizontal: 12 }}>
       {/* Safety Resources - keep this prominent if needed */}
@@ -87,7 +79,7 @@ export function DeepSearchResultBubble({
         </View>
       )}
 
-      {/* Results Header - focus on what was found */}
+      {/* Results Header */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
         <Ionicons name="checkmark-circle" size={16} color={COLORS.green} />
         <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginLeft: 8 }}>
@@ -95,15 +87,13 @@ export function DeepSearchResultBubble({
         </Text>
       </View>
 
-      {/* Results List - Google style */}
+      {/* Results List - Enhanced Cards */}
       {result.sources.length > 0 && (
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 12 }}>
           {result.sources.map((source, index) => (
-            <SearchResultCard
+            <EnhancedResultCard
               key={`${source.platform}-${index}`}
               source={source}
-              getDomainFromUrl={getDomainFromUrl}
-              getSourceIcon={getSourceIcon}
             />
           ))}
         </View>
@@ -113,17 +103,9 @@ export function DeepSearchResultBubble({
 }
 
 /**
- * Individual search result - Google style card
+ * Enhanced result card - always shows rich details
  */
-function SearchResultCard({
-  source,
-  getDomainFromUrl,
-  getSourceIcon,
-}: {
-  source: DeepSearchSource;
-  getDomainFromUrl: (url: string) => string;
-  getSourceIcon: (platform: string) => keyof typeof Ionicons.glyphMap;
-}) {
+function EnhancedResultCard({ source }: { source: DeepSearchSource }) {
   const [copiedUsername, setCopiedUsername] = React.useState(false);
 
   const handlePress = () => {
@@ -143,314 +125,253 @@ function SearchResultCard({
     }
   };
 
-  const isSocialMedia = ["linkedin", "twitter", "x.com", "facebook", "instagram", "youtube", "reddit", "github", "tiktok"]
-    .some(platform => source.platform.toLowerCase().includes(platform));
+  // Get platform info
+  const platformLower = source.platform.toLowerCase();
+  const platformKey = Object.keys(PLATFORM_COLORS).find(k => platformLower.includes(k)) || "default";
+  const platformColor = PLATFORM_COLORS[platformKey];
+
+  // Get icon for platform
+  const getSourceIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
+    const lower = platform.toLowerCase();
+    if (lower.includes("linkedin")) return "logo-linkedin";
+    if (lower.includes("twitter") || lower.includes("x.com")) return "logo-twitter";
+    if (lower.includes("facebook")) return "logo-facebook";
+    if (lower.includes("instagram")) return "logo-instagram";
+    if (lower.includes("youtube")) return "logo-youtube";
+    if (lower.includes("reddit")) return "logo-reddit";
+    if (lower.includes("github")) return "logo-github";
+    if (lower.includes("tiktok")) return "musical-notes";
+    if (lower.includes("tinder") || lower.includes("bumble") || lower.includes("hinge") || lower.includes("dating")) return "heart";
+    if (lower.includes("court") || lower.includes("legal") || lower.includes("gov")) return "document-text";
+    if (lower.includes("archive")) return "time";
+    return "globe-outline";
+  };
+
+  // Get domain from URL
+  const getDomainFromUrl = (url: string): string => {
+    try {
+      const domain = new URL(url).hostname.replace("www.", "");
+      return domain;
+    } catch {
+      return url;
+    }
+  };
 
   const stats = source.socialStats;
-  const hasStats = stats && (stats.followers !== undefined || stats.following !== undefined || stats.posts !== undefined);
   const username = stats?.username || extractUsernameFromUrl(source.url, source.platform);
+  const displayName = stats?.displayName || source.platform;
+  const bio = stats?.bio || source.summary;
+  const hasStats = stats && (stats.followers !== undefined || stats.following !== undefined || stats.posts !== undefined);
 
   // Format large numbers
   const formatNumber = (num: number | undefined): string => {
-    if (num === undefined) return "";
+    if (num === undefined) return "-";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
 
   return (
-    <View>
-      {/* Social Media Enhanced Card */}
-      {isSocialMedia && (stats?.profileImageUrl || hasStats || username) ? (
+    <View
+      style={{
+        backgroundColor: COLORS.surface,
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      {/* Platform Header Bar */}
+      <View
+        style={{
+          backgroundColor: platformColor.bg,
+          paddingHorizontal: 14,
+          paddingVertical: 10,
+          flexDirection: "row",
+          alignItems: "center",
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.border,
+        }}
+      >
         <View
           style={{
-            backgroundColor: COLORS.surface,
-            borderRadius: 14,
-            padding: 14,
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            backgroundColor: COLORS.background,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {/* Header with profile image and basic info */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            {/* Profile Image */}
-            {stats?.profileImageUrl ? (
-              <Image
-                source={{ uri: stats.profileImageUrl }}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: COLORS.surfaceHover,
-                }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: COLORS.surfaceHover,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name={getSourceIcon(source.platform)} size={22} color={COLORS.textSecondary} />
-              </View>
-            )}
+          <Ionicons name={getSourceIcon(source.platform)} size={16} color={platformColor.icon} />
+        </View>
+        <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginLeft: 10, flex: 1 }}>
+          {source.platform}
+        </Text>
+        {stats?.isVerifiedAccount && (
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#1DA1F220", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
+            <Ionicons name="checkmark-circle" size={14} color="#1DA1F2" />
+            <Text style={{ fontSize: 11, color: "#1DA1F2", marginLeft: 4, fontWeight: "500" }}>Verified</Text>
+          </View>
+        )}
+      </View>
 
-            {/* Name and Platform */}
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Pressable onPress={handlePress} disabled={!source.url}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: COLORS.text,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {stats?.displayName || source.platform}
-                  </Text>
-                </Pressable>
-                {stats?.isVerifiedAccount && (
-                  <Ionicons name="checkmark-circle" size={16} color="#1DA1F2" style={{ marginLeft: 4 }} />
-                )}
-              </View>
-              {username && (
-                <Text style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 2 }}>
-                  @{username.replace(/^@/, "")}
-                </Text>
-              )}
-            </View>
-
-            {/* Platform Icon */}
+      {/* Content */}
+      <View style={{ padding: 14 }}>
+        {/* Profile Row */}
+        <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 12 }}>
+          {/* Profile Image/Icon */}
+          {stats?.profileImageUrl ? (
+            <Image
+              source={{ uri: stats.profileImageUrl }}
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: COLORS.surfaceHover,
+              }}
+            />
+          ) : (
             <View
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: COLORS.background,
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: platformColor.bg,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name={getSourceIcon(source.platform)} size={15} color={COLORS.textSecondary} />
-            </View>
-          </View>
-
-          {/* Bio if available */}
-          {stats?.bio && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: COLORS.textSecondary,
-                lineHeight: 18,
-                marginBottom: 12,
-              }}
-              numberOfLines={2}
-            >
-              {stats.bio}
-            </Text>
-          )}
-
-          {/* Stats Row */}
-          {hasStats && (
-            <View
-              style={{
-                flexDirection: "row",
-                backgroundColor: COLORS.background,
-                borderRadius: 10,
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              {stats.posts !== undefined && (
-                <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.posts)}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Posts</Text>
-                </View>
-              )}
-              {stats.followers !== undefined && (
-                <View style={{ flex: 1, alignItems: "center", borderLeftWidth: stats.posts !== undefined ? 1 : 0, borderLeftColor: COLORS.border }}>
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.followers)}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Followers</Text>
-                </View>
-              )}
-              {stats.following !== undefined && (
-                <View style={{ flex: 1, alignItems: "center", borderLeftWidth: 1, borderLeftColor: COLORS.border }}>
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.following)}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Following</Text>
-                </View>
-              )}
+              <Ionicons name={getSourceIcon(source.platform)} size={24} color={platformColor.icon} />
             </View>
           )}
 
-          {/* Summary */}
-          {source.summary && !stats?.bio && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: COLORS.textSecondary,
-                lineHeight: 18,
-                marginBottom: 12,
-              }}
-              numberOfLines={2}
-            >
-              {source.summary}
-            </Text>
-          )}
-
-          {/* Action Buttons */}
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            {/* View Profile Button */}
-            {source.url && (
-              <Pressable
-                onPress={handlePress}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: COLORS.link,
-                  paddingVertical: 10,
-                  borderRadius: 8,
-                  opacity: pressed ? 0.8 : 1,
-                })}
+          {/* Name and Username */}
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Pressable onPress={handlePress} disabled={!source.url}>
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: "600",
+                  color: COLORS.text,
+                }}
+                numberOfLines={1}
               >
-                <Ionicons name="open-outline" size={15} color="#fff" />
-                <Text style={{ fontSize: 13, color: "#fff", fontWeight: "600", marginLeft: 6 }}>
-                  View Profile
-                </Text>
-              </Pressable>
-            )}
-
-            {/* Copy Username Button */}
+                {displayName}
+              </Text>
+            </Pressable>
             {username && (
-              <Pressable
-                onPress={handleCopyUsername}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: COLORS.background,
-                  paddingVertical: 10,
-                  paddingHorizontal: 14,
-                  borderRadius: 8,
-                  opacity: pressed ? 0.8 : 1,
-                })}
-              >
+              <Pressable onPress={handleCopyUsername} style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
+                <Text style={{ fontSize: 14, color: COLORS.link }}>
+                  @{username.replace(/^@/, "")}
+                </Text>
                 <Ionicons
                   name={copiedUsername ? "checkmark" : "copy-outline"}
-                  size={15}
-                  color={copiedUsername ? COLORS.green : COLORS.textSecondary}
+                  size={14}
+                  color={copiedUsername ? COLORS.green : COLORS.textMuted}
+                  style={{ marginLeft: 6 }}
                 />
                 {copiedUsername && (
-                  <Text style={{ fontSize: 12, color: COLORS.green, marginLeft: 4 }}>Copied</Text>
+                  <Text style={{ fontSize: 11, color: COLORS.green, marginLeft: 4 }}>Copied!</Text>
                 )}
               </Pressable>
+            )}
+            {/* URL domain */}
+            {source.url && (
+              <Text style={{ fontSize: 12, color: COLORS.green, marginTop: 4 }} numberOfLines={1}>
+                {getDomainFromUrl(source.url)}
+              </Text>
             )}
           </View>
         </View>
-      ) : (
-        /* Standard Result Card for non-social or minimal data */
-        <>
-          {/* URL / Source line */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: COLORS.surface,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
-              }}
-            >
-              <Ionicons name={getSourceIcon(source.platform)} size={11} color={COLORS.textSecondary} />
-            </View>
-            <Text style={{ fontSize: 12, color: COLORS.green }} numberOfLines={1}>
-              {source.url ? getDomainFromUrl(source.url) : source.platform.toLowerCase()}
-            </Text>
-          </View>
 
-          {/* Title / Platform - clickable */}
-          <Pressable onPress={handlePress} disabled={!source.url}>
+        {/* Bio/Summary */}
+        {bio && (
+          <View style={{ backgroundColor: COLORS.background, borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <Text
               style={{
-                fontSize: 17,
-                fontWeight: "400",
-                color: source.url ? COLORS.link : COLORS.text,
-                marginBottom: 6,
-                lineHeight: 22,
+                fontSize: 13,
+                color: COLORS.textSecondary,
+                lineHeight: 19,
               }}
+              numberOfLines={3}
             >
-              {source.platform}
+              {bio}
+            </Text>
+          </View>
+        )}
+
+        {/* Stats Row - Always show for social platforms */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: COLORS.background,
+            borderRadius: 10,
+            marginBottom: 12,
+          }}
+        >
+          <View style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>
+              {hasStats && stats.posts !== undefined ? formatNumber(stats.posts) : "-"}
+            </Text>
+            <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Posts</Text>
+          </View>
+          <View style={{ width: 1, backgroundColor: COLORS.border }} />
+          <View style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>
+              {hasStats && stats.followers !== undefined ? formatNumber(stats.followers) : "-"}
+            </Text>
+            <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Followers</Text>
+          </View>
+          <View style={{ width: 1, backgroundColor: COLORS.border }} />
+          <View style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>
+              {hasStats && stats.following !== undefined ? formatNumber(stats.following) : "-"}
+            </Text>
+            <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>Following</Text>
+          </View>
+        </View>
+
+        {/* Relevant Details as Tags */}
+        {source.relevantDetails.length > 0 && (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            {source.relevantDetails.slice(0, 4).map((detail, i) => (
+              <View
+                key={i}
+                style={{
+                  backgroundColor: COLORS.background,
+                  paddingVertical: 5,
+                  paddingHorizontal: 10,
+                  borderRadius: 14,
+                }}
+              >
+                <Text style={{ fontSize: 11, color: COLORS.textSecondary }} numberOfLines={1}>
+                  {detail.length > 35 ? detail.slice(0, 35) + "..." : detail}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Action Button */}
+        {source.url && (
+          <Pressable
+            onPress={handlePress}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: COLORS.link,
+              paddingVertical: 12,
+              borderRadius: 10,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Ionicons name="open-outline" size={16} color="#fff" />
+            <Text style={{ fontSize: 14, color: "#fff", fontWeight: "600", marginLeft: 8 }}>
+              View Profile
             </Text>
           </Pressable>
-
-          {/* Description - short */}
-          <Text
-            style={{
-              fontSize: 13,
-              color: COLORS.textSecondary,
-              lineHeight: 19,
-            }}
-            numberOfLines={2}
-          >
-            {source.summary}
-          </Text>
-
-          {/* Quick details as inline pills */}
-          {source.relevantDetails.length > 0 && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10, gap: 6 }}>
-              {source.relevantDetails.slice(0, 3).map((detail, i) => (
-                <View
-                  key={i}
-                  style={{
-                    backgroundColor: COLORS.surface,
-                    paddingVertical: 4,
-                    paddingHorizontal: 10,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 11, color: COLORS.textSecondary }} numberOfLines={1}>
-                    {detail.length > 40 ? detail.slice(0, 40) + "..." : detail}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* View Profile Link - always show for social media */}
-          {source.url && (
-            <Pressable
-              onPress={handlePress}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 12,
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Ionicons
-                name={isSocialMedia ? "open-outline" : "arrow-forward"}
-                size={14}
-                color={COLORS.link}
-              />
-              <Text style={{ fontSize: 13, color: COLORS.link, marginLeft: 6, fontWeight: "500" }}>
-                {isSocialMedia ? "View Profile" : "Visit Site"}
-              </Text>
-            </Pressable>
-          )}
-        </>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -507,7 +428,7 @@ function extractUsernameFromUrl(url: string | undefined, platform: string): stri
 }
 
 /**
- * Loading state - minimal Google style
+ * Loading state - skeleton cards
  */
 export function DeepSearchLoading() {
   return (
@@ -520,58 +441,43 @@ export function DeepSearchLoading() {
         </Text>
       </View>
 
-      {/* Skeleton results */}
-      <View style={{ gap: 24 }}>
+      {/* Skeleton cards */}
+      <View style={{ gap: 12 }}>
         {[1, 2, 3].map((i) => (
-          <View key={i}>
-            {/* URL line skeleton */}
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 10,
-                  backgroundColor: COLORS.surface,
-                }}
-              />
-              <View
-                style={{
-                  height: 10,
-                  width: 120,
-                  backgroundColor: COLORS.surface,
-                  borderRadius: 4,
-                  marginLeft: 8,
-                }}
-              />
+          <View
+            key={i}
+            style={{
+              backgroundColor: COLORS.surface,
+              borderRadius: 16,
+              overflow: "hidden",
+            }}
+          >
+            {/* Header skeleton */}
+            <View style={{ backgroundColor: COLORS.surfaceHover, padding: 14, flexDirection: "row", alignItems: "center" }}>
+              <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.background }} />
+              <View style={{ height: 14, width: 100, backgroundColor: COLORS.background, borderRadius: 4, marginLeft: 10 }} />
             </View>
-            {/* Title skeleton */}
-            <View
-              style={{
-                height: 16,
-                width: "70%",
-                backgroundColor: COLORS.surface,
-                borderRadius: 4,
-                marginBottom: 8,
-              }}
-            />
-            {/* Description skeleton */}
-            <View
-              style={{
-                height: 12,
-                width: "100%",
-                backgroundColor: COLORS.surface,
-                borderRadius: 4,
-                marginBottom: 4,
-              }}
-            />
-            <View
-              style={{
-                height: 12,
-                width: "85%",
-                backgroundColor: COLORS.surface,
-                borderRadius: 4,
-              }}
-            />
+            {/* Content skeleton */}
+            <View style={{ padding: 14 }}>
+              <View style={{ flexDirection: "row", marginBottom: 12 }}>
+                <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.surfaceHover }} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={{ height: 16, width: "70%", backgroundColor: COLORS.surfaceHover, borderRadius: 4, marginBottom: 8 }} />
+                  <View style={{ height: 12, width: "50%", backgroundColor: COLORS.surfaceHover, borderRadius: 4 }} />
+                </View>
+              </View>
+              {/* Stats skeleton */}
+              <View style={{ flexDirection: "row", backgroundColor: COLORS.background, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                {[1, 2, 3].map((j) => (
+                  <View key={j} style={{ flex: 1, alignItems: "center" }}>
+                    <View style={{ height: 16, width: 30, backgroundColor: COLORS.surfaceHover, borderRadius: 4, marginBottom: 4 }} />
+                    <View style={{ height: 10, width: 50, backgroundColor: COLORS.surfaceHover, borderRadius: 4 }} />
+                  </View>
+                ))}
+              </View>
+              {/* Button skeleton */}
+              <View style={{ height: 44, backgroundColor: COLORS.surfaceHover, borderRadius: 10 }} />
+            </View>
           </View>
         ))}
       </View>
