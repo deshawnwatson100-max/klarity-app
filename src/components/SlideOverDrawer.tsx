@@ -242,48 +242,50 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
 
   return (
     <View style={{ position: "relative", overflow: "hidden" }}>
-      {/* Action buttons behind the item */}
-      <View
-        style={{
-          position: "absolute",
-          right: 0,
-          top: 0,
-          bottom: 0,
-          flexDirection: "row",
-          alignItems: "center",
-          paddingRight: 4,
-        }}
-      >
-        <Pressable
-          onPress={handleArchive}
+      {/* Action buttons behind the item - hide for active item */}
+      {!isActive && (
+        <View
           style={{
-            width: ACTION_BUTTON_WIDTH,
-            height: "100%",
-            backgroundColor: "#3B82F6",
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 8,
-            marginRight: 4,
+            paddingRight: 4,
           }}
         >
-          <Ionicons name="archive-outline" size={20} color="#FFF" />
-          <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Archive</Text>
-        </Pressable>
-        <Pressable
-          onPress={handleDelete}
-          style={{
-            width: ACTION_BUTTON_WIDTH,
-            height: "100%",
-            backgroundColor: "#EF4444",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 8,
-          }}
-        >
-          <Ionicons name="trash-outline" size={20} color="#FFF" />
-          <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Delete</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            onPress={handleArchive}
+            style={{
+              width: ACTION_BUTTON_WIDTH,
+              height: "100%",
+              backgroundColor: "#3B82F6",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 8,
+              marginRight: 4,
+            }}
+          >
+            <Ionicons name="archive-outline" size={20} color="#FFF" />
+            <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Archive</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleDelete}
+            style={{
+              width: ACTION_BUTTON_WIDTH,
+              height: "100%",
+              backgroundColor: "#EF4444",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 8,
+            }}
+          >
+            <Ionicons name="trash-outline" size={20} color="#FFF" />
+            <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Delete</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Swipeable content */}
       <Animated.View
