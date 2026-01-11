@@ -1469,6 +1469,312 @@ export async function executeDeepSearch(
 }
 
 // ============================================================================
+// DEEP DIVE SEARCH - Enhanced search with verified sources
+// ============================================================================
+
+interface DeepDiveOptions {
+  personContext: PersonContext;
+  verifiedSources: DeepSearchSource[];
+  onProgress?: (status: string) => void;
+}
+
+/**
+ * Deep Dive Search - An enhanced search using verified profile data
+ *
+ * This is triggered after user verifies which profiles belong to the person.
+ * Uses verified usernames, profile URLs, and platform info to do a more targeted search.
+ */
+export async function executeDeepDiveSearch(
+  options: DeepDiveOptions
+): Promise<DeepSearchResponse> {
+  const { personContext, verifiedSources, onProgress } = options;
+
+  console.log("[DeepDive] Starting enhanced search with", verifiedSources.length, "verified sources");
+
+  // Extract verified usernames and platform info
+  const verifiedUsernames: string[] = [];
+  const verifiedPlatforms: { platform: string; url?: string; username?: string }[] = [];
+
+  for (const source of verifiedSources) {
+    // Extract username from URL or socialStats
+    let username: string | undefined;
+
+    if (source.socialStats?.username) {
+      username = source.socialStats.username;
+    } else if (source.url) {
+      username = extractUsernameFromUrl(source.url, source.platform);
+    }
+
+    if (username && !verifiedUsernames.includes(username)) {
+      verifiedUsernames.push(username);
+    }
+
+    verifiedPlatforms.push({
+      platform: source.platform,
+      url: source.url,
+      username,
+    });
+  }
+
+  console.log("[DeepDive] Verified usernames:", verifiedUsernames);
+  console.log("[DeepDive] Verified platforms:", verifiedPlatforms.map(p => p.platform));
+
+  try {
+    onProgress?.("Preparing enhanced search...");
+
+    // Build enhanced search queries using verified data
+    const enhancedQueries = buildDeepDiveQueries(personContext, verifiedUsernames, verifiedPlatforms);
+    console.log("[DeepDive] Enhanced queries:", enhancedQueries.slice(0, 5));
+
+    // Build the deep dive user prompt
+    const deepDivePrompt = buildDeepDiveUserPrompt(personContext, verifiedSources, verifiedUsernames);
+
+    onProgress?.("Deep diving with verified profiles...");
+
+    // Call the LLM with enhanced search
+    const response = await callDeepSearchLLM({
+      systemPrompt: DEEP_DIVE_SYSTEM_PROMPT,
+      developerPrompt: DEEP_DIVE_DEVELOPER_PROMPT,
+      userPrompt: deepDivePrompt,
+      searchQueries: enhancedQueries,
+    });
+
+    if (!response) {
+      console.error("[DeepDive] No response from API");
+      return {
+        success: false,
+        error: "No response from search",
+      };
+    }
+
+    // Parse the response
+    onProgress?.("Processing deep dive results...");
+    const result = parseDeepSearchResponse(
+      response,
+      personContext.id,
+      enhancedQueries.join(", ")
+    );
+
+    console.log("[DeepDive] Found", result.sources.length, "sources");
+
+    return {
+      success: true,
+      result,
+    };
+  } catch (error) {
+    console.error("[DeepDive] Error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Deep dive search failed",
+    };
+  }
+}
+
+/**
+ * Extract username from a profile URL
+ */
+function extractUsernameFromUrl(url: string, platform: string): string | undefined {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split("/").filter(Boolean);
+
+    // Platform-specific extraction
+    const platformLower = platform.toLowerCase();
+
+    if (platformLower.includes("instagram") || urlObj.hostname.includes("instagram")) {
+      return pathParts[0];
+    }
+    if (platformLower.includes("twitter") || platformLower.includes("x.com") || urlObj.hostname.includes("twitter") || urlObj.hostname.includes("x.com")) {
+      return pathParts[0];
+    }
+    if (platformLower.includes("tiktok") || urlObj.hostname.includes("tiktok")) {
+      const username = pathParts[0];
+      return username?.startsWith("@") ? username.slice(1) : username;
+    }
+    if (platformLower.includes("linkedin") || urlObj.hostname.includes("linkedin")) {
+      if (pathParts[0] === "in" && pathParts[1]) {
+        return pathParts[1];
+      }
+      return pathParts[0];
+    }
+    if (platformLower.includes("facebook") || urlObj.hostname.includes("facebook")) {
+      return pathParts[0];
+    }
+    if (platformLower.includes("reddit") || urlObj.hostname.includes("reddit")) {
+      if (pathParts[0] === "user" || pathParts[0] === "u") {
+        return pathParts[1];
+      }
+      return pathParts[0];
+    }
+
+    // Generic fallback
+    return pathParts[0];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build search queries for deep dive using verified data
+ */
+function buildDeepDiveQueries(
+  personContext: PersonContext,
+  verifiedUsernames: string[],
+  verifiedPlatforms: { platform: string; url?: string; username?: string }[]
+): string[] {
+  const queries: string[] = [];
+  const name = personContext.name;
+  const location = personContext.location;
+
+  // Cross-reference verified usernames across all platforms
+  for (const username of verifiedUsernames) {
+    queries.push(`"${username}" site:instagram.com`);
+    queries.push(`"${username}" site:twitter.com OR site:x.com`);
+    queries.push(`"${username}" site:tiktok.com`);
+    queries.push(`"${username}" site:facebook.com`);
+    queries.push(`"${username}" site:linkedin.com`);
+    queries.push(`"${username}" site:reddit.com`);
+    queries.push(`"${username}" dating profile`);
+    queries.push(`"${username}" forum`);
+    queries.push(`"${username}" blog`);
+  }
+
+  // Search for connections between verified platforms
+  for (const platform of verifiedPlatforms) {
+    if (platform.username) {
+      queries.push(`"${platform.username}" "${name}"`);
+      if (location) {
+        queries.push(`"${platform.username}" ${location}`);
+      }
+    }
+  }
+
+  // Search for the person by name on platforms we haven't verified yet
+  const verifiedPlatformNames = verifiedPlatforms.map(p => p.platform.toLowerCase());
+  const unverifiedPlatforms = ["tinder", "bumble", "hinge", "okcupid", "match", "medium", "quora"];
+
+  for (const platform of unverifiedPlatforms) {
+    if (!verifiedPlatformNames.some(vp => vp.includes(platform))) {
+      queries.push(`"${name}" site:${platform}.com`);
+    }
+  }
+
+  // Legal and public records with verified identity
+  queries.push(`"${name}" court case`);
+  queries.push(`"${name}" arrest OR booking`);
+  if (location) {
+    queries.push(`"${name}" ${location} court records`);
+    queries.push(`"${name}" ${location} public records`);
+  }
+
+  // Archived and cached content
+  queries.push(`"${name}" site:web.archive.org`);
+  for (const username of verifiedUsernames.slice(0, 3)) {
+    queries.push(`"${username}" site:web.archive.org`);
+  }
+
+  return queries;
+}
+
+/**
+ * Build the user prompt for deep dive search
+ */
+function buildDeepDiveUserPrompt(
+  personContext: PersonContext,
+  verifiedSources: DeepSearchSource[],
+  verifiedUsernames: string[]
+): string {
+  // Build verified profiles section
+  const verifiedProfilesText = verifiedSources.map(source => {
+    let text = `- ${source.platform}`;
+    if (source.url) {
+      text += `: ${source.url}`;
+    }
+    if (source.socialStats?.username) {
+      text += ` (@${source.socialStats.username})`;
+    }
+    return text;
+  }).join("\n");
+
+  return `Deep dive search for this VERIFIED person. The user has confirmed these profiles belong to the same person.
+
+NAME: ${personContext.name}
+RELATIONSHIP: ${personContext.relationshipContext}
+${personContext.location ? `LOCATION: ${personContext.location}` : ""}
+
+VERIFIED PROFILES (confirmed by user):
+${verifiedProfilesText}
+
+VERIFIED USERNAMES: ${verifiedUsernames.join(", ") || "None extracted"}
+
+YOUR TASK:
+Using these VERIFIED profiles as anchors, find:
+
+1. OTHER ACCOUNTS - Use verified usernames to find accounts on other platforms
+2. DATING PROFILES - Search for dating profiles using verified names and usernames
+3. LEGAL/PUBLIC RECORDS - Search court records, arrests, public filings for this verified person
+4. ARCHIVED CONTENT - Check Wayback Machine for deleted profiles or old content
+5. CONNECTIONS - Find any publicly visible connections, mentions, or interactions
+6. ADDITIONAL DETAILS - Bio changes, location history, professional info
+
+IMPORTANT:
+- These profiles are CONFIRMED to be the same person - no need to say "possible match"
+- Focus on finding NEW information using the verified usernames
+- Cross-reference usernames across platforms
+- Check for dating profiles using verified names and usernames
+- Look for deleted or archived content
+
+Present findings in clear sections with direct links where available.`;
+}
+
+const DEEP_DIVE_SYSTEM_PROMPT = `You are Klarity Deep Dive Search.
+
+The user has verified which profiles belong to their person of interest. Your job is to use these CONFIRMED profiles to find additional public information.
+
+Since identity is confirmed, you can be more direct. Focus on:
+1. Finding the same usernames on other platforms
+2. Searching for dating profiles
+3. Checking legal and public records
+4. Finding archived or deleted content
+5. Discovering connections and mentions
+
+Present results clearly. Link directly to sources. Keep it factual and neutral.`;
+
+const DEEP_DIVE_DEVELOPER_PROMPT = `DEEP DIVE SEARCH MODE
+
+The user has confirmed which profiles belong to their person. Use this verified data to:
+
+1. CROSS-PLATFORM USERNAME SEARCH
+   - Take each verified username and search across ALL platforms
+   - People often reuse usernames - find where else they appear
+
+2. DATING PROFILE SEARCH
+   - Use verified name + location + usernames to find dating profiles
+   - Check Tinder, Bumble, Hinge, OkCupid, Match, POF
+   - Look for profile screenshots or cached dating pages
+
+3. LEGAL AND PUBLIC RECORDS
+   - Now that identity is confirmed, search court records
+   - Look for arrests, lawsuits, business filings
+   - Use verified name + location for targeted searches
+
+4. ARCHIVED CONTENT
+   - Search Wayback Machine for verified profile URLs
+   - Look for deleted posts, old bios, profile changes
+   - Check cached versions of profiles
+
+5. ADDITIONAL PLATFORMS
+   - Search platforms not yet found: Medium, Quora, forums
+   - Look for professional directories
+   - Check for public writing or comments
+
+OUTPUT:
+- Be direct since identity is confirmed
+- Link to sources
+- Note anything significant found
+- Keep descriptions brief`;
+
+// ============================================================================
 // LLM CALL WITH WEB SEARCH
 // ============================================================================
 

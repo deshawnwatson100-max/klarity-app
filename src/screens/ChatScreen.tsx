@@ -59,7 +59,7 @@ import {
   generateDecodeResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
-import { executeDeepSearch } from "../api/deepSearchService";
+import { executeDeepSearch, executeDeepDiveSearch } from "../api/deepSearchService";
 import {
   ChatMessage,
   TypingMessage,
@@ -1697,7 +1697,7 @@ export function ChatScreen({ navigation, route }: Props) {
           key={message.id}
           verifiedSources={msg.verifiedSources || []}
           personName={msg.personName}
-          onDeepDive={() => {
+          onDeepDive={async () => {
             // Update message state to deep-diving
             const updatedMsg: DeepSearchVerificationMessage = {
               ...msg,
@@ -1705,8 +1705,91 @@ export function ChatScreen({ navigation, route }: Props) {
             };
             updateMessageInActiveLoop(message.id, updatedMsg);
 
-            // TODO: Trigger enhanced deep search with verified usernames/profiles
-            console.log("[DeepSearch] Deep dive with verified sources:", msg.verifiedSources);
+            // Get the person context
+            const personContext = getPersonContextById(msg.personContextId);
+            if (!personContext) {
+              console.error("[DeepDive] Person context not found:", msg.personContextId);
+              return;
+            }
+
+            // Add loading message
+            const loadingMsgId = `deep-dive-loading-${Date.now()}`;
+            const loadingMessage: ChatLoadingMessage = {
+              id: loadingMsgId,
+              role: "chat-loading",
+              content: "",
+              timestamp: Date.now(),
+              loadingType: "deep-search",
+              loadingState: "loading",
+              customAction: `Deep diving for ${msg.personName}...`,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(loadingMessage);
+
+            // Scroll to show loading
+            setTimeout(() => {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+            try {
+              // Execute deep dive search with verified sources
+              const result = await executeDeepDiveSearch({
+                personContext,
+                verifiedSources: msg.verifiedSources || [],
+                onProgress: (status) => {
+                  console.log("[DeepDive] Progress:", status);
+                },
+              });
+
+              // Remove loading message
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              if (result.success && result.result) {
+                // Show the deep dive results
+                const resultMessage: DeepSearchResultMessage = {
+                  id: `deep-dive-result-${Date.now()}`,
+                  role: "deep-search-result",
+                  content: "",
+                  timestamp: Date.now(),
+                  searchResult: result.result,
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(resultMessage);
+
+                // Scroll to show results
+                setTimeout(() => {
+                  decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              } else {
+                // Show error
+                const errorMessage: ChatLoadingMessage = {
+                  id: `deep-dive-error-${Date.now()}`,
+                  role: "chat-loading",
+                  content: "",
+                  timestamp: Date.now(),
+                  loadingType: "deep-search",
+                  loadingState: "error",
+                  errorMessage: result.error || "Deep dive search failed. Please try again.",
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(errorMessage);
+              }
+            } catch (error) {
+              console.error("[DeepDive] Error:", error);
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              const errorMessage: ChatLoadingMessage = {
+                id: `deep-dive-error-${Date.now()}`,
+                role: "chat-loading",
+                content: "",
+                timestamp: Date.now(),
+                loadingType: "deep-search",
+                loadingState: "error",
+                errorMessage: "Something went wrong during deep dive. Please try again.",
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(errorMessage);
+            }
           }}
           onDone={() => {
             // User is done, nothing more to do
