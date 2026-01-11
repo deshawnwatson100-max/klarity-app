@@ -96,11 +96,30 @@ You MUST search ALL of the following 9 categories. Do not stop after finding som
    - Cached search results
    - Deleted but still indexed pages
 
-PRESENT RESULTS IN A GOOGLE-STYLE FORMAT:
-- Clean sections for each category where something was found
-- Simple cards with source links
-- Links and previews where available
-- State clearly when nothing was found in a category
+PRESENT RESULTS IN A STRUCTURED FORMAT:
+For each profile found, include:
+- Platform name
+- Direct profile URL
+- Username/handle (if visible)
+- Display name shown on profile
+- Bio/description (first 100 chars if available)
+- Follower count (if visible, use format: "Followers: 1.2K")
+- Following count (if visible, use format: "Following: 500")
+- Post/content count (if visible, use format: "Posts: 150")
+- Profile picture description (if visible, describe briefly)
+- Any verified badge status
+
+Example format for each result:
+**Instagram**
+URL: https://instagram.com/username
+Username: @username
+Display Name: John Smith
+Bio: Coffee lover | NYC | Working at Tech Co
+Followers: 2.5K | Following: 890 | Posts: 47
+Profile: Has profile photo, appears to be a selfie
+Verified: No
+
+Group results by category (Dating, Social Media, Legal, etc.)
 
 DO NOT:
 - Summarize meaning
@@ -117,6 +136,7 @@ DO:
 - Use neutral, human language
 - State clearly if identity is unclear (treat as possible matches)
 - State clearly if nothing meaningful was found in a category
+- Include all available profile stats when visible
 
 LANGUAGE:
 Use everyday phrasing. Keep it simple and calm.
@@ -2939,12 +2959,15 @@ export function parseDeepSearchResponse(
 
     // Get context around the URL (look for description in surrounding lines)
     const urlIndex = response.indexOf(url);
-    const contextStart = Math.max(0, urlIndex - 200);
-    const contextEnd = Math.min(response.length, urlIndex + 200);
+    const contextStart = Math.max(0, urlIndex - 300);
+    const contextEnd = Math.min(response.length, urlIndex + 400);
     const context = response.slice(contextStart, contextEnd);
 
     // Extract a summary from context
     const summary = extractSummaryFromContext(context, url);
+
+    // Extract social stats from context
+    const socialStats = extractSocialStatsFromContext(context, url, platform);
 
     sources.push({
       type,
@@ -2953,6 +2976,7 @@ export function parseDeepSearchResponse(
       summary,
       relevantDetails: [],
       isVerified: true,
+      socialStats,
     });
   }
 
@@ -2970,6 +2994,13 @@ export function parseDeepSearchResponse(
       const platform = getPlatformFromUrl(url);
       const type = getTypeFromPlatform(platform);
 
+      // Get context for markdown link
+      const urlIndex = response.indexOf(url);
+      const contextStart = Math.max(0, urlIndex - 300);
+      const contextEnd = Math.min(response.length, urlIndex + 400);
+      const context = response.slice(contextStart, contextEnd);
+      const socialStats = extractSocialStatsFromContext(context, url, platform);
+
       sources.push({
         type,
         platform: linkText || platform,
@@ -2977,6 +3008,7 @@ export function parseDeepSearchResponse(
         summary: linkText,
         relevantDetails: [],
         isVerified: true,
+        socialStats,
       });
     }
   }
@@ -3230,6 +3262,192 @@ function extractSummaryFromContext(context: string, url: string): string {
   }
 
   return relevantLines.join(" ").slice(0, 200) || "Found profile";
+}
+
+// Helper to extract social stats from context around URL
+function extractSocialStatsFromContext(context: string, url: string, platform: string): SocialMediaStats | undefined {
+  const stats: SocialMediaStats = {};
+  const contextLower = context.toLowerCase();
+
+  // Extract username from URL
+  const username = extractUsernameFromProfileUrl(url, platform);
+  if (username) {
+    stats.username = username;
+  }
+
+  // Try to extract username from context if not found in URL
+  // Look for patterns like "Username: @johndoe" or "@johndoe"
+  if (!stats.username) {
+    const usernamePatterns = [
+      /username:\s*@?(\w+)/i,
+      /handle:\s*@?(\w+)/i,
+      /@(\w{3,30})\b/,
+    ];
+    for (const pattern of usernamePatterns) {
+      const match = context.match(pattern);
+      if (match && match[1]) {
+        stats.username = match[1];
+        break;
+      }
+    }
+  }
+
+  // Extract display name
+  // Look for patterns like "Display Name: John Smith" or "Name: John Smith"
+  const displayNamePatterns = [
+    /display\s*name:\s*([^\n|]+)/i,
+    /name:\s*([^\n|]+)/i,
+    /profile(?:\s+of)?:\s*([^\n|]+)/i,
+  ];
+  for (const pattern of displayNamePatterns) {
+    const match = context.match(pattern);
+    if (match && match[1] && match[1].trim().length > 1 && match[1].trim().length < 50) {
+      const name = match[1].trim();
+      // Skip if it looks like a URL or username
+      if (!name.startsWith("http") && !name.startsWith("@") && !name.includes(".com")) {
+        stats.displayName = name;
+        break;
+      }
+    }
+  }
+
+  // Extract bio
+  const bioPatterns = [
+    /bio:\s*([^\n]+)/i,
+    /description:\s*([^\n]+)/i,
+    /about:\s*([^\n]+)/i,
+  ];
+  for (const pattern of bioPatterns) {
+    const match = context.match(pattern);
+    if (match && match[1] && match[1].trim().length > 5) {
+      stats.bio = match[1].trim().slice(0, 150);
+      break;
+    }
+  }
+
+  // Extract follower count - various formats
+  const followerPatterns = [
+    /followers?[:\s]+(\d+(?:\.\d+)?)\s*([kmb])?/i,
+    /(\d+(?:\.\d+)?)\s*([kmb])?\s*followers?/i,
+  ];
+  for (const pattern of followerPatterns) {
+    const match = context.match(pattern);
+    if (match && match[1]) {
+      stats.followers = parseStatNumber(match[1], match[2]);
+      break;
+    }
+  }
+
+  // Extract following count
+  const followingPatterns = [
+    /following[:\s]+(\d+(?:\.\d+)?)\s*([kmb])?/i,
+    /(\d+(?:\.\d+)?)\s*([kmb])?\s*following/i,
+  ];
+  for (const pattern of followingPatterns) {
+    const match = context.match(pattern);
+    if (match && match[1]) {
+      stats.following = parseStatNumber(match[1], match[2]);
+      break;
+    }
+  }
+
+  // Extract post count
+  const postPatterns = [
+    /posts?[:\s]+(\d+(?:\.\d+)?)\s*([kmb])?/i,
+    /(\d+(?:\.\d+)?)\s*([kmb])?\s*posts?/i,
+    /tweets?[:\s]+(\d+(?:\.\d+)?)\s*([kmb])?/i,
+    /(\d+(?:\.\d+)?)\s*([kmb])?\s*tweets?/i,
+    /videos?[:\s]+(\d+(?:\.\d+)?)\s*([kmb])?/i,
+    /(\d+(?:\.\d+)?)\s*([kmb])?\s*videos?/i,
+  ];
+  for (const pattern of postPatterns) {
+    const match = context.match(pattern);
+    if (match && match[1]) {
+      stats.posts = parseStatNumber(match[1], match[2]);
+      break;
+    }
+  }
+
+  // Check for verified status
+  if (contextLower.includes("verified: yes") || contextLower.includes("verified account") || contextLower.includes("✓") || contextLower.includes("verified badge")) {
+    stats.isVerifiedAccount = true;
+  } else if (contextLower.includes("verified: no")) {
+    stats.isVerifiedAccount = false;
+  }
+
+  // Check if we have any meaningful stats
+  const hasStats = stats.username || stats.displayName || stats.bio ||
+                   stats.followers !== undefined || stats.following !== undefined ||
+                   stats.posts !== undefined;
+
+  return hasStats ? stats : undefined;
+}
+
+// Helper to parse stat numbers with K, M, B suffixes
+function parseStatNumber(numStr: string, suffix?: string): number {
+  const num = parseFloat(numStr);
+  if (isNaN(num)) return 0;
+
+  const suffixLower = (suffix || "").toLowerCase();
+  if (suffixLower === "k") return Math.round(num * 1000);
+  if (suffixLower === "m") return Math.round(num * 1000000);
+  if (suffixLower === "b") return Math.round(num * 1000000000);
+  return Math.round(num);
+}
+
+// Helper to extract username from profile URL
+function extractUsernameFromProfileUrl(url: string, platform: string): string | undefined {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const parts = pathname.split("/").filter(p => p.length > 0);
+    const platformLower = platform.toLowerCase();
+
+    // Instagram, Twitter/X, TikTok, GitHub: first path segment is usually username
+    if (["instagram", "twitter", "x.com", "x", "tiktok", "github"].some(p => platformLower.includes(p) || urlObj.hostname.includes(p))) {
+      if (parts.length > 0) {
+        const firstPart = parts[0];
+        // Skip non-username paths
+        if (!["p", "status", "reel", "explore", "settings", "stories", "reels", "hashtag", "i"].includes(firstPart)) {
+          return firstPart.replace(/^@/, "");
+        }
+      }
+    }
+
+    // LinkedIn: /in/username
+    if (platformLower.includes("linkedin") || urlObj.hostname.includes("linkedin")) {
+      if (parts[0] === "in" && parts.length > 1) {
+        return parts[1];
+      }
+    }
+
+    // Facebook
+    if (platformLower.includes("facebook") || urlObj.hostname.includes("facebook")) {
+      const idParam = urlObj.searchParams.get("id");
+      if (idParam) return idParam;
+      if (parts.length > 0 && !["pages", "groups", "events", "profile.php"].includes(parts[0])) {
+        return parts[0];
+      }
+    }
+
+    // YouTube: /@username or /c/username or /channel/id
+    if (platformLower.includes("youtube") || urlObj.hostname.includes("youtube")) {
+      if (parts[0]?.startsWith("@")) return parts[0].substring(1);
+      if (parts[0] === "c" && parts.length > 1) return parts[1];
+      if (parts[0] === "channel" && parts.length > 1) return parts[1];
+    }
+
+    // Reddit: /user/username or /u/username
+    if (platformLower.includes("reddit") || urlObj.hostname.includes("reddit")) {
+      if ((parts[0] === "user" || parts[0] === "u") && parts.length > 1) {
+        return parts[1];
+      }
+    }
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // ============================================================================

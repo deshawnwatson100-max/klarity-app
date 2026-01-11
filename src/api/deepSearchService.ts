@@ -1738,7 +1738,29 @@ Since identity is confirmed, you can be more direct. Focus on:
 4. Finding archived or deleted content
 5. Discovering connections and mentions
 
-Present results clearly. Link directly to sources. Keep it factual and neutral.`;
+PRESENT RESULTS IN A STRUCTURED FORMAT:
+For each profile found, include:
+- Platform name
+- Direct profile URL
+- Username/handle (if visible)
+- Display name shown on profile
+- Bio/description (first 100 chars if available)
+- Follower count (if visible, use format: "Followers: 1.2K")
+- Following count (if visible, use format: "Following: 500")
+- Post/content count (if visible, use format: "Posts: 150")
+- Profile picture description (if visible)
+- Any verified badge status
+
+Example format:
+**Instagram**
+URL: https://instagram.com/johndoe123
+Username: @johndoe123
+Display Name: John D
+Bio: NYC based | Tech enthusiast
+Followers: 2.5K | Following: 890 | Posts: 47
+Verified: No
+
+Keep it factual and neutral. Link directly to sources.`;
 
 const DEEP_DIVE_DEVELOPER_PROMPT = `DEEP DIVE SEARCH MODE
 
@@ -1768,11 +1790,16 @@ The user has confirmed which profiles belong to their person. Use this verified 
    - Look for professional directories
    - Check for public writing or comments
 
-OUTPUT:
-- Be direct since identity is confirmed
-- Link to sources
-- Note anything significant found
-- Keep descriptions brief`;
+OUTPUT FORMAT - For each profile found include:
+- Platform name (bold)
+- URL: direct link
+- Username: @handle
+- Display Name: name shown on profile
+- Bio: short description if available
+- Stats: Followers: X | Following: Y | Posts: Z (when visible)
+- Verified: Yes/No
+
+Be direct since identity is confirmed. Include all visible profile stats.`;
 
 // ============================================================================
 // LLM CALL WITH WEB SEARCH
