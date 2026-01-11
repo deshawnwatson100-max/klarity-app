@@ -186,12 +186,10 @@ function ContextMenuChatListItem({
           onPress={onPress}
           className="active:opacity-60"
           style={({ pressed }) => ({
-            backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : isActive ? "#000000" : "transparent",
+            backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : isActive ? "rgba(255, 255, 255, 0.08)" : "transparent",
             borderRadius: isActive ? 12 : 0,
             marginHorizontal: isActive ? 8 : 0,
             marginVertical: isActive ? 4 : 0,
-            borderWidth: isActive ? 1 : 0,
-            borderColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
           })}
         >
           <View className="px-5 py-3">
