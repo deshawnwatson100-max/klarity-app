@@ -91,11 +91,15 @@ interface SwipeableChatListItemProps {
   onDelete: () => void;
   onArchive: () => void;
   isLast?: boolean;
+  isActive?: boolean;
 }
 
-function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = false }: SwipeableChatListItemProps) {
+function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = false, isActive = false }: SwipeableChatListItemProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isSwipeOpenRef = useRef(false);
+
+  // Background color based on active state
+  const bgColor = isActive ? "#000000" : "#171717";
 
   // Get emotional theme from first user message or title
   const getPreview = () => {
@@ -283,14 +287,14 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
 
       {/* Swipeable content */}
       <Animated.View
-        style={{ backgroundColor: "#171717", transform: [{ translateX }] }}
+        style={{ backgroundColor: bgColor, transform: [{ translateX }] }}
         {...panResponder.panHandlers}
       >
         <Pressable
           onPress={handlePress}
           className="active:opacity-60"
           style={({ pressed }) => ({
-            backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "#171717",
+            backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : bgColor,
           })}
         >
           <View className="px-5 py-3">
@@ -495,6 +499,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // Store
   const loops = useLoopsStore((s) => s.loops);
   const archivedLoops = useLoopsStore((s) => s.archivedLoops);
+  const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const switchToLoop = useLoopsStore((s) => s.switchToLoop);
   const deleteLoop = useLoopsStore((s) => s.deleteLoop);
@@ -724,6 +729,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onDelete={() => deleteLoop(loop.id)}
                   onArchive={() => archiveLoop(loop.id)}
                   isLast={index === loops.length - 1}
+                  isActive={loop.id === activeLoopId}
                 />
               ))}
             </View>
