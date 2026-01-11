@@ -30,6 +30,7 @@ export type MessageRole =
   | "image-continuation"
   | "deep-search-loading"
   | "deep-search-result"
+  | "deep-search-verification"
   | "person-context-card"
   | "deep-search-suggestion"
   | "chat-loading"
@@ -300,6 +301,18 @@ export interface PersonContextCardMessage extends Message {
   role: "person-context-card";
 }
 
+export type DeepSearchVerificationState = "verifying" | "completed" | "deep-diving";
+
+export interface DeepSearchVerificationMessage extends Message {
+  role: "deep-search-verification";
+  personName: string;
+  personContextId: string;
+  sources: DeepSearchResultMessage["searchResult"]["sources"];
+  verificationState: DeepSearchVerificationState;
+  verifiedSources?: DeepSearchResultMessage["searchResult"]["sources"];
+  rejectedSources?: DeepSearchResultMessage["searchResult"]["sources"];
+}
+
 export type DeepSearchSuggestionState = "collapsed" | "input" | "running" | "results" | "error";
 
 export interface DeepSearchSuggestionMessage extends Message {
@@ -357,6 +370,7 @@ export type ChatMessage =
   | ImageContinuationMessage
   | DeepSearchLoadingMessage
   | DeepSearchResultMessage
+  | DeepSearchVerificationMessage
   | PersonContextCardMessage
   | DeepSearchSuggestionMessage
   | ChatLoadingMessage

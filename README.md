@@ -1182,8 +1182,19 @@ Automatically searches publicly available information when Person Context is cre
 **How it Works:**
 1. User creates a Person Context with name, relationship, and notes
 2. Deep Search automatically runs (or can be triggered manually in chat)
-3. Results appear in chat loop with sources, alignment notes, and uncertainties
-4. User is asked "How does this sit with you?" for perception calibration
+3. **Visual Verification Flow** - Results are presented in a swipeable card interface
+4. User swipes right (confirm) or left (reject) each result to verify accuracy
+5. Verified profiles are summarized with option for a "Deep Dive" search
+6. User can trigger enhanced search with validated data for more accurate results
+
+**Verification Flow Features:**
+- **Swipeable Cards** - Tinder-style card UI for quick verification
+- **Profile Cards** - Display profile image, username, platform, bio, follower/following counts
+- **Platform Colors** - Each card shows platform-specific branding (LinkedIn blue, Twitter blue, Instagram gradient, etc.)
+- **Swipe Indicators** - "THIS IS THEM" (green) and "NOT THEM" (red) appear as user swipes
+- **Progress Tracking** - Shows verified/rejected/remaining counts
+- **View Profile** - Button to open the actual profile in browser before deciding
+- **Deep Dive Option** - After verification, user can trigger an enhanced search using confirmed usernames/profiles
 
 **Search Scope (All 9 Categories):**
 Deep Search performs multiple search passes covering all of the following areas:

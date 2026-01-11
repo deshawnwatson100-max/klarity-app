@@ -38,6 +38,10 @@ import {
   DeepSearchLoading,
   DeepSearchNoResults,
 } from "../components/DeepSearchResultBubble";
+import {
+  DeepSearchVerificationFlow,
+  VerificationSummary,
+} from "../components/DeepSearchVerificationFlow";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -68,6 +72,7 @@ import {
   ImageContinuationMessage,
   DeepSearchLoadingMessage,
   DeepSearchResultMessage,
+  DeepSearchVerificationMessage,
   PersonContextCardMessage,
   DeepSearchSuggestionMessage,
   DeepSearchSuggestionState,
@@ -92,6 +97,15 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Deep Search Verification Flow state
+  const [verificationData, setVerificationData] = useState<{
+    isOpen: boolean;
+    sources: DeepSearchResultMessage["searchResult"]["sources"];
+    personName: string;
+    personContextId: string;
+    messageId: string;
+  } | null>(null);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -411,18 +425,29 @@ export function ChatScreen({ navigation, route }: Props) {
         removeMessageFromActiveLoop(loadingMsgId);
 
         if (result.success && result.result) {
-          // Add result message
-          const resultMessage: DeepSearchResultMessage = {
-            id: `deep-search-result-${Date.now()}`,
-            role: "deep-search-result",
+          // Show verification flow instead of direct results
+          const verificationMsgId = `deep-search-verification-${Date.now()}`;
+          const verificationMessage: DeepSearchVerificationMessage = {
+            id: verificationMsgId,
+            role: "deep-search-verification",
             content: "",
             timestamp: Date.now(),
-            searchResult: result.result,
-            showSafetyResources: false,
+            personName: activePersonContext.name,
+            personContextId: activePersonContext.id,
+            sources: result.result.sources,
+            verificationState: "verifying",
             mode: "understand",
           };
-          addMessageToActiveLoopRaw(resultMessage);
-          setActiveLoopDeepSearchCompleted(true);
+          addMessageToActiveLoopRaw(verificationMessage);
+
+          // Open the verification modal
+          setVerificationData({
+            isOpen: true,
+            sources: result.result.sources,
+            personName: activePersonContext.name,
+            personContextId: activePersonContext.id,
+            messageId: verificationMsgId,
+          });
         } else if (result.safetyBlock) {
           // Safety block - show resources if needed
           const safetyMessage: ChatMessage = {
@@ -510,18 +535,29 @@ export function ChatScreen({ navigation, route }: Props) {
       removeMessageFromActiveLoop(loadingMsgId);
 
       if (result.success && result.result) {
-        // Add result message
-        const resultMessage: DeepSearchResultMessage = {
-          id: `deep-search-result-${Date.now()}`,
-          role: "deep-search-result",
+        // Show verification flow instead of direct results
+        const verificationMsgId = `deep-search-verification-${Date.now()}`;
+        const verificationMessage: DeepSearchVerificationMessage = {
+          id: verificationMsgId,
+          role: "deep-search-verification",
           content: "",
           timestamp: Date.now(),
-          searchResult: result.result,
-          showSafetyResources: false,
+          personName: personContext.name,
+          personContextId: personContext.id,
+          sources: result.result.sources,
+          verificationState: "verifying",
           mode: "understand",
         };
-        addMessageToActiveLoopRaw(resultMessage);
-        setActiveLoopDeepSearchCompleted(true);
+        addMessageToActiveLoopRaw(verificationMessage);
+
+        // Open the verification modal
+        setVerificationData({
+          isOpen: true,
+          sources: result.result.sources,
+          personName: personContext.name,
+          personContextId: personContext.id,
+          messageId: verificationMsgId,
+        });
       } else if (result.safetyBlock) {
         // Safety block - show error with appropriate message
         const errorMessage: ChatLoadingMessage = {
@@ -1640,6 +1676,45 @@ export function ChatScreen({ navigation, route }: Props) {
       );
     }
 
+    // Deep Search Verification - shows after verification is completed
+    if (message.role === "deep-search-verification") {
+      const msg = message as DeepSearchVerificationMessage;
+
+      // If still verifying, show a placeholder (modal handles the actual verification)
+      if (msg.verificationState === "verifying") {
+        return (
+          <View key={message.id} style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: "#A0A0A0", fontSize: 14 }}>
+              Verifying search results...
+            </Text>
+          </View>
+        );
+      }
+
+      // Show verification summary with option to deep dive
+      return (
+        <VerificationSummary
+          key={message.id}
+          verifiedSources={msg.verifiedSources || []}
+          personName={msg.personName}
+          onDeepDive={() => {
+            // Update message state to deep-diving
+            const updatedMsg: DeepSearchVerificationMessage = {
+              ...msg,
+              verificationState: "deep-diving",
+            };
+            updateMessageInActiveLoop(message.id, updatedMsg);
+
+            // TODO: Trigger enhanced deep search with verified usernames/profiles
+            console.log("[DeepSearch] Deep dive with verified sources:", msg.verifiedSources);
+          }}
+          onDone={() => {
+            // User is done, nothing more to do
+          }}
+        />
+      );
+    }
+
     // Person Context Card - inline in chat
     if (message.role === "person-context-card") {
       return (
@@ -2133,6 +2208,53 @@ export function ChatScreen({ navigation, route }: Props) {
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
       />
+
+      {/* Deep Search Verification Modal */}
+      {verificationData?.isOpen && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2000,
+          }}
+        >
+          <DeepSearchVerificationFlow
+            sources={verificationData.sources}
+            personName={verificationData.personName}
+            onVerificationComplete={(verifiedSources, rejectedSources) => {
+              // Update the verification message with results
+              const updatedMessage: DeepSearchVerificationMessage = {
+                id: verificationData.messageId,
+                role: "deep-search-verification",
+                content: "",
+                timestamp: Date.now(),
+                personName: verificationData.personName,
+                personContextId: verificationData.personContextId,
+                sources: verificationData.sources,
+                verificationState: "completed",
+                verifiedSources,
+                rejectedSources,
+                mode: "understand",
+              };
+              updateMessageInActiveLoop(verificationData.messageId, updatedMessage);
+
+              // Close modal
+              setVerificationData(null);
+
+              // Mark deep search as completed
+              setActiveLoopDeepSearchCompleted(true);
+            }}
+            onCancel={() => {
+              // Remove the verification message
+              removeMessageFromActiveLoop(verificationData.messageId);
+              setVerificationData(null);
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }
