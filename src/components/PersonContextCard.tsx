@@ -125,7 +125,6 @@ export const PersonContextCard = memo(function PersonContextCard({
   const [selectedAnchorType, setSelectedAnchorType] = useState<ContextAnchorType | null>(null);
   const [anchorValue, setAnchorValue] = useState("");
   const [showBoost, setShowBoost] = useState(false);
-  const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
   const [profileImageUri, setProfileImageUri] = useState<string | undefined>(undefined);
 
@@ -203,9 +202,6 @@ export const PersonContextCard = memo(function PersonContextCard({
         type: selectedAnchorType,
         value: anchorValue.trim(),
       };
-    }
-    if (knownUsername.trim()) {
-      deepSearchContext.knownUsername = knownUsername.trim();
     }
     if (approximateAge.trim()) {
       deepSearchContext.approximateAge = approximateAge.trim();
@@ -517,13 +513,6 @@ export const PersonContextCard = memo(function PersonContextCard({
 
       {showBoost && (
         <View style={{ marginBottom: 16 }}>
-          <ChatBubbleInput
-            label="Known username"
-            helperText="A handle you know they use."
-            placeholder="@username"
-            value={knownUsername}
-            onChangeText={setKnownUsername}
-          />
           <ChatBubbleInput
             label="Approximate age"
             helperText="Used only to narrow public matches."
