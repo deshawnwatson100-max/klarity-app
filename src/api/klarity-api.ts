@@ -1,5 +1,6 @@
 import { EmotionalAnalysis, SuggestedResponse, ImageAnalysis, BoundaryAnalysis } from "../types/chat";
 import { getOpenAIClient } from "./openai";
+import { processDecodeResponseWithEmoji } from "../utils/decodeEmoji";
 
 /**
  * Klarity Notation types for internal tracking
@@ -2713,8 +2714,12 @@ Keep responses **2-4 paragraphs** typically. Be concise but meaningful - every s
       console.log("[generateDecodeResponse] Klarity Notation:", JSON.stringify(notation, null, 2));
     }
 
+    // Apply subtle emoji integration to decode responses
+    // Emojis are added only to specific parts (insights, guidance, context acknowledgment)
+    const responseWithEmoji = processDecodeResponseWithEmoji(userResponse);
+
     return {
-      response: userResponse,
+      response: responseWithEmoji,
       notation: notation || undefined,
     };
   } catch (error) {

@@ -1636,6 +1636,50 @@ Logs are stored in memory (last 50 entries) and can be accessed via:
 - `clearDeepSearchLogs()` - Clear all stored logs
 - `formatLogForConsole(entry)` - Format log for readable console output
 
+### NEW: Subtle Emoji Integration (Decode Chat Loop Only)
+Minimal, intentional emoji usage in the decode chat loop to increase warmth, clarity, and engagement while maintaining a premium, professional tone.
+
+#### Scope Rules
+- Emojis appear **only in the decode chat loop**
+- No emojis in: Headers, Buttons, Navigation, Input placeholders
+- Emojis are never decorative — they must add meaning
+- Never more than one emoji per message block
+- Emojis appear at start of section or end of short insight, never mid-sentence
+
+#### Approved Emoji Set (Professional, Neutral)
+| Emoji | Usage |
+|-------|-------|
+| 🧠 | Insight / understanding |
+| ⚖️ | Balance / nuance / fairness |
+| 🚩 | Red flags (only inside Red Flags card header) |
+| 💬 | Communication / conversation |
+| 🔍 | Clarity / noticing something subtle |
+| 🧭 | Direction / guidance |
+| 🤝 | Mutual respect / cooperation |
+
+**No expressive or emotional emojis** (❌ 😭 😡 😂 🙏 ❤️)
+
+#### Where Emojis Are Allowed
+1. **Communication Pattern Insight**
+   - Example: 🧠 There is a pattern here where responsibility is being shifted without being stated directly.
+
+2. **Red Flags Card (Header Only)**
+   - Example: 🚩 Red Flags
+
+3. **End-of-Loop Guidance (Decode Only)**
+   - Example: 🧭 If your goal is respect here, calm consistency will matter more than explanation.
+
+4. **Context Acknowledgment**
+   - Example: 🔍 This new message adds pressure that was not present earlier.
+
+#### Design Intent
+Emojis function as **visual anchors**, not emotional expressions. They subtly guide attention without reducing credibility or seriousness.
+
+#### Files
+- `src/utils/decodeEmoji.ts` - Emoji utility functions and pattern detection
+- `src/api/klarity-api.ts` - Integration with `generateDecodeResponse()`
+- `src/components/RedFlagsCard.tsx` - Uses `DECODE_EMOJIS.RED_FLAG` constant
+
 ## Development
 
 The app runs on Expo SDK 53 and is automatically served on port 8081.

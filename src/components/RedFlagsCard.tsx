@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TypewriterText } from "./TypewriterText";
+import { DECODE_EMOJIS } from "../utils/decodeEmoji";
 
 interface RedFlag {
   text: string;
@@ -107,7 +108,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
           {/* Header row - always visible */}
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Text style={{ fontSize: 14, marginRight: 6 }}>🚩</Text>
+              <Text style={{ fontSize: 14, marginRight: 6 }}>{DECODE_EMOJIS.RED_FLAG}</Text>
               <Text
                 style={{
                   fontSize: 12,
