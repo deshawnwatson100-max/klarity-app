@@ -29,16 +29,24 @@ type EmojiType = keyof typeof DECODE_EMOJIS;
 
 /**
  * Patterns that indicate where an emoji might be appropriate
+ * Broader patterns to catch more natural AI responses
  */
 const EMOJI_PATTERNS: Record<EmojiType, RegExp[]> = {
   INSIGHT: [
     /^(there['']?s a pattern|what stands out|i['']?m noticing|what i['']?m hearing|something interesting)/i,
     /pattern.*(here|emerging|showing|shifting)/i,
     /responsibility.*(being shifted|deflected)/i,
+    // Broader insight patterns
+    /^(it seems like|it looks like|i notice|i see|what['']?s happening|this sounds like)/i,
+    /dynamic|underlying|subtext|what['']?s really/i,
+    /^(the way|when someone|this kind of)/i,
   ],
   BALANCE: [
     /^(it could be|on one hand|both|there may be)/i,
     /nuance|balance|perspective|consider.*both/i,
+    // Broader balance patterns
+    /^(that said|at the same time|however|while)/i,
+    /two (sides|perspectives|ways)/i,
   ],
   RED_FLAG: [], // Only used explicitly in RedFlagsCard header
   COMMUNICATION: [
@@ -48,10 +56,17 @@ const EMOJI_PATTERNS: Record<EmojiType, RegExp[]> = {
   CLARITY: [
     /^(this new message|looking at this|noticing)/i,
     /adds.*pressure|subtle|underlying|beneath the surface/i,
+    // Broader clarity patterns
+    /^(this is|that['']?s|what you['']?re describing)/i,
+    /clearer|makes sense|understand/i,
   ],
   GUIDANCE: [
     /^(if your goal|one approach|moving forward|a way to)/i,
     /calm consistency|matter more|direction|next step/i,
+    // Broader guidance patterns
+    /^(you (might|could|can)|one thing|something that)/i,
+    /^(consider|try|think about)/i,
+    /helpful|approach|strategy/i,
   ],
   COOPERATION: [
     /mutual|respect|together|cooperation|understanding each other/i,
@@ -149,6 +164,14 @@ export function isInsightText(text: string): boolean {
     /dynamic/i,
     /notice|noticing/i,
     /stands out/i,
+    // Broader insight indicators
+    /seems like/i,
+    /looks like/i,
+    /sounds like/i,
+    /underlying/i,
+    /subtext/i,
+    /what['']?s really/i,
+    /the way.*is/i,
   ];
 
   return insightIndicators.some((pattern) => pattern.test(text));
@@ -166,6 +189,13 @@ export function isGuidanceText(text: string): boolean {
     /consistency.*matter/i,
     /might help/i,
     /consider.*approach/i,
+    // Broader guidance indicators
+    /you (might|could|can)/i,
+    /something that/i,
+    /try/i,
+    /helpful/i,
+    /strategy/i,
+    /next step/i,
   ];
 
   return guidanceIndicators.some((pattern) => pattern.test(text));
