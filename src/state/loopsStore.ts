@@ -59,6 +59,9 @@ interface LoopsState {
   unarchiveLoop: (loopId: string) => void;
   deleteArchivedLoop: (loopId: string) => void;
   updateLoopTitle: (loopId: string, title: string) => void;
+  pinLoop: (loopId: string) => void;
+  unpinLoop: (loopId: string) => void;
+  togglePinLoop: (loopId: string) => void;
 
   // Actions - Message Management
   addMessageToActiveLoop: (message: ChatMessage) => void;
@@ -233,6 +236,36 @@ export const useLoopsStore = create<LoopsState>()(
           loops: state.loops.map((loop) =>
             loop.id === loopId
               ? { ...loop, title, updatedAt: new Date().toISOString() }
+              : loop
+          ),
+        }));
+      },
+
+      pinLoop: (loopId: string) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === loopId
+              ? { ...loop, isPinned: true, updatedAt: new Date().toISOString() }
+              : loop
+          ),
+        }));
+      },
+
+      unpinLoop: (loopId: string) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === loopId
+              ? { ...loop, isPinned: false, updatedAt: new Date().toISOString() }
+              : loop
+          ),
+        }));
+      },
+
+      togglePinLoop: (loopId: string) => {
+        set((state) => ({
+          loops: state.loops.map((loop) =>
+            loop.id === loopId
+              ? { ...loop, isPinned: !loop.isPinned, updatedAt: new Date().toISOString() }
               : loop
           ),
         }));

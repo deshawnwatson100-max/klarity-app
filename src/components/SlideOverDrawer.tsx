@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
+import * as ContextMenu from "zeego/context-menu";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 
@@ -82,6 +83,213 @@ function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemPr
         <Ionicons name="chevron-forward" size={16} color="#4B5563" />
       </View>
     </Pressable>
+  );
+}
+
+interface ContextMenuChatListItemProps {
+  loop: KlarityLoop;
+  onPress: () => void;
+  onDelete: () => void;
+  onArchive: () => void;
+  onPin: () => void;
+  isLast?: boolean;
+  isActive?: boolean;
+}
+
+function ContextMenuChatListItem({
+  loop,
+  onPress,
+  onDelete,
+  onArchive,
+  onPin,
+  isLast = false,
+  isActive = false
+}: ContextMenuChatListItemProps) {
+  // Background color based on active state
+  const bgColor = isActive ? "#000000" : "#171717";
+
+  // Get emotional theme from first user message or title
+  const getPreview = () => {
+    const userMessages = loop.messages.filter((m) => m.role === "user");
+    if (userMessages.length > 0) {
+      const firstMessage = userMessages[0];
+      const hasImage = !!(firstMessage as any).imageUrl || !!(firstMessage as any).imageBase64;
+      const content = firstMessage.content;
+
+      if (content === "[Image]" && hasImage) {
+        return null;
+      }
+
+      const cleanContent = content.replace(/\[Image\]/gi, "").trim();
+      if (cleanContent) {
+        return cleanContent.length > 60
+          ? cleanContent.substring(0, 60) + "..."
+          : cleanContent;
+      }
+
+      if (hasImage) {
+        return null;
+      }
+
+      return firstMessage.content.length > 60
+        ? firstMessage.content.substring(0, 60) + "..."
+        : firstMessage.content;
+    }
+    return "No messages yet";
+  };
+
+  const hasImageAttachment = () => {
+    const userMessages = loop.messages.filter((m) => m.role === "user");
+    if (userMessages.length > 0) {
+      const firstMessage = userMessages[0];
+      return !!(firstMessage as any).imageUrl || !!(firstMessage as any).imageBase64;
+    }
+    return false;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return "Today";
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+  };
+
+  const preview = getPreview();
+  const showImageIcon = preview === null && hasImageAttachment();
+
+  const handlePin = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPin();
+  }, [onPin]);
+
+  const handleArchive = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onArchive();
+  }, [onArchive]);
+
+  const handleDelete = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onDelete();
+  }, [onDelete]);
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger>
+        <Pressable
+          onPress={onPress}
+          className="active:opacity-60"
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : bgColor,
+            borderRadius: isActive ? 12 : 0,
+            marginHorizontal: isActive ? 8 : 0,
+            marginVertical: isActive ? 4 : 0,
+          })}
+        >
+          <View className="px-5 py-3">
+            <View className="flex-row items-center justify-between mb-1">
+              <View className="flex-row items-center flex-1 mr-2">
+                {loop.isPinned && (
+                  <View className="mr-1.5">
+                    <Ionicons name="pin" size={12} color="#F59E0B" />
+                  </View>
+                )}
+                <Text
+                  className="text-sm font-medium flex-1"
+                  style={{ color: "#E5E7EB" }}
+                  numberOfLines={1}
+                >
+                  {loop.title}
+                </Text>
+              </View>
+              <Text className="text-xs" style={{ color: "#6B7280" }}>
+                {formatDate(loop.updatedAt)}
+              </Text>
+            </View>
+            {showImageIcon ? (
+              <View className="flex-row items-center">
+                <Ionicons name="image-outline" size={14} color="#9CA3AF" />
+                <Text
+                  className="text-xs ml-1"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Image conversation
+                </Text>
+              </View>
+            ) : (
+              <Text
+                className="text-xs"
+                style={{ color: "#9CA3AF" }}
+                numberOfLines={2}
+              >
+                {preview}
+              </Text>
+            )}
+            {loop.emotionalClarity !== undefined && (
+              <View className="flex-row items-center mt-2">
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor:
+                      loop.emotionalClarity >= 70
+                        ? "#10B981"
+                        : loop.emotionalClarity >= 40
+                        ? "#F59E0B"
+                        : "#EF4444",
+                    marginRight: 6,
+                  }}
+                />
+                <Text className="text-xs" style={{ color: "#6B7280" }}>
+                  {loop.emotionalClarity}% clarity
+                </Text>
+              </View>
+            )}
+          </View>
+        </Pressable>
+      </ContextMenu.Trigger>
+      <ContextMenu.Content>
+        <ContextMenu.Item key="pin" onSelect={handlePin}>
+          <ContextMenu.ItemIcon
+            ios={{
+              name: loop.isPinned ? "pin.slash" : "pin",
+              pointSize: 18,
+            }}
+          />
+          <ContextMenu.ItemTitle>
+            {loop.isPinned ? "Unpin" : "Pin to Top"}
+          </ContextMenu.ItemTitle>
+        </ContextMenu.Item>
+        <ContextMenu.Item key="archive" onSelect={handleArchive}>
+          <ContextMenu.ItemIcon
+            ios={{
+              name: "archivebox",
+              pointSize: 18,
+            }}
+          />
+          <ContextMenu.ItemTitle>Archive</ContextMenu.ItemTitle>
+        </ContextMenu.Item>
+        <ContextMenu.Item key="delete" onSelect={handleDelete} destructive>
+          <ContextMenu.ItemIcon
+            ios={{
+              name: "trash",
+              pointSize: 18,
+            }}
+          />
+          <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
+        </ContextMenu.Item>
+      </ContextMenu.Content>
+    </ContextMenu.Root>
   );
 }
 
@@ -515,6 +723,18 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const archiveLoop = useLoopsStore((s) => s.archiveLoop);
   const unarchiveLoop = useLoopsStore((s) => s.unarchiveLoop);
   const deleteArchivedLoop = useLoopsStore((s) => s.deleteArchivedLoop);
+  const togglePinLoop = useLoopsStore((s) => s.togglePinLoop);
+
+  // Sort loops: pinned first, then by updatedAt
+  const sortedLoops = useMemo(() => {
+    return [...loops].sort((a, b) => {
+      // Pinned items first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // Then by updatedAt (most recent first)
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  }, [loops]);
 
   // Animation config
   const ANIMATION_DURATION = 300;
@@ -717,27 +937,52 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
 
   // Render content
   const renderContent = () => {
+    const pinnedLoops = sortedLoops.filter((loop) => loop.isPinned);
+    const unpinnedLoops = sortedLoops.filter((loop) => !loop.isPinned);
+
     return (
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {loops.length > 0 && (
+          {pinnedLoops.length > 0 && (
             <View style={{ marginTop: 8 }}>
               <View className="px-5 pb-2">
-                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
-                  Recent
+                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#F59E0B" }}>
+                  Pinned
                 </Text>
               </View>
-              {loops.map((loop, index) => (
-                <SwipeableChatListItem
+              {pinnedLoops.map((loop, index) => (
+                <ContextMenuChatListItem
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
                   onDelete={() => deleteLoop(loop.id)}
                   onArchive={() => archiveLoop(loop.id)}
-                  isLast={index === loops.length - 1}
+                  onPin={() => togglePinLoop(loop.id)}
+                  isLast={index === pinnedLoops.length - 1}
+                  isActive={loop.id === activeLoopId}
+                />
+              ))}
+            </View>
+          )}
+          {unpinnedLoops.length > 0 && (
+            <View style={{ marginTop: pinnedLoops.length > 0 ? 16 : 8 }}>
+              <View className="px-5 pb-2">
+                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
+                  Recent
+                </Text>
+              </View>
+              {unpinnedLoops.map((loop, index) => (
+                <ContextMenuChatListItem
+                  key={loop.id}
+                  loop={loop}
+                  onPress={() => handleSelectChat(loop.id)}
+                  onDelete={() => deleteLoop(loop.id)}
+                  onArchive={() => archiveLoop(loop.id)}
+                  onPin={() => togglePinLoop(loop.id)}
+                  isLast={index === unpinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
                 />
               ))}

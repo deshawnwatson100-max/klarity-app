@@ -30,6 +30,7 @@ export interface KlarityLoop {
   summary?: string; // Optional emotional clarity summary
   emotionalClarity?: number; // Optional percentage (0-100)
   relationshipId?: string; // Optional link to a tracked relationship
+  isPinned?: boolean; // Whether this loop is pinned to the top
 
   // Person Context - Loop-specific
   personContextId?: string; // ID of the person context for this loop
