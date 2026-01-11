@@ -221,7 +221,25 @@ SEARCH SEQUENCE BY CATEGORY:
    - "First Last" site:web.archive.org
    - Search for deleted profiles or posts
 
-OUTPUT FORMAT:
+WHEN YOU FIND A PROFILE - EXTRACT THESE DETAILS:
+For EVERY social media profile you find, you MUST visit the page and extract:
+- Username: The @handle or username
+- Display Name: The name shown on the profile
+- Bio: The description/bio text (first 100 characters)
+- Followers: The follower count (write as "Followers: 1.5K" or "Followers: 15000")
+- Following: The following count (write as "Following: 500")
+- Posts: The post/tweet/video count (write as "Posts: 120")
+- Verified: Whether the account has a verification badge (Yes/No)
+
+OUTPUT FORMAT FOR EACH PROFILE:
+**[Platform Name]**
+URL: [direct profile link]
+Username: @[handle]
+Display Name: [name on profile]
+Bio: [bio text]
+Followers: [count] | Following: [count] | Posts: [count]
+Verified: Yes/No
+
 Group results by category:
 
 **Dating**
@@ -230,8 +248,10 @@ Group results by category:
 - Note if this is a possible match vs confirmed
 
 **Social Media**
-- Platform name + direct link
-- Brief description (1-2 lines max)
+For each profile include ALL details:
+- URL, Username, Display Name, Bio
+- Followers, Following, Posts counts
+- Verified status
 
 **Legal & Public Records**
 - Source + direct link
@@ -265,6 +285,7 @@ Group results by category:
 
 RULES:
 - Always include the profile URL when available
+- For social media, ALWAYS include follower/following/post counts
 - Keep descriptions brief and factual
 - No interpretations or conclusions
 - No labeling or judgment

@@ -109,16 +109,36 @@ CRITICAL SEARCH REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
    - Include the actual search query used for each result
    - If a search returns no results, note that and CONTINUE to the next search
 
-4. LOGGING: For each search you perform, mentally track:
-   - Search #1: [query] -> [result summary]
-   - Search #2: [query] -> [result summary]
-   - ... continue until you have completed at least ${MIN_SEARCHES_REQUIRED} searches
+4. FOR EACH PROFILE FOUND - EXTRACT THESE DETAILS:
+   When you find a social media profile, LOOK AT THE PAGE and extract:
+   - Username/handle (e.g., @johndoe)
+   - Display name shown on profile
+   - Bio or description text
+   - Follower count (format: "Followers: 1.5K" or "Followers: 15000")
+   - Following count (format: "Following: 500")
+   - Post/tweet/video count (format: "Posts: 120")
+   - Whether account is verified (has blue checkmark)
+   - Profile picture description (briefly describe what you see)
 
-5. DO NOT:
+   IMPORTANT: Actually visit the profile pages and read the stats shown on them.
+   Do not guess - only report numbers you actually see on the profile.
+
+5. OUTPUT FORMAT FOR EACH RESULT:
+   **Platform Name**
+   URL: [direct profile link]
+   Username: @[handle]
+   Display Name: [name shown on profile]
+   Bio: [bio text, first 100 chars]
+   Followers: [number] | Following: [number] | Posts: [number]
+   Verified: Yes/No
+   Profile Photo: [brief description]
+
+6. DO NOT:
    - Stop after 1-3 searches
    - Claim you "searched comprehensively" without actually doing multiple searches
    - Skip platform-targeted searches
    - Return results without executing the minimum required searches
+   - Make up follower counts or stats - only report what you actually see
 
 BEGIN YOUR ${MIN_SEARCHES_REQUIRED}+ SEARCHES NOW:
 `;
