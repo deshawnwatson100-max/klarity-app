@@ -684,7 +684,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
               className="flex-1 ml-2 text-base"
               style={{ color: "#6B7280" }}
             >
-              Deep Search...
+              Chat Search...
             </Text>
           </Pressable>
 
