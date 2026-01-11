@@ -180,18 +180,24 @@ function ContextMenuChatListItem({
   }, [onDelete]);
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger>
-        <Pressable
-          onPress={onPress}
-          className="active:opacity-60"
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : isActive ? "rgba(255, 255, 255, 0.08)" : "transparent",
-            borderRadius: isActive ? 12 : 0,
-            marginHorizontal: isActive ? 8 : 0,
-            marginVertical: isActive ? 4 : 0,
-          })}
-        >
+    <View
+      style={{
+        backgroundColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
+        borderRadius: isActive ? 12 : 0,
+        marginHorizontal: isActive ? 8 : 0,
+        marginVertical: isActive ? 4 : 0,
+      }}
+    >
+      <ContextMenu.Root>
+        <ContextMenu.Trigger>
+          <Pressable
+            onPress={onPress}
+            className="active:opacity-60"
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              borderRadius: isActive ? 12 : 0,
+            })}
+          >
           <View className="px-5 py-3">
             <View className="flex-row items-center justify-between mb-1">
               <View className="flex-row items-center flex-1 mr-2">
@@ -287,6 +293,7 @@ function ContextMenuChatListItem({
         </ContextMenu.Item>
       </ContextMenu.Content>
     </ContextMenu.Root>
+    </View>
   );
 }
 
