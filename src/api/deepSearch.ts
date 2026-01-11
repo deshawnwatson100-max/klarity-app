@@ -378,6 +378,17 @@ export interface DeepSearchResult {
   rawResponse: string;
 }
 
+export interface SocialMediaStats {
+  followers?: number;
+  following?: number;
+  posts?: number;
+  profileImageUrl?: string;
+  username?: string;
+  displayName?: string;
+  bio?: string;
+  isVerifiedAccount?: boolean;
+}
+
 export interface DeepSearchSource {
   type: "social" | "professional" | "dating" | "legal" | "username" | "images" | "writing" | "location" | "archived" | "other";
   platform: string;
@@ -386,6 +397,7 @@ export interface DeepSearchSource {
   relevantDetails: string[];
   isVerified?: boolean; // Optional, not displayed to user
   category?: "socialPresence" | "professionalFootprint" | "publicWriting" | "datingPresence" | "legalRecords" | "archived" | "other";
+  socialStats?: SocialMediaStats; // Enhanced social media details
 }
 
 // ============================================================================
