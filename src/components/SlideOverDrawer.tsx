@@ -287,7 +287,13 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
 
       {/* Swipeable content */}
       <Animated.View
-        style={{ backgroundColor: bgColor, transform: [{ translateX }] }}
+        style={{
+          backgroundColor: bgColor,
+          transform: [{ translateX }],
+          borderRadius: isActive ? 12 : 0,
+          marginHorizontal: isActive ? 8 : 0,
+          marginVertical: isActive ? 4 : 0,
+        }}
         {...panResponder.panHandlers}
       >
         <Pressable
@@ -295,6 +301,7 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
           className="active:opacity-60"
           style={({ pressed }) => ({
             backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : bgColor,
+            borderRadius: isActive ? 12 : 0,
           })}
         >
           <View className="px-5 py-3">
