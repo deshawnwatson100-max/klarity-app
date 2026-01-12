@@ -28,22 +28,22 @@ import {
 import { RelationshipContextType, ContextAnchorType } from "../types/personContext";
 import {
   DeepSearchResultBubble,
-  DeepSearchLoading,
 } from "./DeepSearchResultBubble";
 import { ChatLoadingBubble } from "./ChatLoadingBubble";
 
-// ChatGPT-style colors
+// ChatGPT-style colors - matching the app aesthetic
 const COLORS = {
-  background: "#1A1A1A",
-  surface: "#000000",
-  surfaceHover: "#1A1A1A",
-  border: "rgba(255,255,255,0.08)",
-  text: "#ECECEC",
-  textSecondary: "#B4B4B4",
-  textMuted: "#8E8E8E",
+  text: "#EDEDED",
+  textSecondary: "#A0A0A0",
+  textMuted: "#6B7280",
+  link: "#60A5FA",
+  success: "#10B981",
+  error: "#EF4444",
+  buttonBg: "rgba(255, 255, 255, 0.08)",
+  buttonBgHover: "rgba(255, 255, 255, 0.12)",
+  inputBg: "rgba(255, 255, 255, 0.05)",
   accent: "#10A37F",
   accentBg: "rgba(16, 163, 127, 0.15)",
-  error: "#EF4444",
   errorBg: "rgba(239, 68, 68, 0.15)",
 };
 
@@ -64,10 +64,10 @@ const CONTEXT_ANCHOR_OPTIONS: {
   label: string;
   placeholder: string;
 }[] = [
-  { type: "workplace", label: "Workplace or industry", placeholder: "e.g. Tech startup, Hospital" },
+  { type: "workplace", label: "Workplace", placeholder: "e.g. Tech startup, Hospital" },
   { type: "school", label: "School", placeholder: "e.g. UCLA, Local high school" },
-  { type: "dating_app", label: "Dating app you met on", placeholder: "e.g. Hinge, Bumble" },
-  { type: "username", label: "Known username or handle", placeholder: "e.g. @handle" },
+  { type: "dating_app", label: "Dating app", placeholder: "e.g. Hinge, Bumble" },
+  { type: "username", label: "Username", placeholder: "e.g. @handle" },
 ];
 
 interface DeepSearchSuggestionCardProps {
@@ -76,7 +76,6 @@ interface DeepSearchSuggestionCardProps {
   existingPersonContextId?: string;
   searchResult?: DeepSearchResultMessage["searchResult"];
   errorMessage?: string;
-  /** If true, shows toggle for user to choose whether to link context to chat. Default: false (auto-links) */
   showLinkOption?: boolean;
   onRunDeepSearch: (personContextId: string, linkedToChat: boolean) => void;
   onDismiss: () => void;
@@ -111,40 +110,32 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
   const [knownUsername, setKnownUsername] = useState("");
   const [approximateAge, setApproximateAge] = useState("");
   const [profileImageUri, setProfileImageUri] = useState<string | undefined>(undefined);
-
-  // Link to chat toggle state - default to true (linked)
   const [linkToChat, setLinkToChat] = useState(true);
 
   const isFormValid = name.trim().length > 0 && relationshipContext !== null;
 
-  // Get existing person context if available
   const existingPersonContext = existingPersonContextId
     ? getPersonContextById(existingPersonContextId)
     : null;
 
-  // Handle expand to input form
   const handleRunDeepSearch = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (existingPersonContext) {
-      // Skip input form and run deep search directly - existing context is already linked
       setCardState("running");
       onUpdateState("running");
       onRunDeepSearch(existingPersonContext.id, true);
     } else {
-      // Show input form
       setCardState("input");
       onUpdateState("input");
     }
   }, [existingPersonContext, onRunDeepSearch, onUpdateState]);
 
-  // Handle dismiss
   const handleNotNow = useCallback(() => {
     Haptics.selectionAsync();
     onDismiss();
   }, [onDismiss]);
 
-  // Handle image picker
   const handlePickImage = async () => {
     Haptics.selectionAsync();
 
@@ -166,7 +157,6 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     }
   };
 
-  // Handle form submit
   const handleStartDeepSearch = useCallback(() => {
     if (!isFormValid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -206,7 +196,6 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
       Object.keys(deepSearchContext).length > 0 ? deepSearchContext : undefined
     );
 
-    // Only link to chat loop if showLinkOption is false (auto-link) or user chose to link
     const shouldLink = !showLinkOption || linkToChat;
     if (shouldLink) {
       setActiveLoopPersonContext(newId);
@@ -232,7 +221,6 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     onRunDeepSearch,
   ]);
 
-  // Handle retry
   const handleRetry = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (existingPersonContextId) {
@@ -245,83 +233,60 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     }
   }, [existingPersonContextId, onRunDeepSearch, onUpdateState]);
 
-  // Handle edit details
   const handleEditDetails = useCallback(() => {
     Haptics.selectionAsync();
     setCardState("input");
     onUpdateState("input");
   }, [onUpdateState]);
 
-  // Render collapsed suggestion card
+  // Collapsed state - ChatGPT style suggestion
   if (cardState === "collapsed") {
     return (
       <Animated.View
         entering={FadeIn.duration(300)}
         exiting={FadeOut.duration(200)}
         layout={Layout.springify()}
-        style={{
-          backgroundColor: COLORS.background,
-          borderRadius: 16,
-          padding: 16,
-          marginVertical: 8,
-          borderWidth: 1,
-          borderColor: COLORS.border,
-        }}
+        style={{ marginBottom: 24 }}
       >
-        {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: COLORS.accentBg,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 10,
-            }}
-          >
-            <Ionicons name="search" size={16} color={COLORS.accent} />
-          </View>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-            Deep Search this person?
-          </Text>
-        </View>
-
-        {/* Body */}
-        <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 14, lineHeight: 20 }}>
-          If you want, I can pull up what is publicly visible so you can explore it yourself.
+        <Text
+          style={{
+            fontSize: 17,
+            lineHeight: 26,
+            color: COLORS.text,
+            letterSpacing: 0.2,
+            marginBottom: 16,
+          }}
+        >
+          I can search for publicly available information about this person if that would help. Would you like me to run a deep search?
         </Text>
 
-        {/* Buttons */}
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
           <Pressable
             onPress={handleRunDeepSearch}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: COLORS.accent,
-              paddingVertical: 12,
-              borderRadius: 10,
+              flexDirection: "row",
               alignItems: "center",
-              opacity: pressed ? 0.8 : 1,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
             })}
           >
-            <Text style={{ fontSize: 14, fontWeight: "600", color: "#fff" }}>
+            <Ionicons name="search" size={16} color={COLORS.link} />
+            <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
               Run Deep Search
             </Text>
           </Pressable>
           <Pressable
             onPress={handleNotNow}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: COLORS.surface,
-              paddingVertical: 12,
-              borderRadius: 10,
-              alignItems: "center",
-              opacity: pressed ? 0.8 : 1,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: pressed ? COLORS.buttonBgHover : "transparent",
             })}
           >
-            <Text style={{ fontSize: 14, fontWeight: "500", color: COLORS.textSecondary }}>
+            <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
               Not now
             </Text>
           </Pressable>
@@ -330,80 +295,74 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     );
   }
 
-  // Render input form
+  // Input form - ChatGPT style inline form
   if (cardState === "input") {
     return (
       <Animated.View
         entering={FadeIn.duration(300)}
         layout={Layout.springify()}
-        style={{
-          marginVertical: 8,
-          paddingHorizontal: 4,
-        }}
+        style={{ marginBottom: 24 }}
       >
-        {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="search" size={18} color={COLORS.textMuted} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-              Deep Search
-            </Text>
-          </View>
-          <Pressable onPress={handleNotNow} hitSlop={12}>
-            <Ionicons name="close" size={20} color={COLORS.textMuted} />
-          </Pressable>
-        </View>
+        {/* Intro text */}
+        <Text
+          style={{
+            fontSize: 17,
+            lineHeight: 26,
+            color: COLORS.text,
+            letterSpacing: 0.2,
+            marginBottom: 20,
+          }}
+        >
+          Tell me a bit about who you are looking for and I will search for their public profiles.
+        </Text>
 
-        {/* Profile Image Picker */}
-        <View style={{ marginBottom: 20, alignItems: "center" }}>
-          <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3, alignSelf: "flex-start" }}>
-            Profile photo
-          </Text>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10, alignSelf: "flex-start" }}>
-            Add a photo to help with visual matching.
-          </Text>
+        {/* Profile photo - optional */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
           <Pressable
             onPress={handlePickImage}
             style={({ pressed }) => ({
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: profileImageUri ? "transparent" : COLORS.surface,
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: profileImageUri ? "transparent" : COLORS.buttonBg,
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
               opacity: pressed ? 0.8 : 1,
+              marginRight: 12,
             })}
           >
             {profileImageUri ? (
               <Image
                 source={{ uri: profileImageUri }}
-                style={{ width: 80, height: 80, borderRadius: 40 }}
+                style={{ width: 56, height: 56, borderRadius: 28 }}
               />
             ) : (
-              <View style={{ alignItems: "center" }}>
-                <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
-                <Text style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2 }}>Add photo</Text>
-              </View>
+              <Ionicons name="camera-outline" size={22} color={COLORS.textMuted} />
             )}
           </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>
+              Add a photo
+            </Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted }}>
+              Optional - helps with visual matching
+            </Text>
+          </View>
         </View>
 
-        {/* Name (required) */}
+        {/* Name input */}
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
-            Name<Text style={{ color: COLORS.textMuted }}> *</Text>
-          </Text>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-            Use the name they go by publicly.
+          <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 }}>
+            Name <Text style={{ color: COLORS.textMuted }}>*</Text>
           </Text>
           <TextInput
             style={{
-              backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              backgroundColor: COLORS.inputBg,
+              borderRadius: 8,
               paddingHorizontal: 14,
               paddingVertical: 12,
-              fontSize: 14,
+              fontSize: 15,
               color: COLORS.text,
             }}
             placeholder="Their name"
@@ -413,15 +372,12 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
           />
         </View>
 
-        {/* Relationship (required) */}
+        {/* Relationship chips */}
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
-            Relationship<Text style={{ color: COLORS.textMuted }}> *</Text>
+          <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>
+            How do you know them? <Text style={{ color: COLORS.textMuted }}>*</Text>
           </Text>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-            How do you know them?
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {RELATIONSHIP_OPTIONS.map((option) => {
               const isSelected = relationshipContext === option.value;
               return (
@@ -435,10 +391,10 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
                     paddingHorizontal: 14,
                     paddingVertical: 8,
                     borderRadius: 16,
-                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
+                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.buttonBg,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
+                  <Text style={{ fontSize: 13, color: isSelected ? COLORS.success : COLORS.textSecondary }}>
                     {option.label}
                   </Text>
                 </Pressable>
@@ -447,39 +403,33 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
           </View>
         </View>
 
-        {/* Location (optional) */}
+        {/* Location input */}
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
+          <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 }}>
             Location
-          </Text>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-            City or area they are usually in.
           </Text>
           <TextInput
             style={{
-              backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              backgroundColor: COLORS.inputBg,
+              borderRadius: 8,
               paddingHorizontal: 14,
               paddingVertical: 12,
-              fontSize: 14,
+              fontSize: 15,
               color: COLORS.text,
             }}
-            placeholder="e.g. Los Angeles, NYC"
+            placeholder="City or area"
             placeholderTextColor={COLORS.textMuted}
             value={location}
             onChangeText={setLocation}
           />
         </View>
 
-        {/* Context anchor (optional - select ONE) */}
+        {/* Context anchor - inline chips */}
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
-            One detail that might help
+          <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>
+            Any detail that might help
           </Text>
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-            Just one thing that could help narrow results.
-          </Text>
-          <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: selectedAnchorType ? 10 : 0 }}>
             {CONTEXT_ANCHOR_OPTIONS.map((option) => {
               const isSelected = selectedAnchorType === option.type;
               return (
@@ -495,13 +445,13 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
                     }
                   }}
                   style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 14,
+                    backgroundColor: isSelected ? COLORS.accentBg : COLORS.buttonBg,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
+                  <Text style={{ fontSize: 12, color: isSelected ? COLORS.success : COLORS.textMuted }}>
                     {option.label}
                   </Text>
                 </Pressable>
@@ -510,26 +460,24 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
           </View>
 
           {selectedAnchorType && (
-            <View style={{ marginTop: 10 }}>
-              <TextInput
-                style={{
-                  backgroundColor: COLORS.surface,
-                  borderRadius: 12,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  color: COLORS.text,
-                }}
-                placeholder={CONTEXT_ANCHOR_OPTIONS.find(o => o.type === selectedAnchorType)?.placeholder}
-                placeholderTextColor={COLORS.textMuted}
-                value={anchorValue}
-                onChangeText={setAnchorValue}
-              />
-            </View>
+            <TextInput
+              style={{
+                backgroundColor: COLORS.inputBg,
+                borderRadius: 8,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                fontSize: 15,
+                color: COLORS.text,
+              }}
+              placeholder={CONTEXT_ANCHOR_OPTIONS.find(o => o.type === selectedAnchorType)?.placeholder}
+              placeholderTextColor={COLORS.textMuted}
+              value={anchorValue}
+              onChangeText={setAnchorValue}
+            />
           )}
         </View>
 
-        {/* Optional boost (collapsed by default) */}
+        {/* More details toggle */}
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -538,36 +486,32 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingVertical: 10,
-            marginBottom: showBoost ? 10 : 0,
+            marginBottom: showBoost ? 16 : 0,
           }}
         >
           <Ionicons
             name={showBoost ? "chevron-down" : "chevron-forward"}
-            size={16}
+            size={14}
             color={COLORS.textMuted}
           />
           <Text style={{ fontSize: 13, color: COLORS.textMuted, marginLeft: 4 }}>
-            Additional details (optional)
+            More details
           </Text>
         </Pressable>
 
         {showBoost && (
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
+          <View style={{ gap: 16 }}>
+            <View>
+              <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 }}>
                 Known username
-              </Text>
-              <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-                A handle you know they use.
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: COLORS.surface,
-                  borderRadius: 12,
+                  backgroundColor: COLORS.inputBg,
+                  borderRadius: 8,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: COLORS.text,
                 }}
                 placeholder="@username"
@@ -577,22 +521,19 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
               />
             </View>
             <View>
-              <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 3 }}>
+              <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 }}>
                 Approximate age
-              </Text>
-              <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-                Used only to narrow public matches.
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: COLORS.surface,
-                  borderRadius: 12,
+                  backgroundColor: COLORS.inputBg,
+                  borderRadius: 8,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: COLORS.text,
                 }}
-                placeholder="e.g. Late 20s, Mid 30s"
+                placeholder="e.g. Late 20s"
                 placeholderTextColor={COLORS.textMuted}
                 value={approximateAge}
                 onChangeText={setApproximateAge}
@@ -601,7 +542,7 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
           </View>
         )}
 
-        {/* Link to chat toggle - only show if showLinkOption is true */}
+        {/* Link toggle */}
         {showLinkOption && (
           <Pressable
             onPress={() => {
@@ -611,72 +552,69 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: 14,
-              paddingHorizontal: 14,
-              backgroundColor: COLORS.surface,
-              borderRadius: 10,
-              marginTop: 8,
-              marginBottom: 8,
+              marginTop: 16,
             }}
           >
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <Text style={{ fontSize: 14, color: COLORS.text, marginBottom: 2 }}>
-                Link to chat
-              </Text>
-              <Text style={{ fontSize: 12, color: COLORS.textMuted }}>
-                Use this context to inform AI responses in chat
-              </Text>
-            </View>
             <View
               style={{
-                width: 44,
-                height: 26,
-                borderRadius: 13,
-                backgroundColor: linkToChat ? COLORS.accent : COLORS.surfaceHover,
+                width: 18,
+                height: 18,
+                borderRadius: 4,
+                backgroundColor: linkToChat ? COLORS.success : COLORS.buttonBg,
+                alignItems: "center",
                 justifyContent: "center",
-                paddingHorizontal: 2,
+                marginRight: 10,
               }}
             >
-              <View
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 11,
-                  backgroundColor: "#fff",
-                  alignSelf: linkToChat ? "flex-end" : "flex-start",
-                }}
-              />
+              {linkToChat && <Ionicons name="checkmark" size={12} color="#fff" />}
             </View>
+            <Text style={{ fontSize: 13, color: COLORS.textSecondary }}>
+              Use this context in our conversation
+            </Text>
           </Pressable>
         )}
 
-        {/* Start Deep Search button */}
-        <Pressable
-          onPress={handleStartDeepSearch}
-          disabled={!isFormValid}
-          style={({ pressed }) => ({
-            backgroundColor: isFormValid ? COLORS.accent : COLORS.surface,
-            paddingVertical: 14,
-            borderRadius: 10,
-            marginTop: 8,
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <Text style={{
-            fontSize: 15,
-            fontWeight: "600",
-            color: isFormValid ? "#fff" : COLORS.textMuted,
-            textAlign: "center"
-          }}>
-            Start Deep Search
-          </Text>
-        </Pressable>
+        {/* Action buttons */}
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
+          <Pressable
+            onPress={handleStartDeepSearch}
+            disabled={!isFormValid}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: isFormValid
+                ? pressed ? COLORS.buttonBgHover : COLORS.buttonBg
+                : COLORS.buttonBg,
+              opacity: isFormValid ? 1 : 0.5,
+            })}
+          >
+            <Ionicons name="search" size={16} color={isFormValid ? COLORS.link : COLORS.textMuted} />
+            <Text style={{ color: isFormValid ? COLORS.link : COLORS.textMuted, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
+              Start Search
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={handleNotNow}
+            style={({ pressed }) => ({
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: pressed ? COLORS.buttonBgHover : "transparent",
+            })}
+          >
+            <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
+              Cancel
+            </Text>
+          </Pressable>
+        </View>
       </Animated.View>
     );
   }
 
-  // Render running state
+  // Running state
   if (cardState === "running") {
     return (
       <Animated.View
@@ -692,75 +630,53 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     );
   }
 
-  // Render error state
+  // Error state - ChatGPT style
   if (cardState === "error") {
     return (
       <Animated.View
         entering={FadeIn.duration(300)}
         layout={Layout.springify()}
-        style={{
-          backgroundColor: COLORS.background,
-          borderRadius: 16,
-          padding: 16,
-          marginVertical: 8,
-          borderWidth: 1,
-          borderColor: COLORS.border,
-        }}
+        style={{ marginBottom: 24 }}
       >
-        {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: COLORS.errorBg,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 10,
-            }}
-          >
-            <Ionicons name="alert-circle" size={18} color={COLORS.error} />
-          </View>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-            Deep Search is not available right now
-          </Text>
-        </View>
-
-        {/* Body */}
-        <Text style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 14, lineHeight: 20 }}>
-          {errorMessage || "Web search did not run successfully. Please try again."}
+        <Text
+          style={{
+            fontSize: 17,
+            lineHeight: 26,
+            color: COLORS.text,
+            letterSpacing: 0.2,
+            marginBottom: 16,
+          }}
+        >
+          {errorMessage || "I was not able to complete the search. Would you like to try again?"}
         </Text>
 
-        {/* Buttons */}
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
           <Pressable
             onPress={handleRetry}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: COLORS.accent,
-              paddingVertical: 12,
-              borderRadius: 10,
+              flexDirection: "row",
               alignItems: "center",
-              opacity: pressed ? 0.8 : 1,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
             })}
           >
-            <Text style={{ fontSize: 14, fontWeight: "600", color: "#fff" }}>
+            <Ionicons name="refresh" size={16} color={COLORS.link} />
+            <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
               Try again
             </Text>
           </Pressable>
           <Pressable
             onPress={handleEditDetails}
             style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: COLORS.surface,
-              paddingVertical: 12,
-              borderRadius: 10,
-              alignItems: "center",
-              opacity: pressed ? 0.8 : 1,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              backgroundColor: pressed ? COLORS.buttonBgHover : "transparent",
             })}
           >
-            <Text style={{ fontSize: 14, fontWeight: "500", color: COLORS.textSecondary }}>
+            <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
               Edit details
             </Text>
           </Pressable>
@@ -769,7 +685,7 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     );
   }
 
-  // Render results state
+  // Results state
   if (cardState === "results" && searchResult) {
     return (
       <Animated.View
@@ -781,6 +697,5 @@ export const DeepSearchSuggestionCard = memo(function DeepSearchSuggestionCard({
     );
   }
 
-  // Fallback (should not happen)
   return null;
 });
