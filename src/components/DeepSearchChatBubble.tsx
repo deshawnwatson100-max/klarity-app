@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, Pressable, Linking, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
@@ -77,6 +77,12 @@ export function DeepSearchProfileMessage({
 }: DeepSearchProfileMessageProps) {
   const [copiedUsername, setCopiedUsername] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<"pending" | "verified" | "rejected">("pending");
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Animation values
+  const opacity = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const height = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
     Haptics.selectionAsync();
@@ -98,7 +104,27 @@ export function DeepSearchProfileMessage({
   const handleVerify = (isVerified: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setVerificationStatus(isVerified ? "verified" : "rejected");
-    onVerify?.(isVerified);
+
+    if (!isVerified) {
+      // Animate out when rejected
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: -50,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsVisible(false);
+        onVerify?.(isVerified);
+      });
+    } else {
+      onVerify?.(isVerified);
+    }
   };
 
   const stats = source.socialStats;
@@ -119,8 +145,19 @@ export function DeepSearchProfileMessage({
     stats?.posts !== undefined ? `${formatNumber(stats.posts)} posts` : null,
   ].filter(Boolean).join(" · ");
 
+  // Don't render if dismissed
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <View style={{ marginBottom: 28 }}>
+    <Animated.View
+      style={{
+        marginBottom: 28,
+        opacity,
+        transform: [{ translateX }],
+      }}
+    >
       {/* Profile header line */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
         <View
@@ -261,27 +298,27 @@ export function DeepSearchProfileMessage({
           </>
         )}
 
-        {/* Verification status indicator */}
-        {verificationStatus !== "pending" && (
+        {/* Verification status indicator - only show for verified */}
+        {verificationStatus === "verified" && (
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Ionicons
-              name={verificationStatus === "verified" ? "checkmark-circle" : "close-circle"}
+              name="checkmark-circle"
               size={16}
-              color={verificationStatus === "verified" ? COLORS.success : COLORS.error}
+              color={COLORS.success}
             />
             <Text
               style={{
-                color: verificationStatus === "verified" ? COLORS.success : COLORS.error,
+                color: COLORS.success,
                 fontSize: 13,
                 marginLeft: 4,
               }}
             >
-              {verificationStatus === "verified" ? "Confirmed" : "Not them"}
+              Confirmed
             </Text>
           </View>
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
