@@ -3,11 +3,7 @@ import { View, Text, Pressable, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
-import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { DeepSearchSource } from "../api/deepSearch";
-
-// Create AnimatedView explicitly to avoid undefined issues
-const AnimatedView = Animated.View;
 
 // Colors matching the app's ChatGPT-style aesthetic
 const COLORS = {
@@ -45,10 +41,7 @@ interface DeepSearchIntroMessageProps {
  */
 export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchIntroMessageProps) {
   return (
-    <AnimatedView
-      entering={FadeIn.duration(300)}
-      style={{ marginBottom: 24 }}
-    >
+    <View style={{ marginBottom: 24 }}>
       <Text
         style={{
           fontSize: 17,
@@ -60,7 +53,7 @@ export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchI
         I found {totalResults} public profile{totalResults !== 1 ? "s" : ""} that may belong to{" "}
         <Text style={{ fontWeight: "600" }}>{personName}</Text>. Let me show you what I found so you can verify which ones are actually them.
       </Text>
-    </AnimatedView>
+    </View>
   );
 }
 
@@ -127,10 +120,7 @@ export function DeepSearchProfileMessage({
   ].filter(Boolean).join(" · ");
 
   return (
-    <AnimatedView
-      entering={FadeInUp.duration(350).delay(index * 100)}
-      style={{ marginBottom: 28 }}
-    >
+    <View style={{ marginBottom: 28 }}>
       {/* Profile header line */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
         <View
@@ -291,7 +281,7 @@ export function DeepSearchProfileMessage({
           </View>
         )}
       </View>
-    </AnimatedView>
+    </View>
   );
 }
 
@@ -324,10 +314,7 @@ export function DeepSearchSummaryMessage({
   }
 
   return (
-    <AnimatedView
-      entering={FadeIn.duration(300)}
-      style={{ marginBottom: 24 }}
-    >
+    <View style={{ marginBottom: 24 }}>
       <Text
         style={{
           fontSize: 17,
@@ -362,7 +349,7 @@ export function DeepSearchSummaryMessage({
           </Text>
         </Pressable>
       )}
-    </AnimatedView>
+    </View>
   );
 }
 
@@ -375,10 +362,7 @@ interface DeepSearchNoResultsMessageProps {
  */
 export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMessageProps) {
   return (
-    <AnimatedView
-      entering={FadeIn.duration(300)}
-      style={{ marginBottom: 24 }}
-    >
+    <View style={{ marginBottom: 24 }}>
       <Text
         style={{
           fontSize: 17,
@@ -411,7 +395,7 @@ export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMe
           </Text>
         </View>
       </View>
-    </AnimatedView>
+    </View>
   );
 }
 
