@@ -39,10 +39,6 @@ import {
   DeepSearchNoResults,
 } from "../components/DeepSearchResultBubble";
 import {
-  DeepSearchVerificationFlow,
-  VerificationSummary,
-} from "../components/DeepSearchVerificationFlow";
-import {
   DeepSearchIntroMessage as DeepSearchIntroBubble,
   DeepSearchProfileMessage,
   DeepSearchSummaryMessage,
@@ -107,15 +103,6 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-
-  // Deep Search Verification Flow state
-  const [verificationData, setVerificationData] = useState<{
-    isOpen: boolean;
-    sources: DeepSearchResultMessage["searchResult"]["sources"];
-    personName: string;
-    personContextId: string;
-    messageId: string;
-  } | null>(null);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -435,29 +422,56 @@ export function ChatScreen({ navigation, route }: Props) {
         removeMessageFromActiveLoop(loadingMsgId);
 
         if (result.success && result.result) {
-          // Show verification flow instead of direct results
-          const verificationMsgId = `deep-search-verification-${Date.now()}`;
-          const verificationMessage: DeepSearchVerificationMessage = {
-            id: verificationMsgId,
-            role: "deep-search-verification",
-            content: "",
-            timestamp: Date.now(),
-            personName: activePersonContext.name,
-            personContextId: activePersonContext.id,
-            sources: result.result.sources,
-            verificationState: "verifying",
-            mode: "understand",
-          };
-          addMessageToActiveLoopRaw(verificationMessage);
+          const sources = result.result.sources;
 
-          // Open the verification modal
-          setVerificationData({
-            isOpen: true,
-            sources: result.result.sources,
-            personName: activePersonContext.name,
-            personContextId: activePersonContext.id,
-            messageId: verificationMsgId,
-          });
+          if (sources.length === 0) {
+            // No results found - show no results message in chat loop
+            const noResultsMsg: DeepSearchNoResultsChatMessage = {
+              id: `deep-search-no-results-${Date.now()}`,
+              role: "deep-search-no-results",
+              content: "",
+              timestamp: Date.now(),
+              personName: activePersonContext.name,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(noResultsMsg);
+          } else {
+            // Add intro message to chat loop
+            const introMsg: DeepSearchIntroMessage = {
+              id: `deep-search-intro-${Date.now()}`,
+              role: "deep-search-intro",
+              content: "",
+              timestamp: Date.now(),
+              personName: activePersonContext.name,
+              totalResults: sources.length,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(introMsg);
+
+            // Add individual profile messages with inline verification
+            for (let i = 0; i < sources.length; i++) {
+              const profileMsg: DeepSearchProfileChatMessage = {
+                id: `deep-search-profile-${Date.now()}-${i}`,
+                role: "deep-search-profile",
+                content: "",
+                timestamp: Date.now() + i,
+                source: sources[i],
+                index: i,
+                total: sources.length,
+                personContextId: activePersonContext.id,
+                verificationStatus: "pending",
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(profileMsg);
+            }
+          }
+
+          setActiveLoopDeepSearchCompleted(true);
+
+          // Scroll to bottom to show results
+          setTimeout(() => {
+            decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
         } else if (result.safetyBlock) {
           // Safety block - show resources if needed
           const safetyMessage: ChatMessage = {
@@ -545,29 +559,56 @@ export function ChatScreen({ navigation, route }: Props) {
       removeMessageFromActiveLoop(loadingMsgId);
 
       if (result.success && result.result) {
-        // Show verification flow instead of direct results
-        const verificationMsgId = `deep-search-verification-${Date.now()}`;
-        const verificationMessage: DeepSearchVerificationMessage = {
-          id: verificationMsgId,
-          role: "deep-search-verification",
-          content: "",
-          timestamp: Date.now(),
-          personName: personContext.name,
-          personContextId: personContext.id,
-          sources: result.result.sources,
-          verificationState: "verifying",
-          mode: "understand",
-        };
-        addMessageToActiveLoopRaw(verificationMessage);
+        const sources = result.result.sources;
 
-        // Open the verification modal
-        setVerificationData({
-          isOpen: true,
-          sources: result.result.sources,
-          personName: personContext.name,
-          personContextId: personContext.id,
-          messageId: verificationMsgId,
-        });
+        if (sources.length === 0) {
+          // No results found - show no results message in chat loop
+          const noResultsMsg: DeepSearchNoResultsChatMessage = {
+            id: `deep-search-no-results-${Date.now()}`,
+            role: "deep-search-no-results",
+            content: "",
+            timestamp: Date.now(),
+            personName: personContext.name,
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(noResultsMsg);
+        } else {
+          // Add intro message to chat loop
+          const introMsg: DeepSearchIntroMessage = {
+            id: `deep-search-intro-${Date.now()}`,
+            role: "deep-search-intro",
+            content: "",
+            timestamp: Date.now(),
+            personName: personContext.name,
+            totalResults: sources.length,
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(introMsg);
+
+          // Add individual profile messages with inline verification
+          for (let i = 0; i < sources.length; i++) {
+            const profileMsg: DeepSearchProfileChatMessage = {
+              id: `deep-search-profile-${Date.now()}-${i}`,
+              role: "deep-search-profile",
+              content: "",
+              timestamp: Date.now() + i,
+              source: sources[i],
+              index: i,
+              total: sources.length,
+              personContextId: personContextId,
+              verificationStatus: "pending",
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(profileMsg);
+          }
+        }
+
+        setActiveLoopDeepSearchCompleted(true);
+
+        // Scroll to bottom to show results
+        setTimeout(() => {
+          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       } else if (result.safetyBlock) {
         // Safety block - show error with appropriate message
         const errorMessage: ChatLoadingMessage = {
@@ -1686,128 +1727,6 @@ export function ChatScreen({ navigation, route }: Props) {
       );
     }
 
-    // Deep Search Verification - shows after verification is completed
-    if (message.role === "deep-search-verification") {
-      const msg = message as DeepSearchVerificationMessage;
-
-      // If still verifying, show a placeholder (modal handles the actual verification)
-      if (msg.verificationState === "verifying") {
-        return (
-          <View key={message.id} style={{ padding: 20, alignItems: "center" }}>
-            <Text style={{ color: "#A0A0A0", fontSize: 14 }}>
-              Verifying search results...
-            </Text>
-          </View>
-        );
-      }
-
-      // Show verification summary with option to deep dive
-      return (
-        <VerificationSummary
-          key={message.id}
-          verifiedSources={msg.verifiedSources || []}
-          personName={msg.personName}
-          onDeepDive={async () => {
-            // Update message state to deep-diving
-            const updatedMsg: DeepSearchVerificationMessage = {
-              ...msg,
-              verificationState: "deep-diving",
-            };
-            updateMessageInActiveLoop(message.id, updatedMsg);
-
-            // Get the person context
-            const personContext = getPersonContextById(msg.personContextId);
-            if (!personContext) {
-              console.error("[DeepDive] Person context not found:", msg.personContextId);
-              return;
-            }
-
-            // Add loading message
-            const loadingMsgId = `deep-dive-loading-${Date.now()}`;
-            const loadingMessage: ChatLoadingMessage = {
-              id: loadingMsgId,
-              role: "chat-loading",
-              content: "",
-              timestamp: Date.now(),
-              loadingType: "deep-search",
-              loadingState: "loading",
-              customAction: `Deep diving for ${msg.personName}...`,
-              mode: "understand",
-            };
-            addMessageToActiveLoopRaw(loadingMessage);
-
-            // Scroll to show loading
-            setTimeout(() => {
-              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-
-            try {
-              // Execute deep dive search with verified sources
-              const result = await executeDeepDiveSearch({
-                personContext,
-                verifiedSources: msg.verifiedSources || [],
-                onProgress: (status) => {
-                  console.log("[DeepDive] Progress:", status);
-                },
-              });
-
-              // Remove loading message
-              removeMessageFromActiveLoop(loadingMsgId);
-
-              if (result.success && result.result) {
-                // Show the deep dive results
-                const resultMessage: DeepSearchResultMessage = {
-                  id: `deep-dive-result-${Date.now()}`,
-                  role: "deep-search-result",
-                  content: "",
-                  timestamp: Date.now(),
-                  searchResult: result.result,
-                  mode: "understand",
-                };
-                addMessageToActiveLoopRaw(resultMessage);
-
-                // Scroll to show results
-                setTimeout(() => {
-                  decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-                }, 100);
-              } else {
-                // Show error
-                const errorMessage: ChatLoadingMessage = {
-                  id: `deep-dive-error-${Date.now()}`,
-                  role: "chat-loading",
-                  content: "",
-                  timestamp: Date.now(),
-                  loadingType: "deep-search",
-                  loadingState: "error",
-                  errorMessage: result.error || "Deep dive search failed. Please try again.",
-                  mode: "understand",
-                };
-                addMessageToActiveLoopRaw(errorMessage);
-              }
-            } catch (error) {
-              console.error("[DeepDive] Error:", error);
-              removeMessageFromActiveLoop(loadingMsgId);
-
-              const errorMessage: ChatLoadingMessage = {
-                id: `deep-dive-error-${Date.now()}`,
-                role: "chat-loading",
-                content: "",
-                timestamp: Date.now(),
-                loadingType: "deep-search",
-                loadingState: "error",
-                errorMessage: "Something went wrong during deep dive. Please try again.",
-                mode: "understand",
-              };
-              addMessageToActiveLoopRaw(errorMessage);
-            }
-          }}
-          onDone={() => {
-            // User is done, nothing more to do
-          }}
-        />
-      );
-    }
-
     // Person Context Card - inline in chat
     if (message.role === "person-context-card") {
       return (
@@ -2535,53 +2454,6 @@ export function ChatScreen({ navigation, route }: Props) {
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
       />
-
-      {/* Deep Search Verification Modal */}
-      {verificationData?.isOpen && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2000,
-          }}
-        >
-          <DeepSearchVerificationFlow
-            sources={verificationData.sources}
-            personName={verificationData.personName}
-            onVerificationComplete={(verifiedSources, rejectedSources) => {
-              // Update the verification message with results
-              const updatedMessage: DeepSearchVerificationMessage = {
-                id: verificationData.messageId,
-                role: "deep-search-verification",
-                content: "",
-                timestamp: Date.now(),
-                personName: verificationData.personName,
-                personContextId: verificationData.personContextId,
-                sources: verificationData.sources,
-                verificationState: "completed",
-                verifiedSources,
-                rejectedSources,
-                mode: "understand",
-              };
-              updateMessageInActiveLoop(verificationData.messageId, updatedMessage);
-
-              // Close modal
-              setVerificationData(null);
-
-              // Mark deep search as completed
-              setActiveLoopDeepSearchCompleted(true);
-            }}
-            onCancel={() => {
-              // Remove the verification message
-              removeMessageFromActiveLoop(verificationData.messageId);
-              setVerificationData(null);
-            }}
-          />
-        </View>
-      )}
     </View>
   );
 }
