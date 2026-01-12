@@ -1188,13 +1188,37 @@ Automatically searches publicly available information when Person Context is cre
 6. User can trigger enhanced search with validated data for more accurate results
 
 **Verification Flow Features:**
-- **Swipeable Cards** - Tinder-style card UI for quick verification
+- **Inline Chat Verification** - Profile cards appear in chat with "This is them" / "Not them" buttons
+- **Dismiss Animation** - Rejected profiles animate out (fade + slide left)
 - **Profile Cards** - Display profile image, username, platform, bio, follower/following counts
-- **Platform Colors** - Each card shows platform-specific branding (LinkedIn blue, Twitter blue, Instagram gradient, etc.)
-- **Swipe Indicators** - "THIS IS THEM" (green) and "NOT THEM" (red) appear as user swipes
-- **Progress Tracking** - Shows verified/rejected/remaining counts
+- **Platform Icons** - Each card shows platform-specific icon (LinkedIn, Twitter, Instagram, etc.)
+- **Progress Tracking** - Summary appears after all profiles verified/rejected
 - **View Profile** - Button to open the actual profile in browser before deciding
-- **Deep Dive Option** - After verification, user can trigger an enhanced search using confirmed usernames/profiles
+- **Deep Dive Option** - After verification, user can trigger an enhanced search using confirmed data
+
+**Deep Dive Search (Enhanced):**
+After user verifies profiles, the Deep Dive search uses ALL extracted data for better results:
+
+1. **Extracted Data Used:**
+   - Verified usernames (cross-platform search)
+   - Display names (may differ from legal name)
+   - Bio keywords (locations, jobs, interests extracted from bios)
+   - Follower/following ratios (influencer vs normal user context)
+   - Platforms already found (to search unfound platforms)
+
+2. **Enhanced Search Strategy:**
+   - **Username Cross-Reference** - Each verified username searched on ALL platforms not yet found
+   - **Username Variations** - Tries common patterns: username_, _username, username123, theusername, etc.
+   - **Display Name Search** - If display name differs from legal name, searches both
+   - **Bio Keywords** - Extracts locations, companies, interests from bios for targeted searches
+   - **Dating Deep Search** - Uses usernames AND display names on dating sites
+   - **Archived Content** - Wayback Machine for verified profile URLs
+   - **Legal Records** - Confirmed identity enables more targeted court/arrest searches
+   - **Forum/Community** - Reddit, Quora, forums with verified usernames
+
+3. **Search Result Matching:**
+   - Results marked as "High confidence" (username match) or "Medium" (name match)
+   - Same clean inline style as initial search results
 
 **Search Scope (All 9 Categories):**
 Deep Search performs multiple search passes covering all of the following areas:
