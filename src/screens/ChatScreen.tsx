@@ -42,6 +42,12 @@ import {
   DeepSearchVerificationFlow,
   VerificationSummary,
 } from "../components/DeepSearchVerificationFlow";
+import {
+  DeepSearchIntroMessage as DeepSearchIntroBubble,
+  DeepSearchProfileMessage,
+  DeepSearchSummaryMessage,
+  DeepSearchNoResultsMessage,
+} from "../components/DeepSearchChatBubble";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -76,6 +82,10 @@ import {
   PersonContextCardMessage,
   DeepSearchSuggestionMessage,
   DeepSearchSuggestionState,
+  DeepSearchIntroMessage,
+  DeepSearchProfileChatMessage,
+  DeepSearchSummaryChatMessage,
+  DeepSearchNoResultsChatMessage,
   ChatLoadingMessage,
   MessageMode,
 } from "../types/chat";
@@ -1854,14 +1864,59 @@ export function ChatScreen({ navigation, route }: Props) {
               });
 
               if (result.success && result.result) {
-                // Update the card with results
-                updateMessageInActiveLoop(message.id, {
-                  ...suggestionMsg,
-                  suggestionState: "results",
-                  personContextId,
-                  searchResult: result.result,
-                } as DeepSearchSuggestionMessage);
+                // Remove the suggestion card - we will show results as chat messages
+                removeMessageFromActiveLoop(message.id);
+
+                const sources = result.result.sources;
+
+                if (sources.length === 0) {
+                  // No results found - show no results message
+                  const noResultsMsg: DeepSearchNoResultsChatMessage = {
+                    id: `deep-search-no-results-${Date.now()}`,
+                    role: "deep-search-no-results",
+                    content: "",
+                    timestamp: Date.now(),
+                    personName: personContext.name,
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(noResultsMsg);
+                } else {
+                  // Add intro message
+                  const introMsg: DeepSearchIntroMessage = {
+                    id: `deep-search-intro-${Date.now()}`,
+                    role: "deep-search-intro",
+                    content: "",
+                    timestamp: Date.now(),
+                    personName: personContext.name,
+                    totalResults: sources.length,
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(introMsg);
+
+                  // Add individual profile messages with staggered timing
+                  for (let i = 0; i < sources.length; i++) {
+                    const profileMsg: DeepSearchProfileChatMessage = {
+                      id: `deep-search-profile-${Date.now()}-${i}`,
+                      role: "deep-search-profile",
+                      content: "",
+                      timestamp: Date.now() + i,
+                      source: sources[i],
+                      index: i,
+                      total: sources.length,
+                      personContextId,
+                      verificationStatus: "pending",
+                      mode: "understand",
+                    };
+                    addMessageToActiveLoopRaw(profileMsg);
+                  }
+                }
+
                 setActiveLoopDeepSearchCompleted(true);
+
+                // Scroll to bottom to show results
+                setTimeout(() => {
+                  decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
               } else if (result.safetyBlock) {
                 // Safety block - show error state
                 updateMessageInActiveLoop(message.id, {
@@ -1903,6 +1958,195 @@ export function ChatScreen({ navigation, route }: Props) {
               suggestionState: newState,
             } as DeepSearchSuggestionMessage);
           }}
+        />
+      );
+    }
+
+    // Deep Search Intro Message - chat loop format
+    if (message.role === "deep-search-intro") {
+      const introMsg = message as DeepSearchIntroMessage;
+      return (
+        <DeepSearchIntroBubble
+          key={message.id}
+          personName={introMsg.personName}
+          totalResults={introMsg.totalResults}
+        />
+      );
+    }
+
+    // Deep Search Profile Message - individual profile in chat loop format
+    if (message.role === "deep-search-profile") {
+      const profileMsg = message as DeepSearchProfileChatMessage;
+      return (
+        <DeepSearchProfileMessage
+          key={message.id}
+          source={profileMsg.source}
+          index={profileMsg.index}
+          total={profileMsg.total}
+          showVerificationButtons={profileMsg.verificationStatus === "pending"}
+          onVerify={(isVerified) => {
+            // Update the verification status
+            updateMessageInActiveLoop(message.id, {
+              ...profileMsg,
+              verificationStatus: isVerified ? "verified" : "rejected",
+            } as DeepSearchProfileChatMessage);
+
+            // Check if all profiles have been verified/rejected
+            const allProfiles = decodeMessages.filter(
+              (m) => m.role === "deep-search-profile"
+            ) as DeepSearchProfileChatMessage[];
+
+            const updatedProfiles = allProfiles.map((p) =>
+              p.id === message.id
+                ? { ...p, verificationStatus: isVerified ? "verified" : "rejected" }
+                : p
+            );
+
+            const pendingProfiles = updatedProfiles.filter(
+              (p) => p.verificationStatus === "pending"
+            );
+
+            // If all profiles are verified/rejected, show summary
+            if (pendingProfiles.length === 0) {
+              const verifiedProfiles = updatedProfiles.filter(
+                (p) => p.verificationStatus === "verified"
+              );
+              const rejectedProfiles = updatedProfiles.filter(
+                (p) => p.verificationStatus === "rejected"
+              );
+
+              const personContext = getPersonContextById(profileMsg.personContextId);
+              const personName = personContext?.name || "this person";
+
+              // Add summary message after a short delay
+              setTimeout(() => {
+                const summaryMsg: DeepSearchSummaryChatMessage = {
+                  id: `deep-search-summary-${Date.now()}`,
+                  role: "deep-search-summary",
+                  content: "",
+                  timestamp: Date.now(),
+                  personName,
+                  personContextId: profileMsg.personContextId,
+                  verifiedCount: verifiedProfiles.length,
+                  rejectedCount: rejectedProfiles.length,
+                  totalCount: allProfiles.length,
+                  verifiedSources: verifiedProfiles.map((p) => p.source),
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(summaryMsg);
+
+                // Scroll to bottom to show summary
+                setTimeout(() => {
+                  decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }, 300);
+            }
+          }}
+        />
+      );
+    }
+
+    // Deep Search Summary Message - shown after verification
+    if (message.role === "deep-search-summary") {
+      const summaryMsg = message as DeepSearchSummaryChatMessage;
+      return (
+        <DeepSearchSummaryMessage
+          key={message.id}
+          verifiedCount={summaryMsg.verifiedCount}
+          rejectedCount={summaryMsg.rejectedCount}
+          totalCount={summaryMsg.totalCount}
+          personName={summaryMsg.personName}
+          onDeepDive={async () => {
+            // Get verified sources and run deep dive
+            const personContext = getPersonContextById(summaryMsg.personContextId);
+            if (!personContext || !summaryMsg.verifiedSources?.length) return;
+
+            // Add loading message
+            const loadingMsgId = `deep-dive-loading-${Date.now()}`;
+            const loadingMessage: ChatLoadingMessage = {
+              id: loadingMsgId,
+              role: "chat-loading",
+              content: "",
+              timestamp: Date.now(),
+              loadingType: "deep-search",
+              loadingState: "loading",
+              customAction: `Deep diving into ${summaryMsg.personName}...`,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(loadingMessage);
+
+            // Scroll to show loading
+            setTimeout(() => {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+            try {
+              const result = await executeDeepDiveSearch({
+                personContext,
+                verifiedSources: summaryMsg.verifiedSources,
+                onProgress: (status) => {
+                  console.log("[DeepDive] Progress:", status);
+                },
+              });
+
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              if (result.success && result.result) {
+                // Show deep dive results
+                const resultMessage: DeepSearchResultMessage = {
+                  id: `deep-dive-result-${Date.now()}`,
+                  role: "deep-search-result",
+                  content: "",
+                  timestamp: Date.now(),
+                  searchResult: result.result,
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(resultMessage);
+              } else {
+                const errorMessage: ChatLoadingMessage = {
+                  id: `deep-dive-error-${Date.now()}`,
+                  role: "chat-loading",
+                  content: "",
+                  timestamp: Date.now(),
+                  loadingType: "deep-search",
+                  loadingState: "error",
+                  errorMessage: result.error || "Deep dive failed. Please try again.",
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(errorMessage);
+              }
+
+              setTimeout(() => {
+                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            } catch (error) {
+              console.error("[DeepDive] Error:", error);
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              const errorMessage: ChatLoadingMessage = {
+                id: `deep-dive-error-${Date.now()}`,
+                role: "chat-loading",
+                content: "",
+                timestamp: Date.now(),
+                loadingType: "deep-search",
+                loadingState: "error",
+                errorMessage: "Something went wrong during deep dive.",
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(errorMessage);
+            }
+          }}
+        />
+      );
+    }
+
+    // Deep Search No Results Message
+    if (message.role === "deep-search-no-results") {
+      const noResultsMsg = message as DeepSearchNoResultsChatMessage;
+      return (
+        <DeepSearchNoResultsMessage
+          key={message.id}
+          personName={noResultsMsg.personName}
         />
       );
     }

@@ -1592,8 +1592,39 @@ When triggered, a **suggestion card** appears in chat:
   - Optional boost (username, age range)
   - "Start Deep Search" button
 - **Running state:** Shows loading animation with progress
-- **Results state:** Displays categorized results inline
 - **Error state:** "Deep Search is not available right now" with "Try again" and "Edit details" buttons
+
+**Chat Loop Results Format (NEW):**
+After the user submits the Deep Search input, results are displayed as a collaborative chat conversation rather than card click-through:
+
+1. **Intro Message** - Assistant introduces results: "I found X public profiles that may belong to [Name]. Let me walk you through what I found."
+
+2. **Individual Profile Messages** - Each profile appears as a separate chat bubble with:
+   - Profile number indicator (1, 2, 3...)
+   - Platform badge with brand colors
+   - Profile image (if available)
+   - Display name and @username
+   - Bio/summary preview
+   - Follower/following stats (for social profiles)
+   - Relevant details as tags
+   - "View Profile" button to open in browser
+   - Inline verification buttons: "Not them" / "This is them"
+
+3. **Verification Flow** - Users verify profiles directly in the chat:
+   - Each profile has "Not them" (red) and "This is them" (green) buttons
+   - Tapping updates the profile status immediately
+   - Once all profiles are verified/rejected, a summary appears
+
+4. **Summary Message** - After all profiles are verified:
+   - Shows count of verified vs rejected profiles
+   - If verified profiles exist, offers "Deep Dive" button for enhanced search
+   - Uses verified profiles to run more targeted searches
+
+5. **No Results Message** - If no profiles found:
+   - Explains possible reasons (different name, private profiles, etc.)
+   - Suggests trying with different details
+
+This chat-based format makes the search feel like a collaborative effort where the user is involved at every step, rather than waiting for a final result card.
 
 The suggestion card does NOT auto-run Deep Search. It waits for user to choose to run it.
 

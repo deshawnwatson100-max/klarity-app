@@ -33,6 +33,10 @@ export type MessageRole =
   | "deep-search-verification"
   | "person-context-card"
   | "deep-search-suggestion"
+  | "deep-search-intro"
+  | "deep-search-profile"
+  | "deep-search-summary"
+  | "deep-search-no-results"
   | "chat-loading"
   | "response-prompt";
 
@@ -323,6 +327,37 @@ export interface DeepSearchSuggestionMessage extends Message {
   errorMessage?: string; // Error message if failed
 }
 
+// New chat loop format message types for deep search
+export interface DeepSearchIntroMessage extends Message {
+  role: "deep-search-intro";
+  personName: string;
+  totalResults: number;
+}
+
+export interface DeepSearchProfileChatMessage extends Message {
+  role: "deep-search-profile";
+  source: DeepSearchResultMessage["searchResult"]["sources"][0];
+  index: number;
+  total: number;
+  personContextId: string;
+  verificationStatus?: "pending" | "verified" | "rejected";
+}
+
+export interface DeepSearchSummaryChatMessage extends Message {
+  role: "deep-search-summary";
+  personName: string;
+  personContextId: string;
+  verifiedCount: number;
+  rejectedCount: number;
+  totalCount: number;
+  verifiedSources?: DeepSearchResultMessage["searchResult"]["sources"];
+}
+
+export interface DeepSearchNoResultsChatMessage extends Message {
+  role: "deep-search-no-results";
+  personName: string;
+}
+
 export type ChatLoadingType = "chat" | "deep-search";
 export type ChatLoadingState = "loading" | "success" | "error" | "cancelled";
 
@@ -373,5 +408,9 @@ export type ChatMessage =
   | DeepSearchVerificationMessage
   | PersonContextCardMessage
   | DeepSearchSuggestionMessage
+  | DeepSearchIntroMessage
+  | DeepSearchProfileChatMessage
+  | DeepSearchSummaryChatMessage
+  | DeepSearchNoResultsChatMessage
   | ChatLoadingMessage
   | ResponsePromptMessage;
