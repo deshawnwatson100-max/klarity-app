@@ -1,37 +1,35 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Linking, Image } from "react-native";
+import { View, Text, Pressable, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { DeepSearchSource } from "../api/deepSearch";
 
-// Chat bubble colors - consistent with decode chat loop
+// Colors matching the app's ChatGPT-style aesthetic
 const COLORS = {
-  background: "#1A1A1A",
-  surface: "#242424",
-  surfaceHover: "#2E2E2E",
-  border: "#333333",
-  text: "#E8E8E8",
+  text: "#EDEDED",
   textSecondary: "#A0A0A0",
-  textMuted: "#707070",
-  link: "#8AB4F8",
-  green: "#81C995",
-  accent: "#10A37F",
+  textMuted: "#6B7280",
+  link: "#60A5FA",
+  success: "#10B981",
+  error: "#EF4444",
+  buttonBg: "rgba(255, 255, 255, 0.08)",
+  buttonBgHover: "rgba(255, 255, 255, 0.12)",
 };
 
-// Platform colors for visual distinction
-const PLATFORM_COLORS: Record<string, { bg: string; icon: string }> = {
-  instagram: { bg: "#E1306C20", icon: "#E1306C" },
-  facebook: { bg: "#1877F220", icon: "#1877F2" },
-  twitter: { bg: "#1DA1F220", icon: "#1DA1F2" },
-  "x.com": { bg: "#00000040", icon: "#FFFFFF" },
-  linkedin: { bg: "#0A66C220", icon: "#0A66C2" },
-  tiktok: { bg: "#00F2EA20", icon: "#00F2EA" },
-  youtube: { bg: "#FF000020", icon: "#FF0000" },
-  reddit: { bg: "#FF450020", icon: "#FF4500" },
-  github: { bg: "#FFFFFF15", icon: "#FFFFFF" },
-  default: { bg: "#8AB4F815", icon: "#8AB4F8" },
+// Platform icons
+const getPlatformIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
+  const lower = platform.toLowerCase();
+  if (lower.includes("linkedin")) return "logo-linkedin";
+  if (lower.includes("twitter") || lower.includes("x.com")) return "logo-twitter";
+  if (lower.includes("facebook")) return "logo-facebook";
+  if (lower.includes("instagram")) return "logo-instagram";
+  if (lower.includes("youtube")) return "logo-youtube";
+  if (lower.includes("reddit")) return "logo-reddit";
+  if (lower.includes("github")) return "logo-github";
+  if (lower.includes("tiktok")) return "musical-notes";
+  return "globe-outline";
 };
 
 interface DeepSearchIntroMessageProps {
@@ -40,26 +38,25 @@ interface DeepSearchIntroMessageProps {
 }
 
 /**
- * Initial message from assistant introducing the search results
+ * Intro message - ChatGPT style flowing text
  */
 export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchIntroMessageProps) {
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
-      style={{ marginBottom: 8 }}
+      style={{ marginBottom: 24 }}
     >
-      <View
+      <Text
         style={{
-          backgroundColor: COLORS.background,
-          borderRadius: 16,
-          padding: 16,
-          maxWidth: "85%",
+          fontSize: 17,
+          lineHeight: 26,
+          color: COLORS.text,
+          letterSpacing: 0.2,
         }}
       >
-        <Text style={{ fontSize: 15, color: COLORS.text, lineHeight: 22 }}>
-          I found {totalResults} public profile{totalResults !== 1 ? "s" : ""} that may belong to {personName}. Let me walk you through what I found.
-        </Text>
-      </View>
+        I found {totalResults} public profile{totalResults !== 1 ? "s" : ""} that may belong to{" "}
+        <Text style={{ fontWeight: "600" }}>{personName}</Text>. Let me show you what I found so you can verify which ones are actually them.
+      </Text>
     </Animated.View>
   );
 }
@@ -73,7 +70,7 @@ interface DeepSearchProfileMessageProps {
 }
 
 /**
- * Individual profile result as a chat message
+ * Profile result - clean inline format like ChatGPT
  */
 export function DeepSearchProfileMessage({
   source,
@@ -108,323 +105,188 @@ export function DeepSearchProfileMessage({
     onVerify?.(isVerified);
   };
 
-  // Get platform info
-  const platformLower = source.platform.toLowerCase();
-  const platformKey = Object.keys(PLATFORM_COLORS).find(k => platformLower.includes(k)) || "default";
-  const platformColor = PLATFORM_COLORS[platformKey];
-
-  const getSourceIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
-    const lower = platform.toLowerCase();
-    if (lower.includes("linkedin")) return "logo-linkedin";
-    if (lower.includes("twitter") || lower.includes("x.com")) return "logo-twitter";
-    if (lower.includes("facebook")) return "logo-facebook";
-    if (lower.includes("instagram")) return "logo-instagram";
-    if (lower.includes("youtube")) return "logo-youtube";
-    if (lower.includes("reddit")) return "logo-reddit";
-    if (lower.includes("github")) return "logo-github";
-    if (lower.includes("tiktok")) return "musical-notes";
-    if (lower.includes("tinder") || lower.includes("bumble") || lower.includes("hinge") || lower.includes("dating")) return "heart";
-    return "globe-outline";
-  };
-
-  const getDomainFromUrl = (url: string): string => {
-    try {
-      const domain = new URL(url).hostname.replace("www.", "");
-      return domain;
-    } catch {
-      return url;
-    }
-  };
+  const stats = source.socialStats;
+  const username = stats?.username || extractUsernameFromUrl(source.url, source.platform);
+  const displayName = stats?.displayName || source.platform;
+  const bio = stats?.bio || source.summary;
 
   const formatNumber = (num: number | undefined): string => {
-    if (num === undefined) return "-";
+    if (num === undefined) return "";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
 
-  const stats = source.socialStats;
-  const username = stats?.username || extractUsernameFromUrl(source.url, source.platform);
-  const displayName = stats?.displayName || source.platform;
-  const bio = stats?.bio || source.summary;
-  const hasStats = stats && (stats.followers !== undefined || stats.following !== undefined || stats.posts !== undefined);
+  // Build stats string
+  const statsStr = [
+    stats?.followers !== undefined ? `${formatNumber(stats.followers)} followers` : null,
+    stats?.posts !== undefined ? `${formatNumber(stats.posts)} posts` : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(400).delay(index * 150)}
-      style={{ marginBottom: 16 }}
+      entering={FadeInUp.duration(350).delay(index * 100)}
+      style={{ marginBottom: 28 }}
     >
-      {/* Profile number indicator */}
+      {/* Profile header line */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
         <View
           style={{
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            backgroundColor: platformColor.bg,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: COLORS.buttonBg,
             alignItems: "center",
             justifyContent: "center",
-            marginRight: 8,
+            marginRight: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: platformColor.icon }}>
-            {index + 1}
-          </Text>
+          <Ionicons name={getPlatformIcon(source.platform)} size={16} color={COLORS.textSecondary} />
         </View>
-        <Text style={{ fontSize: 13, color: COLORS.textMuted }}>
-          {source.platform}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: "600", color: COLORS.text }}>
+            {displayName}
+          </Text>
+          {username && (
+            <Pressable onPress={handleCopyUsername} style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={{ fontSize: 14, color: COLORS.link }}>
+                @{username.replace(/^@/, "")}
+              </Text>
+              {copiedUsername && (
+                <Ionicons name="checkmark" size={12} color={COLORS.success} style={{ marginLeft: 4 }} />
+              )}
+            </Pressable>
+          )}
+        </View>
         {stats?.isVerifiedAccount && (
-          <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
-            <Ionicons name="checkmark-circle" size={14} color="#1DA1F2" />
-            <Text style={{ fontSize: 11, color: "#1DA1F2", marginLeft: 2 }}>Verified</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="checkmark-circle" size={16} color="#1DA1F2" />
           </View>
         )}
       </View>
 
-      {/* Profile Card */}
-      <View
-        style={{
-          backgroundColor: COLORS.surface,
-          borderRadius: 16,
-          overflow: "hidden",
-          maxWidth: "90%",
-        }}
-      >
-        {/* Profile Header */}
-        <View style={{ padding: 14 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            {/* Profile Image */}
-            {stats?.profileImageUrl ? (
-              <Image
-                source={{ uri: stats.profileImageUrl }}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: COLORS.surfaceHover,
-                }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: platformColor.bg,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name={getSourceIcon(source.platform)} size={22} color={platformColor.icon} />
-              </View>
-            )}
-
-            {/* Name and Username */}
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "600",
-                  color: COLORS.text,
-                }}
-                numberOfLines={1}
-              >
-                {displayName}
-              </Text>
-              {username && (
-                <Pressable onPress={handleCopyUsername} style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
-                  <Text style={{ fontSize: 14, color: COLORS.link }}>
-                    @{username.replace(/^@/, "")}
-                  </Text>
-                  <Ionicons
-                    name={copiedUsername ? "checkmark" : "copy-outline"}
-                    size={12}
-                    color={copiedUsername ? COLORS.green : COLORS.textMuted}
-                    style={{ marginLeft: 6 }}
-                  />
-                </Pressable>
-              )}
-              {source.url && (
-                <Text style={{ fontSize: 11, color: COLORS.green, marginTop: 2 }} numberOfLines={1}>
-                  {getDomainFromUrl(source.url)}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Bio */}
-          {bio && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: COLORS.textSecondary,
-                lineHeight: 18,
-                marginTop: 12,
-              }}
-              numberOfLines={3}
-            >
-              {bio}
-            </Text>
-          )}
-
-          {/* Stats */}
-          {hasStats && (
-            <View
-              style={{
-                flexDirection: "row",
-                marginTop: 12,
-                gap: 16,
-              }}
-            >
-              {stats.posts !== undefined && (
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.posts)}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: COLORS.textMuted }}>posts</Text>
-                </View>
-              )}
-              {stats.followers !== undefined && (
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.followers)}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: COLORS.textMuted }}>followers</Text>
-                </View>
-              )}
-              {stats.following !== undefined && (
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text }}>
-                    {formatNumber(stats.following)}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: COLORS.textMuted }}>following</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Relevant Details Tags */}
-          {source.relevantDetails.length > 0 && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
-              {source.relevantDetails.slice(0, 3).map((detail, i) => (
-                <View
-                  key={i}
-                  style={{
-                    backgroundColor: COLORS.background,
-                    paddingVertical: 4,
-                    paddingHorizontal: 8,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 11, color: COLORS.textSecondary }} numberOfLines={1}>
-                    {detail.length > 30 ? detail.slice(0, 30) + "..." : detail}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Action Buttons */}
-        <View
+      {/* Bio/Summary */}
+      {bio && (
+        <Text
           style={{
-            borderTopWidth: 1,
-            borderTopColor: COLORS.border,
-            padding: 12,
-            gap: 8,
+            fontSize: 15,
+            lineHeight: 22,
+            color: COLORS.textSecondary,
+            marginBottom: 8,
           }}
+          numberOfLines={3}
         >
-          {/* View Profile Button */}
-          {source.url && (
+          {bio}
+        </Text>
+      )}
+
+      {/* Stats */}
+      {statsStr && (
+        <Text style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 8 }}>
+          {statsStr}
+        </Text>
+      )}
+
+      {/* Relevant details as inline tags */}
+      {source.relevantDetails.length > 0 && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+          {source.relevantDetails.slice(0, 3).map((detail, i) => (
+            <Text
+              key={i}
+              style={{
+                fontSize: 12,
+                color: COLORS.textMuted,
+                backgroundColor: COLORS.buttonBg,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 4,
+              }}
+            >
+              {detail.length > 35 ? detail.slice(0, 35) + "..." : detail}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* Action row - view profile + verification */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {/* View profile link */}
+        {source.url && (
+          <Pressable
+            onPress={handlePress}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 6,
+              paddingHorizontal: 10,
+              borderRadius: 6,
+              backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
+            })}
+          >
+            <Ionicons name="open-outline" size={14} color={COLORS.link} />
+            <Text style={{ color: COLORS.link, fontSize: 13, marginLeft: 4 }}>
+              View
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Verification buttons */}
+        {showVerificationButtons && verificationStatus === "pending" && (
+          <>
             <Pressable
-              onPress={handlePress}
+              onPress={() => handleVerify(true)}
               style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: pressed ? COLORS.surfaceHover : "transparent",
-                borderWidth: 1,
-                borderColor: COLORS.border,
-                borderRadius: 10,
-                paddingVertical: 10,
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 6,
+                backgroundColor: pressed ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.1)",
               })}
             >
-              <Ionicons name="open-outline" size={16} color={COLORS.link} />
-              <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 6 }}>
-                View Profile
+              <Ionicons name="checkmark" size={14} color={COLORS.success} />
+              <Text style={{ color: COLORS.success, fontSize: 13, marginLeft: 4 }}>
+                This is them
               </Text>
             </Pressable>
-          )}
-
-          {/* Verification Buttons */}
-          {showVerificationButtons && verificationStatus === "pending" && (
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Pressable
-                onPress={() => handleVerify(false)}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: pressed ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.1)",
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                })}
-              >
-                <Ionicons name="close" size={16} color="#EF4444" />
-                <Text style={{ color: "#EF4444", fontSize: 13, fontWeight: "500", marginLeft: 4 }}>
-                  Not them
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleVerify(true)}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: pressed ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.1)",
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                })}
-              >
-                <Ionicons name="checkmark" size={16} color="#10B981" />
-                <Text style={{ color: "#10B981", fontSize: 13, fontWeight: "500", marginLeft: 4 }}>
-                  This is them
-                </Text>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Verification Status */}
-          {verificationStatus !== "pending" && (
-            <View
-              style={{
+            <Pressable
+              onPress={() => handleVerify(false)}
+              style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 6,
+                backgroundColor: pressed ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.1)",
+              })}
+            >
+              <Ionicons name="close" size={14} color={COLORS.error} />
+              <Text style={{ color: COLORS.error, fontSize: 13, marginLeft: 4 }}>
+                Not them
+              </Text>
+            </Pressable>
+          </>
+        )}
+
+        {/* Verification status indicator */}
+        {verificationStatus !== "pending" && (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name={verificationStatus === "verified" ? "checkmark-circle" : "close-circle"}
+              size={16}
+              color={verificationStatus === "verified" ? COLORS.success : COLORS.error}
+            />
+            <Text
+              style={{
+                color: verificationStatus === "verified" ? COLORS.success : COLORS.error,
+                fontSize: 13,
+                marginLeft: 4,
               }}
             >
-              <Ionicons
-                name={verificationStatus === "verified" ? "checkmark-circle" : "close-circle"}
-                size={18}
-                color={verificationStatus === "verified" ? "#10B981" : "#EF4444"}
-              />
-              <Text
-                style={{
-                  color: verificationStatus === "verified" ? "#10B981" : "#EF4444",
-                  fontSize: 13,
-                  fontWeight: "500",
-                  marginLeft: 6,
-                }}
-              >
-                {verificationStatus === "verified" ? "Confirmed as them" : "Not them"}
-              </Text>
-            </View>
-          )}
-        </View>
+              {verificationStatus === "verified" ? "Confirmed" : "Not them"}
+            </Text>
+          </View>
+        )}
       </View>
     </Animated.View>
   );
@@ -439,7 +301,7 @@ interface DeepSearchSummaryMessageProps {
 }
 
 /**
- * Summary message after verification
+ * Summary message - ChatGPT style
  */
 export function DeepSearchSummaryMessage({
   verifiedCount,
@@ -453,51 +315,50 @@ export function DeepSearchSummaryMessage({
   if (verifiedCount === 0) {
     summaryText = `None of the ${totalCount} profiles were confirmed as ${personName}. Would you like me to search again with different details?`;
   } else if (verifiedCount === 1) {
-    summaryText = `Got it! I confirmed 1 profile belongs to ${personName}. I can dig deeper into this profile if you would like.`;
+    summaryText = `Got it! I confirmed 1 profile belongs to ${personName}. I can dig deeper into this profile if you'd like.`;
   } else {
-    summaryText = `Got it! I confirmed ${verifiedCount} profiles belong to ${personName}. I can analyze these further if you would like.`;
+    summaryText = `Got it! I confirmed ${verifiedCount} profiles belong to ${personName}. I can analyze these further if you'd like.`;
   }
 
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
-      style={{ marginTop: 8, marginBottom: 8 }}
+      style={{ marginBottom: 24 }}
     >
-      <View
+      <Text
         style={{
-          backgroundColor: COLORS.background,
-          borderRadius: 16,
-          padding: 16,
-          maxWidth: "85%",
+          fontSize: 17,
+          lineHeight: 26,
+          color: COLORS.text,
+          letterSpacing: 0.2,
         }}
       >
-        <Text style={{ fontSize: 15, color: COLORS.text, lineHeight: 22 }}>
-          {summaryText}
-        </Text>
+        {summaryText}
+      </Text>
 
-        {verifiedCount > 0 && onDeepDive && (
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onDeepDive();
-            }}
-            style={({ pressed }) => ({
-              marginTop: 12,
-              backgroundColor: pressed ? COLORS.surfaceHover : COLORS.accent,
-              borderRadius: 10,
-              paddingVertical: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            })}
-          >
-            <Ionicons name="search" size={18} color="#fff" />
-            <Text style={{ color: "#fff", fontSize: 14, fontWeight: "600", marginLeft: 8 }}>
-              Deep Dive
-            </Text>
-          </Pressable>
-        )}
-      </View>
+      {verifiedCount > 0 && onDeepDive && (
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onDeepDive();
+          }}
+          style={({ pressed }) => ({
+            marginTop: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            alignSelf: "flex-start",
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
+          })}
+        >
+          <Ionicons name="search" size={16} color={COLORS.link} />
+          <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
+            Deep Dive
+          </Text>
+        </Pressable>
+      )}
     </Animated.View>
   );
 }
@@ -507,44 +368,44 @@ interface DeepSearchNoResultsMessageProps {
 }
 
 /**
- * Message when no results are found
+ * No results message - ChatGPT style
  */
 export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMessageProps) {
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
-      style={{ marginBottom: 8 }}
+      style={{ marginBottom: 24 }}
     >
-      <View
+      <Text
         style={{
-          backgroundColor: COLORS.background,
-          borderRadius: 16,
-          padding: 16,
-          maxWidth: "85%",
+          fontSize: 17,
+          lineHeight: 26,
+          color: COLORS.text,
+          letterSpacing: 0.2,
+          marginBottom: 16,
         }}
       >
-        <Text style={{ fontSize: 15, color: COLORS.text, lineHeight: 22 }}>
-          I was not able to find any public profiles for {personName}. This could mean:
-        </Text>
-        <View style={{ marginTop: 12, gap: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
-            <Text style={{ fontSize: 14, color: COLORS.textSecondary, flex: 1 }}>
-              They use a different name online
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
-            <Text style={{ fontSize: 14, color: COLORS.textSecondary, flex: 1 }}>
-              Their profiles are private
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
-            <Text style={{ fontSize: 14, color: COLORS.textSecondary, flex: 1 }}>
-              Additional details might help narrow the search
-            </Text>
-          </View>
+        I was not able to find any public profiles for <Text style={{ fontWeight: "600" }}>{personName}</Text>. This could mean:
+      </Text>
+
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
+          <Text style={{ fontSize: 15, lineHeight: 22, color: COLORS.textSecondary, flex: 1 }}>
+            They use a different name online
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
+          <Text style={{ fontSize: 15, lineHeight: 22, color: COLORS.textSecondary, flex: 1 }}>
+            Their profiles are set to private
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          <Text style={{ color: COLORS.textMuted, marginRight: 8 }}>•</Text>
+          <Text style={{ fontSize: 15, lineHeight: 22, color: COLORS.textSecondary, flex: 1 }}>
+            Additional details might help narrow the search
+          </Text>
         </View>
       </View>
     </Animated.View>
