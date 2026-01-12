@@ -6,6 +6,9 @@ import * as Clipboard from "expo-clipboard";
 import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { DeepSearchSource } from "../api/deepSearch";
 
+// Create AnimatedView explicitly to avoid undefined issues
+const AnimatedView = Animated.View;
+
 // Colors matching the app's ChatGPT-style aesthetic
 const COLORS = {
   text: "#EDEDED",
@@ -42,7 +45,7 @@ interface DeepSearchIntroMessageProps {
  */
 export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchIntroMessageProps) {
   return (
-    <Animated.View
+    <AnimatedView
       entering={FadeIn.duration(300)}
       style={{ marginBottom: 24 }}
     >
@@ -57,7 +60,7 @@ export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchI
         I found {totalResults} public profile{totalResults !== 1 ? "s" : ""} that may belong to{" "}
         <Text style={{ fontWeight: "600" }}>{personName}</Text>. Let me show you what I found so you can verify which ones are actually them.
       </Text>
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
@@ -124,7 +127,7 @@ export function DeepSearchProfileMessage({
   ].filter(Boolean).join(" · ");
 
   return (
-    <Animated.View
+    <AnimatedView
       entering={FadeInUp.duration(350).delay(index * 100)}
       style={{ marginBottom: 28 }}
     >
@@ -288,7 +291,7 @@ export function DeepSearchProfileMessage({
           </View>
         )}
       </View>
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
@@ -321,7 +324,7 @@ export function DeepSearchSummaryMessage({
   }
 
   return (
-    <Animated.View
+    <AnimatedView
       entering={FadeIn.duration(300)}
       style={{ marginBottom: 24 }}
     >
@@ -359,7 +362,7 @@ export function DeepSearchSummaryMessage({
           </Text>
         </Pressable>
       )}
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
@@ -372,7 +375,7 @@ interface DeepSearchNoResultsMessageProps {
  */
 export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMessageProps) {
   return (
-    <Animated.View
+    <AnimatedView
       entering={FadeIn.duration(300)}
       style={{ marginBottom: 24 }}
     >
@@ -408,7 +411,7 @@ export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMe
           </Text>
         </View>
       </View>
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
