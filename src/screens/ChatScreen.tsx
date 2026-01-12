@@ -1904,41 +1904,42 @@ export function ChatScreen({ navigation, route }: Props) {
           total={profileMsg.total}
           showVerificationButtons={profileMsg.verificationStatus === "pending"}
           onVerify={(isVerified) => {
-            // Update the verification status
+            // Update the verification status in store
             updateMessageInActiveLoop(message.id, {
               ...profileMsg,
               verificationStatus: isVerified ? "verified" : "rejected",
             } as DeepSearchProfileChatMessage);
 
-            // Check if all profiles have been verified/rejected
-            const allProfiles = decodeMessages.filter(
-              (m) => m.role === "deep-search-profile"
-            ) as DeepSearchProfileChatMessage[];
+            // Get fresh state from store after update
+            setTimeout(() => {
+              const activeLoop = getActiveLoop();
+              if (!activeLoop) return;
 
-            const updatedProfiles = allProfiles.map((p) =>
-              p.id === message.id
-                ? { ...p, verificationStatus: isVerified ? "verified" : "rejected" }
-                : p
-            );
+              const allProfilesInStore = activeLoop.messages.filter(
+                (m) => m.role === "deep-search-profile"
+              ) as DeepSearchProfileChatMessage[];
 
-            const pendingProfiles = updatedProfiles.filter(
-              (p) => p.verificationStatus === "pending"
-            );
-
-            // If all profiles are verified/rejected, show summary
-            if (pendingProfiles.length === 0) {
-              const verifiedProfiles = updatedProfiles.filter(
-                (p) => p.verificationStatus === "verified"
-              );
-              const rejectedProfiles = updatedProfiles.filter(
-                (p) => p.verificationStatus === "rejected"
+              // Update the current profile's status in our check
+              const updatedProfiles = allProfilesInStore.map((p) =>
+                p.id === message.id
+                  ? { ...p, verificationStatus: isVerified ? "verified" : "rejected" }
+                  : p
               );
 
-              const personContext = getPersonContextById(profileMsg.personContextId);
-              const personName = personContext?.name || "this person";
+              const pendingProfiles = updatedProfiles.filter(
+                (p) => p.verificationStatus === "pending"
+              );
 
-              // Add summary message after a short delay
-              setTimeout(() => {
+              // If all profiles are verified/rejected, show summary
+              if (pendingProfiles.length === 0) {
+                const verifiedProfiles = updatedProfiles.filter(
+                  (p) => p.verificationStatus === "verified"
+                );
+
+                const personContext = getPersonContextById(profileMsg.personContextId);
+                const personName = personContext?.name || "this person";
+
+                // Add summary message
                 const summaryMsg: DeepSearchSummaryChatMessage = {
                   id: `deep-search-summary-${Date.now()}`,
                   role: "deep-search-summary",
@@ -1947,8 +1948,8 @@ export function ChatScreen({ navigation, route }: Props) {
                   personName,
                   personContextId: profileMsg.personContextId,
                   verifiedCount: verifiedProfiles.length,
-                  rejectedCount: rejectedProfiles.length,
-                  totalCount: allProfiles.length,
+                  rejectedCount: updatedProfiles.length - verifiedProfiles.length,
+                  totalCount: allProfilesInStore.length,
                   verifiedSources: verifiedProfiles.map((p) => p.source),
                   mode: "understand",
                 };
@@ -1958,8 +1959,8 @@ export function ChatScreen({ navigation, route }: Props) {
                 setTimeout(() => {
                   decodeScrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 100);
-              }, 300);
-            }
+              }
+            }, 50); // Small delay to ensure store update is processed
           }}
         />
       );
