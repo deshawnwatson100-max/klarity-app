@@ -1219,6 +1219,15 @@ After user verifies profiles, the Deep Dive search uses ALL extracted data for b
 3. **Search Result Matching:**
    - Results marked as "High confidence" (username match) or "Medium" (name match)
    - Same clean inline style as initial search results
+   - **Match Reason** required - each result explains WHY it's the same person
+
+4. **Identity Verification (Deep Dive):**
+   Even with verified usernames, Deep Dive requires clear evidence before including new results:
+   - EXACT username match from verified profile (HIGH confidence)
+   - Username + consistent bio details (location, job match)
+   - Cross-linked accounts (profile A links to profile B)
+   - Same unique display name + location combination
+   - Excludes random profiles with similar usernames, common usernames, or guesses
 
 **Search Scope (All 9 Categories):**
 Deep Search performs multiple search passes covering all of the following areas:

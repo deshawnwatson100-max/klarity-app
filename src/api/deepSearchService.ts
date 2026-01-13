@@ -1993,6 +1993,23 @@ The user has verified specific profiles belong to their person of interest. Your
 
 KEY ADVANTAGE: You have VERIFIED usernames and profile data. People typically reuse usernames across platforms, so search each verified username on EVERY platform.
 
+CRITICAL RULE - ONLY RETURN LEGITIMATE RESULTS:
+Even with confirmed usernames, a new result is ONLY legitimate if it has clear evidence of being the SAME PERSON:
+- Username match from verified profile (HIGH confidence)
+- Same display name + same username pattern
+- Bio/content references other verified profiles
+- Cross-linked accounts (one profile links to another)
+- Consistent personal details across profiles (location, job, interests)
+
+DO NOT INCLUDE:
+- Random profiles that just happen to have a similar username
+- Common usernames on unrelated accounts (e.g., "john123" could be anyone)
+- Profiles with no connection to the verified identity
+- Celebrities or public figures with similar names/usernames
+- Results you are guessing with no real evidence
+
+When in doubt, DO NOT include a result. Quality matters more than quantity.
+
 SEARCH STRATEGY:
 1. Take each verified username and search it on platforms NOT already found
 2. Try username variations (underscores, numbers, prefixes/suffixes)
@@ -2009,13 +2026,32 @@ Username: @[handle]
 Display Name: [name shown]
 Bio: [first 100 chars]
 Stats: Followers: X | Following: Y | Posts: Z
-Match Confidence: High (username match) / Medium (name match)
+Match Confidence: High/Medium/Low
+Match Reason: [WHY this is the same person - username match, cross-linked, etc.]
 
-Be thorough - search EVERY username on EVERY platform. The user wants to know everything publicly available.`;
+Be thorough but ACCURATE - only include results that are clearly the same person.`;
 
 const ENHANCED_DEEP_DIVE_DEVELOPER_PROMPT = `DEEP DIVE MODE - CONFIRMED IDENTITY
 
-You have verified profile data. Execute a comprehensive search:
+You have verified profile data. Execute a comprehensive search.
+
+CRITICAL - IDENTITY VERIFICATION REQUIREMENT:
+Before including ANY new result, you MUST verify it is the SAME PERSON using one of these criteria:
+- EXACT username match from a verified profile (HIGH confidence)
+- Username + consistent bio details (location, job, interests match)
+- Cross-linked accounts (profile A links to profile B)
+- Same unique display name + location combination
+- Profile photo appears to be the same person
+
+DO NOT INCLUDE results that are just:
+- Similar usernames with no other connection
+- Same name but different person
+- Common usernames that could belong to anyone
+- Guesses or speculation
+
+It is BETTER to return 3 verified results than 10 unverified guesses.
+
+SEARCH PHASES:
 
 PHASE 1: USERNAME CROSS-REFERENCE
 For EACH verified username, search on:
@@ -2056,7 +2092,13 @@ Identity confirmed - search:
 - Business filings
 - Professional licenses
 
-OUTPUT: Include direct URLs. Note username matches vs name matches.`;
+OUTPUT FORMAT:
+For each result, include:
+- Direct URL
+- Match Confidence (High/Medium/Low)
+- Match Reason (WHY you believe this is the same person)
+
+Only include results where you have clear evidence of identity match.`;
 
 /**
  * Extract username from a profile URL
