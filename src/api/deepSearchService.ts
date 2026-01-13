@@ -109,7 +109,23 @@ CRITICAL SEARCH REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
    - Include the actual search query used for each result
    - If a search returns no results, note that and CONTINUE to the next search
 
-4. FOR EACH PROFILE FOUND - EXTRACT THESE DETAILS:
+4. CRITICAL: IDENTITY VERIFICATION FOR RESULTS
+   A result is ONLY LEGITIMATE if it meets these criteria:
+   - The profile has AT LEAST 2 matching identifiers from the search context
+   - Valid matching combinations include:
+     * Same name + same city/location
+     * Same name + same workplace/school
+     * Same username + same name
+     * Same name + same age range
+     * Same username + profile photo matches description provided
+   - DO NOT INCLUDE:
+     * Random people with the same name but no other matches
+     * Celebrities or public figures with similar names
+     * Profiles where only the first OR last name matches
+     * Search result pages (only direct profile links)
+   - If a result has ONLY a name match with NO corroborating info, EXCLUDE IT
+
+5. FOR EACH PROFILE FOUND - EXTRACT THESE DETAILS:
    When you find a social media profile, LOOK AT THE PAGE and extract:
    - Username/handle (e.g., @johndoe)
    - Display name shown on profile
@@ -119,11 +135,12 @@ CRITICAL SEARCH REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
    - Post/tweet/video count (format: "Posts: 120")
    - Whether account is verified (has blue checkmark)
    - Profile picture description (briefly describe what you see)
+   - WHY YOU BELIEVE THIS IS THE SAME PERSON (list matching identifiers)
 
    IMPORTANT: Actually visit the profile pages and read the stats shown on them.
    Do not guess - only report numbers you actually see on the profile.
 
-5. OUTPUT FORMAT FOR EACH RESULT:
+6. OUTPUT FORMAT FOR EACH RESULT:
    **Platform Name**
    URL: [direct profile link]
    Username: @[handle]
@@ -132,13 +149,16 @@ CRITICAL SEARCH REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
    Followers: [number] | Following: [number] | Posts: [number]
    Verified: Yes/No
    Profile Photo: [brief description]
+   Match Confidence: [High/Medium/Low] - [explain what identifiers match]
 
-6. DO NOT:
+7. DO NOT:
    - Stop after 1-3 searches
    - Claim you "searched comprehensively" without actually doing multiple searches
    - Skip platform-targeted searches
    - Return results without executing the minimum required searches
    - Make up follower counts or stats - only report what you actually see
+   - Include results that are just "same name" with no other matching details
+   - Include obviously wrong results just to have something to show
 
 BEGIN YOUR ${MIN_SEARCHES_REQUIRED}+ SEARCHES NOW:
 `;
@@ -1280,7 +1300,15 @@ Results: [what you found]
 You are NOT allowed to stop after one search. You MUST execute at least ${MIN_SEARCHES_REQUIRED} different search queries.
 Each search should target different information: name variations, locations, specific platforms, usernames, etc.
 Report what each individual search found. Include actual URLs when available.
-DO NOT make up or hallucinate information - only report what you actually find.`,
+
+CRITICAL ACCURACY REQUIREMENTS:
+- DO NOT make up or hallucinate information - only report what you actually find
+- DO NOT include results that are just "similar names" - the result must have STRONG EVIDENCE it is the same person
+- A result is LEGITIMATE only if it has at least 2 matching identifiers (e.g., same name + same location, same name + same workplace, same username + same photo, etc.)
+- If you find a profile with ONLY a matching name but NO other corroborating details, mark it as "Possible match - unverified" or EXCLUDE it entirely
+- NEVER include celebrities, public figures, or random people who happen to have the same name
+- When in doubt, DO NOT include the result - quality over quantity
+- Always verify the URL is a direct profile link, not just a search results page`,
           },
           {
             role: "user",

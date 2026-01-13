@@ -1368,6 +1368,23 @@ Query variations used:
 - Each known username independently
 - Aliases if provided
 
+**Identity Verification (Prevents False Positives):**
+Deep Search now requires **2+ matching identifiers** before including any result. This prevents returning random people who just happen to have the same name:
+
+- **Required matches** - Results must have at least 2 of:
+  - Same name + same city/location
+  - Same name + same workplace/school
+  - Same username + same name
+  - Same name + matching age range
+  - Same username + photo matching description
+- **Excluded automatically**:
+  - Results with ONLY a name match (too common)
+  - Celebrities or public figures with similar names
+  - Profiles where only first OR last name matches
+  - Search result pages (only direct profile links accepted)
+- **Match Reason** - Each result now includes an explanation of WHY it was included (what identifiers matched)
+- **Quality over quantity** - Better to return 2 verified results than 10 unverified guesses
+
 **Multi-Search Enforcement (Prevents Shallow Searching):**
 Deep Search is configured to REQUIRE multiple distinct web searches per request:
 - **Minimum 10 searches** required per search pass
