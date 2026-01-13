@@ -37,6 +37,8 @@ export type MessageRole =
   | "deep-search-profile"
   | "deep-search-summary"
   | "deep-search-no-results"
+  | "deep-dive-evaluation"
+  | "deep-dive-follow-up"
   | "chat-loading"
   | "response-prompt";
 
@@ -358,6 +360,31 @@ export interface DeepSearchNoResultsChatMessage extends Message {
   personName: string;
 }
 
+// Deep Dive Collaborative Flow Types
+export type DeepDiveResultQuality = "strong" | "moderate" | "weak" | "no_results";
+
+export interface DeepDiveEvaluationMessage extends Message {
+  role: "deep-dive-evaluation";
+  personName: string;
+  personContextId: string;
+  resultQuality: DeepDiveResultQuality;
+  sourcesCount: number;
+  acknowledgmentText: string;
+  suggestFollowUp: boolean;
+  followUpReason?: string;
+  missingDataTypes?: string[]; // e.g., ["location", "username", "workplace"]
+}
+
+export interface DeepDiveFollowUpMessage extends Message {
+  role: "deep-dive-follow-up";
+  personName: string;
+  personContextId: string;
+  question: string;
+  dataType: string; // e.g., "username", "location", "workplace"
+  placeholder?: string;
+  isOptional?: boolean;
+}
+
 export type ChatLoadingType = "chat" | "deep-search";
 export type ChatLoadingState = "loading" | "success" | "error" | "cancelled";
 
@@ -412,5 +439,7 @@ export type ChatMessage =
   | DeepSearchProfileChatMessage
   | DeepSearchSummaryChatMessage
   | DeepSearchNoResultsChatMessage
+  | DeepDiveEvaluationMessage
+  | DeepDiveFollowUpMessage
   | ChatLoadingMessage
   | ResponsePromptMessage;

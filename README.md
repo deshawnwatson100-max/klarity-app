@@ -1650,6 +1650,52 @@ After the user submits the Deep Search input, results are displayed as a collabo
 
 This chat-based format makes the search feel like a collaborative effort where the user is involved at every step, rather than waiting for a final result card.
 
+### NEW: Deep Dive Collaborative Trust Flow
+After running a Deep Dive search, the AI now evaluates results and builds trust through a collaborative process:
+
+#### How it Works
+1. **Results Evaluation** - AI analyzes search results and categorizes quality as:
+   - **Strong** - Found solid information across multiple source types
+   - **Moderate** - Found some info, but could find more with additional details
+   - **Weak** - Found very little, common with uncommon names or limited online presence
+   - **No Results** - Could not find public information
+
+2. **Acknowledgment Bubble** - After results, AI shows an evaluation with:
+   - Quality indicator pill (green/blue/yellow/red based on quality)
+   - Source count
+   - Transparent acknowledgment of what was found
+   - Reason for limited results (if applicable)
+   - Missing data types that could help
+
+3. **Follow-Up Options** - If results are limited, users can:
+   - **Add more details** - Opens follow-up card for additional info
+   - **Continue with these** - Accept current results and move on
+
+4. **Follow-Up Card** - Intelligent data collection:
+   - Asks prioritized questions based on what's missing
+   - Data types: username, location, workplace, school, age
+   - Input appears inline in chat
+   - "Search again" re-runs with new info
+   - "Skip for now" dismisses the card
+
+5. **Iterative Search** - When user provides more info:
+   - New search runs with enriched context
+   - New results evaluated
+   - Process can repeat until user is satisfied
+
+#### Trust-Building Elements
+- **Transparency** - AI honestly reports result quality
+- **Collaboration** - User participates in improving results
+- **No pressure** - "Continue with these" always available
+- **Clear reasoning** - Explains why more info helps
+
+#### Files
+- `src/types/chat.ts` - DeepDiveEvaluationMessage, DeepDiveFollowUpMessage types
+- `src/components/DeepDiveEvaluationBubble.tsx` - Quality indicator and follow-up options
+- `src/components/DeepDiveFollowUpCard.tsx` - Inline data collection card
+- `src/api/deepSearchService.ts` - evaluateDeepDiveResults(), getBestFollowUpQuestion(), executeDeepDiveWithAdditionalInfo()
+- `src/screens/ChatScreen.tsx` - Integration and message rendering
+
 The suggestion card does NOT auto-run Deep Search. It waits for user to choose to run it.
 
 **Auto-Trigger Flow:**

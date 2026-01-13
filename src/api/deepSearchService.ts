@@ -2449,3 +2449,228 @@ export function formatDeepSearchForChat(result: DeepSearchResult): string {
 
   return output;
 }
+
+// ============================================================================
+// DEEP DIVE RESULT EVALUATION - Collaborative Trust Flow
+// ============================================================================
+
+import { DeepDiveResultQuality } from "../types/chat";
+
+/**
+ * Evaluation result for deep dive search
+ * Used to determine if AI should ask for more info
+ */
+export interface DeepDiveEvaluation {
+  quality: DeepDiveResultQuality;
+  sourcesCount: number;
+  verifiedSourcesCount: number;
+  acknowledgmentText: string;
+  suggestFollowUp: boolean;
+  followUpReason?: string;
+  missingDataTypes: string[];
+  confidence: number; // 0-100
+}
+
+/**
+ * Data types that can improve search results
+ */
+const HELPFUL_DATA_TYPES = [
+  { type: "username", weight: 5, label: "username or social handle" },
+  { type: "location", weight: 4, label: "location" },
+  { type: "workplace", weight: 3, label: "workplace" },
+  { type: "school", weight: 2, label: "school" },
+  { type: "age", weight: 1, label: "age range" },
+];
+
+/**
+ * Evaluates deep dive results and generates collaborative response
+ * This is the core of the trust-building flow - being transparent about results
+ */
+export function evaluateDeepDiveResults(
+  result: DeepSearchResult,
+  personContext: PersonContext,
+  verifiedSourcesCount: number = 0
+): DeepDiveEvaluation {
+  const sourcesCount = result.sources.length;
+  const hasUrls = result.sources.filter(s => s.url).length;
+  const uniqueCategories = new Set(result.sources.map(s => s.type)).size;
+
+  // Determine result quality
+  let quality: DeepDiveResultQuality;
+  let confidence: number;
+
+  if (sourcesCount === 0) {
+    quality = "no_results";
+    confidence = 0;
+  } else if (hasUrls >= 4 && uniqueCategories >= 3) {
+    quality = "strong";
+    confidence = 85;
+  } else if (hasUrls >= 2 && uniqueCategories >= 2) {
+    quality = "moderate";
+    confidence = 60;
+  } else {
+    quality = "weak";
+    confidence = 30;
+  }
+
+  // Determine what data is missing that could help
+  const missingDataTypes: string[] = [];
+
+  // Check what data we have vs what could help
+  const hasUsername = !!(personContext.knownUsername || personContext.extendedContext?.knownAliases?.length);
+  const hasLocation = !!personContext.location;
+  const hasWorkplace = !!personContext.extendedContext?.professionalInfo;
+  const hasAge = !!personContext.approximateAge;
+
+  if (!hasUsername) missingDataTypes.push("username");
+  if (!hasLocation) missingDataTypes.push("location");
+  if (!hasWorkplace && quality !== "strong") missingDataTypes.push("workplace");
+  if (!hasAge && quality === "weak") missingDataTypes.push("age");
+
+  // Generate acknowledgment text based on quality
+  const personName = personContext.name;
+  let acknowledgmentText: string;
+  let suggestFollowUp = false;
+  let followUpReason: string | undefined;
+
+  switch (quality) {
+    case "strong":
+      acknowledgmentText = `I found solid information on ${personName}. Here's what I discovered across ${uniqueCategories} different sources.`;
+      suggestFollowUp = false;
+      break;
+
+    case "moderate":
+      acknowledgmentText = `I found some information on ${personName}, but the results are limited. I could find more with additional details.`;
+      suggestFollowUp = missingDataTypes.length > 0;
+      followUpReason = missingDataTypes.length > 0
+        ? "Having more context often helps narrow down the right person and find additional profiles."
+        : undefined;
+      break;
+
+    case "weak":
+      acknowledgmentText = `I found very little on ${personName}. This happens when someone has a common name or limited online presence.`;
+      suggestFollowUp = true;
+      followUpReason = "A few more details would help me search more effectively and rule out false matches.";
+      break;
+
+    case "no_results":
+      acknowledgmentText = `I was not able to find public information on ${personName}. This could mean they use a different name online, have private accounts, or have minimal digital footprint.`;
+      suggestFollowUp = true;
+      followUpReason = "If you have any other details—even partial ones—I can try a more targeted search.";
+      break;
+  }
+
+  return {
+    quality,
+    sourcesCount,
+    verifiedSourcesCount,
+    acknowledgmentText,
+    suggestFollowUp,
+    followUpReason,
+    missingDataTypes,
+    confidence,
+  };
+}
+
+/**
+ * Determines the best follow-up question to ask based on what's missing
+ */
+export function getBestFollowUpQuestion(
+  missingDataTypes: string[],
+  personContext: PersonContext
+): { dataType: string; question: string; placeholder: string } | null {
+  if (missingDataTypes.length === 0) return null;
+
+  // Prioritize by how helpful each data type is
+  const prioritized = missingDataTypes.sort((a, b) => {
+    const aWeight = HELPFUL_DATA_TYPES.find(d => d.type === a)?.weight || 0;
+    const bWeight = HELPFUL_DATA_TYPES.find(d => d.type === b)?.weight || 0;
+    return bWeight - aWeight;
+  });
+
+  const bestType = prioritized[0];
+  const personName = personContext.name;
+
+  // Generate context-aware question
+  const questions: Record<string, { question: string; placeholder: string }> = {
+    username: {
+      question: `Do you know any usernames or handles ${personName} uses online?`,
+      placeholder: "e.g., @johndoe, john_doe123",
+    },
+    location: {
+      question: `Do you know where ${personName} lives or is from?`,
+      placeholder: "e.g., Los Angeles, CA or Chicago area",
+    },
+    workplace: {
+      question: `Do you know where ${personName} works or what they do?`,
+      placeholder: "e.g., works at Google, is a nurse",
+    },
+    school: {
+      question: `Do you know what school ${personName} went to?`,
+      placeholder: "e.g., UCLA, graduated 2020",
+    },
+    age: {
+      question: `Do you have an idea of ${personName}'s age?`,
+      placeholder: "e.g., mid 20s, around 35",
+    },
+  };
+
+  return {
+    dataType: bestType,
+    ...questions[bestType] || {
+      question: `Is there anything else you know about ${personName}?`,
+      placeholder: "Any detail helps...",
+    },
+  };
+}
+
+/**
+ * Generates a re-search with additional context provided by user
+ */
+export async function executeDeepDiveWithAdditionalInfo(
+  personContext: PersonContext,
+  additionalInfo: { dataType: string; value: string },
+  verifiedSources: DeepSearchSource[],
+  onProgress?: (status: string) => void
+): Promise<DeepSearchResponse> {
+  // Merge additional info into person context for search
+  const enrichedContext: PersonContext = {
+    ...personContext,
+    extendedContext: { ...personContext.extendedContext },
+  };
+
+  switch (additionalInfo.dataType) {
+    case "username":
+      enrichedContext.knownUsername = additionalInfo.value;
+      if (!enrichedContext.extendedContext) enrichedContext.extendedContext = {};
+      if (!enrichedContext.extendedContext.knownAliases) enrichedContext.extendedContext.knownAliases = [];
+      enrichedContext.extendedContext.knownAliases.push(additionalInfo.value);
+      break;
+    case "location":
+      enrichedContext.location = additionalInfo.value;
+      break;
+    case "workplace":
+      if (!enrichedContext.extendedContext) enrichedContext.extendedContext = {};
+      enrichedContext.extendedContext.professionalInfo = additionalInfo.value;
+      break;
+    case "school":
+      // Add to professional info
+      if (!enrichedContext.extendedContext) enrichedContext.extendedContext = {};
+      enrichedContext.extendedContext.professionalInfo = enrichedContext.extendedContext.professionalInfo
+        ? `${enrichedContext.extendedContext.professionalInfo}, ${additionalInfo.value}`
+        : additionalInfo.value;
+      break;
+    case "age":
+      enrichedContext.approximateAge = additionalInfo.value;
+      break;
+  }
+
+  onProgress?.(`Searching with ${additionalInfo.dataType}: ${additionalInfo.value}...`);
+
+  // Execute enhanced deep dive with the new info
+  return executeDeepDiveSearch({
+    personContext: enrichedContext,
+    verifiedSources,
+    onProgress,
+  });
+}

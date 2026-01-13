@@ -44,6 +44,8 @@ import {
   DeepSearchSummaryMessage,
   DeepSearchNoResultsMessage,
 } from "../components/DeepSearchChatBubble";
+import { DeepDiveEvaluationBubble } from "../components/DeepDiveEvaluationBubble";
+import { DeepDiveFollowUpCard } from "../components/DeepDiveFollowUpCard";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -61,7 +63,13 @@ import {
   generateDecodeResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
-import { executeDeepSearch, executeDeepDiveSearch } from "../api/deepSearchService";
+import {
+  executeDeepSearch,
+  executeDeepDiveSearch,
+  evaluateDeepDiveResults,
+  getBestFollowUpQuestion,
+  executeDeepDiveWithAdditionalInfo,
+} from "../api/deepSearchService";
 import {
   ChatMessage,
   TypingMessage,
@@ -82,6 +90,8 @@ import {
   DeepSearchProfileChatMessage,
   DeepSearchSummaryChatMessage,
   DeepSearchNoResultsChatMessage,
+  DeepDiveEvaluationMessage,
+  DeepDiveFollowUpMessage,
   ChatLoadingMessage,
   MessageMode,
 } from "../types/chat";
@@ -2012,7 +2022,14 @@ export function ChatScreen({ navigation, route }: Props) {
               removeMessageFromActiveLoop(loadingMsgId);
 
               if (result.success && result.result) {
-                // Show deep dive results
+                // Evaluate the results to determine quality and follow-up needs
+                const evaluation = evaluateDeepDiveResults(
+                  result.result,
+                  personContext,
+                  summaryMsg.verifiedCount
+                );
+
+                // Show deep dive results first
                 const resultMessage: DeepSearchResultMessage = {
                   id: `deep-dive-result-${Date.now()}`,
                   role: "deep-search-result",
@@ -2022,6 +2039,24 @@ export function ChatScreen({ navigation, route }: Props) {
                   mode: "understand",
                 };
                 addMessageToActiveLoopRaw(resultMessage);
+
+                // Then show evaluation bubble (collaborative trust flow)
+                const evaluationMessage: DeepDiveEvaluationMessage = {
+                  id: `deep-dive-eval-${Date.now()}`,
+                  role: "deep-dive-evaluation",
+                  content: "",
+                  timestamp: Date.now(),
+                  personName: summaryMsg.personName,
+                  personContextId: summaryMsg.personContextId,
+                  resultQuality: evaluation.quality,
+                  sourcesCount: evaluation.sourcesCount,
+                  acknowledgmentText: evaluation.acknowledgmentText,
+                  suggestFollowUp: evaluation.suggestFollowUp,
+                  followUpReason: evaluation.followUpReason,
+                  missingDataTypes: evaluation.missingDataTypes,
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(evaluationMessage);
               } else {
                 const errorMessage: ChatLoadingMessage = {
                   id: `deep-dive-error-${Date.now()}`,
@@ -2055,6 +2090,191 @@ export function ChatScreen({ navigation, route }: Props) {
               };
               addMessageToActiveLoopRaw(errorMessage);
             }
+          }}
+        />
+      );
+    }
+
+    // Deep Dive Evaluation Message - collaborative trust flow
+    if (message.role === "deep-dive-evaluation") {
+      const evalMsg = message as DeepDiveEvaluationMessage;
+      return (
+        <DeepDiveEvaluationBubble
+          key={message.id}
+          personName={evalMsg.personName}
+          resultQuality={evalMsg.resultQuality}
+          sourcesCount={evalMsg.sourcesCount}
+          acknowledgmentText={evalMsg.acknowledgmentText}
+          suggestFollowUp={evalMsg.suggestFollowUp}
+          followUpReason={evalMsg.followUpReason}
+          missingDataTypes={evalMsg.missingDataTypes}
+          onProvideMoreInfo={() => {
+            // Get the best follow-up question to ask
+            const personContext = getPersonContextById(evalMsg.personContextId);
+            if (!personContext) return;
+
+            const followUp = getBestFollowUpQuestion(
+              evalMsg.missingDataTypes || [],
+              personContext
+            );
+
+            if (followUp) {
+              // Add follow-up card
+              const followUpMessage: DeepDiveFollowUpMessage = {
+                id: `deep-dive-followup-${Date.now()}`,
+                role: "deep-dive-follow-up",
+                content: "",
+                timestamp: Date.now(),
+                personName: evalMsg.personName,
+                personContextId: evalMsg.personContextId,
+                question: followUp.question,
+                dataType: followUp.dataType,
+                placeholder: followUp.placeholder,
+                isOptional: true,
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(followUpMessage);
+
+              setTimeout(() => {
+                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            }
+          }}
+          onContinueWithResults={() => {
+            // User chooses to continue with current results
+            // Could add a confirmation message or just dismiss
+            console.log("[DeepDive] User continuing with current results");
+          }}
+        />
+      );
+    }
+
+    // Deep Dive Follow-Up Card - for collecting additional info
+    if (message.role === "deep-dive-follow-up") {
+      const followUpMsg = message as DeepDiveFollowUpMessage;
+      return (
+        <DeepDiveFollowUpCard
+          key={message.id}
+          personName={followUpMsg.personName}
+          dataType={followUpMsg.dataType}
+          customQuestion={followUpMsg.question}
+          placeholder={followUpMsg.placeholder}
+          isOptional={followUpMsg.isOptional}
+          onSubmit={async (value, dataType) => {
+            // Remove the follow-up card
+            removeMessageFromActiveLoop(message.id);
+
+            const personContext = getPersonContextById(followUpMsg.personContextId);
+            if (!personContext) return;
+
+            // Add loading message
+            const loadingMsgId = `deep-dive-retry-loading-${Date.now()}`;
+            const loadingMessage: ChatLoadingMessage = {
+              id: loadingMsgId,
+              role: "chat-loading",
+              content: "",
+              timestamp: Date.now(),
+              loadingType: "deep-search",
+              loadingState: "loading",
+              customAction: `Searching with ${dataType}: ${value}...`,
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(loadingMessage);
+
+            setTimeout(() => {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+            try {
+              // Find existing verified sources from the summary message
+              const summaryMessages = allMessages.filter(
+                (m) => m.role === "deep-search-summary"
+              ) as DeepSearchSummaryChatMessage[];
+              const latestSummary = summaryMessages[summaryMessages.length - 1];
+              const verifiedSources = latestSummary?.verifiedSources || [];
+
+              const result = await executeDeepDiveWithAdditionalInfo(
+                personContext,
+                { dataType, value },
+                verifiedSources,
+                (status) => console.log("[DeepDive Retry] Progress:", status)
+              );
+
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              if (result.success && result.result) {
+                // Evaluate the new results
+                const evaluation = evaluateDeepDiveResults(
+                  result.result,
+                  personContext,
+                  verifiedSources.length
+                );
+
+                // Show new results
+                const resultMessage: DeepSearchResultMessage = {
+                  id: `deep-dive-retry-result-${Date.now()}`,
+                  role: "deep-search-result",
+                  content: "",
+                  timestamp: Date.now(),
+                  searchResult: result.result,
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(resultMessage);
+
+                // Show new evaluation
+                const evaluationMessage: DeepDiveEvaluationMessage = {
+                  id: `deep-dive-retry-eval-${Date.now()}`,
+                  role: "deep-dive-evaluation",
+                  content: "",
+                  timestamp: Date.now(),
+                  personName: followUpMsg.personName,
+                  personContextId: followUpMsg.personContextId,
+                  resultQuality: evaluation.quality,
+                  sourcesCount: evaluation.sourcesCount,
+                  acknowledgmentText: evaluation.acknowledgmentText,
+                  suggestFollowUp: evaluation.suggestFollowUp,
+                  followUpReason: evaluation.followUpReason,
+                  missingDataTypes: evaluation.missingDataTypes,
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(evaluationMessage);
+              } else {
+                const errorMessage: ChatLoadingMessage = {
+                  id: `deep-dive-retry-error-${Date.now()}`,
+                  role: "chat-loading",
+                  content: "",
+                  timestamp: Date.now(),
+                  loadingType: "deep-search",
+                  loadingState: "error",
+                  errorMessage: result.error || "Search with additional info failed.",
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(errorMessage);
+              }
+
+              setTimeout(() => {
+                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            } catch (error) {
+              console.error("[DeepDive Retry] Error:", error);
+              removeMessageFromActiveLoop(loadingMsgId);
+
+              const errorMessage: ChatLoadingMessage = {
+                id: `deep-dive-retry-error-${Date.now()}`,
+                role: "chat-loading",
+                content: "",
+                timestamp: Date.now(),
+                loadingType: "deep-search",
+                loadingState: "error",
+                errorMessage: "Something went wrong. Please try again.",
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(errorMessage);
+            }
+          }}
+          onSkip={() => {
+            // Remove the follow-up card
+            removeMessageFromActiveLoop(message.id);
           }}
         />
       );
