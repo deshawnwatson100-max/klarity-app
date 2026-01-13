@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, Pressable, Keyboard, KeyboardAvoidingView, Platform } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import { View, Text, TextInput, Pressable, Keyboard, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -93,20 +87,32 @@ export function DeepDiveFollowUpCard({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(12);
-  const scale = useSharedValue(0.98);
+  // Use React Native's built-in Animated API
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+  const scale = useRef(new Animated.Value(0.98)).current;
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
-    scale.value = withSpring(1, { damping: 18, stiffness: 200 });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        damping: 15,
+        stiffness: 150,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        damping: 18,
+        stiffness: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-  }));
 
   // Get question config from predefined or use custom
   const questionConfig = FOLLOW_UP_QUESTIONS[dataType] || {
@@ -132,7 +138,13 @@ export function DeepDiveFollowUpCard({
   };
 
   return (
-    <Animated.View style={[{ marginBottom: 24 }, animatedStyle]}>
+    <Animated.View
+      style={{
+        marginBottom: 24,
+        opacity,
+        transform: [{ translateY }, { scale }],
+      }}
+    >
       <View
         style={{
           backgroundColor: "rgba(5, 6, 8, 0.95)",

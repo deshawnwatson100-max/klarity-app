@@ -1,12 +1,5 @@
-import React, { useEffect } from "react";
-import { View, Text, Pressable } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withDelay,
-} from "react-native-reanimated";
+import React, { useEffect, useRef } from "react";
+import { View, Text, Pressable, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { DeepDiveResultQuality } from "../types/chat";
@@ -50,29 +43,43 @@ export function DeepDiveEvaluationBubble({
   onProvideMoreInfo,
   onContinueWithResults,
 }: DeepDiveEvaluationBubbleProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(12);
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(8);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+  const buttonOpacity = useRef(new Animated.Value(0)).current;
+  const buttonTranslateY = useRef(new Animated.Value(8)).current;
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        damping: 15,
+        stiffness: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     // Stagger button animations
-    buttonOpacity.value = withDelay(300, withTiming(1, { duration: 350 }));
-    buttonTranslateY.value = withDelay(300, withSpring(0, { damping: 15, stiffness: 150 }));
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(buttonOpacity, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.spring(buttonTranslateY, {
+          toValue: 0,
+          damping: 15,
+          stiffness: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 300);
   }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonTranslateY.value }],
-  }));
 
   // Get quality indicator
   const getQualityIndicator = () => {
@@ -99,7 +106,13 @@ export function DeepDiveEvaluationBubble({
   };
 
   return (
-    <Animated.View style={[{ marginBottom: 24 }, animatedStyle]}>
+    <Animated.View
+      style={{
+        marginBottom: 24,
+        opacity,
+        transform: [{ translateY }],
+      }}
+    >
       {/* Quality indicator pill */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
         <View
@@ -174,7 +187,15 @@ export function DeepDiveEvaluationBubble({
           )}
 
           {/* Action buttons */}
-          <Animated.View style={[{ flexDirection: "row", gap: 10, flexWrap: "wrap" }, buttonAnimatedStyle]}>
+          <Animated.View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              flexWrap: "wrap",
+              opacity: buttonOpacity,
+              transform: [{ translateY: buttonTranslateY }],
+            }}
+          >
             {/* Provide more info button */}
             <Pressable
               onPress={() => {
