@@ -227,23 +227,6 @@ export function DeepDiveFollowUpCard({
             gap: 10,
           }}
         >
-          {/* Skip button */}
-          {isOptional && onSkip && (
-            <Pressable
-              onPress={handleSkip}
-              style={({ pressed }) => ({
-                paddingVertical: 8,
-                paddingHorizontal: 14,
-                borderRadius: 8,
-                backgroundColor: pressed ? COLORS.buttonBgHover : "transparent",
-              })}
-            >
-              <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
-                Skip for now
-              </Text>
-            </Pressable>
-          )}
-
           {/* Submit button */}
           <Pressable
             onPress={handleSubmit}
