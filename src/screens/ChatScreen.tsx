@@ -2176,8 +2176,19 @@ export function ChatScreen({ navigation, route }: Props) {
           }}
           onContinueWithResults={() => {
             // User chooses to continue with current results
-            // Could add a confirmation message or just dismiss
-            console.log("[DeepDive] User continuing with current results");
+            // Add a confirmation message to the chat
+            const confirmMessage: ChatMessage = {
+              id: `continue-confirm-${Date.now()}`,
+              role: "assistant",
+              content: `Got it! I'll keep what I found about ${evalMsg.personName} in mind as we continue our conversation. Feel free to ask me anything about them or share more context anytime.`,
+              timestamp: Date.now(),
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(confirmMessage);
+
+            setTimeout(() => {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
           }}
         />
       );

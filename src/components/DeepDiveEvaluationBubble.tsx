@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -43,6 +43,7 @@ export function DeepDiveEvaluationBubble({
   onProvideMoreInfo,
   onContinueWithResults,
 }: DeepDiveEvaluationBubbleProps) {
+  const [buttonsHidden, setButtonsHidden] = useState(false);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
@@ -187,42 +188,22 @@ export function DeepDiveEvaluationBubble({
           )}
 
           {/* Action buttons */}
-          <Animated.View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-              flexWrap: "wrap",
-              opacity: buttonOpacity,
-              transform: [{ translateY: buttonTranslateY }],
-            }}
-          >
-            {/* Provide more info button */}
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                onProvideMoreInfo?.();
-              }}
-              style={({ pressed }) => ({
+          {!buttonsHidden && (
+            <Animated.View
+              style={{
                 flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 10,
-                paddingHorizontal: 14,
-                borderRadius: 8,
-                backgroundColor: pressed ? "rgba(96, 165, 250, 0.2)" : "rgba(96, 165, 250, 0.12)",
-              })}
+                gap: 10,
+                flexWrap: "wrap",
+                opacity: buttonOpacity,
+                transform: [{ translateY: buttonTranslateY }],
+              }}
             >
-              <Ionicons name="add-circle-outline" size={16} color={COLORS.link} />
-              <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 6 }}>
-                Add more details
-              </Text>
-            </Pressable>
-
-            {/* Continue with current results button (only if we have some results) */}
-            {resultQuality !== "no_results" && onContinueWithResults && (
+              {/* Provide more info button */}
               <Pressable
                 onPress={() => {
-                  Haptics.selectionAsync();
-                  onContinueWithResults();
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setButtonsHidden(true);
+                  onProvideMoreInfo?.();
                 }}
                 style={({ pressed }) => ({
                   flexDirection: "row",
@@ -230,16 +211,40 @@ export function DeepDiveEvaluationBubble({
                   paddingVertical: 10,
                   paddingHorizontal: 14,
                   borderRadius: 8,
-                  backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
+                  backgroundColor: pressed ? "rgba(96, 165, 250, 0.2)" : "rgba(96, 165, 250, 0.12)",
                 })}
               >
-                <Ionicons name="arrow-forward-outline" size={16} color={COLORS.textSecondary} />
-                <Text style={{ color: COLORS.textSecondary, fontSize: 14, marginLeft: 6 }}>
-                  Continue with these
+                <Ionicons name="add-circle-outline" size={16} color={COLORS.link} />
+                <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 6 }}>
+                  Add more details
                 </Text>
               </Pressable>
-            )}
-          </Animated.View>
+
+              {/* Continue with current results button (only if we have some results) */}
+              {resultQuality !== "no_results" && onContinueWithResults && (
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setButtonsHidden(true);
+                    onContinueWithResults();
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    paddingHorizontal: 14,
+                    borderRadius: 8,
+                    backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
+                  })}
+                >
+                  <Ionicons name="arrow-forward-outline" size={16} color={COLORS.textSecondary} />
+                  <Text style={{ color: COLORS.textSecondary, fontSize: 14, marginLeft: 6 }}>
+                    Continue with these
+                  </Text>
+                </Pressable>
+              )}
+            </Animated.View>
+          )}
         </View>
       )}
     </Animated.View>
