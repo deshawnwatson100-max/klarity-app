@@ -149,8 +149,6 @@ export function DeepDiveFollowUpCard({
         style={{
           backgroundColor: "rgba(5, 6, 8, 0.95)",
           borderRadius: 16,
-          borderWidth: 1,
-          borderColor: isFocused ? COLORS.inputBorderFocus : COLORS.inputBorder,
           overflow: "hidden",
         }}
       >
