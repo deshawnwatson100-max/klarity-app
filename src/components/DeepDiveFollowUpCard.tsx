@@ -147,7 +147,6 @@ export function DeepDiveFollowUpCard({
     >
       <View
         style={{
-          backgroundColor: "rgba(5, 6, 8, 0.95)",
           borderRadius: 16,
           overflow: "hidden",
         }}
