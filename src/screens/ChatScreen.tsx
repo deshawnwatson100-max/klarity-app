@@ -153,6 +153,7 @@ export function ChatScreen({ navigation, route }: Props) {
   // Person context for Deep Search
   const activeLoopPersonContextId = useActiveLoopPersonContextId();
   const getPersonContextById = usePersonContextStore((s) => s.getPersonContextById);
+  const updatePersonContext = usePersonContextStore((s) => s.updatePersonContext);
   const activePersonContext = activeLoopPersonContextId
     ? getPersonContextById(activeLoopPersonContextId)
     : null;
@@ -1986,6 +1987,39 @@ export function ChatScreen({ navigation, route }: Props) {
           rejectedCount={summaryMsg.rejectedCount}
           totalCount={summaryMsg.totalCount}
           personName={summaryMsg.personName}
+          onSearchAgain={() => {
+            // When no profiles verified, allow searching with different details
+            const personContext = getPersonContextById(summaryMsg.personContextId);
+            if (!personContext) return;
+
+            // Show follow-up card to collect additional info
+            const followUp = getBestFollowUpQuestion(
+              ["username", "location", "workplace", "school", "relationship"],
+              personContext
+            );
+
+            if (followUp) {
+              const followUpMessage: DeepDiveFollowUpMessage = {
+                id: `search-again-followup-${Date.now()}`,
+                role: "deep-dive-follow-up",
+                content: "",
+                timestamp: Date.now(),
+                personName: summaryMsg.personName,
+                personContextId: summaryMsg.personContextId,
+                question: followUp.question,
+                dataType: followUp.dataType,
+                placeholder: followUp.placeholder,
+                isOptional: false,
+                isSearchAgain: true, // Flag to indicate this is a fresh search, not deep dive
+                mode: "understand",
+              };
+              addMessageToActiveLoopRaw(followUpMessage);
+
+              setTimeout(() => {
+                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            }
+          }}
           onDeepDive={async () => {
             // Get verified sources and run deep dive
             const personContext = getPersonContextById(summaryMsg.personContextId);
@@ -2167,8 +2201,29 @@ export function ChatScreen({ navigation, route }: Props) {
             const personContext = getPersonContextById(followUpMsg.personContextId);
             if (!personContext) return;
 
+            // Update person context with the new info
+            const updateData: Record<string, string> = {};
+            if (dataType === "username") updateData.knownUsername = value;
+            if (dataType === "location") updateData.location = value;
+            if (dataType === "workplace" || dataType === "school" || dataType === "relationship") {
+              // Add to extended context
+              const existingContext = personContext.extendedContext || "";
+              updateData.extendedContext = existingContext
+                ? `${existingContext}\n${dataType}: ${value}`
+                : `${dataType}: ${value}`;
+            }
+            if (dataType === "age") updateData.approximateAge = value;
+
+            if (Object.keys(updateData).length > 0) {
+              updatePersonContext(followUpMsg.personContextId, updateData);
+            }
+
+            // Get updated person context after the update
+            const updatedPersonContext = getPersonContextById(followUpMsg.personContextId);
+            if (!updatedPersonContext) return;
+
             // Add loading message
-            const loadingMsgId = `deep-dive-retry-loading-${Date.now()}`;
+            const loadingMsgId = `search-retry-loading-${Date.now()}`;
             const loadingMessage: ChatLoadingMessage = {
               id: loadingMsgId,
               role: "chat-loading",
@@ -2176,7 +2231,9 @@ export function ChatScreen({ navigation, route }: Props) {
               timestamp: Date.now(),
               loadingType: "deep-search",
               loadingState: "loading",
-              customAction: `Searching with ${dataType}: ${value}...`,
+              customAction: followUpMsg.isSearchAgain
+                ? `Searching for ${followUpMsg.personName} with ${dataType}: ${value}...`
+                : `Searching with ${dataType}: ${value}...`,
               mode: "understand",
             };
             addMessageToActiveLoopRaw(loadingMessage);
@@ -2186,81 +2243,149 @@ export function ChatScreen({ navigation, route }: Props) {
             }, 100);
 
             try {
-              // Find existing verified sources from the summary message
-              const summaryMessages = allMessages.filter(
-                (m) => m.role === "deep-search-summary"
-              ) as DeepSearchSummaryChatMessage[];
-              const latestSummary = summaryMessages[summaryMessages.length - 1];
-              const verifiedSources = latestSummary?.verifiedSources || [];
+              // If this is a "search again" flow (no verified sources), run fresh search
+              if (followUpMsg.isSearchAgain) {
+                const result = await executeDeepSearch({
+                  personContext: updatedPersonContext,
+                  onProgress: (status) => console.log("[Search Again] Progress:", status),
+                });
 
-              const result = await executeDeepDiveWithAdditionalInfo(
-                personContext,
-                { dataType, value },
-                verifiedSources,
-                (status) => console.log("[DeepDive Retry] Progress:", status)
-              );
+                removeMessageFromActiveLoop(loadingMsgId);
 
-              removeMessageFromActiveLoop(loadingMsgId);
+                if (result.success && result.result) {
+                  const sources = result.result.sources || [];
 
-              if (result.success && result.result) {
-                // Evaluate the new results
-                const evaluation = evaluateDeepDiveResults(
-                  result.result,
-                  personContext,
-                  verifiedSources.length
+                  if (sources.length === 0) {
+                    // No results found
+                    const noResultsMessage: DeepSearchNoResultsChatMessage = {
+                      id: `deep-search-no-results-${Date.now()}`,
+                      role: "deep-search-no-results",
+                      content: "",
+                      timestamp: Date.now(),
+                      personName: followUpMsg.personName,
+                      mode: "understand",
+                    };
+                    addMessageToActiveLoopRaw(noResultsMessage);
+                  } else {
+                    // Show intro message
+                    const introMessage: DeepSearchIntroMessage = {
+                      id: `deep-search-intro-${Date.now()}`,
+                      role: "deep-search-intro",
+                      content: "",
+                      timestamp: Date.now(),
+                      personName: followUpMsg.personName,
+                      totalResults: sources.length,
+                      mode: "understand",
+                    };
+                    addMessageToActiveLoopRaw(introMessage);
+
+                    // Add profile messages for each source
+                    sources.forEach((source, index) => {
+                      const profileMsg: DeepSearchProfileChatMessage = {
+                        id: `deep-search-profile-${Date.now()}-${index}`,
+                        role: "deep-search-profile",
+                        content: "",
+                        timestamp: Date.now() + index,
+                        source,
+                        index,
+                        total: sources.length,
+                        personContextId: followUpMsg.personContextId,
+                        verificationStatus: "pending",
+                        mode: "understand",
+                      };
+                      addMessageToActiveLoopRaw(profileMsg);
+                    });
+                  }
+                } else {
+                  const errorMessage: ChatLoadingMessage = {
+                    id: `search-retry-error-${Date.now()}`,
+                    role: "chat-loading",
+                    content: "",
+                    timestamp: Date.now(),
+                    loadingType: "deep-search",
+                    loadingState: "error",
+                    errorMessage: result.error || "Search failed. Please try again.",
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(errorMessage);
+                }
+              } else {
+                // Deep dive with additional info flow (has verified sources)
+                const summaryMessages = allMessages.filter(
+                  (m) => m.role === "deep-search-summary"
+                ) as DeepSearchSummaryChatMessage[];
+                const latestSummary = summaryMessages[summaryMessages.length - 1];
+                const verifiedSources = latestSummary?.verifiedSources || [];
+
+                const result = await executeDeepDiveWithAdditionalInfo(
+                  updatedPersonContext,
+                  { dataType, value },
+                  verifiedSources,
+                  (status) => console.log("[DeepDive Retry] Progress:", status)
                 );
 
-                // Show new results
-                const resultMessage: DeepSearchResultMessage = {
-                  id: `deep-dive-retry-result-${Date.now()}`,
-                  role: "deep-search-result",
-                  content: "",
-                  timestamp: Date.now(),
-                  searchResult: result.result,
-                  mode: "understand",
-                };
-                addMessageToActiveLoopRaw(resultMessage);
+                removeMessageFromActiveLoop(loadingMsgId);
 
-                // Show new evaluation
-                const evaluationMessage: DeepDiveEvaluationMessage = {
-                  id: `deep-dive-retry-eval-${Date.now()}`,
-                  role: "deep-dive-evaluation",
-                  content: "",
-                  timestamp: Date.now(),
-                  personName: followUpMsg.personName,
-                  personContextId: followUpMsg.personContextId,
-                  resultQuality: evaluation.quality,
-                  sourcesCount: evaluation.sourcesCount,
-                  acknowledgmentText: evaluation.acknowledgmentText,
-                  suggestFollowUp: evaluation.suggestFollowUp,
-                  followUpReason: evaluation.followUpReason,
-                  missingDataTypes: evaluation.missingDataTypes,
-                  mode: "understand",
-                };
-                addMessageToActiveLoopRaw(evaluationMessage);
-              } else {
-                const errorMessage: ChatLoadingMessage = {
-                  id: `deep-dive-retry-error-${Date.now()}`,
-                  role: "chat-loading",
-                  content: "",
-                  timestamp: Date.now(),
-                  loadingType: "deep-search",
-                  loadingState: "error",
-                  errorMessage: result.error || "Search with additional info failed.",
-                  mode: "understand",
-                };
-                addMessageToActiveLoopRaw(errorMessage);
+                if (result.success && result.result) {
+                  // Evaluate the new results
+                  const evaluation = evaluateDeepDiveResults(
+                    result.result,
+                    updatedPersonContext,
+                    verifiedSources.length
+                  );
+
+                  // Show new results
+                  const resultMessage: DeepSearchResultMessage = {
+                    id: `deep-dive-retry-result-${Date.now()}`,
+                    role: "deep-search-result",
+                    content: "",
+                    timestamp: Date.now(),
+                    searchResult: result.result,
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(resultMessage);
+
+                  // Show new evaluation
+                  const evaluationMessage: DeepDiveEvaluationMessage = {
+                    id: `deep-dive-retry-eval-${Date.now()}`,
+                    role: "deep-dive-evaluation",
+                    content: "",
+                    timestamp: Date.now(),
+                    personName: followUpMsg.personName,
+                    personContextId: followUpMsg.personContextId,
+                    resultQuality: evaluation.quality,
+                    sourcesCount: evaluation.sourcesCount,
+                    acknowledgmentText: evaluation.acknowledgmentText,
+                    suggestFollowUp: evaluation.suggestFollowUp,
+                    followUpReason: evaluation.followUpReason,
+                    missingDataTypes: evaluation.missingDataTypes,
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(evaluationMessage);
+                } else {
+                  const errorMessage: ChatLoadingMessage = {
+                    id: `deep-dive-retry-error-${Date.now()}`,
+                    role: "chat-loading",
+                    content: "",
+                    timestamp: Date.now(),
+                    loadingType: "deep-search",
+                    loadingState: "error",
+                    errorMessage: result.error || "Search with additional info failed.",
+                    mode: "understand",
+                  };
+                  addMessageToActiveLoopRaw(errorMessage);
+                }
               }
 
               setTimeout(() => {
                 decodeScrollViewRef.current?.scrollToEnd({ animated: true });
               }, 100);
             } catch (error) {
-              console.error("[DeepDive Retry] Error:", error);
+              console.error("[Search Retry] Error:", error);
               removeMessageFromActiveLoop(loadingMsgId);
 
               const errorMessage: ChatLoadingMessage = {
-                id: `deep-dive-retry-error-${Date.now()}`,
+                id: `search-retry-error-${Date.now()}`,
                 role: "chat-loading",
                 content: "",
                 timestamp: Date.now(),

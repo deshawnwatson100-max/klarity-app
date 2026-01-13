@@ -328,6 +328,7 @@ interface DeepSearchSummaryMessageProps {
   totalCount: number;
   personName: string;
   onDeepDive?: () => void;
+  onSearchAgain?: () => void;
 }
 
 /**
@@ -339,6 +340,7 @@ export function DeepSearchSummaryMessage({
   totalCount,
   personName,
   onDeepDive,
+  onSearchAgain,
 }: DeepSearchSummaryMessageProps) {
   let summaryText = "";
 
@@ -363,6 +365,32 @@ export function DeepSearchSummaryMessage({
         {summaryText}
       </Text>
 
+      {/* Search Again button - shown when no profiles verified */}
+      {verifiedCount === 0 && onSearchAgain && (
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onSearchAgain();
+          }}
+          style={({ pressed }) => ({
+            marginTop: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            alignSelf: "flex-start",
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
+          })}
+        >
+          <Ionicons name="refresh-outline" size={16} color={COLORS.link} />
+          <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
+            Search with different details
+          </Text>
+        </Pressable>
+      )}
+
+      {/* Deep Dive button - shown when profiles are verified */}
       {verifiedCount > 0 && onDeepDive && (
         <Pressable
           onPress={() => {

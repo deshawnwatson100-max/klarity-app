@@ -383,6 +383,7 @@ export interface DeepDiveFollowUpMessage extends Message {
   dataType: string; // e.g., "username", "location", "workplace"
   placeholder?: string;
   isOptional?: boolean;
+  isSearchAgain?: boolean; // true if this is a "search again" flow (no verified sources)
 }
 
 export type ChatLoadingType = "chat" | "deep-search";
