@@ -327,7 +327,7 @@ export const PersonContextCard = memo(function PersonContextCard({
               Soft Search
             </Text>
             <Text style={{ fontSize: 12, color: COLORS.textMuted }}>
-              internet and social media search
+              AI Person Internet Search
             </Text>
           </View>
         </View>
