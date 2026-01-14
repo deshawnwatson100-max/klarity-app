@@ -117,7 +117,7 @@ function ContextMenuChatListItem({
         return null;
       }
 
-      const cleanContent = content.replace(/\[Image\]/gi, "").trim();
+      const cleanContent = content.replace(/\[Image\]/gi, "").replace(/\[Screenshot shared\]/gi, "").trim();
       if (cleanContent) {
         return cleanContent.length > 60
           ? cleanContent.substring(0, 60) + "..."
@@ -325,7 +325,7 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
         return null;
       }
 
-      const cleanContent = content.replace(/\[Image\]/gi, "").trim();
+      const cleanContent = content.replace(/\[Image\]/gi, "").replace(/\[Screenshot shared\]/gi, "").trim();
       if (cleanContent) {
         return cleanContent.length > 60
           ? cleanContent.substring(0, 60) + "..."
@@ -596,7 +596,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
         return null;
       }
 
-      const cleanContent = content.replace(/\[Image\]/gi, "").trim();
+      const cleanContent = content.replace(/\[Image\]/gi, "").replace(/\[Screenshot shared\]/gi, "").trim();
       if (cleanContent) {
         return cleanContent.length > 60
           ? cleanContent.substring(0, 60) + "..."
