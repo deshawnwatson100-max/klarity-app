@@ -1559,12 +1559,33 @@ export function ChatScreen({ navigation, route }: Props) {
       }, 100);
 
       // Build conversation history from decode messages for context
-      const conversationHistory = decodeMessages
-        .filter((msg) => msg.role === "user" || msg.role === "assistant")
-        .map((msg) => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-        }));
+      // Include search results context so the chatbot knows what was found
+      const conversationHistory: { role: "user" | "assistant"; content: string }[] = [];
+
+      for (const msg of decodeMessages) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          conversationHistory.push({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          });
+        } else if (msg.role === "deep-search-summary") {
+          // Add search results as context so the chatbot knows what was found
+          const summaryMsg = msg as DeepSearchSummaryChatMessage;
+          if (summaryMsg.verifiedSources && summaryMsg.verifiedSources.length > 0) {
+            const sourceSummaries = summaryMsg.verifiedSources.map((source) => {
+              const parts = [source.platform];
+              if (source.summary) parts.push(source.summary);
+              if (source.relevantDetails?.length) parts.push(...source.relevantDetails.slice(0, 3));
+              return parts.join(" - ");
+            }).join("\n");
+
+            conversationHistory.push({
+              role: "assistant",
+              content: `[Search Results for ${summaryMsg.personName}]\nI found and the user verified ${summaryMsg.verifiedCount} profile(s):\n${sourceSummaries}\n\nYou can reference this information when answering follow-up questions about ${summaryMsg.personName}.`,
+            });
+          }
+        }
+      }
 
       // Generate decode response
       const result = await generateDecodeResponse(

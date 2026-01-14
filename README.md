@@ -1686,6 +1686,22 @@ After the user submits the Deep Search input, results are displayed as a collabo
    - Explains possible reasons (different name, private profiles, etc.)
    - Suggests trying with different details
 
+### NEW: Search Results Context in Follow-Up Conversations
+When you ask follow-up questions after a Deep Search, Klarity now remembers what was found.
+
+#### How it Works
+- After Deep Search results are verified, the conversation history includes context about verified profiles
+- Follow-up questions like "is there anything else?" or "what do you think?" now have full context
+- The chatbot can reference specific details from the search (platform, summary, relevant details)
+- No more confusion about what search was performed or what was found
+
+#### Example Flow
+1. Run Deep Search for a person
+2. Verify profiles (confirm which are theirs)
+3. Summary appears with "Feel free to ask me anything about what I found"
+4. Ask: "Is there anything else I should know?"
+5. Klarity responds with context about the verified profiles
+
 This chat-based format makes the search feel like a collaborative effort where the user is involved at every step, rather than waiting for a final result card.
 
 ### NEW: Deep Dive Collaborative Trust Flow
