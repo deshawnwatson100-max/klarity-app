@@ -327,29 +327,27 @@ interface DeepSearchSummaryMessageProps {
   rejectedCount: number;
   totalCount: number;
   personName: string;
-  onDeepDive?: () => void;
   onSearchAgain?: () => void;
 }
 
 /**
- * Summary message - ChatGPT style
+ * Summary message - flows naturally into chat conversation
  */
 export function DeepSearchSummaryMessage({
   verifiedCount,
   rejectedCount,
   totalCount,
   personName,
-  onDeepDive,
   onSearchAgain,
 }: DeepSearchSummaryMessageProps) {
   let summaryText = "";
 
   if (verifiedCount === 0) {
-    summaryText = `None of the ${totalCount} profiles were confirmed as ${personName}. Would you like me to search again with different details?`;
+    summaryText = `None of the ${totalCount} profiles matched ${personName}. Would you like me to search again with different details?`;
   } else if (verifiedCount === 1) {
-    summaryText = `Got it! I confirmed 1 profile belongs to ${personName}. I can dig deeper into this profile if you'd like.`;
+    summaryText = `Got it, I saved that profile for ${personName}. Feel free to ask me anything about what I found.`;
   } else {
-    summaryText = `Got it! I confirmed ${verifiedCount} profiles belong to ${personName}. I can analyze these further if you'd like.`;
+    summaryText = `Got it, I saved ${verifiedCount} profiles for ${personName}. Feel free to ask me anything about what I found.`;
   }
 
   return (
@@ -385,32 +383,7 @@ export function DeepSearchSummaryMessage({
         >
           <Ionicons name="refresh-outline" size={16} color={COLORS.link} />
           <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
-            Search with different details
-          </Text>
-        </Pressable>
-      )}
-
-      {/* Deep Dive button - shown when profiles are verified */}
-      {verifiedCount > 0 && onDeepDive && (
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onDeepDive();
-          }}
-          style={({ pressed }) => ({
-            marginTop: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            alignSelf: "flex-start",
-            paddingVertical: 10,
-            paddingHorizontal: 16,
-            borderRadius: 8,
-            backgroundColor: pressed ? COLORS.buttonBgHover : COLORS.buttonBg,
-          })}
-        >
-          <Ionicons name="search" size={16} color={COLORS.link} />
-          <Text style={{ color: COLORS.link, fontSize: 14, fontWeight: "500", marginLeft: 8 }}>
-            Deep Dive
+            Search again
           </Text>
         </Pressable>
       )}
