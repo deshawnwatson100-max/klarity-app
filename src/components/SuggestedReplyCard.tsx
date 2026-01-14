@@ -28,23 +28,32 @@ function IconButton({
   icon,
   activeIcon,
   onPress,
+  onLongPress,
   isLoading,
   showSuccess,
   color = "#6B7280",
   activeColor = "#7DD3C0",
   size = 18,
+  hidden = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   activeIcon?: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
+  onLongPress?: () => void;
   isLoading?: boolean;
   showSuccess?: boolean;
   color?: string;
   activeColor?: string;
   size?: number;
+  hidden?: boolean;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const [isActive, setIsActive] = useState(false);
+
+  // Don't render if hidden
+  if (hidden) {
+    return null;
+  }
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -62,6 +71,13 @@ function IconButton({
     }
   };
 
+  const handleLongPress = () => {
+    if (onLongPress) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onLongPress();
+    }
+  };
+
   const displayIcon = showSuccess && activeIcon ? activeIcon : icon;
   const displayColor = isActive || showSuccess ? activeColor : color;
 
@@ -74,7 +90,11 @@ function IconButton({
   }
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      delayLongPress={400}
+    >
       <Animated.View
         style={{
           width: size + 16,
@@ -146,22 +166,25 @@ function ReplyItem({
 
   const handleLike = () => {
     Haptics.selectionAsync();
-    const newLiked = liked === "like" ? null : "like";
-    setLiked(newLiked);
-    // Save feedback to store when liking (not when un-liking)
-    if (newLiked === "like") {
+    // Only set to like if not already liked (no toggle on tap)
+    if (liked !== "like") {
+      setLiked("like");
       addFeedback(reply.text, "like");
     }
   };
 
   const handleDislike = () => {
     Haptics.selectionAsync();
-    const newLiked = liked === "dislike" ? null : "dislike";
-    setLiked(newLiked);
-    // Save feedback to store when disliking (not when un-disliking)
-    if (newLiked === "dislike") {
+    // Only set to dislike if not already disliked (no toggle on tap)
+    if (liked !== "dislike") {
+      setLiked("dislike");
       addFeedback(reply.text, "dislike");
     }
+  };
+
+  // Long press to reset feedback and show both buttons again
+  const handleResetFeedback = () => {
+    setLiked(null);
   };
 
   const handleAddEmoji = () => {
@@ -420,27 +443,33 @@ function ReplyItem({
                   />
                 )}
 
-                {/* Divider */}
-                <View style={{ width: 1, height: 16, backgroundColor: "#374151", marginHorizontal: 4 }} />
+                {/* Divider - hide when feedback is given */}
+                {liked === null && (
+                  <View style={{ width: 1, height: 16, backgroundColor: "#374151", marginHorizontal: 4 }} />
+                )}
 
-                {/* Like button */}
+                {/* Like button - hidden when dislike is selected */}
                 <IconButton
                   icon={liked === "like" ? "thumbs-up" : "thumbs-up-outline"}
                   onPress={handleLike}
+                  onLongPress={liked === "like" ? handleResetFeedback : undefined}
                   showSuccess={liked === "like"}
                   color="#E5E7EB"
                   activeColor="#7DD3C0"
                   size={16}
+                  hidden={liked === "dislike"}
                 />
 
-                {/* Dislike button */}
+                {/* Dislike button - hidden when like is selected */}
                 <IconButton
                   icon={liked === "dislike" ? "thumbs-down" : "thumbs-down-outline"}
                   onPress={handleDislike}
+                  onLongPress={liked === "dislike" ? handleResetFeedback : undefined}
                   showSuccess={liked === "dislike"}
                   color="#E5E7EB"
                   activeColor="#7DD3C0"
                   size={16}
+                  hidden={liked === "like"}
                 />
               </View>
             </View>
