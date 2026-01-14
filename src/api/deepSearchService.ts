@@ -69,6 +69,11 @@ import {
   JsHeavyDetectionResult,
   HEADLESS_CONFIG,
 } from "./deepSearchHeadlessFetcher";
+import {
+  isPerplexityConfigured,
+  perplexitySearch,
+  PerplexityResponse,
+} from "./perplexity";
 
 // ============================================================================
 // MULTI-SEARCH ENFORCEMENT CONFIGURATION
@@ -2156,11 +2161,93 @@ interface LLMCallParams {
 }
 
 /**
+ * Calls Perplexity AI for web search - optimized for real-time internet search
+ * Perplexity is specifically built for search and provides better results with citations
+ *
+ * Cost: ~$0.005-0.01 per search (much cheaper than OpenAI web search)
+ */
+async function callDeepSearchWithPerplexity(params: LLMCallParams): Promise<string | null> {
+  const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
+
+  if (!isPerplexityConfigured()) {
+    console.log("[DeepSearch] Perplexity not configured, skipping...");
+    return null;
+  }
+
+  console.log(`[DeepSearch Perplexity] Starting search with ${searchQueries.length} queries`);
+  console.log("[DeepSearch Perplexity] Sample queries:", searchQueries.slice(0, 5));
+
+  // Build a comprehensive search prompt for Perplexity
+  const numberedQueries = searchQueries.slice(0, 15).map((q, i) => `${i + 1}. ${q}`).join("\n");
+
+  const searchPrompt = `${systemPrompt}
+
+${developerPrompt}
+
+${userPrompt}
+
+SEARCH QUERIES TO INVESTIGATE:
+${numberedQueries}
+
+INSTRUCTIONS:
+1. Search thoroughly for each query above
+2. For social media profiles found, include: username, display name, bio, follower counts, and profile link
+3. Only include results where at least 2 identifiers match (name + location, name + workplace, username + name, etc.)
+4. Do NOT include random people with just a matching name
+5. Cite your sources with direct URLs
+6. Organize results by category (Social Media, Professional, Dating, Public Records, etc.)
+
+If nothing is found for a category, state that clearly.`;
+
+  try {
+    const response = await perplexitySearch(searchPrompt, {
+      model: "sonar-pro", // Use pro model for thorough person searches
+      temperature: 0.1, // Low temperature for factual accuracy
+      maxTokens: 4096,
+    });
+
+    if (!response || !response.content) {
+      console.log("[DeepSearch Perplexity] No response received");
+      return null;
+    }
+
+    console.log("[DeepSearch Perplexity] Got response, length:", response.content.length);
+    console.log("[DeepSearch Perplexity] Citations found:", response.citations.length);
+
+    // Append citations to the response for better source tracking
+    let resultWithCitations = response.content;
+    if (response.citations.length > 0) {
+      resultWithCitations += "\n\n---\n**Sources:**\n";
+      response.citations.forEach((citation, i) => {
+        resultWithCitations += `${i + 1}. ${citation.url}\n`;
+      });
+    }
+
+    return resultWithCitations;
+  } catch (error) {
+    console.error("[DeepSearch Perplexity] Search failed:", error);
+    return null;
+  }
+}
+
+/**
  * Calls the OpenAI Responses API with web search capability
  * This uses the newer Responses API with built-in web_search tool
  * ENFORCES multi-search behavior through explicit instructions
+ *
+ * NOTE: This is now the FALLBACK - Perplexity is tried first as it's optimized for search
  */
 async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> {
+  // Try Perplexity first - it's specifically designed for web search
+  const perplexityResult = await callDeepSearchWithPerplexity(params);
+  if (perplexityResult) {
+    console.log("[DeepSearch] Using Perplexity result");
+    return perplexityResult;
+  }
+
+  // Fallback to OpenAI if Perplexity is not configured or fails
+  console.log("[DeepSearch] Falling back to OpenAI...");
+
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
 
   const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
@@ -2173,8 +2260,8 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
   // Build numbered query list for explicit multi-search enforcement
   const numberedQueries = searchQueries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
 
-  console.log(`[DeepSearch] Starting search with ${searchQueries.length} queries (min required: ${MIN_SEARCHES_REQUIRED})`);
-  console.log("[DeepSearch] Sample queries:", searchQueries.slice(0, 5));
+  console.log(`[DeepSearch OpenAI] Starting search with ${searchQueries.length} queries (min required: ${MIN_SEARCHES_REQUIRED})`);
+  console.log("[DeepSearch OpenAI] Sample queries:", searchQueries.slice(0, 5));
 
   // Enhanced instructions with multi-search enforcement
   const enhancedInstructions = `${systemPrompt}

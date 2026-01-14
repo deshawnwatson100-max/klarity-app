@@ -1179,6 +1179,18 @@ interface KlarityLoop {
 #### Deep Search (Prompt 8+)
 Automatically searches publicly available information when Person Context is created, displaying results in the chat loop similar to Perplexity.
 
+**Search Provider: Perplexity AI (Primary)**
+Deep Search now uses Perplexity AI as the primary search provider:
+- **Cost-effective**: ~$0.005-0.01 per search vs OpenAI's higher pricing
+- **Built for search**: Perplexity is specifically optimized for web search with real-time internet access
+- **Better citations**: Returns source URLs with each search result
+- **Fallback support**: Automatically falls back to OpenAI if Perplexity is unavailable
+
+**Environment Variable Required:**
+```
+EXPO_PUBLIC_PERPLEXITY_API_KEY=your_perplexity_api_key
+```
+
 **How it Works:**
 1. User creates a Person Context with name, relationship, and notes
 2. Deep Search automatically runs (or can be triggered manually in chat)
