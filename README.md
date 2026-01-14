@@ -1687,7 +1687,7 @@ After the user submits the Deep Search input, results are displayed as a collabo
    - Suggests trying with different details
 
 ### NEW: Search Results Context in Follow-Up Conversations
-When you ask follow-up questions after a Deep Search, Klarity now remembers what was found.
+When you ask follow-up questions after a Deep Search, Klarity now remembers what was found and can help you search deeper.
 
 #### How it Works
 - After Deep Search results are verified, the conversation history includes context about verified profiles
@@ -1695,12 +1695,26 @@ When you ask follow-up questions after a Deep Search, Klarity now remembers what
 - The chatbot can reference specific details from the search (platform, summary, relevant details)
 - No more confusion about what search was performed or what was found
 
+#### "Want More" Detection
+When you ask for more after a search (e.g., "anything else?", "is there more?", "what else can you find?"), Klarity will:
+1. First respond with context about what was found
+2. Then ask if you have additional information that could help improve the search
+3. Show an inline input for you to add details like:
+   - Usernames or handles they use
+   - Where they live or are from
+   - Where they work or what they do
+   - What school they attended
+   - Their approximate age
+4. If you provide more info, run another search with the enriched data
+5. If you skip, continue the conversation normally
+
 #### Example Flow
 1. Run Deep Search for a person
 2. Verify profiles (confirm which are theirs)
 3. Summary appears with "Feel free to ask me anything about what I found"
-4. Ask: "Is there anything else I should know?"
-5. Klarity responds with context about the verified profiles
+4. Ask: "Is there anything else?"
+5. Klarity responds, then shows: "Do you know any usernames or handles [Name] uses online?"
+6. You can enter a username and search again, or skip to continue chatting
 
 This chat-based format makes the search feel like a collaborative effort where the user is involved at every step, rather than waiting for a final result card.
 

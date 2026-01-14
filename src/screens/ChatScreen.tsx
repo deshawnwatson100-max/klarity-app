@@ -1425,6 +1425,38 @@ export function ChatScreen({ navigation, route }: Props) {
     return deepSearchPhrases.some((phrase) => lowerMessage.includes(phrase));
   };
 
+  // Helper function to detect if user wants more from a completed search
+  const isWantingMoreFromSearch = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase();
+    const wantMorePhrases = [
+      "anything else",
+      "is there more",
+      "what else",
+      "find more",
+      "search more",
+      "dig deeper",
+      "keep searching",
+      "more info",
+      "more information",
+      "anything more",
+      "something else",
+      "other things",
+      "other info",
+      "missed anything",
+      "missing anything",
+      "that all",
+      "is that it",
+      "that everything",
+      "all you found",
+      "all you could find",
+      "can you find more",
+      "try again",
+      "search again",
+    ];
+
+    return wantMorePhrases.some((phrase) => lowerMessage.includes(phrase));
+  };
+
   // Helper function to detect if Deep Search should be SUGGESTED (not explicitly requested)
   // This triggers the suggestion card, not the immediate deep search flow
   const shouldSuggestDeepSearch = (message: string, conversationHistory: { role: string; content: string }[]): boolean => {
@@ -1605,38 +1637,90 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(assistantMsg);
 
-      // Check if we should suggest Deep Search after the assistant response
-      // Only suggest if no deep search has been completed in this loop
+      // Check if user wants more from a completed search
       const activeLoop = getActiveLoop();
       const deepSearchAlreadyCompleted = activeLoop?.deepSearchCompleted || false;
-      const hasSuggestionCardAlready = decodeMessages.some(
-        (msg) => msg.role === "deep-search-suggestion"
-      );
 
-      if (
-        !deepSearchAlreadyCompleted &&
-        !hasSuggestionCardAlready &&
-        shouldSuggestDeepSearch(userMessage.content, conversationHistory)
-      ) {
-        // Small delay before showing suggestion
-        await new Promise((resolve) => setTimeout(resolve, 400));
+      // Get the latest search summary to find person context
+      const searchSummaryMsg = decodeMessages.find(
+        (m) => m.role === "deep-search-summary"
+      ) as DeepSearchSummaryChatMessage | undefined;
 
-        // Add the Deep Search suggestion card
-        const suggestionMsg: DeepSearchSuggestionMessage = {
-          id: `deep-search-suggestion-${Date.now()}`,
-          role: "deep-search-suggestion",
-          content: "",
-          timestamp: Date.now(),
-          suggestionState: "collapsed",
-          personContextId: activeLoopPersonContextId || undefined,
-          mode: "understand",
-        };
-        addMessageToActiveLoopRaw(suggestionMsg);
+      if (deepSearchAlreadyCompleted && isWantingMoreFromSearch(userMessage.content) && searchSummaryMsg) {
+        // User wants more from the search - show follow-up card to collect more info
+        const personContext = searchSummaryMsg.personContextId
+          ? getPersonContextById(searchSummaryMsg.personContextId)
+          : null;
 
-        // Scroll to show the suggestion
-        setTimeout(() => {
-          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        if (personContext) {
+          // Determine what data types might help
+          const missingDataTypes: string[] = [];
+          if (!personContext.knownUsername) missingDataTypes.push("username");
+          if (!personContext.location) missingDataTypes.push("location");
+          if (personContext.contextAnchor?.type !== "workplace") missingDataTypes.push("workplace");
+          if (personContext.contextAnchor?.type !== "school") missingDataTypes.push("school");
+          if (!personContext.approximateAge) missingDataTypes.push("age");
+
+          const followUp = getBestFollowUpQuestion(missingDataTypes, personContext);
+
+          if (followUp) {
+            // Small delay before showing follow-up
+            await new Promise((resolve) => setTimeout(resolve, 400));
+
+            const followUpMessage: DeepDiveFollowUpMessage = {
+              id: `search-more-followup-${Date.now()}`,
+              role: "deep-dive-follow-up",
+              content: "",
+              timestamp: Date.now(),
+              personName: searchSummaryMsg.personName,
+              personContextId: searchSummaryMsg.personContextId,
+              question: followUp.question,
+              dataType: followUp.dataType,
+              placeholder: followUp.placeholder,
+              isOptional: true,
+              isSearchAgain: true, // Flag to indicate this is a fresh search
+              mode: "understand",
+            };
+            addMessageToActiveLoopRaw(followUpMessage);
+
+            // Scroll to show the follow-up
+            setTimeout(() => {
+              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }
+        }
+      } else {
+        // Check if we should suggest Deep Search after the assistant response
+        // Only suggest if no deep search has been completed in this loop
+        const hasSuggestionCardAlready = decodeMessages.some(
+          (msg) => msg.role === "deep-search-suggestion"
+        );
+
+        if (
+          !deepSearchAlreadyCompleted &&
+          !hasSuggestionCardAlready &&
+          shouldSuggestDeepSearch(userMessage.content, conversationHistory)
+        ) {
+          // Small delay before showing suggestion
+          await new Promise((resolve) => setTimeout(resolve, 400));
+
+          // Add the Deep Search suggestion card
+          const suggestionMsg: DeepSearchSuggestionMessage = {
+            id: `deep-search-suggestion-${Date.now()}`,
+            role: "deep-search-suggestion",
+            content: "",
+            timestamp: Date.now(),
+            suggestionState: "collapsed",
+            personContextId: activeLoopPersonContextId || undefined,
+            mode: "understand",
+          };
+          addMessageToActiveLoopRaw(suggestionMsg);
+
+          // Scroll to show the suggestion
+          setTimeout(() => {
+            decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
       }
     } catch (error) {
       console.error("Error processing decode message:", error);
