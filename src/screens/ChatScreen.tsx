@@ -966,7 +966,28 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   const handleGenerateDifferentReply = async (currentMessageId: string) => {
-    if (!currentAnalysis || !currentUserMessage) return;
+    // Find the most recent user message before this reply card
+    const currentMsgIndex = messages.findIndex((m) => m.id === currentMessageId);
+    let userMessageContent = currentUserMessage;
+
+    // If currentUserMessage is empty, try to find the user message from history
+    if (!userMessageContent) {
+      for (let i = currentMsgIndex - 1; i >= 0; i--) {
+        if (messages[i].role === "user" && messages[i].content) {
+          userMessageContent = messages[i].content;
+          break;
+        }
+      }
+    }
+
+    // Still no user message found, return early
+    if (!userMessageContent) return;
+
+    // Get the current reply card to use its reply as context for variation
+    const currentReplyCard = messages.find(
+      (m) => m.id === currentMessageId
+    ) as SuggestedReplyCardMessage | undefined;
+    const existingReply = currentReplyCard?.replies?.[0]?.text;
 
     const typingMsg: TypingMessage = {
       id: Date.now().toString() + "_typing_different",
@@ -978,13 +999,31 @@ export function ChatScreen({ navigation, route }: Props) {
 
     try {
       // If we have the last message from the conversation, include it for better context
-      const contextForReply = conversationContext?.lastMessageFromOther
-        ? `The other person said: "${conversationContext.lastMessageFromOther}"\n\nContext: ${currentUserMessage}`
-        : currentUserMessage;
+      let contextForReply = conversationContext?.lastMessageFromOther
+        ? `The other person said: "${conversationContext.lastMessageFromOther}"\n\nContext: ${userMessageContent}`
+        : userMessageContent;
+
+      // If there's an existing reply, add instruction to generate something different
+      if (existingReply) {
+        contextForReply += `\n\n[IMPORTANT: Generate a DIFFERENT reply than this one: "${existingReply}"]`;
+      }
+
+      // Use existing analysis or create a minimal one
+      const analysisToUse = currentAnalysis || {
+        emotionalClarity: 70,
+        detectedState: "Processing",
+        relationshipRisk: "medium" as const,
+        summary: "Analyzing conversation",
+        tone: "neutral" as const,
+        pattern: "Conversation",
+        emotionalImpact: "moderate",
+        coreIssue: "Communication",
+        fullAnalysis: userMessageContent,
+      };
 
       const newReply = await generateQuickSuggestedReply(
         contextForReply,
-        currentAnalysis
+        analysisToUse
       );
 
       removeMessageFromActiveLoop(typingMsg.id);
