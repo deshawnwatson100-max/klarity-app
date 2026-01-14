@@ -323,7 +323,7 @@ export const PersonContextCard = memo(function PersonContextCard({
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Ionicons name="search" size={18} color={COLORS.textMuted} style={{ marginRight: 8 }} />
           <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-            Deep Search
+            Soft Search
           </Text>
         </View>
         {onDismiss && (
