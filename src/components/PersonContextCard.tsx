@@ -322,9 +322,14 @@ export const PersonContextCard = memo(function PersonContextCard({
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Ionicons name="search" size={18} color={COLORS.textMuted} style={{ marginRight: 8 }} />
-          <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
-            Soft Search
-          </Text>
+          <View>
+            <Text style={{ fontSize: 15, fontWeight: "600", color: COLORS.text }}>
+              Soft Search
+            </Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted }}>
+              internet and social media search
+            </Text>
+          </View>
         </View>
         {onDismiss && (
           <Pressable onPress={onDismiss} hitSlop={12}>
