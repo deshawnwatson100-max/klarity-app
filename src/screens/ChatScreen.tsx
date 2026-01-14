@@ -1194,6 +1194,12 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   const handleSend = async () => {
+    console.log("[ChatScreen] handleSend called:", {
+      currentInput: currentInput.trim(),
+      hasImage: !!selectedImageUri,
+      isLoading,
+      inputMode
+    });
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
 
     // Handle editing an existing message
@@ -1279,6 +1285,7 @@ export function ChatScreen({ navigation, route }: Props) {
 
     // Handle Decode (understand) mode - conversational exploration
     if (inputMode === "understand") {
+      console.log("[ChatScreen] Processing decode message");
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "user",
