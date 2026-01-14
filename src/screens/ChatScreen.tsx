@@ -2682,19 +2682,32 @@ export function ChatScreen({ navigation, route }: Props) {
                 }
               }
 
-              // No linked person context or no results yet - show person context card
-              const personContextCardMsg: PersonContextCardMessage = {
-                id: `person-context-card-${Date.now()}`,
-                role: "person-context-card",
-                content: "",
-                timestamp: Date.now(),
-                mode: "understand",
-              };
-              addMessageToActiveLoopRaw(personContextCardMsg);
-              // Scroll to bottom to show the card
-              setTimeout(() => {
-                decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-              }, 100);
+              // No linked person context or no results yet - toggle person context card
+              // Check if there's already a person-context-card in recent messages
+              const existingCardIndex = messages.findIndex(
+                (msg) => msg.role === "person-context-card"
+              );
+
+              if (existingCardIndex !== -1) {
+                // Card exists - remove it (toggle off)
+                const existingCard = messages[existingCardIndex];
+                removeMessageFromActiveLoop(existingCard.id);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } else {
+                // No card exists - add one (toggle on)
+                const personContextCardMsg: PersonContextCardMessage = {
+                  id: `person-context-card-${Date.now()}`,
+                  role: "person-context-card",
+                  content: "",
+                  timestamp: Date.now(),
+                  mode: "understand",
+                };
+                addMessageToActiveLoopRaw(personContextCardMsg);
+                // Scroll to bottom to show the card
+                setTimeout(() => {
+                  decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }
             }}
             showPersonContext={true}
           />
