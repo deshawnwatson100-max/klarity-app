@@ -6,6 +6,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
 import * as ContextMenu from "zeego/context-menu";
+import { useFeedbackStore } from "../state/feedbackStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -307,6 +308,9 @@ export function MessageBubble({
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(null); // null = no feedback, true = liked, false = disliked
 
+  // Feedback store for tracking user preferences
+  const addFeedback = useFeedbackStore((s) => s.addFeedback);
+
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
     Animated.parallel([
@@ -362,12 +366,26 @@ export function MessageBubble({
 
   const handleLike = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLiked(liked === true ? null : true);
+    // Only set to like if not already liked (no toggle on tap)
+    if (liked !== true) {
+      setLiked(true);
+      addFeedback(content, "like");
+    }
   };
 
   const handleDislike = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLiked(liked === false ? null : false);
+    // Only set to dislike if not already disliked (no toggle on tap)
+    if (liked !== false) {
+      setLiked(false);
+      addFeedback(content, "dislike");
+    }
+  };
+
+  // Long press to reset feedback and show both buttons again
+  const handleResetFeedback = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLiked(null);
   };
 
   const handleRegenerate = () => {
@@ -571,39 +589,47 @@ export function MessageBubble({
             />
           </Pressable>
 
-          {/* Like button */}
-          <Pressable
-            onPress={handleLike}
-            style={({ pressed }) => ({
-              padding: 8,
-              borderRadius: 8,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
-            })}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={liked === true ? "thumbs-up" : "thumbs-up-outline"}
-              size={20}
-              color={liked === true ? "#10B981" : "#9CA3AF"}
-            />
-          </Pressable>
+          {/* Like button - hidden when dislike is selected */}
+          {liked !== false && (
+            <Pressable
+              onPress={handleLike}
+              onLongPress={liked === true ? handleResetFeedback : undefined}
+              delayLongPress={400}
+              style={({ pressed }) => ({
+                padding: 8,
+                borderRadius: 8,
+                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={liked === true ? "thumbs-up" : "thumbs-up-outline"}
+                size={20}
+                color={liked === true ? "#10B981" : "#9CA3AF"}
+              />
+            </Pressable>
+          )}
 
-          {/* Dislike button */}
-          <Pressable
-            onPress={handleDislike}
-            style={({ pressed }) => ({
-              padding: 8,
-              borderRadius: 8,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
-            })}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
-              size={20}
-              color={liked === false ? "#EF4444" : "#9CA3AF"}
-            />
-          </Pressable>
+          {/* Dislike button - hidden when like is selected */}
+          {liked !== true && (
+            <Pressable
+              onPress={handleDislike}
+              onLongPress={liked === false ? handleResetFeedback : undefined}
+              delayLongPress={400}
+              style={({ pressed }) => ({
+                padding: 8,
+                borderRadius: 8,
+                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
+                size={20}
+                color={liked === false ? "#EF4444" : "#9CA3AF"}
+              />
+            </Pressable>
+          )}
 
           {/* Share/Send button */}
           <Pressable
