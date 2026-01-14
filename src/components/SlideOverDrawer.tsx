@@ -14,10 +14,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import * as Haptics from "expo-haptics";
 import * as ContextMenu from "zeego/context-menu";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
+import { RootStackParamList } from "../navigation/RootNavigator";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -711,7 +713,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
 
 export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // State
   const [isRendered, setIsRendered] = useState(false);
@@ -1099,6 +1101,62 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   </Text>
                 </View>
               </View>
+            </View>
+
+            {/* Legal Links */}
+            <View className="px-5 py-2">
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  closeDrawer();
+                  setTimeout(() => {
+                    navigation.navigate("LegalScreen", { tab: "terms" });
+                  }, 100);
+                }}
+                className="active:opacity-60"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  borderRadius: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="document-text-outline" size={20} color="#6B7280" />
+                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
+                  Terms of Service
+                </Text>
+                <View style={{ flex: 1 }} />
+                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  closeDrawer();
+                  setTimeout(() => {
+                    navigation.navigate("LegalScreen", { tab: "privacy" });
+                  }, 100);
+                }}
+                className="active:opacity-60"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  borderRadius: 12,
+                }}
+              >
+                <Ionicons name="shield-checkmark-outline" size={20} color="#6B7280" />
+                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
+                  Privacy Policy
+                </Text>
+                <View style={{ flex: 1 }} />
+                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
+              </Pressable>
             </View>
 
             <View style={{ flex: 1 }}>

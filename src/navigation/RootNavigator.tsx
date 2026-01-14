@@ -8,6 +8,7 @@ import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen";
 import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
+import { LegalScreen } from "../screens/LegalScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -24,6 +25,9 @@ export type RootStackParamList = {
   CommunicationStylesScreen: undefined;
   StyleDetailScreen: {
     profileId: string;
+  };
+  LegalScreen: {
+    tab?: "terms" | "privacy";
   };
 };
 
@@ -293,6 +297,18 @@ export function RootNavigator() {
           presentation: "modal",
           gestureEnabled: false,
           cardStyle: { backgroundColor: "black" },
+        }}
+      />
+
+      {/* Legal Screen - Terms of Service & Privacy Policy */}
+      <Stack.Screen
+        name="LegalScreen"
+        component={LegalScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#0A0A0B" },
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
 
