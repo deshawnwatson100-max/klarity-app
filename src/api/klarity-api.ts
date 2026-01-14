@@ -100,7 +100,8 @@ const MODEL = "gpt-5.2";
 async function callGPT5Mini(
   messages: GPT5Message[],
   maxTokens: number = 1000,
-  useJsonMode: boolean = false
+  useJsonMode: boolean = false,
+  temperature: number = 0.75
 ): Promise<string> {
   const client = getOpenAIClient();
 
@@ -108,7 +109,7 @@ async function callGPT5Mini(
     model: MODEL,
     messages: messages as any,
     max_completion_tokens: maxTokens,
-    temperature: 1,
+    temperature,
   };
 
   // Use JSON mode for structured outputs
@@ -2545,6 +2546,59 @@ Return only the text with emojis naturally integrated.`;
 }
 
 /**
+ * Build a context summary from conversation history for better continuity
+ * Extracts key facts: names, relationships, situations, and prior insights
+ */
+function buildContextSummary(
+  conversationHistory: { role: "user" | "assistant"; content: string }[]
+): string | null {
+  if (conversationHistory.length === 0) return null;
+
+  const keyDetails: string[] = [];
+
+  // Extract key information from user messages
+  for (const msg of conversationHistory) {
+    if (msg.role === "user") {
+      // Look for names (capitalized words that might be names)
+      const nameMatches = msg.content.match(/\b[A-Z][a-z]+\b/g);
+      if (nameMatches) {
+        const potentialNames = nameMatches.filter(
+          (name) => !["I", "The", "This", "That", "What", "When", "Where", "Why", "How", "My", "He", "She", "They", "It"].includes(name)
+        );
+        if (potentialNames.length > 0) {
+          keyDetails.push(`Names mentioned: ${[...new Set(potentialNames)].join(", ")}`);
+        }
+      }
+
+      // Check for relationship keywords
+      const relationshipKeywords = ["boyfriend", "girlfriend", "partner", "husband", "wife", "friend", "coworker", "boss", "ex", "mom", "dad", "brother", "sister", "family"];
+      for (const keyword of relationshipKeywords) {
+        if (msg.content.toLowerCase().includes(keyword)) {
+          keyDetails.push(`Relationship context: ${keyword} mentioned`);
+          break;
+        }
+      }
+    }
+
+    // Extract search result context
+    if (msg.content.includes("[Search Results for")) {
+      keyDetails.push("Deep search was performed - user has verified profile information");
+    }
+  }
+
+  // Get the first user message as the original situation
+  const firstUserMsg = conversationHistory.find((m) => m.role === "user");
+  if (firstUserMsg && firstUserMsg.content.length > 50) {
+    const situationPreview = firstUserMsg.content.substring(0, 200);
+    keyDetails.push(`Original situation: "${situationPreview}..."`);
+  }
+
+  if (keyDetails.length === 0) return null;
+
+  return [...new Set(keyDetails)].join("\n");
+}
+
+/**
  * Generate a Decode Mode conversational response
  * Decode Mode is a collaborative thinking space where the user can freely brainstorm
  * and talk through confusion, concern, or uncertainty about social situations
@@ -2705,19 +2759,45 @@ A great Decode response leaves someone feeling:
 - "I feel clearer about what I'm feeling"
 - "I want to keep exploring this"
 
-Keep responses **2-4 paragraphs** typically. Be concise but meaningful - every sentence should add value.`;
+Keep responses **2-4 paragraphs** typically. Be concise but meaningful - every sentence should add value.
 
-  const messages: GPT5Message[] = [
-    { role: "system", content: systemPrompt },
+## CONTEXT CONTINUITY (CRITICAL)
+
+You MUST maintain perfect continuity with the conversation. Before responding:
+1. Recall any names, relationships, or situations mentioned earlier
+2. Reference specific details the user shared (not generic summaries)
+3. Build on insights from previous exchanges
+4. If the user asks a follow-up like "is there anything else" or "what else", understand they want you to continue analyzing the SAME situation - do not ask them to repeat context
+5. Never say "I don't have context" if prior messages exist - use them`;
+
+  // Build context-aware messages with conversation summary for long chats
+  const messages: GPT5Message[] = [{ role: "system", content: systemPrompt }];
+
+  // If conversation is getting long, add a context summary at the start
+  if (conversationHistory.length > 6) {
+    const contextSummary = buildContextSummary(conversationHistory);
+    if (contextSummary) {
+      messages.push({
+        role: "system",
+        content: `[CONVERSATION CONTEXT SUMMARY]\n${contextSummary}\n[END SUMMARY - Use this to maintain continuity]`,
+      });
+    }
+  }
+
+  // Add conversation history
+  messages.push(
     ...conversationHistory.map((msg) => ({
       role: msg.role as "user" | "assistant",
       content: msg.content,
-    })),
-    { role: "user", content: userMessage },
-  ];
+    }))
+  );
+
+  // Add current user message
+  messages.push({ role: "user", content: userMessage });
 
   try {
-    const rawResponse = await callGPT5Mini(messages, 2500, false);
+    // Use lower temperature (0.7) for more consistent, focused decode responses
+    const rawResponse = await callGPT5Mini(messages, 2500, false, 0.7);
 
     // Parse the response to extract user-facing content and internal notation
     const { userResponse, notation } = parseKlarityNotation(rawResponse);
