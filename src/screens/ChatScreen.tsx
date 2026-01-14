@@ -1223,7 +1223,7 @@ export function ChatScreen({ navigation, route }: Props) {
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "user",
-        content: currentInput || (selectedImageUri ? "[Screenshot shared]" : ""),
+        content: currentInput || "",
         timestamp: Date.now(),
         imageUrl: selectedImageUri,
         imageBase64: selectedImageBase64,
@@ -1243,7 +1243,7 @@ export function ChatScreen({ navigation, route }: Props) {
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "user",
-        content: currentInput || (selectedImageUri ? "[Screenshot shared]" : ""),
+        content: currentInput || "",
         timestamp: Date.now(),
         imageUrl: selectedImageUri,
         imageBase64: selectedImageBase64,
