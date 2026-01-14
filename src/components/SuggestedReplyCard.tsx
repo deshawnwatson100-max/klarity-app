@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { TypewriterText } from "./TypewriterText";
+import { useFeedbackStore } from "../state/feedbackStore";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
@@ -132,6 +133,9 @@ function ReplyItem({
     extrapolate: "clamp",
   });
 
+  // Get feedback store action
+  const addFeedback = useFeedbackStore((s) => s.addFeedback);
+
   const handleCopy = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectReply(reply.text);
@@ -142,12 +146,22 @@ function ReplyItem({
 
   const handleLike = () => {
     Haptics.selectionAsync();
-    setLiked(liked === "like" ? null : "like");
+    const newLiked = liked === "like" ? null : "like";
+    setLiked(newLiked);
+    // Save feedback to store when liking (not when un-liking)
+    if (newLiked === "like") {
+      addFeedback(reply.text, "like");
+    }
   };
 
   const handleDislike = () => {
     Haptics.selectionAsync();
-    setLiked(liked === "dislike" ? null : "dislike");
+    const newLiked = liked === "dislike" ? null : "dislike";
+    setLiked(newLiked);
+    // Save feedback to store when disliking (not when un-disliking)
+    if (newLiked === "dislike") {
+      addFeedback(reply.text, "dislike");
+    }
   };
 
   const handleAddEmoji = () => {

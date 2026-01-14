@@ -253,8 +253,21 @@ Respond with valid JSON only:
  */
 export async function generateQuickSuggestedReply(
   userMessage: string,
-  analysis?: EmotionalAnalysis
+  analysis?: EmotionalAnalysis,
+  userPreferenceSummary?: string
 ): Promise<{ id: string; text: string; guidanceNote: string; notation?: KlarityNotation }> {
+  // Build user preferences section if available
+  const preferencesSection = userPreferenceSummary
+    ? `
+## USER STYLE PREFERENCES (IMPORTANT)
+
+Based on the user's feedback on previous replies, tailor your response to match their preferences:
+${userPreferenceSummary}
+
+Incorporate these preferences naturally while still responding appropriately to the conversation.
+`
+    : "";
+
   const systemPrompt = `You are Klarity. In every response, you must generate two outputs:
 
 1. A JSON object with the suggested reply and guidance note.
@@ -372,7 +385,7 @@ Before finalizing, ask:
 2. Does it sound like a real person would say this?
 3. Is it appropriate for the tone of the conversation?
 4. Would the user feel good sending this?
-
+${preferencesSection}
 Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) — practical, not emotional.
 
 Respond with valid JSON first, then the notation block:

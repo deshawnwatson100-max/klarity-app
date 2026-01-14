@@ -48,6 +48,7 @@ import { DeepDiveEvaluationBubble } from "../components/DeepDiveEvaluationBubble
 import { DeepDiveFollowUpCard } from "../components/DeepDiveFollowUpCard";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
+import { useFeedbackStore } from "../state/feedbackStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import {
   generateDysfunctionalCommunicationSummary,
@@ -157,6 +158,9 @@ export function ChatScreen({ navigation, route }: Props) {
   const activePersonContext = activeLoopPersonContextId
     ? getPersonContextById(activeLoopPersonContextId)
     : null;
+
+  // User feedback preferences for reply generation
+  const getPreferenceSummary = useFeedbackStore((s) => s.getPreferenceSummary);
 
   // Track if Deep Search has been triggered this session
   const deepSearchTriggered = useRef(false);
@@ -865,10 +869,12 @@ export function ChatScreen({ navigation, route }: Props) {
           guidanceNote: "This responds directly to the last message in the conversation.",
         };
       } else {
-        // Generate reply for text-only input
+        // Generate reply for text-only input with user preferences
+        const preferenceSummary = getPreferenceSummary();
         suggestedReply = await generateQuickSuggestedReply(
           userMessage.content,
-          analysis || undefined
+          analysis || undefined,
+          preferenceSummary || undefined
         );
       }
 
@@ -1021,9 +1027,13 @@ export function ChatScreen({ navigation, route }: Props) {
         fullAnalysis: userMessageContent,
       };
 
+      // Get user preferences for reply generation
+      const preferenceSummary = getPreferenceSummary();
+
       const newReply = await generateQuickSuggestedReply(
         contextForReply,
-        analysisToUse
+        analysisToUse,
+        preferenceSummary || undefined
       );
 
       removeMessageFromActiveLoop(typingMsg.id);
@@ -1157,7 +1167,7 @@ export function ChatScreen({ navigation, route }: Props) {
 
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Generate new suggested reply
+      // Generate new suggested reply with user preferences
       const typingMsg2: TypingMessage = {
         id: Date.now().toString() + "_typing_reply",
         role: "typing",
@@ -1166,7 +1176,8 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(typingMsg2);
 
-      const newReply = await generateQuickSuggestedReply(enrichedMessage, newAnalysis);
+      const preferenceSummary = getPreferenceSummary();
+      const newReply = await generateQuickSuggestedReply(enrichedMessage, newAnalysis, preferenceSummary || undefined);
 
       removeMessageFromActiveLoop(typingMsg2.id);
 
