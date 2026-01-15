@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
+import { useTheme } from "../theme/ThemeContext";
 
 /**
  * Header icon component for Person Context
@@ -16,6 +17,7 @@ interface PersonContextHeaderIconProps {
 export function PersonContextHeaderIcon({
   onPress,
 }: PersonContextHeaderIconProps) {
+  const { colors, isDark } = useTheme();
   // Get the person context ID for the current active loop
   const activeLoopPersonContextId = useActiveLoopPersonContextId();
   // Get the actual person context data
@@ -37,7 +39,7 @@ export function PersonContextHeaderIcon({
     >
       {hasActivePerson ? (
         <View style={{ position: "relative" }}>
-          <Ionicons name="search" size={24} color="#FFFFFF" />
+          <Ionicons name="search" size={24} color={colors.textPrimary} />
           {/* Linked indicator - double checkmark */}
           <View
             style={{
@@ -47,16 +49,18 @@ export function PersonContextHeaderIcon({
               width: 14,
               height: 14,
               borderRadius: 7,
-              backgroundColor: "#111111",
+              backgroundColor: isDark
+                ? "rgba(255, 255, 255, 0.12)"
+                : "rgba(0, 0, 0, 0.08)",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons name="checkmark-done" size={10} color="#FFFFFF" />
+            <Ionicons name="checkmark-done" size={10} color={colors.textPrimary} />
           </View>
         </View>
       ) : (
-        <Ionicons name="search-outline" size={22} color="#6B7280" />
+        <Ionicons name="search-outline" size={22} color={colors.textTertiary} />
       )}
     </Pressable>
   );
