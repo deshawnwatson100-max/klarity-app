@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,23 +15,44 @@ import {
   useLoopsStore,
 } from "../state/loopsStore";
 import { RelationshipContextType, ContextAnchorType, DeepSearchExtendedContext } from "../types/personContext";
+import { useTheme } from "../theme/ThemeContext";
 
-// ChatGPT-style colors - minimal, borderless
-const COLORS = {
-  background: "#1A1A1A",
-  surface: "#0A0A0A",
-  surfaceHover: "#1A1A1A",
-  border: "transparent",
-  text: "#ECECEC",
-  textSecondary: "#B4B4B4",
-  textMuted: "#8E8E8E",
-  accent: "#10A37F",
-  accentBg: "rgba(16, 163, 127, 0.15)",
-  error: "#EF4444",
-  errorBg: "rgba(239, 68, 68, 0.15)",
-  warning: "#F59E0B",
-  warningBg: "rgba(245, 158, 11, 0.15)",
-};
+// Theme-aware color getter
+function getColors(isDark: boolean) {
+  if (isDark) {
+    return {
+      background: "#1A1A1A",
+      surface: "#0A0A0A",
+      surfaceHover: "#1A1A1A",
+      border: "transparent",
+      text: "#ECECEC",
+      textSecondary: "#B4B4B4",
+      textMuted: "#8E8E8E",
+      accent: "#10A37F",
+      accentBg: "rgba(16, 163, 127, 0.15)",
+      error: "#EF4444",
+      errorBg: "rgba(239, 68, 68, 0.15)",
+      warning: "#F59E0B",
+      warningBg: "rgba(245, 158, 11, 0.15)",
+    };
+  }
+  // Light mode colors
+  return {
+    background: "#F5F5F7",
+    surface: "#FFFFFF",
+    surfaceHover: "#EBEBED",
+    border: "rgba(0, 0, 0, 0.08)",
+    text: "#1C1C1E",
+    textSecondary: "#636366",
+    textMuted: "#8E8E93",
+    accent: "#0D8A6A",
+    accentBg: "rgba(13, 138, 106, 0.12)",
+    error: "#DC2626",
+    errorBg: "rgba(220, 38, 38, 0.1)",
+    warning: "#D97706",
+    warningBg: "rgba(217, 119, 6, 0.1)",
+  };
+}
 
 const RELATIONSHIP_OPTIONS: {
   value: RelationshipContextType;
@@ -57,6 +78,9 @@ export const PersonContextCard = memo(function PersonContextCard({
   onDismiss,
   showLinkOption = false,
 }: PersonContextCardProps) {
+  const { isDark } = useTheme();
+  const COLORS = useMemo(() => getColors(isDark), [isDark]);
+
   const createPersonContext = usePersonContextStore((s) => s.createPersonContext);
   const setActiveLoopPersonContext = useLoopsStore((s) => s.setActiveLoopPersonContext);
 
@@ -203,6 +227,8 @@ export const PersonContextCard = memo(function PersonContextCard({
             paddingVertical: 14,
             fontSize: 15,
             color: COLORS.text,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: COLORS.border,
           }}
           placeholder="Name"
           placeholderTextColor={COLORS.textMuted}
@@ -222,6 +248,8 @@ export const PersonContextCard = memo(function PersonContextCard({
             paddingVertical: 14,
             fontSize: 15,
             color: COLORS.text,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: COLORS.border,
           }}
           placeholder="Location (optional)"
           placeholderTextColor={COLORS.textMuted}
@@ -251,7 +279,7 @@ export const PersonContextCard = memo(function PersonContextCard({
                   borderRadius: 20,
                   backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
                   borderWidth: 1,
-                  borderColor: isSelected ? COLORS.accent : "transparent",
+                  borderColor: isSelected ? COLORS.accent : (isDark ? "transparent" : COLORS.border),
                 }}
               >
                 <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
@@ -279,6 +307,8 @@ export const PersonContextCard = memo(function PersonContextCard({
             backgroundColor: COLORS.surface,
             borderRadius: 10,
             marginBottom: 16,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: COLORS.border,
           }}
         >
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -325,6 +355,8 @@ export const PersonContextCard = memo(function PersonContextCard({
           justifyContent: "center",
           gap: 8,
           opacity: pressed ? 0.8 : 1,
+          borderWidth: !isFormValid && !isDark ? 1 : 0,
+          borderColor: COLORS.border,
         })}
       >
         <Ionicons
