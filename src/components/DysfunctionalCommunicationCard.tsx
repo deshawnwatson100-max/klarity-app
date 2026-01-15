@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TypewriterText } from "./TypewriterText";
+import { useTheme } from "../theme/ThemeContext";
 
 interface DysfunctionalCommunicationCardProps {
   summary: string;
@@ -12,6 +13,7 @@ export function DysfunctionalCommunicationCard({
   summary,
   patterns,
 }: DysfunctionalCommunicationCardProps) {
+  const { colors, isDark } = useTheme();
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
   const [hasAnimated, setHasAnimated] = useState(false);
   const [shouldAnimate, setShouldAnimate] = useState(false); // Track when to start animation
@@ -79,13 +81,19 @@ export function DysfunctionalCommunicationCard({
         marginBottom: 20, // Generous vertical spacing
       }}
     >
-      {/* Pitch black card background */}
+      {/* Card background - adapts to theme */}
       <Pressable onPress={handleMinimize}>
         <View
           style={{
-            backgroundColor: "#000000",
+            backgroundColor: isDark ? "#000000" : colors.cardBackground,
             borderRadius: 16,
             padding: 16,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: colors.cardBorder,
+            shadowColor: colors.shadowColor,
+            shadowOffset: { width: 0, height: isDark ? 0 : 2 },
+            shadowOpacity: isDark ? 0 : 0.06,
+            shadowRadius: isDark ? 0 : 8,
           }}
         >
           {/* Header row */}
@@ -93,14 +101,14 @@ export function DysfunctionalCommunicationCard({
             <Ionicons
               name="chatbubbles-outline"
               size={14}
-              color="#3B82F6"
+              color={colors.info}
               style={{ marginRight: 6 }}
             />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: "500",
-                color: "#3B82F6",
+                color: colors.info,
                 letterSpacing: 0.3,
                 textTransform: "uppercase",
               }}
@@ -114,7 +122,7 @@ export function DysfunctionalCommunicationCard({
             <Text
               style={{
                 fontSize: 14,
-                color: "#9CA3AF",
+                color: colors.textSecondary,
                 fontStyle: "italic",
               }}
             >
@@ -137,7 +145,7 @@ export function DysfunctionalCommunicationCard({
                 style={{
                   fontSize: 15,
                   lineHeight: 26,
-                  color: "#ECECF1",
+                  color: isDark ? "#ECECF1" : colors.textPrimary,
                 }}
                 speed={85}
                 onComplete={() => setHasAnimated(true)}
@@ -147,7 +155,7 @@ export function DysfunctionalCommunicationCard({
                 style={{
                   fontSize: 15,
                   lineHeight: 26,
-                  color: "#ECECF1",
+                  color: isDark ? "#ECECF1" : colors.textPrimary,
                 }}
               >
                 {summary}
@@ -166,13 +174,13 @@ export function DysfunctionalCommunicationCard({
                       paddingHorizontal: 10,
                       paddingVertical: 4,
                       borderWidth: 1,
-                      borderColor: "#374151",
+                      borderColor: isDark ? "#374151" : colors.border,
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#9CA3AF",
+                        color: colors.textSecondary,
                         fontWeight: "400",
                       }}
                     >
