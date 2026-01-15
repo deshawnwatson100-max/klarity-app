@@ -231,8 +231,6 @@ export const PersonContextCard = memo(function PersonContextCard({
             paddingVertical: 14,
             fontSize: 15,
             color: COLORS.text,
-            borderWidth: isDark ? 0 : 1,
-            borderColor: COLORS.border,
           }}
           placeholder="Name"
           placeholderTextColor={COLORS.textMuted}
@@ -252,8 +250,6 @@ export const PersonContextCard = memo(function PersonContextCard({
             paddingVertical: 14,
             fontSize: 15,
             color: COLORS.text,
-            borderWidth: isDark ? 0 : 1,
-            borderColor: COLORS.border,
           }}
           placeholder="Location (optional)"
           placeholderTextColor={COLORS.textMuted}
@@ -282,8 +278,6 @@ export const PersonContextCard = memo(function PersonContextCard({
                   paddingVertical: 10,
                   borderRadius: 20,
                   backgroundColor: isSelected ? COLORS.accentBg : COLORS.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? COLORS.accent : (isDark ? "transparent" : COLORS.border),
                 }}
               >
                 <Text style={{ fontSize: 14, color: isSelected ? COLORS.accent : COLORS.textSecondary }}>
@@ -311,8 +305,6 @@ export const PersonContextCard = memo(function PersonContextCard({
             backgroundColor: COLORS.surface,
             borderRadius: 10,
             marginBottom: 16,
-            borderWidth: isDark ? 0 : 1,
-            borderColor: COLORS.border,
           }}
         >
           <View style={{ flex: 1, marginRight: 12 }}>
