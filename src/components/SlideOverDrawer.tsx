@@ -21,6 +21,7 @@ import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
+import { ThemeColors } from "../theme/colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -97,6 +98,7 @@ interface ContextMenuChatListItemProps {
   onPin: () => void;
   isLast?: boolean;
   isActive?: boolean;
+  colors: ThemeColors;
 }
 
 function ContextMenuChatListItem({
@@ -106,7 +108,8 @@ function ContextMenuChatListItem({
   onArchive,
   onPin,
   isLast = false,
-  isActive = false
+  isActive = false,
+  colors
 }: ContextMenuChatListItemProps) {
   // Get emotional theme from first user message or title
   const getPreview = () => {
@@ -185,7 +188,7 @@ function ContextMenuChatListItem({
   return (
     <View
       style={{
-        backgroundColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
+        backgroundColor: isActive ? colors.drawerItemActive : "transparent",
         borderRadius: isActive ? 12 : 0,
         marginHorizontal: isActive ? 8 : 0,
         marginVertical: isActive ? 4 : 0,
@@ -197,7 +200,7 @@ function ContextMenuChatListItem({
             onPress={onPress}
             className="active:opacity-60"
             style={({ pressed }) => ({
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              backgroundColor: pressed ? colors.surfaceElevated : "transparent",
               borderRadius: isActive ? 12 : 0,
             })}
           >
@@ -206,27 +209,27 @@ function ContextMenuChatListItem({
               <View className="flex-row items-center flex-1 mr-2">
                 {loop.isPinned && (
                   <View className="mr-1.5">
-                    <Ionicons name="pin" size={12} color="#F59E0B" />
+                    <Ionicons name="pin" size={12} color={colors.warning} />
                   </View>
                 )}
                 <Text
                   className="text-sm font-medium flex-1"
-                  style={{ color: "#E5E7EB" }}
+                  style={{ color: colors.drawerItemText }}
                   numberOfLines={1}
                 >
                   {loop.title}
                 </Text>
               </View>
-              <Text className="text-xs" style={{ color: "#6B7280" }}>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>
                 {formatDate(loop.updatedAt)}
               </Text>
             </View>
             {showImageIcon ? (
               <View className="flex-row items-center">
-                <Ionicons name="image-outline" size={14} color="#9CA3AF" />
+                <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
                 <Text
                   className="text-xs ml-1"
-                  style={{ color: "#9CA3AF" }}
+                  style={{ color: colors.textSecondary }}
                 >
                   Image conversation
                 </Text>
@@ -234,7 +237,7 @@ function ContextMenuChatListItem({
             ) : (
               <Text
                 className="text-xs"
-                style={{ color: "#9CA3AF" }}
+                style={{ color: colors.textSecondary }}
                 numberOfLines={2}
               >
                 {preview}
@@ -249,14 +252,14 @@ function ContextMenuChatListItem({
                     borderRadius: 4,
                     backgroundColor:
                       loop.emotionalClarity >= 70
-                        ? "#10B981"
+                        ? colors.success
                         : loop.emotionalClarity >= 40
-                        ? "#F59E0B"
-                        : "#EF4444",
+                        ? colors.warning
+                        : colors.error,
                     marginRight: 6,
                   }}
                 />
-                <Text className="text-xs" style={{ color: "#6B7280" }}>
+                <Text className="text-xs" style={{ color: colors.textTertiary }}>
                   {loop.emotionalClarity}% clarity
                 </Text>
               </View>
@@ -896,7 +899,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
         }}
       >
         <View className="flex-row items-center mb-4">
-          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+          <Text className="text-xl font-semibold" style={{ color: colors.textPrimary }}>
             Klarity
           </Text>
         </View>
@@ -905,12 +908,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           <Pressable
             onPress={handleDeepSearch}
             className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl active:opacity-70"
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
+            style={{ backgroundColor: colors.surfaceElevated }}
           >
-            <Ionicons name="search" size={18} color="#6B7280" />
+            <Ionicons name="search" size={18} color={colors.textTertiary} />
             <Text
               className="flex-1 ml-2 text-base"
-              style={{ color: "#6B7280" }}
+              style={{ color: colors.textTertiary }}
             >
               Chat Search...
             </Text>
@@ -922,7 +925,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <View style={{ position: "relative" }}>
-              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+              <Ionicons name="chatbubble-outline" size={24} color={colors.textSecondary} />
               <View
                 style={{
                   position: "absolute",
@@ -934,7 +937,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   justifyContent: "center",
                 }}
               >
-                <Ionicons name="add" size={12} color="#9CA3AF" />
+                <Ionicons name="add" size={12} color={colors.textSecondary} />
               </View>
             </View>
           </Pressable>
@@ -957,7 +960,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           {pinnedLoops.length > 0 && (
             <View style={{ marginTop: 8 }}>
               <View className="px-5 pb-2">
-                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#F59E0B" }}>
+                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: colors.warning }}>
                   Pinned
                 </Text>
               </View>
@@ -971,6 +974,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === pinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
+                  colors={colors}
                 />
               ))}
             </View>
@@ -978,7 +982,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           {unpinnedLoops.length > 0 && (
             <View style={{ marginTop: pinnedLoops.length > 0 ? 16 : 8 }}>
               <View className="px-5 pb-2">
-                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
+                <Text className="text-xs font-medium uppercase tracking-wider" style={{ color: colors.textTertiary }}>
                   Recent
                 </Text>
               </View>
@@ -992,6 +996,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === unpinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
+                  colors={colors}
                 />
               ))}
             </View>
