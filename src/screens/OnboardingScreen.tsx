@@ -312,32 +312,44 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           }}
         >
           <View className="flex-row items-center justify-between px-4 h-14">
+            {/* Left - Menu Button and Klarity text */}
             <View className="flex-row items-center">
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: isDark
-                    ? "rgba(255, 255, 255, 0.08)"
-                    : "rgba(0, 0, 0, 0.06)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="sparkles" size={18} color={colors.headerIcon} />
-              </View>
+              <Pressable className="active:opacity-60">
+                <Ionicons name="menu" size={28} color={colors.headerIcon} />
+              </Pressable>
               <Text
                 style={{
                   fontSize: 18,
                   fontWeight: "600",
                   color: colors.headerText,
+                  marginLeft: 12,
                   letterSpacing: 0.5,
                 }}
               >
                 Klarity
               </Text>
+            </View>
+
+            {/* Right - New Loop Button */}
+            <View className="flex-row items-center">
+              <Pressable className="active:opacity-60">
+                <View style={{ position: "relative" }}>
+                  <Ionicons name="chatbubble-outline" size={24} color={colors.headerIcon} />
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      left: 0,
+                      right: 0,
+                      bottom: 4,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name="add" size={12} color={colors.headerIcon} />
+                  </View>
+                </View>
+              </Pressable>
             </View>
           </View>
         </View>
