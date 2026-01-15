@@ -17,11 +17,13 @@ import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
 import { MessageMode } from "../types/chat";
+import { useTheme } from "../theme";
 
 type Props = StackScreenProps<RootStackParamList, "InputScreen">;
 
 export function InputScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [currentInput, setCurrentInput] = useState("");
   const [selectedImageUri, setSelectedImageUri] = useState<string | undefined>();
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | undefined>();
@@ -262,7 +264,7 @@ export function InputScreen({ navigation }: Props) {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Main content - slides with drawer */}
       <Animated.View
         style={{
@@ -271,9 +273,9 @@ export function InputScreen({ navigation }: Props) {
         }}
         {...panResponder.panHandlers}
       >
-        {/* Deep charcoal background - minimal and calming */}
+        {/* Deep charcoal background for dark mode, clean white for light mode */}
         <LinearGradient
-          colors={["#050608", "#0A0A0C", "#050608"]}
+          colors={isDark ? ["#050608", "#0A0A0C", "#050608"] : ["#FFFFFF", "#F8F9FA", "#FFFFFF"]}
           locations={[0, 0.5, 1]}
           style={{
             position: "absolute",
@@ -284,11 +286,11 @@ export function InputScreen({ navigation }: Props) {
           }}
         />
 
-        {/* Soft flares - monochromatic minimal glow - Layer 1 */}
-        <SoftFlares />
+        {/* Soft flares - monochromatic minimal glow - Layer 1 (dark mode only) */}
+        {isDark && <SoftFlares />}
 
-        {/* Floating particles - cool-toned minimal - Layer 2 */}
-        <FloatingParticles count={20} />
+        {/* Floating particles - cool-toned minimal - Layer 2 (dark mode only) */}
+        {isDark && <FloatingParticles count={20} />}
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -321,12 +323,12 @@ export function InputScreen({ navigation }: Props) {
             {isRecording ? (
               <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
                 <Text
-                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: "#9CA3AF" }}
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
                 >
                   Recording...
                 </Text>
                 <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: "#E5E7EB", fontSize: 14, marginTop: 24 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
                   Tap the stop button when done
                 </Text>
               </View>

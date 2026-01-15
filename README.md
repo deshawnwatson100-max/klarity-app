@@ -1922,3 +1922,56 @@ Settings are managed via `settingsStore.ts` with full persistence:
 - `src/navigation/RootNavigator.tsx` - Screen registration
 - `src/components/SlideOverDrawer.tsx` - Settings button in drawer
 
+### Theme System (Light/Dark Mode)
+The app now supports a full light/dark theme system that respects user preferences.
+
+#### How to Change Theme
+1. Go to **Settings** → **Appearance** → **Theme**
+2. Choose from:
+   - **Dark** - Always use dark mode (default)
+   - **Light** - Always use light mode
+   - **System** - Follow device settings
+
+#### Theme Architecture
+The theme system uses React Context for efficient color propagation:
+
+**Files:**
+- `src/theme/colors.ts` - Color palette definitions for both themes
+- `src/theme/ThemeContext.tsx` - Theme provider and hooks
+- `src/theme/index.ts` - Public exports
+
+**Usage in components:**
+```tsx
+import { useTheme } from "../theme";
+
+function MyComponent() {
+  const { colors, isDark } = useTheme();
+
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <Text style={{ color: colors.textPrimary }}>Hello</Text>
+    </View>
+  );
+}
+```
+
+#### Color Tokens
+The theme provides consistent color tokens across both themes:
+
+| Token | Dark Mode | Light Mode |
+|-------|-----------|------------|
+| background | #0A0A0B | #FFFFFF |
+| textPrimary | #F9FAFB | #1C1C1E |
+| textSecondary | #9CA3AF | #636366 |
+| surface | rgba(255,255,255,0.03) | rgba(0,0,0,0.02) |
+| success | #34C759 | #34C759 |
+| error | #EF4444 | #EF4444 |
+
+#### Components with Theme Support
+- InputScreen, ChatScreen - Main screens
+- SettingsScreen - Full theme support
+- Header - Adapts to theme
+- InputBar - Input field styling
+- SlideOverDrawer - Drawer background and items
+- All modals and overlays
+

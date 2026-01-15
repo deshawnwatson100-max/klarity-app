@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
+import { useTheme } from "../theme";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -49,6 +50,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   onCancelEdit,
 }, ref) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const screenWidth = Dimensions.get("window").width;
@@ -205,7 +207,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
       className="px-4 py-3"
       style={{
         paddingBottom: Math.max(insets.bottom, 12),
-        backgroundColor: "#111111",
+        backgroundColor: colors.headerBackground,
       }}
     >
       {/* Edit Mode Indicator */}
@@ -215,7 +217,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "#1F1F1F",
+            backgroundColor: isDark ? "#1F1F1F" : "#F0F0F0",
             borderRadius: 12,
             paddingHorizontal: 14,
             paddingVertical: 10,
@@ -223,8 +225,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Ionicons name="pencil" size={16} color="#9CA3AF" />
-            <Text style={{ color: "#9CA3AF", fontSize: 14 }}>Editing message</Text>
+            <Ionicons name="pencil" size={16} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Editing message</Text>
           </View>
           <Pressable
             onPress={handleCancelEdit}
@@ -234,7 +236,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               padding: 4,
             })}
           >
-            <Ionicons name="close-circle" size={22} color="#6B7280" />
+            <Ionicons name="close-circle" size={22} color={colors.textTertiary} />
           </Pressable>
         </View>
       )}
@@ -268,7 +270,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
           disabled={disabled}
           className="active:opacity-60"
         >
-          <Ionicons name="image-outline" size={28} color="#9CA3AF" />
+          <Ionicons name="image-outline" size={28} color={colors.textSecondary} />
         </Pressable>
 
         {/* Input Field */}
@@ -283,10 +285,10 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 right: -2,
                 bottom: -2,
                 borderRadius: 30,
-                backgroundColor: "rgba(156, 163, 175, 0.12)",
-                shadowColor: "#9CA3AF",
+                backgroundColor: isDark ? "rgba(156, 163, 175, 0.12)" : "rgba(0, 0, 0, 0.08)",
+                shadowColor: isDark ? "#9CA3AF" : "#000",
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.3,
+                shadowOpacity: isDark ? 0.3 : 0.1,
                 shadowRadius: 8,
               }}
             />
@@ -295,7 +297,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
           {/* Inner input with pitch black background */}
           <View
             style={{
-              backgroundColor: "#000000",
+              backgroundColor: isDark ? "#000000" : "#FFFFFF",
               borderRadius: 28,
               paddingHorizontal: 16,
               paddingVertical: 12,
@@ -303,6 +305,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               maxHeight: 100,
               justifyContent: "center",
               overflow: "hidden",
+              borderWidth: isDark ? 0 : 1,
+              borderColor: isDark ? "transparent" : colors.border,
             }}
           >
             {/* Sliding Placeholder Container */}
@@ -323,7 +327,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 <Animated.Text
                   style={{
                     position: "absolute",
-                    color: "#6B7280",
+                    color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: replyOpacity,
                     transform: [{ translateX: replyPlaceholderX }],
@@ -336,7 +340,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 <Animated.Text
                   style={{
                     position: "absolute",
-                    color: "#6B7280",
+                    color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: decodeOpacity,
                     transform: [{ translateX: decodePlaceholderX }],
@@ -357,7 +361,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               }}
               onBlur={() => setIsFocused(false)}
               placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : "Paste the message to decode...") : ""}
-              placeholderTextColor="#6B7280"
+              placeholderTextColor={colors.inputPlaceholder}
               editable={!disabled}
               onSubmitEditing={handleSend}
               returnKeyType="send"
@@ -365,7 +369,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               maxLength={1000}
               autoFocus={autoFocus}
               style={{
-                color: "#F9FAFB",
+                color: colors.textPrimary,
                 fontSize: 16,
                 lineHeight: 20,
               }}
@@ -380,7 +384,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
             disabled={disabled}
             className="active:opacity-60"
           >
-            <Ionicons name="send" size={24} color="#9CA3AF" />
+            <Ionicons name="send" size={24} color={colors.textSecondary} />
           </Pressable>
         ) : (
           <Pressable
@@ -396,7 +400,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 <Ionicons name="stop" size={24} color="white" />
               </View>
             ) : (
-              <Ionicons name="mic-outline" size={28} color="#9CA3AF" />
+              <Ionicons name="mic-outline" size={28} color={colors.textSecondary} />
             )}
           </Pressable>
         )}

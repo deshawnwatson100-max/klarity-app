@@ -5,7 +5,6 @@ import {
   ScrollView,
   Pressable,
   Switch,
-  Alert,
   Linking,
   Share,
   Modal,
@@ -28,11 +27,14 @@ import {
 import { useLoopsStore } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { useTheme } from "../theme";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 // Section Header Component
 function SectionHeader({ title, icon }: { title: string; icon: keyof typeof Ionicons.glyphMap }) {
+  const { colors } = useTheme();
+
   return (
     <View className="flex-row items-center px-5 pt-6 pb-3">
       <View
@@ -40,15 +42,15 @@ function SectionHeader({ title, icon }: { title: string; icon: keyof typeof Ioni
           width: 28,
           height: 28,
           borderRadius: 7,
-          backgroundColor: "rgba(255, 255, 255, 0.08)",
+          backgroundColor: colors.buttonBackground,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 10,
         }}
       >
-        <Ionicons name={icon} size={16} color="#9CA3AF" />
+        <Ionicons name={icon} size={16} color={colors.textSecondary} />
       </View>
-      <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#6B7280" }}>
+      <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.textTertiary }}>
         {title}
       </Text>
     </View>
@@ -78,6 +80,7 @@ function SettingsRow({
   subtitle,
 }: SettingsRowProps) {
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const { colors } = useTheme();
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -94,7 +97,7 @@ function SettingsRow({
       disabled={!onPress}
       className="active:opacity-70"
       style={({ pressed }) => ({
-        backgroundColor: pressed && onPress ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.03)",
+        backgroundColor: pressed && onPress ? colors.surfaceElevated : colors.surface,
         marginHorizontal: 16,
         borderTopLeftRadius: isFirst ? 12 : 0,
         borderTopRightRadius: isFirst ? 12 : 0,
@@ -106,18 +109,18 @@ function SettingsRow({
         className="flex-row items-center justify-between px-4 py-3.5"
         style={{
           borderBottomWidth: isLast ? 0 : 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.06)",
+          borderBottomColor: colors.divider,
         }}
       >
         <View className="flex-1 mr-3">
           <Text
             className="text-base"
-            style={{ color: destructive ? "#EF4444" : "#E5E7EB" }}
+            style={{ color: destructive ? colors.error : colors.textPrimary }}
           >
             {label}
           </Text>
           {subtitle && (
-            <Text className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+            <Text className="text-xs mt-0.5" style={{ color: colors.textTertiary }}>
               {subtitle}
             </Text>
           )}
@@ -126,13 +129,13 @@ function SettingsRow({
           rightElement
         ) : value ? (
           <View className="flex-row items-center">
-            <Text className="text-base mr-1" style={{ color: "#6B7280" }}>
+            <Text className="text-base mr-1" style={{ color: colors.textTertiary }}>
               {value}
             </Text>
-            {onPress && <Ionicons name="chevron-forward" size={16} color="#4B5563" />}
+            {onPress && <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />}
           </View>
         ) : onPress ? (
-          <Ionicons name="chevron-forward" size={16} color="#4B5563" />
+          <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
         ) : null}
       </View>
     </Pressable>
@@ -158,6 +161,7 @@ function ToggleRow({
   subtitle,
 }: ToggleRowProps) {
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const { colors } = useTheme();
 
   const handleChange = useCallback(
     (newValue: boolean) => {
@@ -172,7 +176,7 @@ function ToggleRow({
   return (
     <View
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        backgroundColor: colors.surface,
         marginHorizontal: 16,
         borderTopLeftRadius: isFirst ? 12 : 0,
         borderTopRightRadius: isFirst ? 12 : 0,
@@ -184,15 +188,15 @@ function ToggleRow({
         className="flex-row items-center justify-between px-4 py-3"
         style={{
           borderBottomWidth: isLast ? 0 : 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.06)",
+          borderBottomColor: colors.divider,
         }}
       >
         <View className="flex-1 mr-3">
-          <Text className="text-base" style={{ color: "#E5E7EB" }}>
+          <Text className="text-base" style={{ color: colors.textPrimary }}>
             {label}
           </Text>
           {subtitle && (
-            <Text className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+            <Text className="text-xs mt-0.5" style={{ color: colors.textTertiary }}>
               {subtitle}
             </Text>
           )}
@@ -200,9 +204,9 @@ function ToggleRow({
         <Switch
           value={value}
           onValueChange={handleChange}
-          trackColor={{ false: "#3A3A3C", true: "#34C759" }}
-          thumbColor="#FFFFFF"
-          ios_backgroundColor="#3A3A3C"
+          trackColor={{ false: colors.switchTrackOff, true: colors.switchTrackOn }}
+          thumbColor={colors.switchThumb}
+          ios_backgroundColor={colors.switchTrackOff}
         />
       </View>
     </View>
@@ -229,6 +233,7 @@ function SelectionModal<T extends string>({
 }: SelectionModalProps<T>) {
   const insets = useSafeAreaInsets();
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const { colors } = useTheme();
 
   const handleSelect = useCallback(
     (value: T) => {
@@ -248,14 +253,14 @@ function SelectionModal<T extends string>({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#0A0A0B" }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         {/* Header */}
         <View
           className="flex-row items-center justify-between px-5"
           style={{ paddingTop: insets.top + 16, paddingBottom: 16 }}
         >
           <View style={{ width: 60 }} />
-          <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
+          <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
             {title}
           </Text>
           <Pressable
@@ -263,7 +268,7 @@ function SelectionModal<T extends string>({
             className="active:opacity-60"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text className="text-base font-medium" style={{ color: "#3B82F6" }}>
+            <Text className="text-base font-medium" style={{ color: colors.info }}>
               Done
             </Text>
           </Pressable>
@@ -273,7 +278,7 @@ function SelectionModal<T extends string>({
         <ScrollView className="flex-1 px-4">
           <View
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.03)",
+              backgroundColor: colors.surface,
               borderRadius: 12,
               marginTop: 8,
             }}
@@ -288,21 +293,21 @@ function SelectionModal<T extends string>({
                   className="flex-row items-center px-4 py-4"
                   style={{
                     borderBottomWidth: index === options.length - 1 ? 0 : 0.5,
-                    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+                    borderBottomColor: colors.divider,
                   }}
                 >
                   <View className="flex-1">
-                    <Text className="text-base" style={{ color: "#E5E7EB" }}>
+                    <Text className="text-base" style={{ color: colors.textPrimary }}>
                       {option.label}
                     </Text>
                     {option.description && (
-                      <Text className="text-xs mt-1" style={{ color: "#6B7280" }}>
+                      <Text className="text-xs mt-1" style={{ color: colors.textTertiary }}>
                         {option.description}
                       </Text>
                     )}
                   </View>
                   {selectedValue === option.value && (
-                    <Ionicons name="checkmark" size={22} color="#34C759" />
+                    <Ionicons name="checkmark" size={22} color={colors.success} />
                   )}
                 </View>
               </Pressable>
@@ -328,8 +333,8 @@ function ClearDataModal({
   title: string;
   message: string;
 }) {
-  const insets = useSafeAreaInsets();
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const { colors, isDark } = useTheme();
 
   const handleConfirm = useCallback(() => {
     if (hapticsEnabled) {
@@ -349,7 +354,7 @@ function ClearDataModal({
       <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          backgroundColor: colors.overlay,
           justifyContent: "center",
           alignItems: "center",
           padding: 24,
@@ -357,7 +362,7 @@ function ClearDataModal({
       >
         <View
           style={{
-            backgroundColor: "#1C1C1E",
+            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
             borderRadius: 14,
             width: "100%",
             maxWidth: 320,
@@ -367,13 +372,13 @@ function ClearDataModal({
           <View className="px-5 pt-5 pb-4">
             <Text
               className="text-lg font-semibold text-center"
-              style={{ color: "#F9FAFB" }}
+              style={{ color: colors.textPrimary }}
             >
               {title}
             </Text>
             <Text
               className="text-sm text-center mt-2"
-              style={{ color: "#9CA3AF" }}
+              style={{ color: colors.textSecondary }}
             >
               {message}
             </Text>
@@ -381,7 +386,7 @@ function ClearDataModal({
           <View
             style={{
               borderTopWidth: 0.5,
-              borderTopColor: "rgba(255, 255, 255, 0.1)",
+              borderTopColor: colors.divider,
             }}
           >
             <Pressable
@@ -391,7 +396,7 @@ function ClearDataModal({
             >
               <Text
                 className="text-base font-medium text-center"
-                style={{ color: "#EF4444" }}
+                style={{ color: colors.error }}
               >
                 Delete
               </Text>
@@ -399,7 +404,7 @@ function ClearDataModal({
             <View
               style={{
                 borderTopWidth: 0.5,
-                borderTopColor: "rgba(255, 255, 255, 0.1)",
+                borderTopColor: colors.divider,
               }}
             >
               <Pressable
@@ -409,7 +414,7 @@ function ClearDataModal({
               >
                 <Text
                   className="text-base font-medium text-center"
-                  style={{ color: "#3B82F6" }}
+                  style={{ color: colors.info }}
                 >
                   Cancel
                 </Text>
@@ -425,6 +430,7 @@ function ClearDataModal({
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDark } = useTheme();
 
   // Settings store
   const theme = useSettingsStore((s) => s.theme);
@@ -538,8 +544,6 @@ export function SettingsScreen() {
 
   // Clear all chats
   const handleClearChats = useCallback(() => {
-    // Clear loops store - we need to manually clear since there's no clearAll action
-    // Using the store's internal reset mechanism
     useLoopsStore.setState({
       loops: [],
       archivedLoops: [],
@@ -552,16 +556,13 @@ export function SettingsScreen() {
 
   // Clear all data
   const handleClearAllData = useCallback(() => {
-    // Clear loops
     useLoopsStore.setState({
       loops: [],
       archivedLoops: [],
       activeLoopId: null,
       trackedRelationships: [],
     });
-    // Clear person contexts
     resetPersonContextStore();
-    // Reset settings to defaults
     useSettingsStore.getState().resetToDefaults();
     if (hapticsEnabled) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -588,7 +589,6 @@ export function SettingsScreen() {
     if (hapticsEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // Replace with your actual App Store URL
     const appStoreUrl = "https://apps.apple.com/app/id123456789";
     try {
       const canOpen = await Linking.canOpenURL(appStoreUrl);
@@ -625,17 +625,16 @@ export function SettingsScreen() {
 
   // Total data count
   const totalChats = loops.length + archivedLoops.length;
-  const totalProfiles = personContexts.length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0A0A0B" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View
         style={{
           paddingTop: insets.top,
-          backgroundColor: "#0A0A0B",
+          backgroundColor: colors.background,
           borderBottomWidth: 0.5,
-          borderBottomColor: "rgba(255, 255, 255, 0.06)",
+          borderBottomColor: colors.divider,
         }}
       >
         <View className="flex-row items-center justify-between px-4 h-14">
@@ -644,9 +643,9 @@ export function SettingsScreen() {
             className="active:opacity-60"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="chevron-back" size={28} color="#9CA3AF" />
+            <Ionicons name="chevron-back" size={28} color={colors.textSecondary} />
           </Pressable>
-          <Text className="text-lg font-semibold" style={{ color: "#F9FAFB" }}>
+          <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
             Settings
           </Text>
           <View style={{ width: 28 }} />
@@ -664,7 +663,6 @@ export function SettingsScreen() {
             if (hapticsEnabled) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
-            // Premium upgrade logic would go here
           }}
           className="mx-4 mt-4 overflow-hidden active:opacity-90"
           style={{ borderRadius: 16 }}
@@ -744,6 +742,7 @@ export function SettingsScreen() {
           subtitle="Check in with your conversations"
           value={dailyRemindersEnabled}
           onValueChange={setDailyRemindersEnabled}
+          isLast={!dailyRemindersEnabled}
         />
         {dailyRemindersEnabled && (
           <SettingsRow
@@ -751,17 +750,6 @@ export function SettingsScreen() {
             value={formatReminderTime(reminderTime)}
             onPress={() => setShowTimePicker(true)}
             isLast
-          />
-        )}
-        {!dailyRemindersEnabled && (
-          <View
-            style={{
-              height: 0,
-              marginHorizontal: 16,
-              backgroundColor: "rgba(255, 255, 255, 0.03)",
-              borderBottomLeftRadius: 12,
-              borderBottomRightRadius: 12,
-            }}
           />
         )}
 
@@ -836,7 +824,7 @@ export function SettingsScreen() {
           rightElement={
             <View className="flex-row items-center">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons key={star} name="star" size={14} color="#F59E0B" style={{ marginRight: 2 }} />
+                <Ionicons key={star} name="star" size={14} color={colors.warning} style={{ marginRight: 2 }} />
               ))}
             </View>
           }
@@ -845,12 +833,12 @@ export function SettingsScreen() {
         <SettingsRow
           label="Share with Friends"
           onPress={handleShareApp}
-          rightElement={<Ionicons name="share-outline" size={20} color="#6B7280" />}
+          rightElement={<Ionicons name="share-outline" size={20} color={colors.textTertiary} />}
         />
         <SettingsRow
           label="Contact Support"
           onPress={handleContactSupport}
-          rightElement={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
+          rightElement={<Ionicons name="mail-outline" size={20} color={colors.textTertiary} />}
         />
         <SettingsRow
           label="Version"
@@ -860,7 +848,7 @@ export function SettingsScreen() {
 
         {/* Footer */}
         <View className="items-center mt-8 mb-4">
-          <Text className="text-xs" style={{ color: "#4B5563" }}>
+          <Text className="text-xs" style={{ color: colors.textTertiary }}>
             Made with care by the Klarity team
           </Text>
         </View>
@@ -932,7 +920,7 @@ export function SettingsScreen() {
           is24Hour={false}
           display="spinner"
           onChange={handleTimeChange}
-          themeVariant="dark"
+          themeVariant={isDark ? "dark" : "light"}
         />
       )}
     </View>

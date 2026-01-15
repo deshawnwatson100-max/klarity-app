@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { ThemeProvider, useTheme } from "./src/theme";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -25,14 +26,26 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 
 */
 
+function AppContent() {
+  const { isDark } = useTheme();
+
+  return (
+    <>
+      <RootNavigator />
+      <StatusBar style={isDark ? "light" : "dark"} />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <NavigationContainer>
-          <RootNavigator />
-          <StatusBar style="light" />
-        </NavigationContainer>
+        <ThemeProvider>
+          <NavigationContainer>
+            <AppContent />
+          </NavigationContainer>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

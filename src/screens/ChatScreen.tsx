@@ -50,6 +50,7 @@ import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore
 import { usePersonContextStore } from "../state/personContextStore";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { useTheme } from "../theme";
 import {
   generateDysfunctionalCommunicationSummary,
   generateQuickSuggestedReply,
@@ -101,6 +102,7 @@ type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
 
 export function ChatScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const processedMessageIds = useRef<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -2628,24 +2630,24 @@ export function ChatScreen({ navigation, route }: Props) {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#050608" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Main content - slides with drawer */}
       <Animated.View
         style={{
           flex: 1,
-          backgroundColor: "#050608",
+          backgroundColor: colors.background,
           transform: [{ translateX: mainContentTranslateX }],
         }}
         {...panResponder.panHandlers}
       >
         <LinearGradient
-          colors={["#050608", "#0A0A0C", "#050608"]}
+          colors={isDark ? ["#050608", "#0A0A0C", "#050608"] : ["#FFFFFF", "#F8F9FA", "#FFFFFF"]}
           locations={[0, 0.5, 1]}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
 
-        <SoftFlares />
-        <FloatingParticles count={20} />
+        {isDark && <SoftFlares />}
+        {isDark && <FloatingParticles count={20} />}
 
         <Animated.View
           style={{

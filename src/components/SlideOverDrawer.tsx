@@ -20,6 +20,7 @@ import * as ContextMenu from "zeego/context-menu";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { useTheme } from "../theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -714,6 +715,7 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
 export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverDrawerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
 
   // State
   const [isRendered, setIsRendered] = useState(false);
@@ -1035,7 +1037,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           left: 0,
           bottom: 0,
           width: DRAWER_WIDTH,
-          backgroundColor: "#171717",
+          backgroundColor: colors.drawerBackground,
           transform: [{ translateX: drawerTranslateX }],
         }}
       >
@@ -1058,9 +1060,9 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   className="active:opacity-60"
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="chevron-back" size={24} color="#9CA3AF" />
+                  <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
                 </Pressable>
-                <Text className="text-xl font-semibold ml-3" style={{ color: "#F9FAFB" }}>
+                <Text className="text-xl font-semibold ml-3" style={{ color: colors.textPrimary }}>
                   Account
                 </Text>
               </View>
@@ -1073,7 +1075,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   alignItems: "center",
                   paddingVertical: 16,
                   paddingHorizontal: 16,
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  backgroundColor: colors.surfaceElevated,
                   borderRadius: 16,
                 }}
               >
@@ -1082,21 +1084,21 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     width: 48,
                     height: 48,
                     borderRadius: 24,
-                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    backgroundColor: colors.buttonBackground,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Ionicons name="person" size={24} color="#9CA3AF" />
+                  <Ionicons name="person" size={24} color={colors.textSecondary} />
                 </View>
                 <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text
                     className="text-base font-semibold"
-                    style={{ color: "#E5E7EB" }}
+                    style={{ color: colors.drawerItemText }}
                   >
                     Personal
                   </Text>
-                  <Text className="text-sm" style={{ color: "#6B7280" }}>
+                  <Text className="text-sm" style={{ color: colors.textTertiary }}>
                     Free Plan
                   </Text>
                 </View>
@@ -1119,12 +1121,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   alignItems: "center",
                   paddingVertical: 14,
                   paddingHorizontal: 16,
-                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  backgroundColor: colors.surface,
                   borderRadius: 12,
                   marginBottom: 8,
                 }}
               >
-                <Ionicons name="document-text-outline" size={20} color="#6B7280" />
+                <Ionicons name="document-text-outline" size={20} color={colors.textTertiary} />
                 <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
                   Terms of Service
                 </Text>
@@ -1343,14 +1345,14 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   alignItems: "center",
                   justifyContent: "center",
                   paddingVertical: 12,
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  backgroundColor: colors.surfaceElevated,
                   borderRadius: 12,
                 }}
               >
-                <Ionicons name="settings-outline" size={18} color="#9CA3AF" />
+                <Ionicons name="settings-outline" size={18} color={colors.textSecondary} />
                 <Text
                   className="text-sm font-medium ml-2"
-                  style={{ color: "#9CA3AF" }}
+                  style={{ color: colors.textSecondary }}
                 >
                   Settings
                 </Text>
@@ -1371,7 +1373,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     alignItems: "center",
                     paddingVertical: 12,
                     paddingHorizontal: 12,
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    backgroundColor: colors.surfaceElevated,
                     borderRadius: 12,
                   }}
                 >
@@ -1380,23 +1382,23 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       width: 28,
                       height: 28,
                       borderRadius: 14,
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
+                      backgroundColor: colors.buttonBackground,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="person" size={14} color="#9CA3AF" />
+                    <Ionicons name="person" size={14} color={colors.textSecondary} />
                   </View>
                   <View style={{ marginLeft: 8, flex: 1 }}>
                     <Text
                       className="text-xs font-medium"
-                      style={{ color: "#E5E7EB" }}
+                      style={{ color: colors.drawerItemText }}
                       numberOfLines={1}
                     >
                       Account
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={14} color="#6B7280" />
+                  <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
                 </View>
               </Pressable>
             </View>

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
+import { useTheme } from "../theme";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -47,6 +48,7 @@ export function Header({
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
 
@@ -82,7 +84,7 @@ export function Header({
     if (showBackButton) {
       return (
         <Pressable onPress={handleBackPress} className="active:opacity-60">
-          <Ionicons name="chevron-back" size={28} color="#9CA3AF" />
+          <Ionicons name="chevron-back" size={28} color={colors.headerIcon} />
         </Pressable>
       );
     }
@@ -90,7 +92,7 @@ export function Header({
     // Menu button that opens the slide-over drawer
     return (
       <Pressable onPress={handleMenuPress} className="active:opacity-60">
-        <Ionicons name="menu" size={28} color="#9CA3AF" />
+        <Ionicons name="menu" size={28} color={colors.headerIcon} />
       </Pressable>
     );
   };
@@ -99,7 +101,7 @@ export function Header({
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: "#111111",
+        backgroundColor: colors.headerBackground,
       }}
     >
       <View className="flex-row items-center justify-between px-4 h-14">
@@ -110,7 +112,7 @@ export function Header({
             style={{
               fontSize: 18,
               fontWeight: "600",
-              color: "#EDEDED",
+              color: colors.headerText,
               marginLeft: 12,
               letterSpacing: 0.5,
             }}
@@ -132,7 +134,7 @@ export function Header({
             <View
               style={{
                 flexDirection: "row",
-                backgroundColor: "#1A1A1C",
+                backgroundColor: isDark ? "#1A1A1C" : "rgba(0, 0, 0, 0.06)",
                 borderRadius: 14,
                 padding: 2,
                 marginRight: 12,
@@ -144,12 +146,12 @@ export function Header({
                   paddingHorizontal: 10,
                   paddingVertical: 5,
                   borderRadius: 12,
-                  backgroundColor: inputMode === "understand" ? "#2A2A2C" : "transparent",
+                  backgroundColor: inputMode === "understand" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
                 }}
               >
                 <Text
                   style={{
-                    color: inputMode === "understand" ? "#F9FAFB" : "#6B7280",
+                    color: inputMode === "understand" ? colors.textPrimary : colors.textTertiary,
                     fontSize: 11,
                     fontWeight: inputMode === "understand" ? "600" : "400",
                   }}
@@ -163,12 +165,12 @@ export function Header({
                   paddingHorizontal: 10,
                   paddingVertical: 5,
                   borderRadius: 12,
-                  backgroundColor: inputMode === "rewrite" ? "#2A2A2C" : "transparent",
+                  backgroundColor: inputMode === "rewrite" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
                 }}
               >
                 <Text
                   style={{
-                    color: inputMode === "rewrite" ? "#F9FAFB" : "#6B7280",
+                    color: inputMode === "rewrite" ? colors.textPrimary : colors.textTertiary,
                     fontSize: 11,
                     fontWeight: inputMode === "rewrite" ? "600" : "400",
                   }}
@@ -182,7 +184,7 @@ export function Header({
           {/* New Loop Button */}
           <Pressable onPress={handleNewLoop} className="active:opacity-60">
             <View style={{ position: "relative" }}>
-              <Ionicons name="chatbubble-outline" size={24} color="#9CA3AF" />
+              <Ionicons name="chatbubble-outline" size={24} color={colors.headerIcon} />
               <View
                 style={{
                   position: "absolute",
@@ -194,7 +196,7 @@ export function Header({
                   justifyContent: "center",
                 }}
               >
-                <Ionicons name="add" size={12} color="#9CA3AF" />
+                <Ionicons name="add" size={12} color={colors.headerIcon} />
               </View>
             </View>
           </Pressable>
