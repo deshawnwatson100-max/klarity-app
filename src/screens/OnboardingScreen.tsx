@@ -8,21 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withDelay,
-} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useOnboardingStore } from "../state/onboardingStore";
 
@@ -55,65 +45,92 @@ const GOAL_OPTIONS = [
 ];
 
 function TypingIndicator() {
-  const dot1 = useSharedValue(0);
-  const dot2 = useSharedValue(0);
-  const dot3 = useSharedValue(0);
+  const dot1Anim = useRef(new Animated.Value(0)).current;
+  const dot2Anim = useRef(new Animated.Value(0)).current;
+  const dot3Anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    dot1.value = withRepeat(
-      withSequence(
-        withTiming(-4, { duration: 300 }),
-        withTiming(0, { duration: 300 })
-      ),
-      -1,
-      false
-    );
-    dot2.value = withDelay(
-      150,
-      withRepeat(
-        withSequence(
-          withTiming(-4, { duration: 300 }),
-          withTiming(0, { duration: 300 })
-        ),
-        -1,
-        false
-      )
-    );
-    dot3.value = withDelay(
-      300,
-      withRepeat(
-        withSequence(
-          withTiming(-4, { duration: 300 }),
-          withTiming(0, { duration: 300 })
-        ),
-        -1,
-        false
-      )
-    );
-  }, []);
+    const createDotAnimation = (anim: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: -4,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
 
-  const animatedDot1 = useAnimatedStyle(() => ({
-    transform: [{ translateY: dot1.value }],
-  }));
-  const animatedDot2 = useAnimatedStyle(() => ({
-    transform: [{ translateY: dot2.value }],
-  }));
-  const animatedDot3 = useAnimatedStyle(() => ({
-    transform: [{ translateY: dot3.value }],
-  }));
+    const anim1 = createDotAnimation(dot1Anim, 0);
+    const anim2 = createDotAnimation(dot2Anim, 150);
+    const anim3 = createDotAnimation(dot3Anim, 300);
+
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      anim3.stop();
+    };
+  }, []);
 
   return (
     <View className="flex-row items-center px-4 py-3 rounded-2xl bg-white/5 self-start">
       <Animated.View
-        style={animatedDot1}
+        style={{ transform: [{ translateY: dot1Anim }] }}
         className="w-2 h-2 rounded-full bg-white/40 mr-1"
       />
       <Animated.View
-        style={animatedDot2}
+        style={{ transform: [{ translateY: dot2Anim }] }}
         className="w-2 h-2 rounded-full bg-white/40 mr-1"
       />
-      <Animated.View style={animatedDot3} className="w-2 h-2 rounded-full bg-white/40" />
+      <Animated.View
+        style={{ transform: [{ translateY: dot3Anim }] }}
+        className="w-2 h-2 rounded-full bg-white/40"
+      />
     </View>
+  );
+}
+
+function AnimatedMessage({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(10)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+      }}
+    >
+      {children}
+    </Animated.View>
   );
 }
 
@@ -131,6 +148,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [showInput, setShowInput] = useState(false);
+  const [showGetStarted, setShowGetStarted] = useState(false);
+
+  const inputFadeAnim = useRef(new Animated.Value(0)).current;
+  const inputSlideAnim = useRef(new Animated.Value(20)).current;
+  const buttonFadeAnim = useRef(new Animated.Value(0)).current;
+  const buttonSlideAnim = useRef(new Animated.Value(20)).current;
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setPrimaryUseCase = useOnboardingStore((s) => s.setPrimaryUseCase);
@@ -179,6 +202,49 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     [scrollToBottom]
   );
 
+  // Animate input when shown
+  useEffect(() => {
+    if (showInput) {
+      Animated.parallel([
+        Animated.timing(inputFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(inputSlideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        inputRef.current?.focus();
+      });
+    } else {
+      inputFadeAnim.setValue(0);
+      inputSlideAnim.setValue(20);
+    }
+  }, [showInput]);
+
+  // Animate get started button
+  useEffect(() => {
+    if (showGetStarted) {
+      Animated.parallel([
+        Animated.timing(buttonFadeAnim, {
+          toValue: 1,
+          duration: 500,
+          delay: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonSlideAnim, {
+          toValue: 0,
+          duration: 500,
+          delay: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showGetStarted]);
+
   // Initial welcome message
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -189,7 +255,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           addBotMessage("Before we dive in, I would love to learn a bit about you. What should I call you?");
           setCurrentStep("name");
           setShowInput(true);
-          setTimeout(() => inputRef.current?.focus(), 500);
         }, 1500);
       }, 1500);
     }, 800);
@@ -241,6 +306,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             "Just paste any message you receive, and I will help you understand it and craft the perfect response."
           );
           setCurrentStep("complete");
+          setTimeout(() => setShowGetStarted(true), 1500);
         }, 1500);
       }, 500);
     }
@@ -295,60 +361,63 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {messages.map((message, index) => (
-            <Animated.View
-              key={message.id}
-              entering={FadeInDown.duration(400).delay(50)}
-              className={`mb-3 ${message.type === "user" ? "items-end" : "items-start"}`}
-            >
-              {message.type === "user" ? (
-                <View className="px-4 py-3 rounded-2xl rounded-br-sm bg-white/15 max-w-[80%]">
-                  <Text className="text-white text-base">{message.content}</Text>
-                </View>
-              ) : message.type === "options" ? (
-                <View className="w-full">
-                  <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 mb-3 max-w-[85%]">
+          {messages.map((message) => (
+            <AnimatedMessage key={message.id}>
+              <View
+                className={`mb-3 ${message.type === "user" ? "items-end" : "items-start"}`}
+              >
+                {message.type === "user" ? (
+                  <View className="px-4 py-3 rounded-2xl rounded-br-sm bg-white/15 max-w-[80%]">
+                    <Text className="text-white text-base">{message.content}</Text>
+                  </View>
+                ) : message.type === "options" ? (
+                  <View className="w-full">
+                    <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 mb-3 max-w-[85%]">
+                      <Text className="text-white/90 text-base">{message.content}</Text>
+                    </View>
+                    <View className="flex-row flex-wrap gap-2">
+                      {message.options?.map((option) => (
+                        <Pressable
+                          key={option.id}
+                          onPress={() => handleOptionSelect(option.id, option.label)}
+                          className="flex-row items-center px-4 py-3 rounded-xl bg-white/10 active:bg-white/20"
+                        >
+                          {option.icon && (
+                            <Ionicons
+                              name={option.icon as any}
+                              size={18}
+                              color="#FFFFFF"
+                              style={{ marginRight: 8 }}
+                            />
+                          )}
+                          <Text className="text-white text-sm font-medium">
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 max-w-[85%]">
                     <Text className="text-white/90 text-base">{message.content}</Text>
                   </View>
-                  <View className="flex-row flex-wrap gap-2">
-                    {message.options?.map((option) => (
-                      <Pressable
-                        key={option.id}
-                        onPress={() => handleOptionSelect(option.id, option.label)}
-                        className="flex-row items-center px-4 py-3 rounded-xl bg-white/10 active:bg-white/20"
-                      >
-                        {option.icon && (
-                          <Ionicons
-                            name={option.icon as any}
-                            size={18}
-                            color="#FFFFFF"
-                            style={{ marginRight: 8 }}
-                          />
-                        )}
-                        <Text className="text-white text-sm font-medium">
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              ) : (
-                <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 max-w-[85%]">
-                  <Text className="text-white/90 text-base">{message.content}</Text>
-                </View>
-              )}
-            </Animated.View>
+                )}
+              </View>
+            </AnimatedMessage>
           ))}
 
           {isTyping && (
-            <Animated.View entering={FadeIn.duration(300)} className="mb-3">
+            <View className="mb-3">
               <TypingIndicator />
-            </Animated.View>
+            </View>
           )}
 
-          {currentStep === "complete" && !isTyping && (
+          {showGetStarted && (
             <Animated.View
-              entering={FadeInUp.duration(500).delay(300)}
+              style={{
+                opacity: buttonFadeAnim,
+                transform: [{ translateY: buttonSlideAnim }],
+              }}
               className="mt-6 items-center"
             >
               <Pressable
@@ -366,8 +435,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {/* Input Area */}
         {showInput && (
           <Animated.View
-            entering={FadeInUp.duration(300)}
-            style={{ paddingBottom: insets.bottom + 8 }}
+            style={{
+              opacity: inputFadeAnim,
+              transform: [{ translateY: inputSlideAnim }],
+              paddingBottom: insets.bottom + 8,
+            }}
             className="px-4 pt-3 border-t border-white/5"
           >
             <View className="flex-row items-center bg-white/5 rounded-2xl px-4">
