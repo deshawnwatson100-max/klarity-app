@@ -26,6 +26,7 @@ import {
 } from "../state/settingsStore";
 import { useLoopsStore } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
+import { useOnboardingStore } from "../state/onboardingStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 
@@ -465,6 +466,9 @@ export function SettingsScreen() {
   const personContexts = usePersonContextStore((s) => s.personContexts);
   const resetPersonContextStore = usePersonContextStore((s) => s.resetStore);
 
+  // Onboarding store
+  const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
+
   // Modal states
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
@@ -800,6 +804,16 @@ export function SettingsScreen() {
           subtitle="Chats, profiles, and settings"
           onPress={() => setShowClearAllModal(true)}
           destructive
+        />
+        <SettingsRow
+          label="Reset Onboarding"
+          subtitle="Show onboarding flow again"
+          onPress={() => {
+            if (hapticsEnabled) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            resetOnboarding();
+          }}
           isLast
         />
 
