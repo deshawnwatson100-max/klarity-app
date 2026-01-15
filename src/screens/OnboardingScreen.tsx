@@ -3,18 +3,21 @@ import {
   View,
   Text,
   Pressable,
-  TextInput,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
   Animated,
+  Easing,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useTheme } from "../theme";
+import { InputBar, InputBarRef } from "../components/InputBar";
+import { MessageBubble } from "../components/MessageBubble";
+import { TypingIndicator } from "../components/TypingIndicator";
 
 type OnboardingStep =
   | "welcome"
@@ -44,104 +47,15 @@ const GOAL_OPTIONS = [
   { id: "connect", label: "Build deeper connections", icon: "link-outline" },
 ];
 
-function TypingIndicator() {
-  const dot1Anim = useRef(new Animated.Value(0)).current;
-  const dot2Anim = useRef(new Animated.Value(0)).current;
-  const dot3Anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const createDotAnimation = (anim: Animated.Value, delay: number) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, {
-            toValue: -4,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    };
-
-    const anim1 = createDotAnimation(dot1Anim, 0);
-    const anim2 = createDotAnimation(dot2Anim, 150);
-    const anim3 = createDotAnimation(dot3Anim, 300);
-
-    anim1.start();
-    anim2.start();
-    anim3.start();
-
-    return () => {
-      anim1.stop();
-      anim2.stop();
-      anim3.stop();
-    };
-  }, []);
-
-  return (
-    <View className="flex-row items-center px-4 py-3 rounded-2xl bg-white/5 self-start">
-      <Animated.View
-        style={{ transform: [{ translateY: dot1Anim }] }}
-        className="w-2 h-2 rounded-full bg-white/40 mr-1"
-      />
-      <Animated.View
-        style={{ transform: [{ translateY: dot2Anim }] }}
-        className="w-2 h-2 rounded-full bg-white/40 mr-1"
-      />
-      <Animated.View
-        style={{ transform: [{ translateY: dot3Anim }] }}
-        className="w-2 h-2 rounded-full bg-white/40"
-      />
-    </View>
-  );
-}
-
-function AnimatedMessage({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(10)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        delay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        delay,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<InputBarRef>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
@@ -150,8 +64,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [showInput, setShowInput] = useState(false);
   const [showGetStarted, setShowGetStarted] = useState(false);
 
-  const inputFadeAnim = useRef(new Animated.Value(0)).current;
-  const inputSlideAnim = useRef(new Animated.Value(20)).current;
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
   const buttonSlideAnim = useRef(new Animated.Value(20)).current;
 
@@ -202,29 +114,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     [scrollToBottom]
   );
 
-  // Animate input when shown
-  useEffect(() => {
-    if (showInput) {
-      Animated.parallel([
-        Animated.timing(inputFadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(inputSlideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        inputRef.current?.focus();
-      });
-    } else {
-      inputFadeAnim.setValue(0);
-      inputSlideAnim.setValue(20);
-    }
-  }, [showInput]);
-
   // Animate get started button
   useEffect(() => {
     if (showGetStarted) {
@@ -244,6 +133,15 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       ]).start();
     }
   }, [showGetStarted]);
+
+  // Focus input when shown
+  useEffect(() => {
+    if (showInput) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 300);
+    }
+  }, [showInput]);
 
   // Initial welcome message
   useEffect(() => {
@@ -272,6 +170,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     const name = nameInput.trim();
     setUserName(name);
     addUserMessage(name);
+    setNameInput("");
 
     setTimeout(() => {
       addBotMessage(
@@ -318,37 +217,127 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     onComplete();
   };
 
-  return (
-    <View className="flex-1">
-      <LinearGradient
-        colors={["#050608", "#0A0A0C", "#050608"]}
-        locations={[0, 0.5, 1]}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-        }}
-      />
+  const renderMessage = (message: Message) => {
+    if (message.type === "user") {
+      return (
+        <MessageBubble
+          key={message.id}
+          role="user"
+          content={message.content}
+          timestamp={Date.now()}
+          showUserBubble={true}
+        />
+      );
+    }
 
+    if (message.type === "options") {
+      return (
+        <View key={message.id} className="mb-5">
+          <MessageBubble
+            role="assistant"
+            content={message.content}
+            timestamp={Date.now()}
+          />
+          <View className="flex-row flex-wrap gap-2 mt-3 px-1">
+            {message.options?.map((option) => (
+              <Pressable
+                key={option.id}
+                onPress={() => handleOptionSelect(option.id, option.label)}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 16,
+                  backgroundColor: pressed
+                    ? isDark
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(0, 0, 0, 0.08)"
+                    : isDark
+                    ? "rgba(255, 255, 255, 0.06)"
+                    : "rgba(0, 0, 0, 0.04)",
+                  borderWidth: 1,
+                  borderColor: isDark
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.08)",
+                })}
+              >
+                {option.icon && (
+                  <Ionicons
+                    name={option.icon as any}
+                    size={18}
+                    color={colors.textSecondary}
+                    style={{ marginRight: 10 }}
+                  />
+                )}
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    // Bot message
+    return (
+      <MessageBubble
+        key={message.id}
+        role="assistant"
+        content={message.content}
+        timestamp={Date.now()}
+      />
+    );
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        style={{ flex: 1 }}
         keyboardVerticalOffset={0}
       >
-        {/* Header */}
+        {/* Header - matching ChatScreen style */}
         <View
-          style={{ paddingTop: insets.top + 12 }}
-          className="px-6 pb-4 border-b border-white/5"
+          style={{
+            paddingTop: insets.top,
+            backgroundColor: colors.headerBackground,
+          }}
         >
-          <View className="flex-row items-center">
-            <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center mr-3">
-              <Ionicons name="sparkles" size={20} color="#FFFFFF" />
-            </View>
-            <View>
-              <Text className="text-white font-semibold text-base">Klarity</Text>
-              <Text className="text-white/50 text-xs">Your communication guide</Text>
+          <View className="flex-row items-center justify-between px-4 h-14">
+            <View className="flex-row items-center">
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.06)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="sparkles" size={18} color={colors.headerIcon} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: colors.headerText,
+                  letterSpacing: 0.5,
+                }}
+              >
+                Klarity
+              </Text>
             </View>
           </View>
         </View>
@@ -361,70 +350,36 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {messages.map((message) => (
-            <AnimatedMessage key={message.id}>
-              <View
-                className={`mb-3 ${message.type === "user" ? "items-end" : "items-start"}`}
-              >
-                {message.type === "user" ? (
-                  <View className="px-4 py-3 rounded-2xl rounded-br-sm bg-white/15 max-w-[80%]">
-                    <Text className="text-white text-base">{message.content}</Text>
-                  </View>
-                ) : message.type === "options" ? (
-                  <View className="w-full">
-                    <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 mb-3 max-w-[85%]">
-                      <Text className="text-white/90 text-base">{message.content}</Text>
-                    </View>
-                    <View className="flex-row flex-wrap gap-2">
-                      {message.options?.map((option) => (
-                        <Pressable
-                          key={option.id}
-                          onPress={() => handleOptionSelect(option.id, option.label)}
-                          className="flex-row items-center px-4 py-3 rounded-xl bg-white/10 active:bg-white/20"
-                        >
-                          {option.icon && (
-                            <Ionicons
-                              name={option.icon as any}
-                              size={18}
-                              color="#FFFFFF"
-                              style={{ marginRight: 8 }}
-                            />
-                          )}
-                          <Text className="text-white text-sm font-medium">
-                            {option.label}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                ) : (
-                  <View className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/5 max-w-[85%]">
-                    <Text className="text-white/90 text-base">{message.content}</Text>
-                  </View>
-                )}
-              </View>
-            </AnimatedMessage>
-          ))}
+          {messages.map(renderMessage)}
 
-          {isTyping && (
-            <View className="mb-3">
-              <TypingIndicator />
-            </View>
-          )}
+          {isTyping && <TypingIndicator />}
 
           {showGetStarted && (
             <Animated.View
               style={{
                 opacity: buttonFadeAnim,
                 transform: [{ translateY: buttonSlideAnim }],
+                marginTop: 24,
               }}
-              className="mt-6 items-center"
             >
               <Pressable
                 onPress={handleGetStarted}
-                className="w-full py-4 rounded-2xl bg-white items-center active:opacity-80"
+                style={({ pressed }) => ({
+                  width: "100%",
+                  paddingVertical: 16,
+                  borderRadius: 16,
+                  backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+                  alignItems: "center",
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
-                <Text className="text-black font-semibold text-base">
+                <Text
+                  style={{
+                    color: isDark ? "#1C1C1E" : "#FFFFFF",
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
                   Get Started
                 </Text>
               </Pressable>
@@ -432,44 +387,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           )}
         </ScrollView>
 
-        {/* Input Area */}
+        {/* Input Area - using InputBar component */}
         {showInput && (
-          <Animated.View
-            style={{
-              opacity: inputFadeAnim,
-              transform: [{ translateY: inputSlideAnim }],
-              paddingBottom: insets.bottom + 8,
-            }}
-            className="px-4 pt-3 border-t border-white/5"
-          >
-            <View className="flex-row items-center bg-white/5 rounded-2xl px-4">
-              <TextInput
-                ref={inputRef}
-                value={nameInput}
-                onChangeText={setNameInput}
-                placeholder="Enter your name..."
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                className="flex-1 py-4 text-white text-base"
-                returnKeyType="send"
-                onSubmitEditing={handleNameSubmit}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-              <Pressable
-                onPress={handleNameSubmit}
-                disabled={!nameInput.trim()}
-                className={`w-10 h-10 rounded-full items-center justify-center ${
-                  nameInput.trim() ? "bg-white" : "bg-white/10"
-                }`}
-              >
-                <Ionicons
-                  name="arrow-up"
-                  size={20}
-                  color={nameInput.trim() ? "#000000" : "rgba(255,255,255,0.3)"}
-                />
-              </Pressable>
-            </View>
-          </Animated.View>
+          <InputBar
+            ref={inputRef}
+            value={nameInput}
+            onChangeText={setNameInput}
+            onSend={handleNameSubmit}
+            placeholder="Enter your name..."
+            autoFocus={true}
+          />
         )}
       </KeyboardAvoidingView>
     </View>
