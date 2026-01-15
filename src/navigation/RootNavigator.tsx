@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
@@ -10,6 +10,8 @@ import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { useOnboardingStore } from "../state/onboardingStore";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -36,6 +38,18 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
+  const hasCompletedOnboarding = useOnboardingStore((s) => s.hasCompletedOnboarding);
+  const [showOnboarding, setShowOnboarding] = useState(!hasCompletedOnboarding);
+
+  // Sync state when store changes (e.g., on app restart)
+  useEffect(() => {
+    setShowOnboarding(!hasCompletedOnboarding);
+  }, [hasCompletedOnboarding]);
+
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{

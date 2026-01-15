@@ -64,7 +64,39 @@ The app supports both light and dark themes with automatic system preference det
 1. **Splash Screen** (1.5 seconds) →
 2. **PIN Setup** (first time only) →
 3. **Unlock Screen** (returning users) →
-4. **Main App**
+4. **Onboarding** (first time only) →
+5. **Main App**
+
+### Chat-Loop Onboarding
+A conversational onboarding experience that feels like chatting with Klarity:
+
+#### Flow
+1. **Welcome Message** - "Hey there! Welcome to Klarity."
+2. **Introduction** - Explains what Klarity does
+3. **Name Collection** - Asks for user's name via text input
+4. **Use Case Selection** - Pill buttons: Relationships, Work, Family, Friends
+5. **Goal Selection** - Pill buttons: Understand others, Express myself, Resolve conflicts, Build connections
+6. **Completion** - Personalized closing message and "Get Started" button
+
+#### Features
+- **Typing indicators** - 3-dot animation while "typing"
+- **Smooth message animations** - Messages fade in from below
+- **Interactive option pills** - Tappable buttons with icons
+- **Haptic feedback** - Light/medium/heavy feedback on interactions
+- **Persisted state** - Onboarding only shows once (AsyncStorage)
+- **User profile storage** - Collected data saved for personalization
+
+#### Files
+- `src/state/onboardingStore.ts` - Zustand store with persistence
+- `src/screens/OnboardingScreen.tsx` - Chat-loop UI component
+- `src/navigation/RootNavigator.tsx` - Conditional rendering logic
+
+#### Reset Onboarding
+To show onboarding again during development:
+```typescript
+import { useOnboardingStore } from "../state/onboardingStore";
+useOnboardingStore.getState().resetOnboarding();
+```
 
 ## Features
 
