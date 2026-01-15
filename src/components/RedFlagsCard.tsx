@@ -3,6 +3,7 @@ import { View, Text, Pressable, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TypewriterText } from "./TypewriterText";
 import { DECODE_EMOJIS } from "../utils/decodeEmoji";
+import { useTheme } from "../theme";
 
 interface RedFlag {
   text: string;
@@ -18,6 +19,7 @@ const MUTED_RED = "#B86B6B";
 const MUTED_RED_SOFT = "rgba(184, 107, 107, 0.6)";
 
 export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
+  const { isDark } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasAnimatedIntro, setHasAnimatedIntro] = useState(false);
   const [animatedFlagIndex, setAnimatedFlagIndex] = useState(-1);
@@ -87,6 +89,13 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
     return null;
   }
 
+  // Theme-aware colors
+  const cardBg = isDark ? "#000000" : "#FFFFFF";
+  const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
+  const chevronColor = isDark ? "#6B7280" : "#8E8E93";
+  const introTextColor = isDark ? "#9CA3AF" : "#636366";
+  const flagTextColor = isDark ? "#D1D5DB" : "#3C3C43";
+
   return (
     <Animated.View
       style={{
@@ -100,9 +109,15 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
       <Pressable onPress={handleToggle}>
         <View
           style={{
-            backgroundColor: "#000000",
+            backgroundColor: cardBg,
             borderRadius: 16,
             padding: 16,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: cardBorderColor,
+            shadowColor: isDark ? "transparent" : "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDark ? 0 : 0.06,
+            shadowRadius: 8,
           }}
         >
           {/* Header row - always visible */}
@@ -123,7 +138,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
             </View>
 
             <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
-              <Ionicons name="chevron-down" size={16} color="#6B7280" />
+              <Ionicons name="chevron-down" size={16} color={chevronColor} />
             </Animated.View>
           </View>
 
@@ -142,7 +157,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                 style={{
                   fontSize: 14,
                   lineHeight: 21,
-                  color: "#9CA3AF",
+                  color: introTextColor,
                   marginTop: 12,
                   fontStyle: "italic",
                 }}
@@ -157,7 +172,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                 style={{
                   fontSize: 14,
                   lineHeight: 21,
-                  color: "#9CA3AF",
+                  color: introTextColor,
                   marginTop: 12,
                   fontStyle: "italic",
                 }}
@@ -191,7 +206,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                         style={{
                           fontSize: 14,
                           lineHeight: 21,
-                          color: "#D1D5DB",
+                          color: flagTextColor,
                         }}
                         speed={70}
                         onComplete={() => setAnimatedFlagIndex(index + 1)}
@@ -202,7 +217,7 @@ export function RedFlagsCard({ introText, flags }: RedFlagsCardProps) {
                       style={{
                         fontSize: 14,
                         lineHeight: 21,
-                        color: "#D1D5DB",
+                        color: flagTextColor,
                         flex: 1,
                       }}
                     >

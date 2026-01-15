@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SuggestedResponse } from "../types/chat";
+import { useTheme } from "../theme";
 
 interface SuggestionsCardProps {
   suggestions: SuggestedResponse[];
@@ -18,6 +19,7 @@ export function SuggestionsCard({
   suggestions,
   onSelectResponse,
 }: SuggestionsCardProps) {
+  const { colors, isDark } = useTheme();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
 
@@ -57,10 +59,35 @@ export function SuggestionsCard({
     }
   };
 
+  // Theme-aware colors
+  const accentColor = isDark ? "#B4FF39" : "#34C759";
+  const cardBg = isDark ? "#0A0A0B" : "#FFFFFF";
+  const cardBorderColor = isDark ? "#262626" : "rgba(0, 0, 0, 0.08)";
+  const itemBg = isDark ? "#171717" : "#F5F5F7";
+  const itemBorderColor = isDark ? "#262626" : "rgba(0, 0, 0, 0.06)";
+  const labelColor = isDark ? "#9CA3AF" : "#636366";
+  const textColor = isDark ? "#D4D4D4" : "#3C3C43";
+  const buttonBg = isDark ? "#B4FF39" : "#34C759";
+  const buttonTextColor = isDark ? "#000000" : "#FFFFFF";
+
   return (
     <Animated.View style={animatedStyle} className="mb-4">
-      <View className="bg-neutral-950 border border-neutral-800 rounded-2xl p-5">
-        <Text className="text-neutral-400 text-xs font-semibold uppercase tracking-wider mb-4">
+      <View
+        className="rounded-2xl p-5"
+        style={{
+          backgroundColor: cardBg,
+          borderWidth: 1,
+          borderColor: cardBorderColor,
+          shadowColor: isDark ? "transparent" : "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.06,
+          shadowRadius: 8,
+        }}
+      >
+        <Text
+          className="text-xs font-semibold uppercase tracking-wider mb-4"
+          style={{ color: labelColor }}
+        >
           Suggested Responses
         </Text>
 
@@ -71,28 +98,35 @@ export function SuggestionsCard({
               onPress={() => onSelectResponse(suggestion)}
               className="active:opacity-70"
             >
-              <View className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+              <View
+                className="rounded-xl p-4"
+                style={{
+                  backgroundColor: itemBg,
+                  borderWidth: 1,
+                  borderColor: itemBorderColor,
+                }}
+              >
                 {/* Tone Badge */}
                 <View className="flex-row items-center gap-2 mb-3">
                   <Ionicons
                     name={getToneIcon(suggestion.tone) as any}
                     size={16}
-                    color="#B4FF39"
+                    color={accentColor}
                   />
-                  <Text className="text-[#B4FF39] text-xs font-medium">
+                  <Text className="text-xs font-medium" style={{ color: accentColor }}>
                     {getToneLabel(suggestion.tone)}
                   </Text>
                 </View>
 
                 {/* Response Text */}
-                <Text className="text-neutral-200 text-base leading-6 mb-3">
+                <Text className="text-base leading-6 mb-3" style={{ color: textColor }}>
                   {suggestion.text}
                 </Text>
 
                 {/* Use Button */}
                 <View className="flex-row justify-end">
-                  <View className="bg-[#B4FF39] px-4 py-2 rounded-full">
-                    <Text className="text-black text-sm font-semibold">
+                  <View className="px-4 py-2 rounded-full" style={{ backgroundColor: buttonBg }}>
+                    <Text className="text-sm font-semibold" style={{ color: buttonTextColor }}>
                       Use this reply
                     </Text>
                   </View>

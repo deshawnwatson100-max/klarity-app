@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { TypewriterText } from "./TypewriterText";
 import { useFeedbackStore } from "../state/feedbackStore";
+import { useTheme } from "../theme";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
@@ -122,6 +123,7 @@ function ReplyItem({
   onGenerateDifferent,
   onAddEmoji,
   isAddingEmoji,
+  isDark,
 }: {
   reply: SuggestedReply;
   isMinimized: boolean;
@@ -132,12 +134,28 @@ function ReplyItem({
   onGenerateDifferent?: () => void;
   onAddEmoji?: (replyId: string) => void;
   isAddingEmoji?: boolean;
+  isDark: boolean;
 }) {
   const contentHeight = useRef(new Animated.Value(isMinimized ? 0 : 1)).current;
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
   const [hasAnimatedText, setHasAnimatedText] = useState(false);
   const [hasAnimatedGuidance, setHasAnimatedGuidance] = useState(false);
+
+  // Theme-aware colors
+  const accentColor = isDark ? "#7DD3C0" : "#34C759";
+  const accentColorLight = isDark ? "rgba(125, 211, 192, 0.2)" : "rgba(52, 199, 89, 0.2)";
+  const accentColorLighter = isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(52, 199, 89, 0.15)";
+  const textColor = isDark ? "#EDEDED" : "#1C1C1E";
+  const textSecondary = isDark ? "#9CA3AF" : "#636366";
+  const textTertiary = isDark ? "#6B7280" : "#8E8E93";
+  const buttonBg = isDark ? "#1F1F22" : "#F5F5F7";
+  const buttonBgActive = isDark ? "#1a2f2a" : "rgba(52, 199, 89, 0.15)";
+  const buttonBorderActive = isDark ? "#5BA89A" : "#34C759";
+  const buttonBorder = isDark ? "#374151" : "rgba(0, 0, 0, 0.1)";
+  const buttonTextColor = isDark ? "#E5E7EB" : "#1C1C1E";
+  const dividerColor = isDark ? "#374151" : "rgba(0, 0, 0, 0.1)";
+  const iconColor = isDark ? "#E5E7EB" : "#636366";
 
   useEffect(() => {
     Animated.timing(contentHeight, {
@@ -211,9 +229,9 @@ function ReplyItem({
               position: "relative",
             }}
           >
-            {/* Subtle teal left edge glow */}
+            {/* Subtle accent left edge glow */}
             <LinearGradient
-              colors={["rgba(125, 211, 192, 0.15)", "rgba(125, 211, 192, 0)"]}
+              colors={[accentColorLighter, "transparent"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{
@@ -228,7 +246,7 @@ function ReplyItem({
             <Text
               style={{
                 fontSize: 14,
-                color: "#9CA3AF",
+                color: textSecondary,
                 fontStyle: "italic",
               }}
             >
@@ -237,7 +255,7 @@ function ReplyItem({
             <Text
               style={{
                 fontSize: 12,
-                color: "#6B7280",
+                color: textTertiary,
                 marginTop: 4,
               }}
             >
@@ -247,7 +265,7 @@ function ReplyItem({
         </Pressable>
       ) : (
         <>
-          {/* Reply text as clean floating paragraph with teal glow */}
+          {/* Reply text as clean floating paragraph with accent glow */}
           <Pressable onPress={() => {
             Haptics.selectionAsync();
             onToggleMinimize();
@@ -258,9 +276,9 @@ function ReplyItem({
                 position: "relative",
               }}
             >
-              {/* Soft teal gradient left edge accent */}
+              {/* Soft accent gradient left edge accent */}
               <LinearGradient
-                colors={["rgba(125, 211, 192, 0.2)", "rgba(125, 211, 192, 0)"]}
+                colors={[accentColorLight, "transparent"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -278,7 +296,7 @@ function ReplyItem({
                   style={{
                     fontSize: 15,
                     lineHeight: 24,
-                    color: "#EDEDED",
+                    color: textColor,
                   }}
                   speed={85}
                   onComplete={() => setHasAnimatedText(true)}
@@ -288,7 +306,7 @@ function ReplyItem({
                   style={{
                     fontSize: 15,
                     lineHeight: 24,
-                    color: "#EDEDED",
+                    color: textColor,
                   }}
                 >
                   {reply.text}
@@ -309,7 +327,7 @@ function ReplyItem({
               <Ionicons
                 name="bulb-outline"
                 size={12}
-                color="#4B5563"
+                color={textTertiary}
                 style={{ marginTop: 2, marginRight: 6 }}
               />
               {hasAnimatedText && !hasAnimatedGuidance ? (
@@ -320,7 +338,7 @@ function ReplyItem({
                     style={{
                       fontSize: 13,
                       lineHeight: 18,
-                      color: "#6B7280",
+                      color: textTertiary,
                     }}
                     speed={70}
                     onComplete={() => setHasAnimatedGuidance(true)}
@@ -331,7 +349,7 @@ function ReplyItem({
                   style={{
                     fontSize: 13,
                     lineHeight: 18,
-                    color: "#6B7280",
+                    color: textTertiary,
                     flex: 1,
                   }}
                 >
@@ -354,22 +372,22 @@ function ReplyItem({
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     borderRadius: 20,
-                    backgroundColor: copied ? "#1a2f2a" : "#1F1F22",
+                    backgroundColor: copied ? buttonBgActive : buttonBg,
                     borderWidth: 1,
-                    borderColor: copied ? "#5BA89A" : "transparent",
+                    borderColor: copied ? buttonBorderActive : "transparent",
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
                   <Ionicons
                     name={copied ? "checkmark" : "copy-outline"}
                     size={14}
-                    color={copied ? "#7DD3C0" : "#E5E7EB"}
+                    color={copied ? accentColor : buttonTextColor}
                   />
                   <Text
                     style={{
                       fontSize: 13,
                       fontWeight: "500",
-                      color: copied ? "#7DD3C0" : "#E5E7EB",
+                      color: copied ? accentColor : buttonTextColor,
                     }}
                   >
                     {copied ? "Copied" : "Use this reply"}
@@ -389,16 +407,16 @@ function ReplyItem({
                       borderRadius: 20,
                       backgroundColor: "transparent",
                       borderWidth: 1,
-                      borderColor: "#374151",
+                      borderColor: buttonBorder,
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons name="refresh-outline" size={14} color="#E5E7EB" />
+                    <Ionicons name="refresh-outline" size={14} color={buttonTextColor} />
                     <Text
                       style={{
                         fontSize: 13,
                         fontWeight: "500",
-                        color: "#E5E7EB",
+                        color: buttonTextColor,
                       }}
                     >
                       Different reply
@@ -414,8 +432,8 @@ function ReplyItem({
                   icon="happy-outline"
                   onPress={handleAddEmoji}
                   isLoading={isAddingEmoji}
-                  color="#E5E7EB"
-                  activeColor="#7DD3C0"
+                  color={iconColor}
+                  activeColor={accentColor}
                   size={16}
                 />
 
@@ -425,8 +443,8 @@ function ReplyItem({
                     icon="remove-outline"
                     onPress={() => onModifyLength(reply.id, "shorten")}
                     isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "shorten"}
-                    color="#E5E7EB"
-                    activeColor="#7DD3C0"
+                    color={iconColor}
+                    activeColor={accentColor}
                     size={16}
                   />
                 )}
@@ -437,15 +455,15 @@ function ReplyItem({
                     icon="add-outline"
                     onPress={() => onModifyLength(reply.id, "lengthen")}
                     isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen"}
-                    color="#E5E7EB"
-                    activeColor="#7DD3C0"
+                    color={iconColor}
+                    activeColor={accentColor}
                     size={16}
                   />
                 )}
 
                 {/* Divider - hide when feedback is given */}
                 {liked === null && (
-                  <View style={{ width: 1, height: 16, backgroundColor: "#374151", marginHorizontal: 4 }} />
+                  <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
                 )}
 
                 {/* Like button - hidden when dislike is selected */}
@@ -454,8 +472,8 @@ function ReplyItem({
                   onPress={handleLike}
                   onLongPress={liked === "like" ? handleResetFeedback : undefined}
                   showSuccess={liked === "like"}
-                  color="#E5E7EB"
-                  activeColor="#7DD3C0"
+                  color={iconColor}
+                  activeColor={accentColor}
                   size={16}
                   hidden={liked === "dislike"}
                 />
@@ -466,8 +484,8 @@ function ReplyItem({
                   onPress={handleDislike}
                   onLongPress={liked === "dislike" ? handleResetFeedback : undefined}
                   showSuccess={liked === "dislike"}
-                  color="#E5E7EB"
-                  activeColor="#7DD3C0"
+                  color={iconColor}
+                  activeColor={accentColor}
                   size={16}
                   hidden={liked === "like"}
                 />
@@ -488,12 +506,17 @@ export function SuggestedReplyCard({
   onGenerateDifferent,
   onAddEmoji,
 }: SuggestedReplyCardProps) {
+  const { isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
   const [minimizedReplies, setMinimizedReplies] = useState<Set<string>>(new Set());
   const prevRepliesLengthRef = useRef(replies.length);
+
+  // Theme-aware colors
+  const cardBg = isDark ? "#000000" : "#FFFFFF";
+  const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
 
   useEffect(() => {
     // Gentle fade and drift - no bouncing, no elastic motion
@@ -568,12 +591,18 @@ export function SuggestedReplyCard({
         transform: [{ translateY }],
       }}
     >
-      {/* Pitch black card background */}
+      {/* Card background */}
       <View
         style={{
-          backgroundColor: "#000000",
+          backgroundColor: cardBg,
           borderRadius: 16,
           padding: 16,
+          borderWidth: isDark ? 0 : 1,
+          borderColor: cardBorderColor,
+          shadowColor: isDark ? "transparent" : "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.06,
+          shadowRadius: 8,
         }}
       >
         {replies.map((reply) => (
@@ -588,6 +617,7 @@ export function SuggestedReplyCard({
             onGenerateDifferent={onGenerateDifferent}
             onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
             isAddingEmoji={addingEmojiReplyId === reply.id}
+            isDark={isDark}
           />
         ))}
       </View>

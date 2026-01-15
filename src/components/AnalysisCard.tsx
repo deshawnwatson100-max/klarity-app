@@ -8,12 +8,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { EmotionalAnalysis } from "../types/chat";
+import { useTheme } from "../theme";
 
 interface AnalysisCardProps {
   analysis: EmotionalAnalysis;
 }
 
 export function AnalysisCard({ analysis }: AnalysisCardProps) {
+  const { colors, isDark } = useTheme();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
 
@@ -40,16 +42,40 @@ export function AnalysisCard({ analysis }: AnalysisCardProps) {
     }
   };
 
+  // Theme-aware colors
+  const accentColor = isDark ? "#B4FF39" : "#34C759";
+  const cardBg = isDark ? "#0A0A0B" : "#FFFFFF";
+  const cardBorderColor = isDark ? "#B4FF39" : "rgba(0, 0, 0, 0.08)";
+  const labelColor = isDark ? "#9CA3AF" : "#636366";
+  const valueColor = isDark ? "#FFFFFF" : "#1C1C1E";
+  const trackBg = isDark ? "#262626" : "#E5E5EA";
+  const dividerColor = isDark ? "#262626" : "rgba(0, 0, 0, 0.08)";
+  const summaryTextColor = isDark ? "#D4D4D4" : "#3C3C43";
+
   return (
     <Animated.View style={animatedStyle} className="mb-4">
-      <View className="bg-neutral-950 border border-[#B4FF39] rounded-2xl p-5 overflow-hidden">
+      <View
+        className="rounded-2xl p-5 overflow-hidden"
+        style={{
+          backgroundColor: cardBg,
+          borderWidth: 1,
+          borderColor: cardBorderColor,
+          shadowColor: isDark ? "transparent" : "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.06,
+          shadowRadius: 8,
+        }}
+      >
         {/* Subtle glow effect */}
         <View
           className="absolute top-0 left-0 right-0 h-px"
-          style={{ backgroundColor: "#B4FF39", opacity: 0.3 }}
+          style={{ backgroundColor: accentColor, opacity: isDark ? 0.3 : 0.5 }}
         />
 
-        <Text className="text-[#B4FF39] text-xs font-semibold uppercase tracking-wider mb-4">
+        <Text
+          className="text-xs font-semibold uppercase tracking-wider mb-4"
+          style={{ color: accentColor }}
+        >
           Emotional Analysis
         </Text>
 
@@ -57,17 +83,23 @@ export function AnalysisCard({ analysis }: AnalysisCardProps) {
         <View className="gap-4">
           {/* Emotional Clarity */}
           <View>
-            <Text className="text-neutral-400 text-sm mb-2">
+            <Text className="text-sm mb-2" style={{ color: labelColor }}>
               Emotional Clarity
             </Text>
             <View className="flex-row items-center gap-3">
-              <View className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
+              <View
+                className="flex-1 h-2 rounded-full overflow-hidden"
+                style={{ backgroundColor: trackBg }}
+              >
                 <View
-                  className="h-full bg-[#B4FF39] rounded-full"
-                  style={{ width: `${analysis.emotionalClarity}%` }}
+                  className="h-full rounded-full"
+                  style={{ width: `${analysis.emotionalClarity}%`, backgroundColor: accentColor }}
                 />
               </View>
-              <Text className="text-white text-lg font-semibold w-12 text-right">
+              <Text
+                className="text-lg font-semibold w-12 text-right"
+                style={{ color: valueColor }}
+              >
                 {analysis.emotionalClarity}%
               </Text>
             </View>
@@ -75,15 +107,15 @@ export function AnalysisCard({ analysis }: AnalysisCardProps) {
 
           {/* Detected State */}
           <View className="flex-row items-center justify-between">
-            <Text className="text-neutral-400 text-sm">Detected State</Text>
-            <Text className="text-white text-base font-medium">
+            <Text className="text-sm" style={{ color: labelColor }}>Detected State</Text>
+            <Text className="text-base font-medium" style={{ color: valueColor }}>
               {analysis.detectedState}
             </Text>
           </View>
 
           {/* Relationship Risk */}
           <View className="flex-row items-center justify-between">
-            <Text className="text-neutral-400 text-sm">Relationship Risk</Text>
+            <Text className="text-sm" style={{ color: labelColor }}>Relationship Risk</Text>
             <View
               className="px-3 py-1 rounded-full"
               style={{ backgroundColor: getRiskColor(analysis.relationshipRisk) + "20" }}
@@ -98,9 +130,9 @@ export function AnalysisCard({ analysis }: AnalysisCardProps) {
           </View>
 
           {/* Summary */}
-          <View className="mt-2 pt-4 border-t border-neutral-800">
-            <Text className="text-neutral-400 text-sm mb-2">Summary</Text>
-            <Text className="text-neutral-200 text-base leading-6">
+          <View className="mt-2 pt-4" style={{ borderTopWidth: 1, borderTopColor: dividerColor }}>
+            <Text className="text-sm mb-2" style={{ color: labelColor }}>Summary</Text>
+            <Text className="text-base leading-6" style={{ color: summaryTextColor }}>
               {analysis.summary}
             </Text>
           </View>

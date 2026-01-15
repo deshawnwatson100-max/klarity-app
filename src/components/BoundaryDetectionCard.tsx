@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { BoundaryAnalysis } from "../types/chat";
+import { useTheme } from "../theme";
 
 interface BoundaryDetectionCardProps {
   analysis: BoundaryAnalysis;
@@ -22,6 +23,7 @@ export function BoundaryDetectionCard({
   onExploreResponse,
   onUnderstandBoundaries,
 }: BoundaryDetectionCardProps) {
+  const { isDark } = useTheme();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
 
@@ -35,39 +37,52 @@ export function BoundaryDetectionCard({
     transform: [{ scale: scale.value }],
   }));
 
+  // Theme-aware colors
+  const cardBg = isDark ? "#1A1A1C" : "#FFFFFF";
+  const cardBorderColor = isDark ? "#9CA3AF30" : "rgba(0, 0, 0, 0.08)";
+  const accentColor = isDark ? "#9CA3AF" : "#636366";
+  const headingColor = isDark ? "#E5E7EB" : "#1C1C1E";
+  const labelColor = isDark ? "#9CA3AF" : "#636366";
+  const textColor = isDark ? "#E5E7EB" : "#1C1C1E";
+  const detailTextColor = isDark ? "#D1D5DB" : "#3C3C43";
+  const itemBg = isDark ? "#0F0F11" : "#F5F5F7";
+  const itemBorderColor = isDark ? "#9CA3AF20" : "rgba(0, 0, 0, 0.06)";
+  const buttonTextColor = isDark ? "#E5E7EB" : "#1C1C1E";
+  const secondaryButtonTextColor = isDark ? "#9CA3AF" : "#636366";
+
   return (
     <Animated.View style={animatedStyle} className="mb-4">
       <View
         className="rounded-3xl p-6 overflow-hidden"
         style={{
-          backgroundColor: "#1A1A1C",
+          backgroundColor: cardBg,
           borderWidth: 1.5,
-          borderColor: "#9CA3AF30",
-          shadowColor: "#9CA3AF",
+          borderColor: cardBorderColor,
+          shadowColor: isDark ? "#9CA3AF" : "#000",
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
+          shadowOpacity: isDark ? 0.25 : 0.08,
           shadowRadius: 20,
         }}
       >
         {/* Subtle inner glow at top */}
         <View
           className="absolute top-0 left-0 right-0 h-px"
-          style={{ backgroundColor: "#9CA3AF", opacity: 0.3 }}
+          style={{ backgroundColor: accentColor, opacity: 0.3 }}
         />
 
         {/* Header with Icon */}
         <View className="flex-row items-center mb-1">
           <View
             className="w-6 h-6 rounded-full items-center justify-center mr-2"
-            style={{ backgroundColor: "#9CA3AF15" }}
+            style={{ backgroundColor: isDark ? "#9CA3AF15" : "rgba(0, 0, 0, 0.05)" }}
           >
-            <Ionicons name="shield-outline" size={14} color="#9CA3AF" />
+            <Ionicons name="shield-outline" size={14} color={accentColor} />
           </View>
           <Text
             className="text-lg font-bold flex-1"
             style={{
               fontFamily: "SF Pro Display",
-              color: "#E5E7EB",
+              color: headingColor,
             }}
           >
             Possible Boundary Tension Detected
@@ -77,7 +92,7 @@ export function BoundaryDetectionCard({
           className="text-xs uppercase tracking-wider mb-4"
           style={{
             fontFamily: "SF Pro Display",
-            color: "#9CA3AF",
+            color: labelColor,
           }}
         >
           Awareness Insight
@@ -89,7 +104,7 @@ export function BoundaryDetectionCard({
             className="text-base leading-6"
             style={{
               fontFamily: "SF Pro Display",
-              color: "#E5E7EB",
+              color: textColor,
             }}
           >
             {analysis.primaryMessage}
@@ -103,7 +118,7 @@ export function BoundaryDetectionCard({
               className="text-sm font-semibold mb-3"
               style={{
                 fontFamily: "SF Pro Display",
-                color: "#9CA3AF",
+                color: labelColor,
               }}
             >
               What Was Noticed
@@ -114,16 +129,16 @@ export function BoundaryDetectionCard({
                   key={index}
                   className="rounded-xl p-3"
                   style={{
-                    backgroundColor: "#0F0F11",
+                    backgroundColor: itemBg,
                     borderWidth: 1,
-                    borderColor: "#9CA3AF20",
+                    borderColor: itemBorderColor,
                   }}
                 >
                   <Text
                     className="text-sm leading-5"
                     style={{
                       fontFamily: "SF Pro Display",
-                      color: "#D1D5DB",
+                      color: detailTextColor,
                     }}
                   >
                     {signal}
@@ -140,16 +155,16 @@ export function BoundaryDetectionCard({
             <View
               className="rounded-xl p-3"
               style={{
-                backgroundColor: "#0F0F11",
+                backgroundColor: itemBg,
                 borderWidth: 1,
-                borderColor: "#9CA3AF20",
+                borderColor: itemBorderColor,
               }}
             >
               <Text
                 className="text-sm leading-5"
                 style={{
                   fontFamily: "SF Pro Display",
-                  color: "#D1D5DB",
+                  color: detailTextColor,
                 }}
               >
                 {analysis.supportiveNote}
@@ -164,16 +179,16 @@ export function BoundaryDetectionCard({
             onPress={onAddMoreContext}
             className="rounded-xl p-3 active:opacity-70"
             style={{
-              backgroundColor: "#0F0F11",
+              backgroundColor: itemBg,
               borderWidth: 1,
-              borderColor: "#9CA3AF20",
+              borderColor: itemBorderColor,
             }}
           >
             <Text
               className="text-sm font-medium text-center"
               style={{
                 fontFamily: "SF Pro Display",
-                color: "#E5E7EB",
+                color: buttonTextColor,
               }}
             >
               Add more context
@@ -184,16 +199,16 @@ export function BoundaryDetectionCard({
             onPress={onExploreResponse}
             className="rounded-xl p-3 active:opacity-70"
             style={{
-              backgroundColor: "#0F0F11",
+              backgroundColor: itemBg,
               borderWidth: 1,
-              borderColor: "#9CA3AF20",
+              borderColor: itemBorderColor,
             }}
           >
             <Text
               className="text-sm font-medium text-center"
               style={{
                 fontFamily: "SF Pro Display",
-                color: "#E5E7EB",
+                color: buttonTextColor,
               }}
             >
               Explore a healthier response
@@ -206,14 +221,14 @@ export function BoundaryDetectionCard({
             style={{
               backgroundColor: "transparent",
               borderWidth: 1,
-              borderColor: "#9CA3AF20",
+              borderColor: itemBorderColor,
             }}
           >
             <Text
               className="text-sm font-medium text-center"
               style={{
                 fontFamily: "SF Pro Display",
-                color: "#9CA3AF",
+                color: secondaryButtonTextColor,
               }}
             >
               Understand my boundaries better

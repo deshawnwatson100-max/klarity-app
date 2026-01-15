@@ -11,9 +11,27 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Relationship Direction Selector** - Choose your intention and get tailored guidance
 - **Smart response suggestions** with different tones based on your chosen path
 - **Past loops system** - Save and switch between conversation sessions
-- **Beautiful dark UI** with neon accents (blue, orange, yellow, purple)
+- **Light and Dark themes** - Adaptive theming with system preference support
 - **Premium splash screen** with glowing Klarity AI logo
 - **Secure PIN authentication** - 4-digit PIN to protect your conversations
+
+## Theme Support
+
+The app supports both light and dark themes with automatic system preference detection:
+
+### Light Theme
+- Clean white backgrounds with subtle shadows
+- Dark text for excellent readability
+- Green accent colors (#34C759) for interactive elements
+- Soft gray borders and dividers
+- Cards with subtle shadow depth
+
+### Dark Theme
+- Pitch black backgrounds for OLED displays
+- Off-white text with high contrast
+- Teal/lime accent colors for interactive elements
+- Subtle glow effects on cards
+- Premium dark aesthetic
 
 ## Security Features
 
