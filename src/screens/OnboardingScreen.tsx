@@ -333,8 +333,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </Text>
             </View>
 
-            {/* Right - Mode Toggle + New Loop Button */}
+            {/* Right - Search Icon + Mode Toggle + New Loop Button */}
             <View className="flex-row items-center">
+              {/* Search Icon */}
+              <Pressable
+                className="active:opacity-60"
+                style={{ marginRight: 12 }}
+              >
+                <Ionicons name="search-outline" size={22} color={colors.textTertiary} />
+              </Pressable>
+
               {/* Mode Toggle */}
               <View
                 style={{
