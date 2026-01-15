@@ -4,18 +4,44 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
 import { DeepSearchSource } from "../api/deepSearch";
+import { useTheme } from "../theme/ThemeContext";
 
-// Colors matching the app's ChatGPT-style aesthetic
-const COLORS = {
-  text: "#EDEDED",
-  textSecondary: "#A0A0A0",
-  textMuted: "#6B7280",
-  link: "#60A5FA",
-  success: "#10B981",
-  error: "#EF4444",
-  buttonBg: "rgba(255, 255, 255, 0.08)",
-  buttonBgHover: "rgba(255, 255, 255, 0.12)",
-};
+// Theme-aware color getter
+function getColors(isDark: boolean) {
+  if (isDark) {
+    return {
+      text: "#EDEDED",
+      textSecondary: "#A0A0A0",
+      textMuted: "#6B7280",
+      link: "#60A5FA",
+      success: "#10B981",
+      successBg: "rgba(16, 185, 129, 0.1)",
+      successBgHover: "rgba(16, 185, 129, 0.2)",
+      error: "#EF4444",
+      errorBg: "rgba(239, 68, 68, 0.1)",
+      errorBgHover: "rgba(239, 68, 68, 0.2)",
+      buttonBg: "rgba(255, 255, 255, 0.08)",
+      buttonBgHover: "rgba(255, 255, 255, 0.12)",
+      iconBg: "rgba(255, 255, 255, 0.08)",
+    };
+  }
+  // Light mode colors
+  return {
+    text: "#1C1C1E",
+    textSecondary: "#636366",
+    textMuted: "#8E8E93",
+    link: "#007AFF",
+    success: "#34C759",
+    successBg: "rgba(52, 199, 89, 0.1)",
+    successBgHover: "rgba(52, 199, 89, 0.15)",
+    error: "#DC2626",
+    errorBg: "rgba(220, 38, 38, 0.08)",
+    errorBgHover: "rgba(220, 38, 38, 0.12)",
+    buttonBg: "rgba(0, 0, 0, 0.05)",
+    buttonBgHover: "rgba(0, 0, 0, 0.08)",
+    iconBg: "rgba(0, 0, 0, 0.05)",
+  };
+}
 
 // Platform icons
 const getPlatformIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
@@ -40,6 +66,9 @@ interface DeepSearchIntroMessageProps {
  * Intro message - ChatGPT style flowing text
  */
 export function DeepSearchIntroMessage({ personName, totalResults }: DeepSearchIntroMessageProps) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   return (
     <View style={{ marginBottom: 24 }}>
       <Text
@@ -75,6 +104,9 @@ export function DeepSearchProfileMessage({
   onVerify,
   showVerificationButtons = true,
 }: DeepSearchProfileMessageProps) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   const [copiedUsername, setCopiedUsername] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<"pending" | "verified" | "rejected">("pending");
   const [isVisible, setIsVisible] = useState(true);
@@ -165,7 +197,7 @@ export function DeepSearchProfileMessage({
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: COLORS.buttonBg,
+            backgroundColor: COLORS.iconBg,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
@@ -271,7 +303,7 @@ export function DeepSearchProfileMessage({
                 paddingVertical: 6,
                 paddingHorizontal: 10,
                 borderRadius: 6,
-                backgroundColor: pressed ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.1)",
+                backgroundColor: pressed ? COLORS.successBgHover : COLORS.successBg,
               })}
             >
               <Ionicons name="checkmark" size={14} color={COLORS.success} />
@@ -287,7 +319,7 @@ export function DeepSearchProfileMessage({
                 paddingVertical: 6,
                 paddingHorizontal: 10,
                 borderRadius: 6,
-                backgroundColor: pressed ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.1)",
+                backgroundColor: pressed ? COLORS.errorBgHover : COLORS.errorBg,
               })}
             >
               <Ionicons name="close" size={14} color={COLORS.error} />
@@ -340,6 +372,9 @@ export function DeepSearchSummaryMessage({
   personName,
   onSearchAgain,
 }: DeepSearchSummaryMessageProps) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   let summaryText = "";
 
   if (verifiedCount === 0) {
@@ -399,6 +434,9 @@ interface DeepSearchNoResultsMessageProps {
  * No results message - ChatGPT style
  */
 export function DeepSearchNoResultsMessage({ personName }: DeepSearchNoResultsMessageProps) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   return (
     <View style={{ marginBottom: 24 }}>
       <Text
