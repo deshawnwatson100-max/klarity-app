@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useTheme } from "../theme/ThemeContext";
 
 export interface DailyClaritySummary {
   date: string; // YYYY-MM-DD
@@ -25,6 +26,8 @@ export function DailyClaritySummaryCard({
   summary,
   onViewChatLoops,
 }: DailyClaritySummaryCardProps) {
+  const { colors, isDark } = useTheme();
+
   // Format date for display (e.g., "Jan 25")
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T12:00:00");
@@ -41,17 +44,21 @@ export function DailyClaritySummaryCard({
         entering={FadeInDown.duration(300).springify()}
         className="mx-6 mb-4 rounded-3xl overflow-hidden"
         style={{
-          backgroundColor: "rgba(20, 20, 24, 0.6)",
+          backgroundColor: isDark ? "rgba(20, 20, 24, 0.6)" : colors.cardBackground,
           borderWidth: 1,
-          borderColor: "rgba(156, 163, 175, 0.1)",
+          borderColor: isDark ? "rgba(156, 163, 175, 0.1)" : colors.cardBorder,
+          shadowColor: colors.shadowColor,
+          shadowOffset: { width: 0, height: isDark ? 0 : 2 },
+          shadowOpacity: isDark ? 0 : 0.06,
+          shadowRadius: isDark ? 0 : 8,
         }}
       >
         <View className="p-6 items-center">
-          <Ionicons name="analytics-outline" size={48} color="#6B7280" />
+          <Ionicons name="analytics-outline" size={48} color={colors.textTertiary} />
           <Text
             className="text-center text-base mt-4 leading-6"
             style={{
-              color: "#9CA3AF",
+              color: colors.textSecondary,
               fontFamily: "SF Pro Display",
             }}
           >
@@ -78,7 +85,7 @@ export function DailyClaritySummaryCard({
         <View
           className="flex-1 h-2 rounded-full overflow-hidden"
           style={{
-            backgroundColor: "rgba(156, 163, 175, 0.15)",
+            backgroundColor: isDark ? "rgba(156, 163, 175, 0.15)" : "rgba(0, 0, 0, 0.08)",
           }}
         >
           <LinearGradient
@@ -110,24 +117,24 @@ export function DailyClaritySummaryCard({
       entering={FadeInDown.duration(300).springify()}
       className="mx-6 mb-4 rounded-3xl overflow-hidden"
       style={{
-        backgroundColor: "rgba(20, 20, 24, 0.6)",
+        backgroundColor: isDark ? "rgba(20, 20, 24, 0.6)" : colors.cardBackground,
         borderWidth: 1,
-        borderColor: "rgba(156, 163, 175, 0.1)",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        borderColor: isDark ? "rgba(156, 163, 175, 0.1)" : colors.cardBorder,
+        shadowColor: colors.shadowColor,
+        shadowOffset: { width: 0, height: isDark ? 4 : 2 },
+        shadowOpacity: isDark ? 0.15 : 0.08,
+        shadowRadius: isDark ? 12 : 10,
       }}
     >
       <View className="p-5">
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center gap-2">
-            <Ionicons name="analytics" size={20} color="#60A5FA" />
+            <Ionicons name="analytics" size={20} color={colors.info} />
             <Text
               className="text-lg font-semibold"
               style={{
-                color: "#F9FAFB",
+                color: colors.textPrimary,
                 fontFamily: "SF Pro Display",
               }}
             >
@@ -137,7 +144,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-medium"
             style={{
-              color: "#9CA3AF",
+              color: colors.textSecondary,
             }}
           >
             {formatDate(summary.date)}
@@ -149,7 +156,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-semibold mb-2"
             style={{
-              color: "#E5E7EB",
+              color: isDark ? "#E5E7EB" : colors.textPrimary,
               letterSpacing: 0.3,
             }}
           >
@@ -157,13 +164,13 @@ export function DailyClaritySummaryCard({
           </Text>
           {summary.navigatedItems.map((item, index) => (
             <View key={index} className="flex-row items-start gap-2 mb-1.5">
-              <Text style={{ color: "#60A5FA", fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: colors.info, fontSize: 12, marginTop: 2 }}>
                 •
               </Text>
               <Text
                 className="text-sm flex-1 leading-5"
                 style={{
-                  color: "#D1D5DB",
+                  color: colors.textSecondary,
                   fontFamily: "SF Pro Display",
                 }}
               >
@@ -178,7 +185,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-semibold mb-2"
             style={{
-              color: "#E5E7EB",
+              color: isDark ? "#E5E7EB" : colors.textPrimary,
               letterSpacing: 0.3,
             }}
           >
@@ -187,7 +194,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm leading-5 mb-1"
             style={{
-              color: "#D1D5DB",
+              color: colors.textSecondary,
               fontFamily: "SF Pro Display",
             }}
           >
@@ -201,7 +208,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-semibold mb-2"
             style={{
-              color: "#E5E7EB",
+              color: isDark ? "#E5E7EB" : colors.textPrimary,
               letterSpacing: 0.3,
             }}
           >
@@ -209,13 +216,13 @@ export function DailyClaritySummaryCard({
           </Text>
           {summary.whatYouDidWell.map((item, index) => (
             <View key={index} className="flex-row items-start gap-2 mb-1.5">
-              <Text style={{ color: "#10B981", fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: colors.success, fontSize: 12, marginTop: 2 }}>
                 ✓
               </Text>
               <Text
                 className="text-sm flex-1 leading-5"
                 style={{
-                  color: "#D1D5DB",
+                  color: colors.textSecondary,
                   fontFamily: "SF Pro Display",
                 }}
               >
@@ -230,7 +237,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-semibold mb-2"
             style={{
-              color: "#E5E7EB",
+              color: isDark ? "#E5E7EB" : colors.textPrimary,
               letterSpacing: 0.3,
             }}
           >
@@ -238,13 +245,13 @@ export function DailyClaritySummaryCard({
           </Text>
           {summary.whatToImprove.map((item, index) => (
             <View key={index} className="flex-row items-start gap-2 mb-1.5">
-              <Text style={{ color: "#F59E0B", fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: colors.warning, fontSize: 12, marginTop: 2 }}>
                 →
               </Text>
               <Text
                 className="text-sm flex-1 leading-5"
                 style={{
-                  color: "#D1D5DB",
+                  color: colors.textSecondary,
                   fontFamily: "SF Pro Display",
                 }}
               >
@@ -259,7 +266,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm font-semibold mb-2"
             style={{
-              color: "#E5E7EB",
+              color: isDark ? "#E5E7EB" : colors.textPrimary,
               letterSpacing: 0.3,
             }}
           >
@@ -268,7 +275,7 @@ export function DailyClaritySummaryCard({
           <Text
             className="text-sm leading-5 italic"
             style={{
-              color: "#D1D5DB",
+              color: colors.textSecondary,
               fontFamily: "SF Pro Display",
             }}
           >
@@ -282,20 +289,20 @@ export function DailyClaritySummaryCard({
           className="active:opacity-70 items-center pt-3"
           style={{
             borderTopWidth: 0.5,
-            borderTopColor: "rgba(156, 163, 175, 0.15)",
+            borderTopColor: isDark ? "rgba(156, 163, 175, 0.15)" : colors.divider,
           }}
         >
           <View className="flex-row items-center gap-2">
             <Text
               className="text-sm font-medium"
               style={{
-                color: "#60A5FA",
+                color: colors.info,
                 letterSpacing: 0.2,
               }}
             >
               View full chat loops
             </Text>
-            <Ionicons name="arrow-forward" size={16} color="#60A5FA" />
+            <Ionicons name="arrow-forward" size={16} color={colors.info} />
           </View>
         </Pressable>
       </View>
