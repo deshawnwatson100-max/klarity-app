@@ -7,15 +7,31 @@ import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
 import * as ContextMenu from "zeego/context-menu";
 import { useFeedbackStore } from "../state/feedbackStore";
+import { useTheme } from "../theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Helper function to render beautifully formatted text
-const renderFormattedText = (text: string, baseStyle: any) => {
+const renderFormattedText = (text: string, baseStyle: any, isDark: boolean) => {
   const lines = text.split("\n");
   const elements: React.ReactNode[] = [];
   let inCodeBlock = false;
   let codeBlockContent: string[] = [];
+
+  // Theme-aware colors
+  const boldColor = isDark ? "#FFFFFF" : "#1C1C1E";
+  const italicColor = isDark ? "#D1D5DB" : "#636366";
+  const codeTextColor = isDark ? "#A5F3FC" : "#0284C7";
+  const codeBgColor = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)";
+  const headerColors = {
+    1: isDark ? "#FFFFFF" : "#1C1C1E",
+    2: isDark ? "#F3F4F6" : "#374151",
+    3: isDark ? "#E5E7EB" : "#4B5563",
+  };
+  const bulletColor = isDark ? "#818CF8" : "#6366F1";
+  const quoteTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const quoteBorderColor = isDark ? "#6B7280" : "#D1D5DB";
+  const codeBlockBg = isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.04)";
 
   // Parse inline formatting (bold, italic, code)
   const parseInlineFormatting = (str: string, lineIndex: number, partIndex: number = 0): React.ReactNode[] => {
@@ -40,7 +56,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
         parts.push(
           <Text
             key={`bold-${lineIndex}-${partIndex}-${match.index}`}
-            style={[baseStyle, { fontWeight: "700", color: "#FFFFFF" }]}
+            style={[baseStyle, { fontWeight: "700", color: boldColor }]}
           >
             {match[1] || match[2]}
           </Text>
@@ -54,12 +70,12 @@ const renderFormattedText = (text: string, baseStyle: any) => {
               baseStyle,
               {
                 fontFamily: "Courier",
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                backgroundColor: codeBgColor,
                 paddingHorizontal: 6,
                 paddingVertical: 2,
                 borderRadius: 4,
                 fontSize: baseStyle.fontSize - 1,
-                color: "#A5F3FC",
+                color: codeTextColor,
               },
             ]}
           >
@@ -71,7 +87,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
         parts.push(
           <Text
             key={`italic-${lineIndex}-${partIndex}-${match.index}`}
-            style={[baseStyle, { fontStyle: "italic", color: "#D1D5DB" }]}
+            style={[baseStyle, { fontStyle: "italic", color: italicColor }]}
           >
             {match[4] || match[5]}
           </Text>
@@ -103,7 +119,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
           <View
             key={`codeblock-${lineIndex}`}
             style={{
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              backgroundColor: codeBlockBg,
               borderRadius: 12,
               padding: 14,
               marginTop: 12,
@@ -119,7 +135,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
                   fontFamily: "Courier",
                   fontSize: 14,
                   lineHeight: 20,
-                  color: "#A5F3FC",
+                  color: codeTextColor,
                 }}
               >
                 {codeLine}
@@ -147,9 +163,9 @@ const renderFormattedText = (text: string, baseStyle: any) => {
       const level = headerMatch[1].length;
       const headerText = headerMatch[2];
       const headerStyles = {
-        1: { fontSize: 22, fontWeight: "700" as const, marginTop: 20, marginBottom: 12, color: "#FFFFFF" },
-        2: { fontSize: 19, fontWeight: "600" as const, marginTop: 16, marginBottom: 10, color: "#F3F4F6" },
-        3: { fontSize: 17, fontWeight: "600" as const, marginTop: 14, marginBottom: 8, color: "#E5E7EB" },
+        1: { fontSize: 22, fontWeight: "700" as const, marginTop: 20, marginBottom: 12, color: headerColors[1] },
+        2: { fontSize: 19, fontWeight: "600" as const, marginTop: 16, marginBottom: 10, color: headerColors[2] },
+        3: { fontSize: 17, fontWeight: "600" as const, marginTop: 14, marginBottom: 8, color: headerColors[3] },
       };
       elements.push(
         <Text
@@ -180,7 +196,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
               width: 6,
               height: 6,
               borderRadius: 3,
-              backgroundColor: "#818CF8",
+              backgroundColor: bulletColor,
               marginTop: 9,
               marginRight: 12,
             }}
@@ -211,7 +227,7 @@ const renderFormattedText = (text: string, baseStyle: any) => {
               baseStyle,
               {
                 fontWeight: "600",
-                color: "#818CF8",
+                color: bulletColor,
                 marginRight: 10,
                 minWidth: 22,
               },
@@ -235,13 +251,13 @@ const renderFormattedText = (text: string, baseStyle: any) => {
           key={`quote-${lineIndex}`}
           style={{
             borderLeftWidth: 3,
-            borderLeftColor: "#6B7280",
+            borderLeftColor: quoteBorderColor,
             paddingLeft: 14,
             marginTop: 12,
             marginBottom: 8,
           }}
         >
-          <Text style={[baseStyle, { fontStyle: "italic", color: "#9CA3AF" }]}>
+          <Text style={[baseStyle, { fontStyle: "italic", color: quoteTextColor }]}>
             {parseInlineFormatting(quoteMatch[1], lineIndex)}
           </Text>
         </View>
@@ -300,6 +316,7 @@ export function MessageBubble({
   messageId,
 }: MessageBubbleProps) {
   const isUser = role === "user";
+  const { colors, isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
 
@@ -454,23 +471,27 @@ export function MessageBubble({
                 <View
                   style={showUserBubble ? {
                     maxWidth: SCREEN_WIDTH * 0.85,
-                    backgroundColor: "#2F2F2F", // ChatGPT-style dark gray bubble
+                    backgroundColor: isDark ? "#2F2F2F" : "#007AFF", // Dark gray in dark mode, iOS blue in light mode
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     borderRadius: 20,
                   } : {
                     maxWidth: SCREEN_WIDTH * 0.85,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 8,
+                    backgroundColor: isDark ? "transparent" : "#007AFF",
+                    paddingHorizontal: isDark ? 0 : 16,
+                    paddingVertical: isDark ? 0 : 12,
+                    borderRadius: isDark ? 0 : 20,
+                    shadowColor: isDark ? "#000" : "transparent",
+                    shadowOffset: { width: 0, height: isDark ? 2 : 0 },
+                    shadowOpacity: isDark ? 0.15 : 0,
+                    shadowRadius: isDark ? 8 : 0,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 15,
                       lineHeight: 22,
-                      color: "#F5F5F4", // Warmer white
+                      color: isDark ? "#F5F5F4" : "#FFFFFF", // White text on blue bubble in light mode
                       letterSpacing: 0.2,
                     }}
                   >
@@ -515,7 +536,7 @@ export function MessageBubble({
               height: imageHeight,
               borderRadius: 16,
               overflow: "hidden",
-              backgroundColor: "#1A1A1C",
+              backgroundColor: isDark ? "#1A1A1C" : "#F3F4F6",
             }}
           >
             <Image
@@ -538,10 +559,10 @@ export function MessageBubble({
           {renderFormattedText(content, {
             fontSize: 17,
             lineHeight: 26,
-            color: "#EDEDED",
+            color: isDark ? "#EDEDED" : "#1C1C1E",
             letterSpacing: 0.2,
             fontWeight: "400",
-          })}
+          }, isDark)}
         </View>
       )}
 
@@ -561,14 +582,14 @@ export function MessageBubble({
             style={({ pressed }) => ({
               padding: 8,
               borderRadius: 8,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
             })}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name={copied ? "checkmark" : "copy"}
               size={20}
-              color={copied ? "#10B981" : "#9CA3AF"}
+              color={copied ? "#10B981" : (isDark ? "#9CA3AF" : "#6B7280")}
             />
           </Pressable>
 
@@ -578,14 +599,14 @@ export function MessageBubble({
             style={({ pressed }) => ({
               padding: 8,
               borderRadius: 8,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
             })}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name={isSpeaking ? "stop" : "volume-high"}
               size={20}
-              color={isSpeaking ? "#3B82F6" : "#9CA3AF"}
+              color={isSpeaking ? "#3B82F6" : (isDark ? "#9CA3AF" : "#6B7280")}
             />
           </Pressable>
 
@@ -598,14 +619,14 @@ export function MessageBubble({
               style={({ pressed }) => ({
                 padding: 8,
                 borderRadius: 8,
-                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
               })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
                 name={liked === true ? "thumbs-up" : "thumbs-up-outline"}
                 size={20}
-                color={liked === true ? "#10B981" : "#9CA3AF"}
+                color={liked === true ? "#10B981" : (isDark ? "#9CA3AF" : "#6B7280")}
               />
             </Pressable>
           )}
@@ -619,14 +640,14 @@ export function MessageBubble({
               style={({ pressed }) => ({
                 padding: 8,
                 borderRadius: 8,
-                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
               })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
                 name={liked === false ? "thumbs-down" : "thumbs-down-outline"}
                 size={20}
-                color={liked === false ? "#EF4444" : "#9CA3AF"}
+                color={liked === false ? "#EF4444" : (isDark ? "#9CA3AF" : "#6B7280")}
               />
             </Pressable>
           )}
@@ -637,14 +658,14 @@ export function MessageBubble({
             style={({ pressed }) => ({
               padding: 8,
               borderRadius: 8,
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+              backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
             })}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name="share"
               size={20}
-              color="#9CA3AF"
+              color={isDark ? "#9CA3AF" : "#6B7280"}
             />
           </Pressable>
 
@@ -655,14 +676,14 @@ export function MessageBubble({
               style={({ pressed }) => ({
                 padding: 8,
                 borderRadius: 8,
-                backgroundColor: pressed ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)") : "transparent",
               })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
                 name="refresh"
                 size={20}
-                color="#9CA3AF"
+                color={isDark ? "#9CA3AF" : "#6B7280"}
               />
             </Pressable>
           )}
