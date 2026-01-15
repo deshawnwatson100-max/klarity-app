@@ -4,19 +4,38 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
 import { DeepSearchResult, DeepSearchSource, SAFETY_RESOURCES } from "../api/deepSearch";
+import { useTheme } from "../theme/ThemeContext";
 
-// Colors matching the chat bubble style
-const COLORS = {
-  text: "#EDEDED",
-  textSecondary: "#A0A0A0",
-  textMuted: "#6B7280",
-  link: "#60A5FA",
-  success: "#10B981",
-  error: "#EF4444",
-  errorBg: "rgba(239, 68, 68, 0.1)",
-  buttonBg: "rgba(255, 255, 255, 0.08)",
-  buttonBgHover: "rgba(255, 255, 255, 0.12)",
-};
+// Theme-aware color getter
+function getColors(isDark: boolean) {
+  if (isDark) {
+    return {
+      text: "#EDEDED",
+      textSecondary: "#A0A0A0",
+      textMuted: "#6B7280",
+      link: "#60A5FA",
+      success: "#10B981",
+      error: "#EF4444",
+      errorBg: "rgba(239, 68, 68, 0.1)",
+      buttonBg: "rgba(255, 255, 255, 0.08)",
+      buttonBgHover: "rgba(255, 255, 255, 0.12)",
+      iconBg: "rgba(255, 255, 255, 0.08)",
+    };
+  }
+  // Light mode colors
+  return {
+    text: "#1C1C1E",
+    textSecondary: "#636366",
+    textMuted: "#8E8E93",
+    link: "#007AFF",
+    success: "#34C759",
+    error: "#DC2626",
+    errorBg: "rgba(220, 38, 38, 0.08)",
+    buttonBg: "rgba(0, 0, 0, 0.05)",
+    buttonBgHover: "rgba(0, 0, 0, 0.08)",
+    iconBg: "rgba(0, 0, 0, 0.05)",
+  };
+}
 
 // Platform icons
 const getPlatformIcon = (platform: string): keyof typeof Ionicons.glyphMap => {
@@ -49,6 +68,9 @@ export function DeepSearchResultBubble({
   onAskFollowUp,
   showSafetyResources = false,
 }: DeepSearchResultBubbleProps) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   return (
     <View style={{ marginBottom: 24 }}>
       {/* Safety Resources */}
@@ -98,6 +120,7 @@ export function DeepSearchResultBubble({
             <DeepDiveProfileCard
               key={`${source.platform}-${index}`}
               source={source}
+              isDark={isDark}
             />
           ))}
         </View>
@@ -109,8 +132,9 @@ export function DeepSearchResultBubble({
 /**
  * Profile card - matches DeepSearchProfileMessage style exactly
  */
-function DeepDiveProfileCard({ source }: { source: DeepSearchSource }) {
+function DeepDiveProfileCard({ source, isDark }: { source: DeepSearchSource; isDark: boolean }) {
   const [copiedUsername, setCopiedUsername] = useState(false);
+  const COLORS = getColors(isDark);
 
   const handlePress = () => {
     Haptics.selectionAsync();
@@ -156,7 +180,7 @@ function DeepDiveProfileCard({ source }: { source: DeepSearchSource }) {
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: COLORS.buttonBg,
+            backgroundColor: COLORS.iconBg,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
@@ -308,6 +332,9 @@ function extractUsernameFromUrl(url: string | undefined, platform: string): stri
  * Loading state - simple text
  */
 export function DeepSearchLoading() {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   return (
     <View style={{ marginBottom: 24 }}>
       <Text
@@ -328,6 +355,9 @@ export function DeepSearchLoading() {
  * No results state
  */
 export function DeepSearchNoResults({ personName }: { personName: string }) {
+  const { isDark } = useTheme();
+  const COLORS = getColors(isDark);
+
   return (
     <View style={{ marginBottom: 24 }}>
       <Text

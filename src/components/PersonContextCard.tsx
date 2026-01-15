@@ -30,6 +30,8 @@ function getColors(isDark: boolean) {
       textMuted: "#8E8E8E",
       accent: "#10A37F",
       accentBg: "rgba(16, 163, 127, 0.15)",
+      accentMuted: "rgba(16, 163, 127, 0.6)",
+      buttonDisabled: "rgba(255, 255, 255, 0.06)",
       error: "#EF4444",
       errorBg: "rgba(239, 68, 68, 0.15)",
       warning: "#F59E0B",
@@ -38,19 +40,21 @@ function getColors(isDark: boolean) {
   }
   // Light mode colors
   return {
-    background: "#F5F5F7",
-    surface: "#FFFFFF",
-    surfaceHover: "#EBEBED",
+    background: "rgba(0, 0, 0, 0.03)",
+    surface: "rgba(0, 0, 0, 0.04)",
+    surfaceHover: "rgba(0, 0, 0, 0.06)",
     border: "rgba(0, 0, 0, 0.08)",
     text: "#1C1C1E",
     textSecondary: "#636366",
     textMuted: "#8E8E93",
     accent: "#0D8A6A",
-    accentBg: "rgba(13, 138, 106, 0.12)",
+    accentBg: "rgba(13, 138, 106, 0.1)",
+    accentMuted: "rgba(13, 138, 106, 0.5)",
+    buttonDisabled: "rgba(0, 0, 0, 0.04)",
     error: "#DC2626",
-    errorBg: "rgba(220, 38, 38, 0.1)",
+    errorBg: "rgba(220, 38, 38, 0.08)",
     warning: "#D97706",
-    warningBg: "rgba(217, 119, 6, 0.1)",
+    warningBg: "rgba(217, 119, 6, 0.08)",
   };
 }
 
@@ -200,7 +204,7 @@ export const PersonContextCard = memo(function PersonContextCard({
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Ionicons name="search" size={18} color={COLORS.accent} style={{ marginRight: 8 }} />
+          <Ionicons name="search" size={18} color={COLORS.accentMuted} style={{ marginRight: 8 }} />
           <View>
             <Text style={{ fontSize: 16, fontWeight: "600", color: COLORS.text }}>
               Soft Search
@@ -347,7 +351,7 @@ export const PersonContextCard = memo(function PersonContextCard({
         onPress={handleSave}
         disabled={!isFormValid}
         style={({ pressed }) => ({
-          backgroundColor: isFormValid ? COLORS.accent : COLORS.surface,
+          backgroundColor: isFormValid ? COLORS.accent : COLORS.buttonDisabled,
           paddingVertical: 16,
           borderRadius: 12,
           flexDirection: "row",
@@ -355,8 +359,6 @@ export const PersonContextCard = memo(function PersonContextCard({
           justifyContent: "center",
           gap: 8,
           opacity: pressed ? 0.8 : 1,
-          borderWidth: !isFormValid && !isDark ? 1 : 0,
-          borderColor: COLORS.border,
         })}
       >
         <Ionicons
