@@ -9,6 +9,7 @@ import { CommunicationStylesScreen } from "../screens/CommunicationStylesScreen"
 import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 import { LegalScreen } from "../screens/LegalScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -29,6 +30,7 @@ export type RootStackParamList = {
   LegalScreen: {
     tab?: "terms" | "privacy";
   };
+  SettingsScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -304,6 +306,18 @@ export function RootNavigator() {
       <Stack.Screen
         name="LegalScreen"
         component={LegalScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#0A0A0B" },
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+
+      {/* Settings Screen */}
+      <Stack.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
         options={{
           gestureEnabled: true,
           gestureDirection: "horizontal",

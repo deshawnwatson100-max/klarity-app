@@ -1315,6 +1315,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           <>
             {renderHeader()}
             <View style={{ flex: 1 }}>{renderContent()}</View>
+            {/* Settings and Account Row */}
             <View
               style={{
                 position: "absolute",
@@ -1322,51 +1323,82 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 left: 0,
                 right: 0,
                 paddingHorizontal: 20,
+                flexDirection: "row",
+                gap: 10,
               }}
             >
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowAccountPage(true);
+              {/* Settings Button */}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  closeDrawer();
+                  setTimeout(() => {
+                    navigation.navigate("SettingsScreen");
+                  }, 100);
+                }}
+                className="active:opacity-70"
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 12,
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderRadius: 12,
+                }}
+              >
+                <Ionicons name="settings-outline" size={18} color="#9CA3AF" />
+                <Text
+                  className="text-sm font-medium ml-2"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Settings
+                </Text>
+              </Pressable>
+
+              {/* Account Button */}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowAccountPage(true);
+                }}
+                className="active:opacity-70"
+                style={{ flex: 1 }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    borderRadius: 12,
                   }}
-                  className="active:opacity-70"
                 >
                   <View
                     style={{
-                      flexDirection: "row",
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
                       alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 12,
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      borderRadius: 12,
+                      justifyContent: "center",
                     }}
                   >
-                    <View
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        backgroundColor: "rgba(255, 255, 255, 0.08)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Ionicons name="person" size={18} color="#9CA3AF" />
-                    </View>
-                    <View style={{ marginLeft: 12, flex: 1 }}>
-                      <Text
-                        className="text-sm font-medium"
-                        style={{ color: "#E5E7EB" }}
-                      >
-                        Personal
-                      </Text>
-                      <Text className="text-xs" style={{ color: "#6B7280" }}>
-                        Free Plan
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+                    <Ionicons name="person" size={14} color="#9CA3AF" />
                   </View>
-                </Pressable>
+                  <View style={{ marginLeft: 8, flex: 1 }}>
+                    <Text
+                      className="text-xs font-medium"
+                      style={{ color: "#E5E7EB" }}
+                      numberOfLines={1}
+                    >
+                      Account
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color="#6B7280" />
+                </View>
+              </Pressable>
             </View>
           </>
         )}

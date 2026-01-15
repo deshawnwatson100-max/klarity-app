@@ -1855,3 +1855,70 @@ The app runs on Expo SDK 53 and is automatically served on port 8081.
 
 **Important**: This is a mobile-first design optimized for iOS (iPhone 16 Pro Max), with full support for Android as well.
 
+### NEW: Settings Screen
+A comprehensive settings screen with 6 sections for complete app customization.
+
+#### How to Access
+- Open the slide-over drawer (tap menu icon in header)
+- Tap the **Settings** button at the bottom left
+- Or navigate to Account → Settings
+
+#### Settings Sections
+
+**1. Appearance**
+- **Theme** - Dark, Light, or System (follow device settings)
+- **Font Size** - Small, Medium, or Large
+- **Haptic Feedback** - Enable/disable vibrations for interactions
+
+**2. Notifications**
+- **Push Notifications** - Get notified about important updates
+- **Daily Reminders** - Check in with your conversations
+- **Reminder Time** - Set custom time for daily reminders (shows time picker)
+
+**3. AI Preferences**
+- **Response Style** - Formal, Balanced, or Casual
+- **Response Length** - Concise, Balanced, or Detailed
+- **Auto-Suggest Replies** - Enable/disable smart reply suggestions
+
+**4. Data & Privacy**
+- **Cloud Sync** - Sync data across devices (toggle)
+- **Analytics** - Help improve Klarity (toggle)
+- **Clear Chat History** - Delete all conversations
+- **Clear All Data** - Reset app completely (chats, profiles, settings)
+
+**5. Legal**
+- **Terms of Service** - View terms
+- **Privacy Policy** - View privacy policy
+
+**6. About**
+- **Rate Klarity** - Open App Store to rate
+- **Share with Friends** - Share app via native share sheet
+- **Contact Support** - Open email to support
+- **Version** - Display app version and build number
+
+#### Premium Banner
+- Prominent upgrade banner at the top of settings
+- Gradient purple design with sparkles icon
+- One-tap access to premium features
+
+#### Design Features
+- iOS-style grouped settings with rounded corners
+- Selection modals for multi-option settings
+- Confirmation modals for destructive actions (delete data)
+- Native time picker for reminder time
+- Switch toggles for boolean settings
+- Haptic feedback on all interactions
+- Persisted to AsyncStorage via Zustand
+
+#### State Management
+Settings are managed via `settingsStore.ts` with full persistence:
+- All preferences saved to AsyncStorage
+- Survives app restarts
+- Can be reset to defaults with one action
+
+#### Files
+- `src/screens/SettingsScreen.tsx` - Main settings UI
+- `src/state/settingsStore.ts` - Settings state management
+- `src/navigation/RootNavigator.tsx` - Screen registration
+- `src/components/SlideOverDrawer.tsx` - Settings button in drawer
+
