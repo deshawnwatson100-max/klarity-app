@@ -471,13 +471,13 @@ export function MessageBubble({
                 <View
                   style={showUserBubble ? {
                     maxWidth: SCREEN_WIDTH * 0.85,
-                    backgroundColor: isDark ? "#2F2F2F" : "#007AFF", // Dark gray in dark mode, iOS blue in light mode
+                    backgroundColor: isDark ? "#2F2F2F" : "#E5E5EA", // Dark gray in dark mode, light gray in light mode
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     borderRadius: 20,
                   } : {
                     maxWidth: SCREEN_WIDTH * 0.85,
-                    backgroundColor: isDark ? "transparent" : "#007AFF",
+                    backgroundColor: isDark ? "transparent" : "#E5E5EA",
                     paddingHorizontal: isDark ? 0 : 16,
                     paddingVertical: isDark ? 0 : 12,
                     borderRadius: isDark ? 0 : 20,
@@ -491,7 +491,7 @@ export function MessageBubble({
                     style={{
                       fontSize: 15,
                       lineHeight: 22,
-                      color: isDark ? "#F5F5F4" : "#FFFFFF", // White text on blue bubble in light mode
+                      color: isDark ? "#F5F5F4" : "#1C1C1E", // Black text on light gray bubble in light mode
                       letterSpacing: 0.2,
                     }}
                   >
