@@ -39,7 +39,7 @@ export function PersonContextHeaderIcon({
     >
       {hasActivePerson ? (
         <View style={{ position: "relative" }}>
-          <Ionicons name="search" size={24} color={colors.textPrimary} />
+          <Ionicons name="search" size={24} color={isDark ? colors.textPrimary : "rgba(0, 0, 0, 0.6)"} />
           {/* Linked indicator - double checkmark */}
           <View
             style={{
