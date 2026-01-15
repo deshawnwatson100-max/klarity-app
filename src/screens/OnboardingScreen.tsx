@@ -51,6 +51,8 @@ interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
+type InputMode = "understand" | "rewrite";
+
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -63,6 +65,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [nameInput, setNameInput] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [showGetStarted, setShowGetStarted] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>("understand");
 
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
   const buttonSlideAnim = useRef(new Animated.Value(20)).current;
@@ -330,8 +333,65 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </Text>
             </View>
 
-            {/* Right - New Loop Button */}
+            {/* Right - Mode Toggle + New Loop Button */}
             <View className="flex-row items-center">
+              {/* Mode Toggle */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  backgroundColor: isDark ? "#1A1A1C" : "rgba(0, 0, 0, 0.06)",
+                  borderRadius: 14,
+                  padding: 2,
+                  marginRight: 12,
+                }}
+              >
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setInputMode("understand");
+                  }}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 12,
+                    backgroundColor: inputMode === "understand" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: inputMode === "understand" ? colors.textPrimary : colors.textTertiary,
+                      fontSize: 11,
+                      fontWeight: inputMode === "understand" ? "600" : "400",
+                    }}
+                  >
+                    Decode
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setInputMode("rewrite");
+                  }}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 12,
+                    backgroundColor: inputMode === "rewrite" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: inputMode === "rewrite" ? colors.textPrimary : colors.textTertiary,
+                      fontSize: 11,
+                      fontWeight: inputMode === "rewrite" ? "600" : "400",
+                    }}
+                  >
+                    Reply
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* New Loop Button */}
               <Pressable className="active:opacity-60">
                 <View style={{ position: "relative" }}>
                   <Ionicons name="chatbubble-outline" size={24} color={colors.headerIcon} />
