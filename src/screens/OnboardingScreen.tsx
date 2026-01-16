@@ -11,13 +11,17 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { useOnboardingStore } from "../state/onboardingStore";
 import { useTheme } from "../theme";
 import { InputBar, InputBarRef } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { TypingIndicator } from "../components/TypingIndicator";
+import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer";
+import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator";
 import { getOpenAITextResponse } from "../api/chat-service";
+import { transcribeAudio } from "../api/transcribe-audio";
 import { AIMessage } from "../types/ai";
 
 type OnboardingStep =
@@ -94,6 +98,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [showGetStarted, setShowGetStarted] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
   const [inputPlaceholder, setInputPlaceholder] = useState("Type your message...");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
   const buttonSlideAnim = useRef(new Animated.Value(20)).current;
@@ -283,6 +290,96 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     }
   };
 
+  const handleVoicePress = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Microphone permission denied");
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(newRecording);
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Failed to start recording", error);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      setIsProcessingVoice(true);
+
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (!uri) {
+        setIsProcessingVoice(false);
+        return;
+      }
+
+      try {
+        const transcription = await transcribeAudio(uri);
+
+        if (!transcription) {
+          setIsProcessingVoice(false);
+          return;
+        }
+
+        setIsProcessingVoice(false);
+
+        // Process the transcribed text like a normal text input
+        addUserMessage(transcription);
+        setUserInput("");
+
+        if (currentStep === "name") {
+          setUserName(transcription);
+          setCurrentStep("situation");
+          setInputPlaceholder("Type your answer...");
+
+          const contextMessage = `The user said their name is "${transcription}". Greet them by name, mention you want to customize their experience, and ask what types of conversations they would most like help with (work, personal relationships, family, dating, friendships, etc.). Frame it as setting things up for them, not as a personal question.`;
+          await getAIResponse(contextMessage);
+        } else if (currentStep === "situation" || currentStep === "followup") {
+          setCurrentStep("followup");
+          setInputPlaceholder("Type your response...");
+          await getAIResponse(transcription);
+        }
+      } catch (transcriptionError) {
+        console.error("Transcription error:", transcriptionError);
+        setIsProcessingVoice(false);
+      }
+    } catch (error) {
+      console.error("Error processing recording:", error);
+      setIsProcessingVoice(false);
+      setRecording(null);
+    }
+  };
+
   const handleGetStarted = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setHasCompletedOnboarding(true);
@@ -468,6 +565,32 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
           {isTyping && <TypingIndicator />}
 
+          {/* Voice Recording UI */}
+          {isRecording && (
+            <View style={{ alignItems: "center", paddingVertical: 24 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  marginBottom: 16,
+                  color: colors.textSecondary,
+                }}
+              >
+                Recording...
+              </Text>
+              <VoiceRecordingVisualizer isRecording={isRecording} barCount={25} />
+              <Text
+                style={{
+                  color: colors.textTertiary,
+                  fontSize: 13,
+                  marginTop: 16,
+                }}
+              >
+                Tap the stop button when done
+              </Text>
+            </View>
+          )}
+
           {showGetStarted && (
             <Animated.View
               style={{
@@ -502,16 +625,45 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {showInput && (
+        {showInput && !isRecording && (
           <InputBar
             ref={inputRef}
             value={userInput}
             onChangeText={setUserInput}
             onSend={handleSubmit}
+            onVoicePress={handleVoicePress}
             placeholder={inputPlaceholder}
             autoFocus={true}
+            isRecording={isRecording}
           />
         )}
+
+        {/* Voice Recording Input - show stop button */}
+        {showInput && isRecording && (
+          <View
+            className="px-4 py-3"
+            style={{
+              paddingBottom: Math.max(insets.bottom, 12),
+              backgroundColor: colors.headerBackground,
+            }}
+          >
+            <View className="flex-row items-center justify-center">
+              <Pressable
+                onPress={handleVoicePress}
+                style={{
+                  backgroundColor: "#EF4444",
+                  borderRadius: 28,
+                  padding: 14,
+                }}
+              >
+                <Ionicons name="stop" size={28} color="white" />
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* Voice Processing Indicator */}
+        {isProcessingVoice && <VoiceProcessingIndicator />}
       </KeyboardAvoidingView>
     </View>
   );
