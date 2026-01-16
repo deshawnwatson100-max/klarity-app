@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -94,16 +93,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
   const [isTyping, setIsTyping] = useState(false);
   const [userInput, setUserInput] = useState("");
-  const [showInput, setShowInput] = useState(false);
   const [showGetStarted, setShowGetStarted] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
   const [inputPlaceholder, setInputPlaceholder] = useState("Type your message...");
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
-
-  const buttonFadeAnim = useRef(new Animated.Value(0)).current;
-  const buttonSlideAnim = useRef(new Animated.Value(20)).current;
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setHasCompletedOnboarding = useOnboardingStore(
@@ -173,7 +168,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         if (isComplete) {
           setCurrentStep("complete");
-          setShowInput(false);
           setTimeout(() => setShowGetStarted(true), 1000);
         }
 
@@ -190,34 +184,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     [conversationHistory, addBotMessage, scrollToBottom]
   );
 
-  // Animate get started button
+  // Focus input on mount
   useEffect(() => {
-    if (showGetStarted) {
-      Animated.parallel([
-        Animated.timing(buttonFadeAnim, {
-          toValue: 1,
-          duration: 500,
-          delay: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(buttonSlideAnim, {
-          toValue: 0,
-          duration: 500,
-          delay: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [showGetStarted, buttonFadeAnim, buttonSlideAnim]);
-
-  // Focus input when shown
-  useEffect(() => {
-    if (showInput) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 300);
-    }
-  }, [showInput]);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 800);
+  }, []);
 
   // Initial welcome message
   useEffect(() => {
@@ -247,7 +219,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         addBotMessage(aiContent);
         setCurrentStep("name");
         setInputPlaceholder("Enter your name...");
-        setShowInput(true);
       } catch (error) {
         console.error("Initial message error:", error);
         setIsTyping(false);
@@ -256,7 +227,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         );
         setCurrentStep("name");
         setInputPlaceholder("Enter your name...");
-        setShowInput(true);
       }
     };
 
@@ -590,42 +560,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </Text>
             </View>
           )}
-
-          {showGetStarted && (
-            <Animated.View
-              style={{
-                opacity: buttonFadeAnim,
-                transform: [{ translateY: buttonSlideAnim }],
-                marginTop: 24,
-              }}
-            >
-              <Pressable
-                onPress={handleGetStarted}
-                style={({ pressed }) => ({
-                  width: "100%",
-                  paddingVertical: 16,
-                  borderRadius: 16,
-                  backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
-                  alignItems: "center",
-                  opacity: pressed ? 0.8 : 1,
-                })}
-              >
-                <Text
-                  style={{
-                    color: isDark ? "#1C1C1E" : "#FFFFFF",
-                    fontWeight: "600",
-                    fontSize: 16,
-                  }}
-                >
-                  Get Started
-                </Text>
-              </Pressable>
-            </Animated.View>
-          )}
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {showInput && !isRecording && (
+        {!isRecording && !showGetStarted && (
           <InputBar
             ref={inputRef}
             value={userInput}
@@ -639,7 +577,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         )}
 
         {/* Voice Recording Input - show stop button */}
-        {showInput && isRecording && (
+        {isRecording && (
           <View
             className="px-4 py-3"
             style={{
@@ -659,6 +597,39 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 <Ionicons name="stop" size={28} color="white" />
               </Pressable>
             </View>
+          </View>
+        )}
+
+        {/* Get Started Button - shown at bottom when onboarding is complete */}
+        {showGetStarted && !isRecording && (
+          <View
+            className="px-4 py-3"
+            style={{
+              paddingBottom: Math.max(insets.bottom, 12),
+              backgroundColor: colors.headerBackground,
+            }}
+          >
+            <Pressable
+              onPress={handleGetStarted}
+              style={({ pressed }) => ({
+                width: "100%",
+                paddingVertical: 16,
+                borderRadius: 16,
+                backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+                alignItems: "center",
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  color: isDark ? "#1C1C1E" : "#FFFFFF",
+                  fontWeight: "600",
+                  fontSize: 16,
+                }}
+              >
+                Get Started
+              </Text>
+            </Pressable>
           </View>
         )}
 
