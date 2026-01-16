@@ -364,6 +364,53 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     onComplete();
   };
 
+  const cancelRecording = async () => {
+    if (!recording) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+    } catch (error) {
+      console.error("Error canceling recording:", error);
+    }
+
+    setRecording(null);
+    setIsRecording(false);
+  };
+
+  const restartRecording = async () => {
+    if (!recording) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+      setRecording(null);
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(newRecording);
+    } catch (error) {
+      console.error("Error restarting recording:", error);
+      setIsRecording(false);
+      setRecording(null);
+    }
+  };
+
   const renderMessage = (message: Message) => {
     if (message.type === "user") {
       return (
@@ -554,18 +601,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   color: colors.textSecondary,
                 }}
               >
-                Recording...
+                Listening...
               </Text>
               <VoiceRecordingVisualizer isRecording={isRecording} barCount={25} />
-              <Text
-                style={{
-                  color: colors.textTertiary,
-                  fontSize: 13,
-                  marginTop: 16,
-                }}
-              >
-                Tap the stop button when done
-              </Text>
             </View>
           )}
         </ScrollView>
@@ -584,7 +622,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           />
         )}
 
-        {/* Voice Recording Input - show stop button */}
+        {/* Voice Recording Input - show stop, cancel, restart buttons */}
         {isRecording && (
           <View
             className="px-4 py-3"
@@ -593,16 +631,90 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               backgroundColor: colors.headerBackground,
             }}
           >
-            <View className="flex-row items-center justify-center">
+            <View className="flex-row items-center justify-center" style={{ gap: 32 }}>
+              {/* Cancel Button */}
+              <Pressable
+                onPress={cancelRecording}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  opacity: pressed ? 0.6 : 1,
+                })}
+              >
+                <View
+                  style={{
+                    backgroundColor: isDark ? "#2A2A2C" : "#E5E5EA",
+                    borderRadius: 24,
+                    padding: 12,
+                  }}
+                >
+                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                </View>
+                <Text
+                  style={{
+                    color: colors.textTertiary,
+                    fontSize: 12,
+                    marginTop: 6,
+                  }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+
+              {/* Stop Button */}
               <Pressable
                 onPress={handleVoicePress}
-                style={{
-                  backgroundColor: "#EF4444",
-                  borderRadius: 28,
-                  padding: 14,
-                }}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
-                <Ionicons name="stop" size={28} color="white" />
+                <View
+                  style={{
+                    backgroundColor: "#EF4444",
+                    borderRadius: 32,
+                    padding: 16,
+                  }}
+                >
+                  <Ionicons name="stop" size={28} color="white" />
+                </View>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    marginTop: 6,
+                    fontWeight: "500",
+                  }}
+                >
+                  Done
+                </Text>
+              </Pressable>
+
+              {/* Restart Button */}
+              <Pressable
+                onPress={restartRecording}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  opacity: pressed ? 0.6 : 1,
+                })}
+              >
+                <View
+                  style={{
+                    backgroundColor: isDark ? "#2A2A2C" : "#E5E5EA",
+                    borderRadius: 24,
+                    padding: 12,
+                  }}
+                >
+                  <Ionicons name="refresh" size={24} color={colors.textSecondary} />
+                </View>
+                <Text
+                  style={{
+                    color: colors.textTertiary,
+                    fontSize: 12,
+                    marginTop: 6,
+                  }}
+                >
+                  Restart
+                </Text>
               </Pressable>
             </View>
           </View>
