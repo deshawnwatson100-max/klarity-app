@@ -22,7 +22,7 @@ function AnimatedBar({ isRecording, index }: { isRecording: boolean; index: numb
       Animated.timing(opacity, {
         toValue: 0.9,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false, // Must match height animation driver
       }).start();
 
       // Start the height animation after delay
@@ -71,7 +71,7 @@ function AnimatedBar({ isRecording, index }: { isRecording: boolean; index: numb
         Animated.timing(opacity, {
           toValue: 0.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false, // Must match height animation driver
         }),
       ]).start();
     }
