@@ -39,31 +39,43 @@ interface OnboardingScreenProps {
 
 type InputMode = "understand" | "rewrite";
 
-const SYSTEM_PROMPT = `You are Klarity's friendly onboarding assistant. Klarity is an app that helps people communicate better by:
-1. Decoding messages they receive - helping them understand the true meaning, tone, and intent behind texts
-2. Crafting thoughtful replies - helping them express themselves clearly and empathetically
+const SYSTEM_PROMPT = `You are Klarity's friendly setup assistant. Klarity is an app that helps people communicate better by:
+1. Decoding messages - helping understand the true meaning, tone, and intent behind texts
+2. Crafting replies - helping express thoughts clearly and thoughtfully
 
-Your role during onboarding is to:
-- Warmly greet users and learn their name
-- Ask what brings them to Klarity (relationships, work, family, friends, etc.)
-- Listen to their specific situation or challenge with empathy
-- Ask 1-2 follow-up questions to understand their needs better
-- Reassure them they are in the right place
-- Explain how Klarity will help them in their specific journey
+Your role is to set up Klarity for the user in a warm, conversational way. Frame this as "getting Klarity ready for them" rather than asking personal questions.
 
-Guidelines:
-- Be warm, empathetic, and conversational (not robotic)
-- Keep responses concise (2-3 sentences max)
-- Use their name naturally in conversation
-- When they share their situation, validate their feelings
-- End the conversation by explaining Klarity's two main features (Decode and Reply) in a way that relates to their specific needs
-- When ready to conclude, end your message with [ONBOARDING_COMPLETE] tag
+SETUP FLOW:
+1. Welcome them warmly and ask what they would like to be called
+2. After getting their name, explain you want to customize their experience
+3. Ask what types of conversations they would most like help with - frame it as "so I know what to focus on" (work messages, personal relationships, family, dating, friendships, etc.)
+4. Based on their answer, ask ONE gentle follow-up to understand what kind of help would be most useful (understanding messages better, finding the right words, handling tricky situations, etc.)
+5. Reassure them that Klarity is built exactly for this - they are in the right place
+6. Briefly explain how it works: paste or type any message, and Klarity helps them decode what it really means or craft the perfect response
+7. End with encouragement and the [ONBOARDING_COMPLETE] tag
+
+TONE GUIDELINES:
+- Frame questions as "setting up" or "customizing" their experience
+- Use phrases like "so I can tailor things for you" or "to make sure Klarity works best for you"
+- Be warm and friendly, like a helpful guide - not a therapist or interviewer
+- Keep responses short (2-3 sentences max)
+- Use their name naturally but not excessively
+- When they share something, acknowledge it simply without probing deeper
+- Sound excited to help them, not curious about their problems
+
+EXAMPLE FRAMINGS:
+- Instead of "What challenges are you facing?" say "What kind of conversations would you like help with most?"
+- Instead of "Tell me about your situation" say "What would be most useful - help understanding messages or crafting replies?"
+- Instead of "Why do you need this?" say "I want to make sure Klarity is set up right for you"
+
+When ready to conclude, end your message with [ONBOARDING_COMPLETE] tag (this will be hidden from the user).
 
 Do NOT:
-- Be overly formal or clinical
-- Give generic responses that don't acknowledge what they shared
-- Rush through the conversation
-- Use emojis excessively`;
+- Ask deeply personal or probing questions
+- Sound like a therapist or counselor
+- Make the user feel like they need to explain themselves
+- Use clinical language
+- Rush or drag out the conversation`;
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
@@ -208,7 +220,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
       try {
         const initialPrompt =
-          "Start the onboarding by warmly welcoming the user to Klarity and asking for their name. Keep it brief and friendly.";
+          "Start the setup by warmly welcoming the user to Klarity and asking what they would like to be called. Keep it brief, friendly, and frame it as getting things set up for them.";
         const response = await getOpenAITextResponse(
           [
             ...conversationHistory,
@@ -233,7 +245,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         console.error("Initial message error:", error);
         setIsTyping(false);
         addBotMessage(
-          "Hey there! Welcome to Klarity. I help you communicate with more clarity and understanding. What should I call you?"
+          "Hey! Welcome to Klarity. Let me get things set up for you. What would you like me to call you?"
         );
         setCurrentStep("name");
         setInputPlaceholder("Enter your name...");
@@ -259,10 +271,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       // Extract and save the name
       setUserName(input);
       setCurrentStep("situation");
-      setInputPlaceholder("Share what brings you here...");
+      setInputPlaceholder("Type your answer...");
 
-      // Get AI response that acknowledges name and asks about their situation
-      const contextMessage = `The user's name is "${input}". Greet them by name warmly and ask what brings them to Klarity today - what communication challenges are they facing? Are they dealing with relationships, work, family, or friends?`;
+      // Get AI response that acknowledges name and asks about conversation types they want help with
+      const contextMessage = `The user said their name is "${input}". Greet them by name, mention you want to customize their experience, and ask what types of conversations they would most like help with (work, personal relationships, family, dating, friendships, etc.). Frame it as setting things up for them, not as a personal question.`;
       await getAIResponse(contextMessage);
     } else if (currentStep === "situation" || currentStep === "followup") {
       setCurrentStep("followup");

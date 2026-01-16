@@ -67,25 +67,29 @@ The app supports both light and dark themes with automatic system preference det
 4. **Onboarding** (first time only) →
 5. **Main App**
 
-### AI-Powered Chat-Loop Onboarding
-A conversational onboarding experience powered by real AI that feels like chatting with a thoughtful friend:
+### AI-Powered Setup Onboarding
+A conversational setup experience powered by real AI that feels like getting personalized help from a friendly guide:
 
 #### Flow
-1. **AI Welcome Message** - Klarity warmly greets the user and asks for their name
-2. **Name Collection** - User enters their name via text input
-3. **AI Acknowledgment** - AI greets user by name and asks what brings them to Klarity
-4. **Situation Sharing** - User shares their communication challenges (relationships, work, family, etc.)
-5. **AI Follow-up Questions** - AI asks 1-2 empathetic follow-up questions to understand their needs
-6. **AI Reassurance** - AI validates their feelings and reassures them they are in the right place
-7. **Feature Explanation** - AI explains how Klarity will help with their specific situation (Decode and Reply modes)
-8. **Completion** - "Get Started" button appears when AI determines onboarding is complete
+1. **AI Welcome** - Klarity warmly welcomes the user and asks what they would like to be called
+2. **Name Collection** - User enters their preferred name via text input
+3. **Experience Customization** - AI explains it wants to tailor their experience and asks what types of conversations they would like help with most (work, relationships, family, dating, friendships)
+4. **Gentle Follow-up** - AI asks ONE simple follow-up to understand what kind of help would be most useful (understanding messages vs crafting replies)
+5. **Reassurance** - AI confirms Klarity is built exactly for this - they are in the right place
+6. **How It Works** - AI briefly explains the process: paste any message to decode it or get help crafting the perfect response
+7. **Completion** - "Get Started" button appears when setup is complete
 
 #### AI Personality
-- **Warm and empathetic** - Validates user feelings and shows understanding
-- **Conversational** - Natural language, not robotic or clinical
-- **Personalized** - Uses the user name naturally and references their specific situation
+- **Helpful guide** - Frames everything as "setting up" or "customizing" their experience
+- **Warm but not probing** - Asks what they need help with, not why they need it
+- **Conversational** - Natural language, like a friendly assistant
 - **Concise** - Keeps responses to 2-3 sentences max
-- **Feature-focused** - Explains Decode (understand messages) and Reply (craft responses) in context of user needs
+- **Encouraging** - Excited to help, not curious about their problems
+
+#### Framing Examples
+- Instead of "What challenges are you facing?" → "What kind of conversations would you like help with most?"
+- Instead of "Tell me about your situation" → "What would be most useful - help understanding messages or crafting replies?"
+- Instead of "Why do you need this?" → "I want to make sure Klarity is set up right for you"
 
 #### Features
 - **Real AI responses** - Uses OpenAI GPT-4o to generate personalized conversations
