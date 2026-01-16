@@ -115,6 +115,36 @@ useOnboardingStore.getState().resetOnboarding();
 
 ## Features
 
+### Deep Decode (Magnifying Glass Icon)
+A powerful feature that lets users upload conversation screenshots for comprehensive AI analysis of communication dynamics.
+
+**How It Works:**
+1. Tap the magnifying glass icon in the header
+2. Upload 1-5 conversation screenshots
+3. AI analyzes the full conversation context
+4. Receive detailed insights about the communication
+
+**Analysis Includes:**
+- **Overview** - Summary of what the conversation is about and overall dynamic
+- **Communication Dynamics** - Identified patterns like "Indirect communication", "Shifting focus", etc.
+- **Tone Analysis** - Overall tone and any notable tone shifts throughout
+- **Key Observations** - Specific, neutral observations about the communication
+- **What Might Be Happening** - Grounded interpretation of underlying dynamics
+- **Things to Consider** - Questions to help the user reflect
+- **Navigation Guidance** - Practical guidance on approaching the situation
+
+**AI Personality:**
+- Calm and observational - not judgmental
+- Neutral but insightful - helps users see clearly
+- Uses phrases like "This could be...", "One possibility is..."
+- Never labels anyone as "toxic", "narcissistic", etc.
+- Helps users decide for themselves - does not tell them what to do
+
+**Files:**
+- `src/components/DeepDecodeModal.tsx` - Image upload modal
+- `src/components/DeepDecodeResultView.tsx` - Results display component
+- `src/api/klarity-api.ts` - `analyzeDeepDecode()` function
+
 ### Screen 1: Input/Welcome Screen
 - **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
 - **Animated Klarity AI Logo** - Premium header logo with breathing glow

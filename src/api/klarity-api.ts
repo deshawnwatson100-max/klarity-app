@@ -2963,3 +2963,183 @@ Return ONLY the title, nothing else.`;
   }
 }
 
+/**
+ * Deep Decode: Analyze multiple conversation images to understand communication dynamics
+ * Takes an array of base64 images and provides comprehensive analysis
+ */
+export interface DeepDecodeResult {
+  overview: string;
+  communicationDynamics: {
+    pattern: string;
+    description: string;
+  }[];
+  toneAnalysis: {
+    overallTone: string;
+    toneShifts: string;
+  };
+  keyObservations: string[];
+  whatMightBeHappening: string;
+  thingsToConsider: string[];
+  navigationGuidance: string;
+}
+
+export async function analyzeDeepDecode(
+  imagesBase64: string[]
+): Promise<DeepDecodeResult> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are Klarity in Deep Decode mode — a communication analyst helping someone understand a conversation they are concerned about.
+
+## YOUR ROLE
+You help people see social and communication dynamics more clearly. You do not diagnose, judge, or label people. You surface patterns and observations that help the user decide what matters to them.
+
+## ANALYSIS APPROACH
+1. Read through all conversation screenshots carefully
+2. Note the flow, tone shifts, and dynamics between participants
+3. Identify patterns without labeling them as "good" or "bad"
+4. Offer observations that help the user see things they might not have noticed
+
+## VOICE & TONE
+- Calm and observational
+- Neutral but insightful
+- Direct without being harsh
+- Human and grounded
+- Never clinical or therapy-speak
+- Never use words like "toxic," "narcissistic," "manipulative," "gaslighting"
+
+## RESPONSE FORMAT
+Provide your analysis in this JSON structure:
+
+{
+  "overview": "2-3 sentences summarizing what this conversation is about and the overall dynamic at play",
+
+  "communicationDynamics": [
+    {
+      "pattern": "Short name for the pattern (e.g., 'Indirect communication', 'Shifting focus', 'Unbalanced effort')",
+      "description": "1-2 sentences describing what you observe without judgment"
+    }
+  ],
+
+  "toneAnalysis": {
+    "overallTone": "1-2 words describing the dominant tone (e.g., 'Tense but cordial', 'Warm', 'Guarded', 'Dismissive')",
+    "toneShifts": "Brief note on any notable tone changes throughout the conversation"
+  },
+
+  "keyObservations": [
+    "3-5 specific, neutral observations about the communication (what was said, how it was said, what was not said)"
+  ],
+
+  "whatMightBeHappening": "2-3 sentences offering a grounded interpretation of the underlying dynamic. Use phrases like 'This could be...', 'One possibility is...', 'It seems like...'",
+
+  "thingsToConsider": [
+    "2-3 questions or points for the user to reflect on — things that might help them decide how they feel about this"
+  ],
+
+  "navigationGuidance": "1-2 sentences of practical, grounded guidance on how to approach this situation going forward"
+}
+
+## ABSOLUTE DO NOTs
+- Do NOT diagnose or label anyone
+- Do NOT tell the user how they should feel
+- Do NOT assume the worst interpretation
+- Do NOT use therapy language or clinical terms
+- Do NOT be preachy or moralistic
+- Do NOT make assumptions about intentions without evidence
+- Do NOT tell the user what to do — help them see clearly so they can decide`;
+
+  try {
+    console.log("[analyzeDeepDecode] Starting analysis of", imagesBase64.length, "images");
+
+    // Build the image content array
+    const imageContent = imagesBase64.map((base64, index) => ({
+      type: "image_url" as const,
+      image_url: {
+        url: `data:image/jpeg;base64,${base64}`,
+        detail: "high" as const,
+      },
+    }));
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            ...imageContent,
+            {
+              type: "text",
+              text: `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what might be going on. Provide your analysis in the JSON format specified.`,
+            },
+          ],
+        },
+      ],
+      max_completion_tokens: 2000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    console.log("[analyzeDeepDecode] API response received");
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      console.warn("[analyzeDeepDecode] Empty content from API");
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    // Validate and return
+    return {
+      overview: parsed.overview || "Unable to fully analyze this conversation.",
+      communicationDynamics: Array.isArray(parsed.communicationDynamics)
+        ? parsed.communicationDynamics.slice(0, 4)
+        : [],
+      toneAnalysis: {
+        overallTone: parsed.toneAnalysis?.overallTone || "Unclear",
+        toneShifts: parsed.toneAnalysis?.toneShifts || "No notable shifts observed",
+      },
+      keyObservations: Array.isArray(parsed.keyObservations)
+        ? parsed.keyObservations.slice(0, 5)
+        : [],
+      whatMightBeHappening: parsed.whatMightBeHappening || "More context would help understand this situation better.",
+      thingsToConsider: Array.isArray(parsed.thingsToConsider)
+        ? parsed.thingsToConsider.slice(0, 3)
+        : [],
+      navigationGuidance: parsed.navigationGuidance || "Take time to reflect on what feels important to you here.",
+    };
+  } catch (error: any) {
+    console.error("[analyzeDeepDecode] Analysis failed:", error);
+
+    // Return a graceful fallback
+    return {
+      overview: "Unable to analyze this conversation. Please try again with clearer screenshots.",
+      communicationDynamics: [],
+      toneAnalysis: {
+        overallTone: "Unable to determine",
+        toneShifts: "",
+      },
+      keyObservations: [],
+      whatMightBeHappening: "Could not complete the analysis.",
+      thingsToConsider: ["Try uploading clearer screenshots", "Make sure the conversation text is readable"],
+      navigationGuidance: "Please try again with different images.",
+    };
+  }
+}
+

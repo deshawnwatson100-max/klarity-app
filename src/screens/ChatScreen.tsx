@@ -33,6 +33,8 @@ import { ImageContinuationCard } from "../components/ImageContinuationCard";
 import { PersonContextCard } from "../components/PersonContextCard";
 import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
 import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
+import { DeepDecodeModal, SelectedImage } from "../components/DeepDecodeModal";
+import { DeepDecodeResultView } from "../components/DeepDecodeResultView";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -63,6 +65,8 @@ import {
   analyzeImageContinuation,
   addEmojisToReply,
   generateDecodeResponse,
+  analyzeDeepDecode,
+  DeepDecodeResult,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -116,6 +120,12 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Deep Decode state
+  const [showDeepDecodeModal, setShowDeepDecodeModal] = useState(false);
+  const [isDeepDecodeAnalyzing, setIsDeepDecodeAnalyzing] = useState(false);
+  const [deepDecodeResult, setDeepDecodeResult] = useState<DeepDecodeResult | null>(null);
+  const [showDeepDecodeResults, setShowDeepDecodeResults] = useState(false);
 
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
@@ -266,6 +276,37 @@ export function ChatScreen({ navigation, route }: Props) {
 
     setInputMode(newMode);
   }, [screenWidth]);
+
+  // Handle Deep Decode analysis
+  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[]) => {
+    if (images.length === 0) return;
+
+    setIsDeepDecodeAnalyzing(true);
+
+    try {
+      const imagesBase64 = images.map((img) => img.base64);
+      const result = await analyzeDeepDecode(imagesBase64);
+
+      setDeepDecodeResult(result);
+      setShowDeepDecodeModal(false);
+      setShowDeepDecodeResults(true);
+    } catch (error) {
+      console.error("[DeepDecode] Analysis failed:", error);
+    } finally {
+      setIsDeepDecodeAnalyzing(false);
+    }
+  }, []);
+
+  const handleDeepDecodeClose = useCallback(() => {
+    setShowDeepDecodeResults(false);
+    setDeepDecodeResult(null);
+  }, []);
+
+  const handleDeepDecodeNewAnalysis = useCallback(() => {
+    setShowDeepDecodeResults(false);
+    setDeepDecodeResult(null);
+    setShowDeepDecodeModal(true);
+  }, []);
 
   // Initialize slide positions based on initial mode
   useEffect(() => {
@@ -2769,6 +2810,8 @@ export function ChatScreen({ navigation, route }: Props) {
               }
             }}
             showPersonContext={true}
+            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+            showDeepDecode={true}
           />
 
           <Animated.View
@@ -2883,6 +2926,34 @@ export function ChatScreen({ navigation, route }: Props) {
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
       />
+
+      {/* Deep Decode Modal */}
+      <DeepDecodeModal
+        visible={showDeepDecodeModal}
+        onClose={() => setShowDeepDecodeModal(false)}
+        onAnalyze={handleDeepDecodeAnalyze}
+        isAnalyzing={isDeepDecodeAnalyzing}
+      />
+
+      {/* Deep Decode Results - Full screen modal */}
+      {showDeepDecodeResults && deepDecodeResult && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 100,
+          }}
+        >
+          <DeepDecodeResultView
+            result={deepDecodeResult}
+            onClose={handleDeepDecodeClose}
+            onNewAnalysis={handleDeepDecodeNewAnalysis}
+          />
+        </View>
+      )}
     </View>
   );
 }

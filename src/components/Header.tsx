@@ -21,6 +21,8 @@ interface HeaderProps {
   onModeChange?: (mode: InputMode) => void;
   onPersonContextPress?: () => void;
   showPersonContext?: boolean;
+  onDeepDecodePress?: () => void;
+  showDeepDecode?: boolean;
 }
 
 /**
@@ -45,6 +47,8 @@ export function Header({
   onModeChange,
   onPersonContextPress,
   showPersonContext = true,
+  onDeepDecodePress,
+  showDeepDecode = true,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -122,8 +126,26 @@ export function Header({
         </View>
 
 
-        {/* Right - Person Context Icon + Mode Toggle + New Loop Button */}
+        {/* Right - Deep Decode + Person Context Icon + Mode Toggle + New Loop Button */}
         <View className="flex-row items-center">
+          {/* Deep Decode Button */}
+          {showDeepDecode && onDeepDecodePress && (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onDeepDecodePress();
+              }}
+              className="active:opacity-60"
+              style={{ marginRight: 12 }}
+            >
+              <Ionicons
+                name="search-outline"
+                size={22}
+                color={colors.textTertiary}
+              />
+            </Pressable>
+          )}
+
           {/* Person Context Icon */}
           {showPersonContext && onPersonContextPress && (
             <PersonContextHeaderIcon onPress={onPersonContextPress} />
