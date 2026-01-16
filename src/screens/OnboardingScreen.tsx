@@ -329,7 +329,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           <View className="flex-row items-center justify-between px-4 h-14">
             {/* Left - Menu Button and Klarity text */}
             <View className="flex-row items-center">
-              <Pressable className="active:opacity-60">
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                className="active:opacity-60"
+              >
                 <Ionicons name="menu" size={28} color={colors.headerIcon} />
               </Pressable>
               <Text
@@ -420,7 +425,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </View>
 
               {/* New Loop Button */}
-              <Pressable className="active:opacity-60">
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                className="active:opacity-60"
+              >
                 <View style={{ position: "relative" }}>
                   <Ionicons
                     name="chatbubble-outline"
