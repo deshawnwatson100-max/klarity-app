@@ -8,7 +8,6 @@ import {
   Platform,
   Keyboard,
   Animated,
-  Easing,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -18,40 +17,53 @@ import { useTheme } from "../theme";
 import { InputBar, InputBarRef } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { TypingIndicator } from "../components/TypingIndicator";
+import { getOpenAITextResponse } from "../api/chat-service";
+import { AIMessage } from "../types/ai";
 
 type OnboardingStep =
   | "welcome"
   | "name"
-  | "use_case"
-  | "goal"
+  | "situation"
+  | "followup"
   | "complete";
 
 interface Message {
   id: string;
-  type: "bot" | "user" | "options";
+  type: "bot" | "user";
   content: string;
-  options?: { id: string; label: string; icon?: string }[];
 }
-
-const USE_CASE_OPTIONS = [
-  { id: "relationships", label: "Relationships", icon: "heart-outline" },
-  { id: "work", label: "Work & Professional", icon: "briefcase-outline" },
-  { id: "family", label: "Family", icon: "people-outline" },
-  { id: "friends", label: "Friends", icon: "chatbubbles-outline" },
-];
-
-const GOAL_OPTIONS = [
-  { id: "understand", label: "Understand others better", icon: "eye-outline" },
-  { id: "express", label: "Express myself clearly", icon: "megaphone-outline" },
-  { id: "resolve", label: "Resolve conflicts", icon: "shield-checkmark-outline" },
-  { id: "connect", label: "Build deeper connections", icon: "link-outline" },
-];
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
 type InputMode = "understand" | "rewrite";
+
+const SYSTEM_PROMPT = `You are Klarity's friendly onboarding assistant. Klarity is an app that helps people communicate better by:
+1. Decoding messages they receive - helping them understand the true meaning, tone, and intent behind texts
+2. Crafting thoughtful replies - helping them express themselves clearly and empathetically
+
+Your role during onboarding is to:
+- Warmly greet users and learn their name
+- Ask what brings them to Klarity (relationships, work, family, friends, etc.)
+- Listen to their specific situation or challenge with empathy
+- Ask 1-2 follow-up questions to understand their needs better
+- Reassure them they are in the right place
+- Explain how Klarity will help them in their specific journey
+
+Guidelines:
+- Be warm, empathetic, and conversational (not robotic)
+- Keep responses concise (2-3 sentences max)
+- Use their name naturally in conversation
+- When they share their situation, validate their feelings
+- End the conversation by explaining Klarity's two main features (Decode and Reply) in a way that relates to their specific needs
+- When ready to conclude, end your message with [ONBOARDING_COMPLETE] tag
+
+Do NOT:
+- Be overly formal or clinical
+- Give generic responses that don't acknowledge what they shared
+- Rush through the conversation
+- Use emojis excessively`;
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
@@ -60,23 +72,24 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const inputRef = useRef<InputBarRef>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<AIMessage[]>([
+    { role: "system", content: SYSTEM_PROMPT },
+  ]);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
   const [isTyping, setIsTyping] = useState(false);
-  const [nameInput, setNameInput] = useState("");
+  const [userInput, setUserInput] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [showGetStarted, setShowGetStarted] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+  const [inputPlaceholder, setInputPlaceholder] = useState("Type your message...");
 
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
   const buttonSlideAnim = useRef(new Animated.Value(20)).current;
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
-  const setPrimaryUseCase = useOnboardingStore((s) => s.setPrimaryUseCase);
-  const setCommunicationGoal = useOnboardingStore((s) => s.setCommunicationGoal);
   const setHasCompletedOnboarding = useOnboardingStore(
     (s) => s.setHasCompletedOnboarding
   );
-  const userName = useOnboardingStore((s) => s.userProfile.name);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -85,21 +98,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   }, []);
 
   const addBotMessage = useCallback(
-    (content: string, options?: Message["options"]) => {
-      setIsTyping(true);
+    (content: string) => {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        type: "bot",
+        content,
+      };
+      setMessages((prev) => [...prev, newMessage]);
       scrollToBottom();
-
-      setTimeout(() => {
-        setIsTyping(false);
-        const newMessage: Message = {
-          id: Date.now().toString(),
-          type: options ? "options" : "bot",
-          content,
-          options,
-        };
-        setMessages((prev) => [...prev, newMessage]);
-        scrollToBottom();
-      }, 1200);
     },
     [scrollToBottom]
   );
@@ -115,6 +121,54 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       scrollToBottom();
     },
     [scrollToBottom]
+  );
+
+  const getAIResponse = useCallback(
+    async (userMessage: string) => {
+      const updatedHistory: AIMessage[] = [
+        ...conversationHistory,
+        { role: "user" as const, content: userMessage },
+      ];
+
+      setIsTyping(true);
+      scrollToBottom();
+
+      try {
+        const response = await getOpenAITextResponse(updatedHistory, {
+          temperature: 0.8,
+          maxTokens: 300,
+        });
+
+        let aiContent = response.content;
+        const isComplete = aiContent.includes("[ONBOARDING_COMPLETE]");
+        aiContent = aiContent.replace("[ONBOARDING_COMPLETE]", "").trim();
+
+        const newHistory: AIMessage[] = [
+          ...updatedHistory,
+          { role: "assistant" as const, content: aiContent },
+        ];
+        setConversationHistory(newHistory);
+
+        setIsTyping(false);
+        addBotMessage(aiContent);
+
+        if (isComplete) {
+          setCurrentStep("complete");
+          setShowInput(false);
+          setTimeout(() => setShowGetStarted(true), 1000);
+        }
+
+        return aiContent;
+      } catch (error) {
+        console.error("AI response error:", error);
+        setIsTyping(false);
+        addBotMessage(
+          "I had a small hiccup there. Could you tell me a bit more about what brings you here?"
+        );
+        return null;
+      }
+    },
+    [conversationHistory, addBotMessage, scrollToBottom]
   );
 
   // Animate get started button
@@ -135,7 +189,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         }),
       ]).start();
     }
-  }, [showGetStarted]);
+  }, [showGetStarted, buttonFadeAnim, buttonSlideAnim]);
 
   // Focus input when shown
   useEffect(() => {
@@ -148,69 +202,72 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   // Initial welcome message
   useEffect(() => {
-    const timer = setTimeout(() => {
-      addBotMessage("Hey there! Welcome to Klarity.");
-      setTimeout(() => {
-        addBotMessage("I help you communicate with more clarity and understanding.");
-        setTimeout(() => {
-          addBotMessage("Before we dive in, I would love to learn a bit about you. What should I call you?");
-          setCurrentStep("name");
-          setShowInput(true);
-        }, 1500);
-      }, 1500);
-    }, 800);
+    const startOnboarding = async () => {
+      setIsTyping(true);
+      scrollToBottom();
 
+      try {
+        const initialPrompt =
+          "Start the onboarding by warmly welcoming the user to Klarity and asking for their name. Keep it brief and friendly.";
+        const response = await getOpenAITextResponse(
+          [
+            ...conversationHistory,
+            { role: "user", content: initialPrompt },
+          ],
+          { temperature: 0.8, maxTokens: 150 }
+        );
+
+        const aiContent = response.content;
+        setConversationHistory((prev) => [
+          ...prev,
+          { role: "user" as const, content: initialPrompt },
+          { role: "assistant" as const, content: aiContent },
+        ]);
+
+        setIsTyping(false);
+        addBotMessage(aiContent);
+        setCurrentStep("name");
+        setInputPlaceholder("Enter your name...");
+        setShowInput(true);
+      } catch (error) {
+        console.error("Initial message error:", error);
+        setIsTyping(false);
+        addBotMessage(
+          "Hey there! Welcome to Klarity. I help you communicate with more clarity and understanding. What should I call you?"
+        );
+        setCurrentStep("name");
+        setInputPlaceholder("Enter your name...");
+        setShowInput(true);
+      }
+    };
+
+    const timer = setTimeout(startOnboarding, 800);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleNameSubmit = () => {
-    if (!nameInput.trim()) return;
+  const handleSubmit = async () => {
+    if (!userInput.trim() || isTyping) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
-    setShowInput(false);
 
-    const name = nameInput.trim();
-    setUserName(name);
-    addUserMessage(name);
-    setNameInput("");
+    const input = userInput.trim();
+    addUserMessage(input);
+    setUserInput("");
 
-    setTimeout(() => {
-      addBotMessage(
-        `Nice to meet you, ${name}! What brings you to Klarity today?`,
-        USE_CASE_OPTIONS
-      );
-      setCurrentStep("use_case");
-    }, 500);
-  };
+    if (currentStep === "name") {
+      // Extract and save the name
+      setUserName(input);
+      setCurrentStep("situation");
+      setInputPlaceholder("Share what brings you here...");
 
-  const handleOptionSelect = (optionId: string, optionLabel: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    addUserMessage(optionLabel);
-
-    if (currentStep === "use_case") {
-      setPrimaryUseCase(optionId);
-      setTimeout(() => {
-        addBotMessage(
-          "Great choice. And what would you like to improve most about your communication?",
-          GOAL_OPTIONS
-        );
-        setCurrentStep("goal");
-      }, 500);
-    } else if (currentStep === "goal") {
-      setCommunicationGoal(optionId);
-      setTimeout(() => {
-        addBotMessage(
-          `Perfect, ${userName}! I am all set up and ready to help you communicate better.`
-        );
-        setTimeout(() => {
-          addBotMessage(
-            "Just paste any message you receive, and I will help you understand it and craft the perfect response."
-          );
-          setCurrentStep("complete");
-          setTimeout(() => setShowGetStarted(true), 1500);
-        }, 1500);
-      }, 500);
+      // Get AI response that acknowledges name and asks about their situation
+      const contextMessage = `The user's name is "${input}". Greet them by name warmly and ask what brings them to Klarity today - what communication challenges are they facing? Are they dealing with relationships, work, family, or friends?`;
+      await getAIResponse(contextMessage);
+    } else if (currentStep === "situation" || currentStep === "followup") {
+      setCurrentStep("followup");
+      setInputPlaceholder("Type your response...");
+      await getAIResponse(input);
     }
   };
 
@@ -233,63 +290,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       );
     }
 
-    if (message.type === "options") {
-      return (
-        <View key={message.id} className="mb-5">
-          <MessageBubble
-            role="assistant"
-            content={message.content}
-            timestamp={Date.now()}
-          />
-          <View className="flex-row flex-wrap gap-2 mt-3 px-1">
-            {message.options?.map((option) => (
-              <Pressable
-                key={option.id}
-                onPress={() => handleOptionSelect(option.id, option.label)}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderRadius: 16,
-                  backgroundColor: pressed
-                    ? isDark
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.08)"
-                    : isDark
-                    ? "rgba(255, 255, 255, 0.06)"
-                    : "rgba(0, 0, 0, 0.04)",
-                  borderWidth: 1,
-                  borderColor: isDark
-                    ? "rgba(255, 255, 255, 0.1)"
-                    : "rgba(0, 0, 0, 0.08)",
-                })}
-              >
-                {option.icon && (
-                  <Ionicons
-                    name={option.icon as any}
-                    size={18}
-                    color={colors.textSecondary}
-                    style={{ marginRight: 10 }}
-                  />
-                )}
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: "500",
-                  }}
-                >
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      );
-    }
-
-    // Bot message
     return (
       <MessageBubble
         key={message.id}
@@ -340,7 +340,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 className="active:opacity-60"
                 style={{ marginRight: 12 }}
               >
-                <Ionicons name="search-outline" size={22} color={colors.textTertiary} />
+                <Ionicons
+                  name="search-outline"
+                  size={22}
+                  color={colors.textTertiary}
+                />
               </Pressable>
 
               {/* Mode Toggle */}
@@ -362,12 +366,20 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                     borderRadius: 12,
-                    backgroundColor: inputMode === "understand" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
+                    backgroundColor:
+                      inputMode === "understand"
+                        ? isDark
+                          ? "#2A2A2C"
+                          : "#FFFFFF"
+                        : "transparent",
                   }}
                 >
                   <Text
                     style={{
-                      color: inputMode === "understand" ? colors.textPrimary : colors.textTertiary,
+                      color:
+                        inputMode === "understand"
+                          ? colors.textPrimary
+                          : colors.textTertiary,
                       fontSize: 11,
                       fontWeight: inputMode === "understand" ? "600" : "400",
                     }}
@@ -384,12 +396,20 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                     borderRadius: 12,
-                    backgroundColor: inputMode === "rewrite" ? (isDark ? "#2A2A2C" : "#FFFFFF") : "transparent",
+                    backgroundColor:
+                      inputMode === "rewrite"
+                        ? isDark
+                          ? "#2A2A2C"
+                          : "#FFFFFF"
+                        : "transparent",
                   }}
                 >
                   <Text
                     style={{
-                      color: inputMode === "rewrite" ? colors.textPrimary : colors.textTertiary,
+                      color:
+                        inputMode === "rewrite"
+                          ? colors.textPrimary
+                          : colors.textTertiary,
                       fontSize: 11,
                       fontWeight: inputMode === "rewrite" ? "600" : "400",
                     }}
@@ -402,7 +422,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               {/* New Loop Button */}
               <Pressable className="active:opacity-60">
                 <View style={{ position: "relative" }}>
-                  <Ionicons name="chatbubble-outline" size={24} color={colors.headerIcon} />
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={24}
+                    color={colors.headerIcon}
+                  />
                   <View
                     style={{
                       position: "absolute",
@@ -471,10 +495,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {showInput && (
           <InputBar
             ref={inputRef}
-            value={nameInput}
-            onChangeText={setNameInput}
-            onSend={handleNameSubmit}
-            placeholder="Enter your name..."
+            value={userInput}
+            onChangeText={setUserInput}
+            onSend={handleSubmit}
+            placeholder={inputPlaceholder}
             autoFocus={true}
           />
         )}

@@ -67,24 +67,35 @@ The app supports both light and dark themes with automatic system preference det
 4. **Onboarding** (first time only) →
 5. **Main App**
 
-### Chat-Loop Onboarding
-A conversational onboarding experience that feels like chatting with Klarity:
+### AI-Powered Chat-Loop Onboarding
+A conversational onboarding experience powered by real AI that feels like chatting with a thoughtful friend:
 
 #### Flow
-1. **Welcome Message** - "Hey there! Welcome to Klarity."
-2. **Introduction** - Explains what Klarity does
-3. **Name Collection** - Asks for user's name via text input
-4. **Use Case Selection** - Pill buttons: Relationships, Work, Family, Friends
-5. **Goal Selection** - Pill buttons: Understand others, Express myself, Resolve conflicts, Build connections
-6. **Completion** - Personalized closing message and "Get Started" button
+1. **AI Welcome Message** - Klarity warmly greets the user and asks for their name
+2. **Name Collection** - User enters their name via text input
+3. **AI Acknowledgment** - AI greets user by name and asks what brings them to Klarity
+4. **Situation Sharing** - User shares their communication challenges (relationships, work, family, etc.)
+5. **AI Follow-up Questions** - AI asks 1-2 empathetic follow-up questions to understand their needs
+6. **AI Reassurance** - AI validates their feelings and reassures them they are in the right place
+7. **Feature Explanation** - AI explains how Klarity will help with their specific situation (Decode and Reply modes)
+8. **Completion** - "Get Started" button appears when AI determines onboarding is complete
+
+#### AI Personality
+- **Warm and empathetic** - Validates user feelings and shows understanding
+- **Conversational** - Natural language, not robotic or clinical
+- **Personalized** - Uses the user name naturally and references their specific situation
+- **Concise** - Keeps responses to 2-3 sentences max
+- **Feature-focused** - Explains Decode (understand messages) and Reply (craft responses) in context of user needs
 
 #### Features
-- **Typing indicators** - 3-dot animation while "typing"
-- **Smooth message animations** - Messages fade in from below
-- **Interactive option pills** - Tappable buttons with icons
+- **Real AI responses** - Uses OpenAI GPT-4o to generate personalized conversations
+- **Typing indicators** - 3-dot animation while AI is "thinking"
+- **Smooth message animations** - Messages fade in naturally
+- **Dynamic placeholders** - Input placeholder changes based on conversation step
+- **Fallback handling** - Graceful fallback to static messages if AI fails
 - **Haptic feedback** - Light/medium/heavy feedback on interactions
 - **Persisted state** - Onboarding only shows once (AsyncStorage)
-- **User profile storage** - Collected data saved for personalization
+- **User profile storage** - Name saved for personalization throughout app
 
 #### Files
 - `src/state/onboardingStore.ts` - Zustand store with persistence
