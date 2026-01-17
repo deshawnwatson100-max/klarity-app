@@ -11,7 +11,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,19 +43,13 @@ export function DeepDecodeModal({
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isContextFocused, setIsContextFocused] = useState(false);
   const contextInputRef = useRef<TextInput>(null);
-  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
-  // Handle keyboard visibility with height tracking
+  // Handle keyboard visibility
   useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => {
+      () => {
         setIsKeyboardVisible(true);
-        Animated.timing(keyboardHeight, {
-          toValue: e.endCoordinates.height,
-          duration: Platform.OS === "ios" ? 250 : 0,
-          useNativeDriver: false,
-        }).start();
       }
     );
     const hideSub = Keyboard.addListener(
@@ -64,11 +57,6 @@ export function DeepDecodeModal({
       () => {
         setIsKeyboardVisible(false);
         setIsContextFocused(false);
-        Animated.timing(keyboardHeight, {
-          toValue: 0,
-          duration: Platform.OS === "ios" ? 250 : 0,
-          useNativeDriver: false,
-        }).start();
       }
     );
 
@@ -76,7 +64,7 @@ export function DeepDecodeModal({
       showSub.remove();
       hideSub.remove();
     };
-  }, [keyboardHeight]);
+  }, []);
 
   const handlePickImages = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -483,16 +471,12 @@ export function DeepDecodeModal({
           </View>
 
           {/* Bottom Section - Context Input */}
-          <Animated.View
+          <View
             style={{
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
-              paddingBottom: keyboardHeight.interpolate({
-                inputRange: [0, 1],
-                outputRange: [insets.bottom + 8, 8],
-                extrapolate: "clamp",
-              }),
+              paddingBottom: isKeyboardVisible ? 8 : insets.bottom + 8,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
@@ -542,7 +526,7 @@ export function DeepDecodeModal({
                 </Pressable>
               )}
             </View>
-          </Animated.View>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
