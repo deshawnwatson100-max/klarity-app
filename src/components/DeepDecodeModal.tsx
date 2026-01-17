@@ -127,6 +127,7 @@ export function DeepDecodeModal({
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1, backgroundColor: colors.background }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <View
           style={{
