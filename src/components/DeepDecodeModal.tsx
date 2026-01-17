@@ -41,18 +41,27 @@ export function DeepDecodeModal({
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [additionalContext, setAdditionalContext] = useState("");
   const [isContextFocused, setIsContextFocused] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const contextInputRef = useRef<TextInput>(null);
 
-  // Handle keyboard hide to reset context focus
+  // Handle keyboard show/hide
   useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
     const hideSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
+        setKeyboardHeight(0);
         setIsContextFocused(false);
       }
     );
 
     return () => {
+      showSub.remove();
       hideSub.remove();
     };
   }, []);
@@ -401,7 +410,7 @@ export function DeepDecodeModal({
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
-              paddingBottom: insets.bottom + 8,
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom + 8,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
