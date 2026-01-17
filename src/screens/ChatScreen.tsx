@@ -1943,26 +1943,26 @@ export function ChatScreen({ navigation, route }: Props) {
       );
     }
 
-    // Person Context Card - inline in chat
-    if (message.role === "person-context-card") {
-      return (
-        <PersonContextCard
-          key={message.id}
-          showLinkOption={true}
-          onPersonContextCreated={(personContextId, linkedToChat) => {
-            // Card stays visible with completed state - don't remove
-            // Trigger deep search for the new person context
-            setTimeout(() => {
-              runDeepSearchForPerson(personContextId);
-            }, 300);
-          }}
-          onDismiss={() => {
-            // Remove the card from chat when dismissed via X button
-            removeMessageFromActiveLoop(message.id);
-          }}
-        />
-      );
-    }
+    // Person Context Card - HIDDEN FOR NOW
+    // if (message.role === "person-context-card") {
+    //   return (
+    //     <PersonContextCard
+    //       key={message.id}
+    //       showLinkOption={true}
+    //       onPersonContextCreated={(personContextId, linkedToChat) => {
+    //         // Card stays visible with completed state - don't remove
+    //         // Trigger deep search for the new person context
+    //         setTimeout(() => {
+    //           runDeepSearchForPerson(personContextId);
+    //         }, 300);
+    //       }}
+    //       onDismiss={() => {
+    //         // Remove the card from chat when dismissed via X button
+    //         removeMessageFromActiveLoop(message.id);
+    //       }}
+    //     />
+    //   );
+    // }
 
     // Deep Search Suggestion Card - suggested inline in chat
     if (message.role === "deep-search-suggestion") {
