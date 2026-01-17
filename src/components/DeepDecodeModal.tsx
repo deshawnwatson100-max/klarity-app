@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  InputAccessoryView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,28 +41,20 @@ export function DeepDecodeModal({
   const { colors, isDark } = useTheme();
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [additionalContext, setAdditionalContext] = useState("");
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isContextFocused, setIsContextFocused] = useState(false);
   const contextInputRef = useRef<TextInput>(null);
+  const inputAccessoryViewID = "deepDecodeInput";
 
-  // Handle keyboard visibility
+  // Handle keyboard hide to reset context focus
   useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setIsKeyboardVisible(true);
-      }
-    );
     const hideSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
-        setIsKeyboardVisible(false);
         setIsContextFocused(false);
       }
     );
 
     return () => {
-      showSub.remove();
       hideSub.remove();
     };
   }, []);
@@ -409,18 +402,18 @@ export function DeepDecodeModal({
             )}
           </ScrollView>
 
-          {/* Bottom Section - Input Bar with Analyze Button above */}
+          {/* Bottom Section - Analyze Button only (Input is in InputAccessoryView when keyboard is open) */}
           <View
             style={{
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
-              paddingBottom: isKeyboardVisible ? 8 : insets.bottom + 8,
+              paddingBottom: insets.bottom + 8,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
           >
-            {/* Analyze Conversation Button - Above the input bar */}
+            {/* Analyze Conversation Button */}
             <View
               style={{
                 alignItems: "flex-end",
@@ -508,6 +501,7 @@ export function DeepDecodeModal({
                 placeholderTextColor={colors.textTertiary}
                 multiline
                 editable={!isAnalyzing}
+                inputAccessoryViewID={Platform.OS === "ios" ? inputAccessoryViewID : undefined}
                 style={{
                   flex: 1,
                   color: colors.textPrimary,
@@ -529,6 +523,56 @@ export function DeepDecodeModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* InputAccessoryView - appears above keyboard on iOS */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={inputAccessoryViewID}>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderTopWidth: 1,
+              borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+              }}
+            >
+              <Ionicons
+                name="chatbubble-outline"
+                size={18}
+                color={colors.textTertiary}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  color: additionalContext ? colors.textPrimary : colors.textTertiary,
+                  fontSize: 15,
+                }}
+              >
+                {additionalContext || "Add context... (optional)"}
+              </Text>
+              {additionalContext.length > 0 && !isAnalyzing && (
+                <Pressable
+                  onPress={() => setAdditionalContext("")}
+                  style={{ padding: 4, marginLeft: 4 }}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </InputAccessoryView>
+      )}
     </Modal>
   );
 }
