@@ -112,13 +112,10 @@ export function DeepDecodeModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="formSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, backgroundColor: colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{
             flex: 1,
@@ -517,7 +514,7 @@ export function DeepDecodeModal({
             </View>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
