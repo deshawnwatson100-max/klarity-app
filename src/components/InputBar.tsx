@@ -360,7 +360,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 onInputFocus?.();
               }}
               onBlur={() => setIsFocused(false)}
-              placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : "Paste the message to decode...") : ""}
+              placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : placeholder) : ""}
               placeholderTextColor={colors.inputPlaceholder}
               editable={!disabled}
               onSubmitEditing={handleSend}
