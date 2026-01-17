@@ -2904,7 +2904,7 @@ export function ChatScreen({ navigation, route }: Props) {
               onImageSelected={handleImageSelected}
               onClearImage={handleClearImage}
               selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
+              placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type a message..."}
               disabled={isLoading}
               inputMode={inputMode}
               onInputFocus={handleInputFocus}
