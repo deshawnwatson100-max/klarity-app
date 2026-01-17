@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,22 +44,39 @@ export function DeepDecodeModal({
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isContextFocused, setIsContextFocused] = useState(false);
   const contextInputRef = useRef<TextInput>(null);
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
-  // Handle keyboard visibility
+  // Handle keyboard visibility with height tracking
   useEffect(() => {
-    const showSub = Keyboard.addListener("keyboardWillShow", () => {
-      setIsKeyboardVisible(true);
-    });
-    const hideSub = Keyboard.addListener("keyboardWillHide", () => {
-      setIsKeyboardVisible(false);
-      setIsContextFocused(false);
-    });
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setIsKeyboardVisible(true);
+        Animated.timing(keyboardHeight, {
+          toValue: e.endCoordinates.height,
+          duration: Platform.OS === "ios" ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+        setIsContextFocused(false);
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: Platform.OS === "ios" ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
 
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [keyboardHeight]);
 
   const handlePickImages = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -403,11 +421,11 @@ export function DeepDecodeModal({
           </ScrollView>
 
           {/* Analyze Conversation Button - Floating above the footer */}
-          <View
+          <Animated.View
             style={{
               position: "absolute",
               right: 16,
-              bottom: insets.bottom + 80, // Position above the footer
+              bottom: Animated.add(keyboardHeight, insets.bottom + 80), // Position above the footer, moves with keyboard
               zIndex: 10,
             }}
           >
@@ -463,15 +481,20 @@ export function DeepDecodeModal({
                 </>
               )}
             </Pressable>
-          </View>
+          </Animated.View>
 
           {/* Bottom Section - Context Input */}
-          <View
+          <Animated.View
             style={{
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
-              paddingBottom: insets.bottom + 8,
+              paddingBottom: keyboardHeight.interpolate({
+                inputRange: [0, 1],
+                outputRange: [insets.bottom + 8, 8],
+                extrapolate: "clamp",
+              }),
+              marginBottom: keyboardHeight,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
@@ -521,7 +544,7 @@ export function DeepDecodeModal({
                 </Pressable>
               )}
             </View>
-          </View>
+          </Animated.View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
