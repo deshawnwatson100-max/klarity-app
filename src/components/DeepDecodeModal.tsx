@@ -402,147 +402,128 @@ export function DeepDecodeModal({
             )}
           </ScrollView>
 
-          {/* Bottom Section - Context Input + Action Button */}
+          {/* Bottom Section - Analyze Button + Context Input */}
           <View
             style={{
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
+              paddingBottom: insets.bottom + 8,
             }}
           >
-            {/* Context Input Card with Analyze Button */}
+            {/* Analyze Conversation Button - Floating above input */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                paddingHorizontal: 16,
+                paddingTop: 8,
+                paddingBottom: 8,
+              }}
+            >
+              <Pressable
+                onPress={handleAnalyze}
+                disabled={selectedImages.length === 0 || isAnalyzing}
+                style={({ pressed }) => ({
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.08)",
+                  borderRadius: 20,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.8 : 1,
+                })}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <ActivityIndicator
+                      color={colors.textPrimary}
+                      size="small"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyzing...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="scan"
+                      size={16}
+                      color={colors.textPrimary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyze Conversation
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Context Input Bar */}
             <View
               style={{
                 paddingHorizontal: 16,
-                paddingTop: 12,
-                paddingBottom: insets.bottom + 12,
               }}
             >
               <View
                 style={{
+                  flexDirection: "row",
+                  alignItems: "center",
                   backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
                   borderRadius: 12,
-                  padding: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
                 }}
               >
-                {/* Header Row with Analyze Button */}
-                <View
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={18}
+                  color={colors.textTertiary}
+                  style={{ marginRight: 10 }}
+                />
+                <TextInput
+                  ref={contextInputRef}
+                  value={additionalContext}
+                  onChangeText={setAdditionalContext}
+                  onFocus={() => setIsContextFocused(true)}
+                  onBlur={() => setIsContextFocused(false)}
+                  placeholder="Add context... (optional)"
+                  placeholderTextColor={colors.textTertiary}
+                  multiline
+                  editable={!isAnalyzing}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
+                    flex: 1,
+                    color: colors.textPrimary,
+                    fontSize: 15,
+                    lineHeight: 20,
+                    maxHeight: 80,
+                    textAlignVertical: "top",
                   }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name="chatbubble-outline"
-                      size={16}
-                      color={colors.textTertiary}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text
-                      style={{
-                        color: colors.textTertiary,
-                        fontSize: 13,
-                        fontWeight: "500",
-                      }}
-                    >
-                      Add context (optional)
-                    </Text>
-                  </View>
-
-                  {/* Analyze Button */}
+                />
+                {additionalContext.length > 0 && !isAnalyzing && (
                   <Pressable
-                    onPress={handleAnalyze}
-                    disabled={selectedImages.length === 0 || isAnalyzing}
-                    style={({ pressed }) => ({
-                      backgroundColor: isDark
-                        ? "rgba(255,255,255,0.1)"
-                        : "rgba(0,0,0,0.08)",
-                      borderRadius: 8,
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.8 : 1,
-                    })}
+                    onPress={() => setAdditionalContext("")}
+                    style={{ padding: 4, marginLeft: 4 }}
                   >
-                    {isAnalyzing ? (
-                      <>
-                        <ActivityIndicator
-                          color={colors.textPrimary}
-                          size="small"
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text
-                          style={{
-                            color: colors.textPrimary,
-                            fontSize: 13,
-                            fontWeight: "600",
-                          }}
-                        >
-                          Analyzing...
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons
-                          name="scan"
-                          size={14}
-                          color={colors.textPrimary}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text
-                          style={{
-                            color: colors.textPrimary,
-                            fontSize: 13,
-                            fontWeight: "600",
-                          }}
-                        >
-                          Analyze
-                        </Text>
-                      </>
-                    )}
+                    <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                   </Pressable>
-                </View>
-
-                {/* Text Input */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <TextInput
-                    ref={contextInputRef}
-                    value={additionalContext}
-                    onChangeText={setAdditionalContext}
-                    onFocus={() => setIsContextFocused(true)}
-                    onBlur={() => setIsContextFocused(false)}
-                    placeholder="e.g. We met on a dating app 2 weeks ago..."
-                    placeholderTextColor={colors.textTertiary}
-                    multiline
-                    editable={!isAnalyzing}
-                    style={{
-                      flex: 1,
-                      color: colors.textPrimary,
-                      fontSize: 15,
-                      lineHeight: 20,
-                      maxHeight: 80,
-                      minHeight: 36,
-                      textAlignVertical: "top",
-                    }}
-                  />
-                  {additionalContext.length > 0 && !isAnalyzing && (
-                    <Pressable
-                      onPress={() => setAdditionalContext("")}
-                      style={{ padding: 4, marginLeft: 4 }}
-                    >
-                      <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-                    </Pressable>
-                  )}
-                </View>
+                )}
               </View>
             </View>
           </View>
