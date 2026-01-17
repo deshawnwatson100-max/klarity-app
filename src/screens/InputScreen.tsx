@@ -19,7 +19,7 @@ import { analyzeDeepDecode, DeepDecodeResult } from "../api/klarity-api";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
-import { MessageMode } from "../types/chat";
+import { MessageMode, DeepDecodeResultMessage } from "../types/chat";
 import { useTheme } from "../theme";
 
 type Props = StackScreenProps<RootStackParamList, "InputScreen">;
@@ -150,28 +150,50 @@ export function InputScreen({ navigation }: Props) {
   };
 
   // Handle Deep Decode analysis
-  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[]) => {
+  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[], context?: string) => {
     const imagesBase64 = images.map((img) => img.base64);
 
     setIsDeepDecodeAnalyzing(true);
 
     try {
-      const result = await analyzeDeepDecode(imagesBase64);
+      const result = await analyzeDeepDecode(imagesBase64, context);
 
       setDeepDecodeResult(result);
       setShowDeepDecodeModal(false);
       setShowDeepDecodeResults(true);
+
+      // Add the result to the decode chat loop as floating text
+      let activeLoop = getActiveLoop();
+      if (!activeLoop) {
+        createNewLoop();
+        activeLoop = getActiveLoop();
+      }
+
+      if (activeLoop) {
+        const deepDecodeMsg: DeepDecodeResultMessage = {
+          id: `deep-decode-result-${Date.now()}`,
+          role: "deep-decode-result",
+          content: "",
+          timestamp: Date.now(),
+          mode: "understand",
+          decodeResult: result,
+        };
+        console.log("[DeepDecode] Adding result to chat loop from InputScreen:", deepDecodeMsg.id);
+        addMessageToActiveLoop(deepDecodeMsg);
+      }
     } catch (error) {
       console.error("[DeepDecode] Analysis failed:", error);
     } finally {
       setIsDeepDecodeAnalyzing(false);
     }
-  }, []);
+  }, [getActiveLoop, createNewLoop, addMessageToActiveLoop]);
 
   const handleDeepDecodeClose = useCallback(() => {
     setShowDeepDecodeResults(false);
     setDeepDecodeResult(null);
-  }, []);
+    // Navigate to ChatScreen in decode mode to show the results
+    navigation.navigate("ChatScreen", { inputMode: "understand" });
+  }, [navigation]);
 
   const handleDeepDecodeNewAnalysis = useCallback(() => {
     setShowDeepDecodeResults(false);

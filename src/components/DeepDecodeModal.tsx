@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Image,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,6 +40,25 @@ export function DeepDecodeModal({
   const { colors, isDark } = useTheme();
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [additionalContext, setAdditionalContext] = useState("");
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isContextFocused, setIsContextFocused] = useState(false);
+  const contextInputRef = useRef<TextInput>(null);
+
+  // Handle keyboard visibility
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardWillShow", () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener("keyboardWillHide", () => {
+      setIsKeyboardVisible(false);
+      setIsContextFocused(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const handlePickImages = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -82,8 +104,10 @@ export function DeepDecodeModal({
 
   const handleClose = useCallback(() => {
     if (isAnalyzing) return;
+    Keyboard.dismiss();
     setSelectedImages([]);
     setAdditionalContext("");
+    setIsContextFocused(false);
     onClose();
   }, [isAnalyzing, onClose]);
 
@@ -94,384 +118,415 @@ export function DeepDecodeModal({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          paddingTop: insets.top,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, backgroundColor: colors.background }}
       >
-        {/* Header */}
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+            flex: 1,
+            paddingTop: insets.top,
           }}
         >
-          <Pressable
-            onPress={handleClose}
-            disabled={isAnalyzing}
-            style={{ opacity: isAnalyzing ? 0.5 : 1 }}
-          >
-            <Text style={{ color: colors.textSecondary, fontSize: 16 }}>
-              Cancel
-            </Text>
-          </Pressable>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: 17,
-              fontWeight: "600",
-            }}
-          >
-            Deep Decode
-          </Text>
-          <View style={{ width: 50 }} />
-        </View>
-
-        {/* Content */}
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 20 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Instructions */}
+          {/* Header */}
           <View
             style={{
-              backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 24,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-              <Ionicons
-                name="scan-outline"
-                size={24}
-                color={isDark ? "#7DD3C0" : "#059669"}
-                style={{ marginRight: 12 }}
-              />
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Analyze a Conversation
-              </Text>
-            </View>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: 14,
-                lineHeight: 20,
-              }}
-            >
-              Upload screenshots of a conversation you want to understand better.
-              Klarity will analyze the communication patterns, tone, and dynamics
-              to help you see what might really be going on.
-            </Text>
-          </View>
-
-          {/* Image Selection Area */}
-          {selectedImages.length === 0 ? (
             <Pressable
-              onPress={handlePickImages}
+              onPress={handleClose}
               disabled={isAnalyzing}
-              style={({ pressed }) => ({
-                borderWidth: 2,
-                borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
-                borderStyle: "dashed",
-                borderRadius: 16,
-                padding: 40,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: pressed
-                  ? isDark
-                    ? "rgba(255,255,255,0.04)"
-                    : "rgba(0,0,0,0.02)"
-                  : "transparent",
-                opacity: isAnalyzing ? 0.5 : 1,
-              })}
+              style={{ opacity: isAnalyzing ? 0.5 : 1 }}
             >
-              <Ionicons
-                name="images-outline"
-                size={48}
-                color={colors.textTertiary}
-                style={{ marginBottom: 12 }}
-              />
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: "500",
-                  marginBottom: 4,
-                }}
-              >
-                Tap to select images
-              </Text>
-              <Text
-                style={{
-                  color: colors.textTertiary,
-                  fontSize: 13,
-                }}
-              >
-                Up to 5 screenshots
+              <Text style={{ color: colors.textSecondary, fontSize: 16 }}>
+                Cancel
               </Text>
             </Pressable>
-          ) : (
-            <View>
-              {/* Selected Images Grid */}
-              <View
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: 17,
+                fontWeight: "600",
+              }}
+            >
+              Deep Decode
+            </Text>
+            <View style={{ width: 50 }} />
+          </View>
+
+          {/* Content */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 20 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Instructions */}
+            <View
+              style={{
+                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                <Ionicons
+                  name="scan-outline"
+                  size={24}
+                  color={isDark ? "#7DD3C0" : "#059669"}
+                  style={{ marginRight: 12 }}
+                />
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Analyze a Conversation
+                </Text>
+              </View>
+              <Text
                 style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 12,
-                  marginBottom: 16,
+                  color: colors.textSecondary,
+                  fontSize: 14,
+                  lineHeight: 20,
                 }}
               >
-                {selectedImages.map((image, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      position: "relative",
-                      borderRadius: 12,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Image
-                      source={{ uri: image.uri }}
+                Upload screenshots of a conversation you want to understand better.
+                Klarity will analyze the communication patterns, tone, and dynamics
+                to help you see what might really be going on.
+              </Text>
+            </View>
+
+            {/* Image Selection Area */}
+            {selectedImages.length === 0 ? (
+              <Pressable
+                onPress={handlePickImages}
+                disabled={isAnalyzing}
+                style={({ pressed }) => ({
+                  borderWidth: 2,
+                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
+                  borderStyle: "dashed",
+                  borderRadius: 16,
+                  padding: 40,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: pressed
+                    ? isDark
+                      ? "rgba(255,255,255,0.04)"
+                      : "rgba(0,0,0,0.02)"
+                    : "transparent",
+                  opacity: isAnalyzing ? 0.5 : 1,
+                })}
+              >
+                <Ionicons
+                  name="images-outline"
+                  size={48}
+                  color={colors.textTertiary}
+                  style={{ marginBottom: 12 }}
+                />
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: "500",
+                    marginBottom: 4,
+                  }}
+                >
+                  Tap to select images
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textTertiary,
+                    fontSize: 13,
+                  }}
+                >
+                  Up to 5 screenshots
+                </Text>
+              </Pressable>
+            ) : (
+              <View>
+                {/* Selected Images Grid */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  {selectedImages.map((image, index) => (
+                    <View
+                      key={index}
                       style={{
+                        position: "relative",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Image
+                        source={{ uri: image.uri }}
+                        style={{
+                          width: 100,
+                          height: 150,
+                          borderRadius: 12,
+                        }}
+                        resizeMode="cover"
+                      />
+                      {!isAnalyzing && (
+                        <Pressable
+                          onPress={() => handleRemoveImage(index)}
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            backgroundColor: "rgba(0,0,0,0.6)",
+                            borderRadius: 12,
+                            padding: 4,
+                          }}
+                        >
+                          <Ionicons name="close" size={16} color="#FFFFFF" />
+                        </Pressable>
+                      )}
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: 4,
+                          left: 4,
+                          backgroundColor: "rgba(0,0,0,0.6)",
+                          borderRadius: 8,
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                        }}
+                      >
+                        <Text style={{ color: "#FFFFFF", fontSize: 11 }}>
+                          {index + 1}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  {/* Add More Button */}
+                  {selectedImages.length < 5 && !isAnalyzing && (
+                    <Pressable
+                      onPress={handlePickImages}
+                      style={({ pressed }) => ({
                         width: 100,
                         height: 150,
                         borderRadius: 12,
-                      }}
-                      resizeMode="cover"
-                    />
-                    {!isAnalyzing && (
-                      <Pressable
-                        onPress={() => handleRemoveImage(index)}
-                        style={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          backgroundColor: "rgba(0,0,0,0.6)",
-                          borderRadius: 12,
-                          padding: 4,
-                        }}
-                      >
-                        <Ionicons name="close" size={16} color="#FFFFFF" />
-                      </Pressable>
-                    )}
-                    <View
-                      style={{
-                        position: "absolute",
-                        bottom: 4,
-                        left: 4,
-                        backgroundColor: "rgba(0,0,0,0.6)",
-                        borderRadius: 8,
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                      }}
+                        borderWidth: 2,
+                        borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
+                        borderStyle: "dashed",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: pressed
+                          ? isDark
+                            ? "rgba(255,255,255,0.04)"
+                            : "rgba(0,0,0,0.02)"
+                          : "transparent",
+                      })}
                     >
-                      <Text style={{ color: "#FFFFFF", fontSize: 11 }}>
-                        {index + 1}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
+                      <Ionicons
+                        name="add"
+                        size={32}
+                        color={colors.textTertiary}
+                      />
+                    </Pressable>
+                  )}
+                </View>
 
-                {/* Add More Button */}
-                {selectedImages.length < 5 && !isAnalyzing && (
-                  <Pressable
-                    onPress={handlePickImages}
-                    style={({ pressed }) => ({
-                      width: 100,
-                      height: 150,
-                      borderRadius: 12,
-                      borderWidth: 2,
-                      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
-                      borderStyle: "dashed",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: pressed
-                        ? isDark
-                          ? "rgba(255,255,255,0.04)"
-                          : "rgba(0,0,0,0.02)"
-                        : "transparent",
-                    })}
-                  >
-                    <Ionicons
-                      name="add"
-                      size={32}
-                      color={colors.textTertiary}
-                    />
-                  </Pressable>
-                )}
+                {/* Image count */}
+                <Text
+                  style={{
+                    color: colors.textTertiary,
+                    fontSize: 13,
+                    marginBottom: 8,
+                  }}
+                >
+                  {selectedImages.length} of 5 images selected
+                </Text>
               </View>
+            )}
 
-              {/* Image count */}
-              <Text
-                style={{
-                  color: colors.textTertiary,
-                  fontSize: 13,
-                  marginBottom: 16,
-                }}
-              >
-                {selectedImages.length} of 5 images selected
-              </Text>
-
-              {/* Additional Context Input */}
-              <View
-                style={{
-                  backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-                  borderRadius: 12,
-                  padding: 12,
-                  marginBottom: 8,
-                }}
-              >
+            {/* Tips - only show when not focused on input */}
+            {!isContextFocused && (
+              <View style={{ marginTop: 24 }}>
                 <Text
                   style={{
                     color: colors.textSecondary,
                     fontSize: 13,
                     fontWeight: "500",
-                    marginBottom: 8,
+                    marginBottom: 12,
                   }}
                 >
-                  Additional context (optional)
+                  Tips for best results
                 </Text>
+                <View style={{ gap: 8 }}>
+                  {[
+                    "Include full conversation context when possible",
+                    "Make sure text is readable in screenshots",
+                    "Order images chronologically for better analysis",
+                  ].map((tip, index) => (
+                    <View
+                      key={index}
+                      style={{ flexDirection: "row", alignItems: "flex-start" }}
+                    >
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={16}
+                        color={isDark ? "#7DD3C0" : "#059669"}
+                        style={{ marginRight: 8, marginTop: 1 }}
+                      />
+                      <Text
+                        style={{
+                          color: colors.textTertiary,
+                          fontSize: 13,
+                          flex: 1,
+                        }}
+                      >
+                        {tip}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Bottom Section - Context Input + Action Button */}
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              backgroundColor: colors.background,
+            }}
+          >
+            {/* Context Input - Always visible at bottom */}
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingTop: 12,
+                paddingBottom: 8,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                }}
+              >
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={18}
+                  color={colors.textTertiary}
+                  style={{ marginRight: 10 }}
+                />
                 <TextInput
+                  ref={contextInputRef}
                   value={additionalContext}
                   onChangeText={setAdditionalContext}
-                  placeholder="What would you like me to focus on? Any backstory that might help..."
+                  onFocus={() => setIsContextFocused(true)}
+                  onBlur={() => setIsContextFocused(false)}
+                  placeholder="Add context... (optional)"
                   placeholderTextColor={colors.textTertiary}
                   multiline
-                  numberOfLines={3}
                   editable={!isAnalyzing}
                   style={{
+                    flex: 1,
                     color: colors.textPrimary,
                     fontSize: 15,
                     lineHeight: 20,
-                    minHeight: 60,
+                    maxHeight: 80,
                     textAlignVertical: "top",
                   }}
                 />
+                {additionalContext.length > 0 && !isAnalyzing && (
+                  <Pressable
+                    onPress={() => setAdditionalContext("")}
+                    style={{ padding: 4, marginLeft: 4 }}
+                  >
+                    <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                  </Pressable>
+                )}
               </View>
             </View>
-          )}
 
-          {/* Tips */}
-          <View style={{ marginTop: 24 }}>
-            <Text
+            {/* Action Button */}
+            <View
               style={{
-                color: colors.textSecondary,
-                fontSize: 13,
-                fontWeight: "500",
-                marginBottom: 12,
+                paddingHorizontal: 16,
+                paddingTop: 4,
+                paddingBottom: insets.bottom + 12,
               }}
             >
-              Tips for best results
-            </Text>
-            <View style={{ gap: 8 }}>
-              {[
-                "Include full conversation context when possible",
-                "Make sure text is readable in screenshots",
-                "Order images chronologically for better analysis",
-              ].map((tip, index) => (
-                <View
-                  key={index}
-                  style={{ flexDirection: "row", alignItems: "flex-start" }}
-                >
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={isDark ? "#7DD3C0" : "#059669"}
-                    style={{ marginRight: 8, marginTop: 1 }}
-                  />
-                  <Text
-                    style={{
-                      color: colors.textTertiary,
-                      fontSize: 13,
-                      flex: 1,
-                    }}
-                  >
-                    {tip}
-                  </Text>
-                </View>
-              ))}
+              <Pressable
+                onPress={handleAnalyze}
+                disabled={selectedImages.length === 0 || isAnalyzing}
+                style={({ pressed }) => ({
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.08)",
+                  borderRadius: 14,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "row",
+                  opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.8 : 1,
+                })}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <ActivityIndicator
+                      color={colors.textPrimary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyzing...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="scan"
+                      size={20}
+                      color={colors.textPrimary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyze Conversation
+                    </Text>
+                  </>
+                )}
+              </Pressable>
             </View>
           </View>
-        </ScrollView>
-
-        {/* Bottom Action */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 12,
-            paddingBottom: insets.bottom + 12,
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-          }}
-        >
-          <Pressable
-            onPress={handleAnalyze}
-            disabled={selectedImages.length === 0 || isAnalyzing}
-            style={({ pressed }) => ({
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.08)",
-              borderRadius: 14,
-              paddingVertical: 16,
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "row",
-              opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.8 : 1,
-            })}
-          >
-            {isAnalyzing ? (
-              <>
-                <ActivityIndicator
-                  color={colors.textPrimary}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  Analyzing...
-                </Text>
-              </>
-            ) : (
-              <>
-                <Ionicons
-                  name="scan"
-                  size={20}
-                  color={colors.textPrimary}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  Analyze Conversation
-                </Text>
-              </>
-            )}
-          </Pressable>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

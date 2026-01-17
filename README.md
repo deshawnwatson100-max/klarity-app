@@ -120,9 +120,16 @@ A powerful feature that lets users upload conversation screenshots for comprehen
 
 **How It Works:**
 1. Tap the magnifying glass icon in the header
-2. Upload 1-5 conversation screenshots
-3. AI analyzes the full conversation context
-4. Receive detailed insights about the communication
+2. Add optional context in the input bar at the bottom (available before and after adding photos)
+3. Upload 1-5 conversation screenshots
+4. AI analyzes the full conversation context with your additional notes
+5. Receive detailed insights about the communication
+
+**Context Input:**
+- The context input bar is always visible at the bottom of the modal, above the keyboard
+- Type context before or after selecting images
+- Provides hints for what to include: backstory, what to focus on, etc.
+- Optional but helps Klarity provide more targeted analysis
 
 **Analysis Includes:**
 - **Overview** - Summary of what the conversation is about and overall dynamic
@@ -146,9 +153,10 @@ A powerful feature that lets users upload conversation screenshots for comprehen
 - Tap "See full analysis" to expand and view all sections inline
 - Full-screen view available via modal for detailed reading
 - Results persist in chat history for reference
+- Closing the full-screen results modal navigates to the decode chat loop to show the results inline
 
 **Files:**
-- `src/components/DeepDecodeModal.tsx` - Image upload modal
+- `src/components/DeepDecodeModal.tsx` - Image upload modal with bottom context input
 - `src/components/DeepDecodeResultView.tsx` - Full-screen results display component
 - `src/components/DeepDecodeResultBubble.tsx` - Floating text bubble for chat loop
 - `src/api/klarity-api.ts` - `analyzeDeepDecode()` function
