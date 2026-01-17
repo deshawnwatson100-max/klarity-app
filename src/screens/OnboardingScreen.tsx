@@ -725,7 +725,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </KeyboardAvoidingView>
 
       {/* Get Started Button - shown at bottom when onboarding is complete */}
-      {showGetStarted && !isRecording && (
+      {(showGetStarted || true) && !isRecording && (
         <View
           style={{
             position: "absolute",
