@@ -720,42 +720,47 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           </View>
         )}
 
-        {/* Get Started Button - shown at bottom when onboarding is complete */}
-        {showGetStarted && !isRecording && (
-          <View
-            style={{
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              paddingBottom: Math.max(insets.bottom, 12),
-            }}
-          >
-            <Pressable
-              onPress={handleGetStarted}
-              style={({ pressed }) => ({
-                width: "100%",
-                paddingVertical: 16,
-                borderRadius: 16,
-                backgroundColor: isDark ? "#FFFFFF" : "#3A3A3C",
-                alignItems: "center",
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Text
-                style={{
-                  color: isDark ? "#1C1C1E" : "#FFFFFF",
-                  fontWeight: "600",
-                  fontSize: 16,
-                }}
-              >
-                Get Started
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
         {/* Voice Processing Indicator */}
         {isProcessingVoice && <VoiceProcessingIndicator />}
       </KeyboardAvoidingView>
+
+      {/* Get Started Button - shown at bottom when onboarding is complete */}
+      {showGetStarted && !isRecording && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 12),
+            backgroundColor: colors.background,
+          }}
+        >
+          <Pressable
+            onPress={handleGetStarted}
+            style={({ pressed }) => ({
+              width: "100%",
+              paddingVertical: 16,
+              borderRadius: 16,
+              backgroundColor: isDark ? "#FFFFFF" : "#3A3A3C",
+              alignItems: "center",
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Text
+              style={{
+                color: isDark ? "#1C1C1E" : "#FFFFFF",
+                fontWeight: "600",
+                fontSize: 16,
+              }}
+            >
+              Get Started
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
