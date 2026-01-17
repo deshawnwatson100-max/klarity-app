@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
@@ -13,6 +13,9 @@ import { VoiceRecordingVisualizer } from "../components/VoiceRecordingVisualizer
 import { FloatingParticles } from "../components/FloatingParticles";
 import { SoftFlares } from "../components/SoftFlares";
 import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator";
+import { DeepDecodeModal, SelectedImage } from "../components/DeepDecodeModal";
+import { DeepDecodeResultView } from "../components/DeepDecodeResultView";
+import { analyzeDeepDecode, DeepDecodeResult } from "../api/klarity-api";
 import { useLoopsStore } from "../state/loopsStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
@@ -33,6 +36,12 @@ export function InputScreen({ navigation }: Props) {
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+
+  // Deep Decode state
+  const [showDeepDecodeModal, setShowDeepDecodeModal] = useState(false);
+  const [isDeepDecodeAnalyzing, setIsDeepDecodeAnalyzing] = useState(false);
+  const [deepDecodeResult, setDeepDecodeResult] = useState<DeepDecodeResult | null>(null);
+  const [showDeepDecodeResults, setShowDeepDecodeResults] = useState(false);
 
   // Track current input mode for navigation
   const inputModeRef = useRef<InputMode>(inputMode);
@@ -139,6 +148,36 @@ export function InputScreen({ navigation }: Props) {
     setSelectedImageUri(undefined);
     setSelectedImageBase64(undefined);
   };
+
+  // Handle Deep Decode analysis
+  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[]) => {
+    const imagesBase64 = images.map((img) => img.base64);
+
+    setIsDeepDecodeAnalyzing(true);
+
+    try {
+      const result = await analyzeDeepDecode(imagesBase64);
+
+      setDeepDecodeResult(result);
+      setShowDeepDecodeModal(false);
+      setShowDeepDecodeResults(true);
+    } catch (error) {
+      console.error("[DeepDecode] Analysis failed:", error);
+    } finally {
+      setIsDeepDecodeAnalyzing(false);
+    }
+  }, []);
+
+  const handleDeepDecodeClose = useCallback(() => {
+    setShowDeepDecodeResults(false);
+    setDeepDecodeResult(null);
+  }, []);
+
+  const handleDeepDecodeNewAnalysis = useCallback(() => {
+    setShowDeepDecodeResults(false);
+    setDeepDecodeResult(null);
+    setShowDeepDecodeModal(true);
+  }, []);
 
   const handleVoicePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -301,14 +340,9 @@ export function InputScreen({ navigation }: Props) {
             onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
             onModeChange={setInputMode}
-            onPersonContextPress={() => {
-              // Navigate to ChatScreen and show inline person context card
-              navigation.navigate("ChatScreen", {
-                inputMode: inputModeRef.current,
-                showPersonContextCard: true,
-              });
-            }}
-            showPersonContext={true}
+            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+            showDeepDecode={true}
+            showPersonContext={false}
           />
 
           {/* Center Content */}
@@ -364,6 +398,35 @@ export function InputScreen({ navigation }: Props) {
         onClose={() => setIsDrawerOpen(false)}
         drawerProgress={drawerProgress}
       />
+
+      {/* Deep Decode Modal */}
+      <DeepDecodeModal
+        visible={showDeepDecodeModal}
+        onClose={() => setShowDeepDecodeModal(false)}
+        onAnalyze={handleDeepDecodeAnalyze}
+        isAnalyzing={isDeepDecodeAnalyzing}
+      />
+
+      {/* Deep Decode Results - Full screen modal */}
+      {showDeepDecodeResults && deepDecodeResult && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.background,
+            zIndex: 100,
+          }}
+        >
+          <DeepDecodeResultView
+            result={deepDecodeResult}
+            onClose={handleDeepDecodeClose}
+            onNewAnalysis={handleDeepDecodeNewAnalysis}
+          />
+        </View>
+      )}
     </View>
   );
 }
