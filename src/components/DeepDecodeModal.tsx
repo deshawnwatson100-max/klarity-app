@@ -421,12 +421,11 @@ export function DeepDecodeModal({
           </ScrollView>
 
           {/* Analyze Conversation Button - Floating above the footer */}
-          <Animated.View
+          <View
             style={{
-              position: "absolute",
-              right: 16,
-              bottom: Animated.add(keyboardHeight, insets.bottom + 80), // Position above the footer, moves with keyboard
-              zIndex: 10,
+              alignItems: "flex-end",
+              paddingHorizontal: 16,
+              paddingBottom: 12,
             }}
           >
             <Pressable
@@ -481,7 +480,7 @@ export function DeepDecodeModal({
                 </>
               )}
             </Pressable>
-          </Animated.View>
+          </View>
 
           {/* Bottom Section - Context Input */}
           <Animated.View
@@ -494,7 +493,6 @@ export function DeepDecodeModal({
                 outputRange: [insets.bottom + 8, 8],
                 extrapolate: "clamp",
               }),
-              marginBottom: keyboardHeight,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
