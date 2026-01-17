@@ -2984,7 +2984,8 @@ export interface DeepDecodeResult {
 }
 
 export async function analyzeDeepDecode(
-  imagesBase64: string[]
+  imagesBase64: string[],
+  additionalContext?: string
 ): Promise<DeepDecodeResult> {
   const client = getOpenAIClient();
 
@@ -3059,6 +3060,14 @@ Provide your analysis in this JSON structure:
       },
     }));
 
+    const userPrompt = additionalContext
+      ? `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what might be going on.
+
+The user has provided this additional context: "${additionalContext}"
+
+Please take this into account in your analysis. Provide your analysis in the JSON format specified.`
+      : `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what might be going on. Provide your analysis in the JSON format specified.`;
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-2024-11-20",
       messages: [
@@ -3072,7 +3081,7 @@ Provide your analysis in this JSON structure:
             ...imageContent,
             {
               type: "text",
-              text: `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what might be going on. Provide your analysis in the JSON format specified.`,
+              text: userPrompt,
             },
           ],
         },

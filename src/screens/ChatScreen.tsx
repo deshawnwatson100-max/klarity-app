@@ -280,41 +280,48 @@ export function ChatScreen({ navigation, route }: Props) {
   }, [screenWidth]);
 
   // Handle Deep Decode analysis
-  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[]) => {
+  const handleDeepDecodeAnalyze = useCallback(async (images: SelectedImage[], context?: string) => {
     if (images.length === 0) return;
 
     setIsDeepDecodeAnalyzing(true);
 
     try {
       const imagesBase64 = images.map((img) => img.base64);
-      const result = await analyzeDeepDecode(imagesBase64);
+      const result = await analyzeDeepDecode(imagesBase64, context);
 
       setDeepDecodeResult(result);
       setShowDeepDecodeModal(false);
       setShowDeepDecodeResults(true);
 
       // Add the result to the decode chat loop as floating text
-      const deepDecodeMsg: DeepDecodeResultMessage = {
-        id: `deep-decode-result-${Date.now()}`,
-        role: "deep-decode-result",
-        content: "",
-        timestamp: Date.now(),
-        mode: "understand",
-        decodeResult: result,
-      };
-      console.log("[DeepDecode] Adding result to chat loop:", deepDecodeMsg.id);
-      addMessageToActiveLoopRaw(deepDecodeMsg);
+      const activeLoop = getActiveLoop();
+      console.log("[DeepDecode] Active loop exists:", !!activeLoop, "id:", activeLoop?.id);
 
-      // Scroll to bottom to show the result
-      setTimeout(() => {
-        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      if (activeLoop) {
+        const deepDecodeMsg: DeepDecodeResultMessage = {
+          id: `deep-decode-result-${Date.now()}`,
+          role: "deep-decode-result",
+          content: "",
+          timestamp: Date.now(),
+          mode: "understand",
+          decodeResult: result,
+        };
+        console.log("[DeepDecode] Adding result to chat loop:", deepDecodeMsg.id);
+        addMessageToActiveLoopRaw(deepDecodeMsg);
+
+        // Scroll to bottom to show the result
+        setTimeout(() => {
+          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      } else {
+        console.log("[DeepDecode] No active loop, cannot add message to chat");
+      }
     } catch (error) {
       console.error("[DeepDecode] Analysis failed:", error);
     } finally {
       setIsDeepDecodeAnalyzing(false);
     }
-  }, [addMessageToActiveLoopRaw]);
+  }, [addMessageToActiveLoopRaw, getActiveLoop]);
 
   const handleDeepDecodeClose = useCallback(() => {
     setShowDeepDecodeResults(false);

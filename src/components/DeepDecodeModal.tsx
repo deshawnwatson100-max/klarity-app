@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +23,7 @@ interface SelectedImage {
 interface DeepDecodeModalProps {
   visible: boolean;
   onClose: () => void;
-  onAnalyze: (images: SelectedImage[]) => void;
+  onAnalyze: (images: SelectedImage[], context?: string) => void;
   isAnalyzing?: boolean;
 }
 
@@ -35,6 +36,7 @@ export function DeepDecodeModal({
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const [additionalContext, setAdditionalContext] = useState("");
 
   const handlePickImages = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -75,12 +77,13 @@ export function DeepDecodeModal({
   const handleAnalyze = useCallback(() => {
     if (selectedImages.length === 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onAnalyze(selectedImages);
-  }, [selectedImages, onAnalyze]);
+    onAnalyze(selectedImages, additionalContext.trim() || undefined);
+  }, [selectedImages, additionalContext, onAnalyze]);
 
   const handleClose = useCallback(() => {
     if (isAnalyzing) return;
     setSelectedImages([]);
+    setAdditionalContext("");
     onClose();
   }, [isAnalyzing, onClose]);
 
@@ -318,11 +321,48 @@ export function DeepDecodeModal({
                 style={{
                   color: colors.textTertiary,
                   fontSize: 13,
-                  marginBottom: 24,
+                  marginBottom: 16,
                 }}
               >
                 {selectedImages.length} of 5 images selected
               </Text>
+
+              {/* Additional Context Input */}
+              <View
+                style={{
+                  backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+                  borderRadius: 12,
+                  padding: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: "500",
+                    marginBottom: 8,
+                  }}
+                >
+                  Additional context (optional)
+                </Text>
+                <TextInput
+                  value={additionalContext}
+                  onChangeText={setAdditionalContext}
+                  placeholder="What would you like me to focus on? Any backstory that might help..."
+                  placeholderTextColor={colors.textTertiary}
+                  multiline
+                  numberOfLines={3}
+                  editable={!isAnalyzing}
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 15,
+                    lineHeight: 20,
+                    minHeight: 60,
+                    textAlignVertical: "top",
+                  }}
+                />
+              </View>
             </View>
           )}
 
