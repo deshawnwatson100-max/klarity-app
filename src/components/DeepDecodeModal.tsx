@@ -409,69 +409,7 @@ export function DeepDecodeModal({
             )}
           </ScrollView>
 
-          {/* Analyze Conversation Button - Floating above the footer */}
-          <View
-            style={{
-              alignItems: "flex-end",
-              paddingHorizontal: 16,
-              paddingBottom: 12,
-            }}
-          >
-            <Pressable
-              onPress={handleAnalyze}
-              disabled={selectedImages.length === 0 || isAnalyzing}
-              style={({ pressed }) => ({
-                backgroundColor: isDark
-                  ? "rgba(125, 211, 192, 0.15)"
-                  : "rgba(5, 150, 105, 0.1)",
-                borderRadius: 20,
-                paddingVertical: 10,
-                paddingHorizontal: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.7 : 1,
-              })}
-            >
-              {isAnalyzing ? (
-                <>
-                  <ActivityIndicator
-                    color={isDark ? "#7DD3C0" : "#059669"}
-                    size="small"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text
-                    style={{
-                      color: isDark ? "#7DD3C0" : "#059669",
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Analyzing...
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons
-                    name="scan"
-                    size={16}
-                    color={isDark ? "#7DD3C0" : "#059669"}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={{
-                      color: isDark ? "#7DD3C0" : "#059669",
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Analyze Conversation
-                  </Text>
-                </>
-              )}
-            </Pressable>
-          </View>
-
-          {/* Bottom Section - Context Input */}
+          {/* Bottom Section - Input Bar with Analyze Button above */}
           <View
             style={{
               borderTopWidth: 1,
@@ -482,6 +420,67 @@ export function DeepDecodeModal({
               paddingHorizontal: 16,
             }}
           >
+            {/* Analyze Conversation Button - Above the input bar */}
+            <View
+              style={{
+                alignItems: "flex-end",
+                marginBottom: 12,
+              }}
+            >
+              <Pressable
+                onPress={handleAnalyze}
+                disabled={selectedImages.length === 0 || isAnalyzing}
+                style={({ pressed }) => ({
+                  backgroundColor: isDark
+                    ? "rgba(125, 211, 192, 0.15)"
+                    : "rgba(5, 150, 105, 0.1)",
+                  borderRadius: 20,
+                  paddingVertical: 10,
+                  paddingHorizontal: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.7 : 1,
+                })}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <ActivityIndicator
+                      color={isDark ? "#7DD3C0" : "#059669"}
+                      size="small"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: isDark ? "#7DD3C0" : "#059669",
+                        fontSize: 13,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyzing...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="scan"
+                      size={16}
+                      color={isDark ? "#7DD3C0" : "#059669"}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={{
+                        color: isDark ? "#7DD3C0" : "#059669",
+                        fontSize: 13,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyze Conversation
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+
             {/* Context Input Bar */}
             <View
               style={{
