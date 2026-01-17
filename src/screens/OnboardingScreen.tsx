@@ -735,7 +735,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             paddingHorizontal: 16,
             paddingTop: 12,
             paddingBottom: Math.max(insets.bottom, 12),
-            backgroundColor: colors.background,
           }}
         >
           <Pressable
@@ -744,14 +743,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               width: "100%",
               paddingVertical: 16,
               borderRadius: 16,
-              backgroundColor: isDark ? "#FFFFFF" : "#3A3A3C",
+              backgroundColor: "#3A3A3C",
               alignItems: "center",
               opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               style={{
-                color: isDark ? "#1C1C1E" : "#FFFFFF",
+                color: "#FFFFFF",
                 fontWeight: "600",
                 fontSize: 16,
               }}
