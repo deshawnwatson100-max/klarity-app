@@ -383,31 +383,26 @@ export function DeepDecodeModal({
             onPress={handleAnalyze}
             disabled={selectedImages.length === 0 || isAnalyzing}
             style={({ pressed }) => ({
-              backgroundColor:
-                selectedImages.length === 0 || isAnalyzing
-                  ? isDark
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.08)"
-                  : isDark
-                  ? "#FFFFFF"
-                  : "#1C1C1E",
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.08)",
               borderRadius: 14,
               paddingVertical: 16,
               alignItems: "center",
               justifyContent: "center",
               flexDirection: "row",
-              opacity: pressed ? 0.8 : 1,
+              opacity: selectedImages.length === 0 || isAnalyzing ? 0.5 : pressed ? 0.8 : 1,
             })}
           >
             {isAnalyzing ? (
               <>
                 <ActivityIndicator
-                  color={isDark ? "#1C1C1E" : "#FFFFFF"}
+                  color={colors.textPrimary}
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   style={{
-                    color: isDark ? "#1C1C1E" : "#FFFFFF",
+                    color: colors.textPrimary,
                     fontSize: 16,
                     fontWeight: "600",
                   }}
@@ -420,23 +415,12 @@ export function DeepDecodeModal({
                 <Ionicons
                   name="scan"
                   size={20}
-                  color={
-                    selectedImages.length === 0
-                      ? colors.textTertiary
-                      : isDark
-                      ? "#1C1C1E"
-                      : "#FFFFFF"
-                  }
+                  color={colors.textPrimary}
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   style={{
-                    color:
-                      selectedImages.length === 0
-                        ? colors.textTertiary
-                        : isDark
-                        ? "#1C1C1E"
-                        : "#FFFFFF",
+                    color: colors.textPrimary,
                     fontSize: 16,
                     fontWeight: "600",
                   }}
