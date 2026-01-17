@@ -735,7 +735,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 paddingHorizontal: 24,
                 paddingVertical: 14,
                 borderRadius: 28,
-                backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+                backgroundColor: isDark ? "#FFFFFF" : "#3A3A3C",
                 alignItems: "center",
                 opacity: pressed ? 0.8 : 1,
                 shadowColor: "#000",
