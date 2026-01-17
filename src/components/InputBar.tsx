@@ -346,7 +346,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                     transform: [{ translateX: decodePlaceholderX }],
                   }}
                 >
-                  Paste the message to decode...
+                  Ask Klarity social nuances…
                 </Animated.Text>
               </View>
             )}
