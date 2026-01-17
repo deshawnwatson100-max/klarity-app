@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useTheme } from "../theme";
 import { DeepDecodeResultMessage } from "../types/chat";
 
@@ -21,8 +20,7 @@ export function DeepDecodeResultBubble({ result }: DeepDecodeResultBubbleProps) 
   };
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(400).springify()}
+    <View
       style={{
         marginBottom: 16,
         alignSelf: "flex-start",
@@ -85,7 +83,7 @@ export function DeepDecodeResultBubble({ result }: DeepDecodeResultBubbleProps) 
 
         {/* Expanded content */}
         {isExpanded && (
-          <Animated.View entering={FadeIn.duration(300)}>
+          <View>
             {/* Tone Analysis */}
             <View
               style={{
@@ -362,7 +360,7 @@ export function DeepDecodeResultBubble({ result }: DeepDecodeResultBubbleProps) 
                 {result.navigationGuidance}
               </Text>
             </View>
-          </Animated.View>
+          </View>
         )}
 
         {/* Expand/Collapse button */}
@@ -399,6 +397,6 @@ export function DeepDecodeResultBubble({ result }: DeepDecodeResultBubbleProps) 
           />
         </Pressable>
       </View>
-    </Animated.View>
+    </View>
   );
 }
