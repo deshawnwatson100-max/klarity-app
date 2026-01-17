@@ -905,8 +905,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
         </View>
 
         <View className="flex-row items-center">
-          {/* Soft Search - HIDDEN FOR NOW */}
-          {/* <Pressable
+          <Pressable
             onPress={handleDeepSearch}
             className="flex-row items-center flex-1 px-3 py-2.5 rounded-xl active:opacity-70"
             style={{ backgroundColor: colors.surfaceElevated }}
@@ -918,7 +917,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
             >
               Chat Search...
             </Text>
-          </Pressable> */}
+          </Pressable>
 
           <Pressable
             onPress={handleNewChat}
