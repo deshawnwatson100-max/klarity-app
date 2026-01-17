@@ -723,21 +723,26 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {/* Get Started Button - shown at bottom when onboarding is complete */}
         {showGetStarted && !isRecording && (
           <View
-            className="px-4 py-3"
             style={{
-              paddingBottom: Math.max(insets.bottom, 12),
-              backgroundColor: "transparent",
+              position: "absolute",
+              bottom: Math.max(insets.bottom, 12) + 8,
+              right: 16,
             }}
           >
             <Pressable
               onPress={handleGetStarted}
               style={({ pressed }) => ({
-                width: "100%",
-                paddingVertical: 16,
-                borderRadius: 16,
+                paddingHorizontal: 24,
+                paddingVertical: 14,
+                borderRadius: 28,
                 backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
                 alignItems: "center",
                 opacity: pressed ? 0.8 : 1,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
               })}
             >
               <Text
