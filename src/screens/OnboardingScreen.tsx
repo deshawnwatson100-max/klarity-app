@@ -757,7 +757,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           >
             <Text
               style={{
-                color: "#FFFFFF",
+                color: "#2D2D2D",
                 fontWeight: "600",
                 fontSize: 16,
               }}
