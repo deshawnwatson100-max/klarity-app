@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/Header";
 import { InputBar, InputMode } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
@@ -2856,8 +2855,8 @@ export function ChatScreen({ navigation, route }: Props) {
               }
             }}
             showPersonContext={true}
-            onDeepDecodePress={undefined}
-            showDeepDecode={false}
+            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+            showDeepDecode={true}
           />
 
           <Animated.View
@@ -2942,44 +2941,6 @@ export function ChatScreen({ navigation, route }: Props) {
               transform: [{ translateY: bottomTranslateY }],
             }}
           >
-            {/* Analyze Conversation Button - positioned above the InputBar */}
-            {inputMode === "understand" && (
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowDeepDecodeModal(true);
-                }}
-                style={({ pressed }) => ({
-                  position: "absolute",
-                  right: 16,
-                  bottom: "100%",
-                  marginBottom: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 20,
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <Ionicons
-                  name="scan-outline"
-                  size={16}
-                  color={isDark ? "#7DD3C0" : "#059669"}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={{
-                    color: isDark ? "#7DD3C0" : "#059669",
-                    fontSize: 13,
-                    fontWeight: "600",
-                  }}
-                >
-                  Analyze Conversation
-                </Text>
-              </Pressable>
-            )}
             <InputBar
               value={currentInput}
               onChangeText={setCurrentInput}
