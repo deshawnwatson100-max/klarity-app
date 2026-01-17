@@ -724,25 +724,20 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {showGetStarted && !isRecording && (
           <View
             style={{
-              position: "absolute",
-              bottom: Math.max(insets.bottom, 12) + 8,
-              right: 16,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: Math.max(insets.bottom, 12),
             }}
           >
             <Pressable
               onPress={handleGetStarted}
               style={({ pressed }) => ({
-                paddingHorizontal: 24,
-                paddingVertical: 14,
-                borderRadius: 28,
+                width: "100%",
+                paddingVertical: 16,
+                borderRadius: 16,
                 backgroundColor: isDark ? "#FFFFFF" : "#3A3A3C",
                 alignItems: "center",
                 opacity: pressed ? 0.8 : 1,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 8,
               })}
             >
               <Text
