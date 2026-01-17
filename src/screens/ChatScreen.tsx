@@ -302,6 +302,7 @@ export function ChatScreen({ navigation, route }: Props) {
         mode: "understand",
         decodeResult: result,
       };
+      console.log("[DeepDecode] Adding result to chat loop:", deepDecodeMsg.id);
       addMessageToActiveLoopRaw(deepDecodeMsg);
 
       // Scroll to bottom to show the result
