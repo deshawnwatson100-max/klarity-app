@@ -40,7 +40,8 @@ export type MessageRole =
   | "deep-dive-evaluation"
   | "deep-dive-follow-up"
   | "chat-loading"
-  | "response-prompt";
+  | "response-prompt"
+  | "deep-decode-result";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -402,6 +403,25 @@ export interface ResponsePromptMessage extends Message {
   promptText: string; // The question to ask the user, e.g., "How do you want to respond?"
 }
 
+export interface DeepDecodeResultMessage extends Message {
+  role: "deep-decode-result";
+  decodeResult: {
+    overview: string;
+    communicationDynamics: {
+      pattern: string;
+      description: string;
+    }[];
+    toneAnalysis: {
+      overallTone: string;
+      toneShifts: string;
+    };
+    keyObservations: string[];
+    whatMightBeHappening: string;
+    thingsToConsider: string[];
+    navigationGuidance: string;
+  };
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -443,4 +463,5 @@ export type ChatMessage =
   | DeepDiveEvaluationMessage
   | DeepDiveFollowUpMessage
   | ChatLoadingMessage
-  | ResponsePromptMessage;
+  | ResponsePromptMessage
+  | DeepDecodeResultMessage;

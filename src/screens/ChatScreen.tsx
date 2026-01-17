@@ -35,6 +35,7 @@ import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard
 import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
 import { DeepDecodeModal, SelectedImage } from "../components/DeepDecodeModal";
 import { DeepDecodeResultView } from "../components/DeepDecodeResultView";
+import { DeepDecodeResultBubble } from "../components/DeepDecodeResultBubble";
 import {
   DeepSearchResultBubble,
   DeepSearchLoading,
@@ -100,6 +101,7 @@ import {
   DeepDiveFollowUpMessage,
   ChatLoadingMessage,
   MessageMode,
+  DeepDecodeResultMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -290,12 +292,28 @@ export function ChatScreen({ navigation, route }: Props) {
       setDeepDecodeResult(result);
       setShowDeepDecodeModal(false);
       setShowDeepDecodeResults(true);
+
+      // Add the result to the decode chat loop as floating text
+      const deepDecodeMsg: DeepDecodeResultMessage = {
+        id: `deep-decode-result-${Date.now()}`,
+        role: "deep-decode-result",
+        content: "",
+        timestamp: Date.now(),
+        mode: "understand",
+        decodeResult: result,
+      };
+      addMessageToActiveLoopRaw(deepDecodeMsg);
+
+      // Scroll to bottom to show the result
+      setTimeout(() => {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (error) {
       console.error("[DeepDecode] Analysis failed:", error);
     } finally {
       setIsDeepDecodeAnalyzing(false);
     }
-  }, []);
+  }, [addMessageToActiveLoopRaw]);
 
   const handleDeepDecodeClose = useCallback(() => {
     setShowDeepDecodeResults(false);
@@ -2523,6 +2541,17 @@ export function ChatScreen({ navigation, route }: Props) {
         <DeepSearchNoResultsMessage
           key={message.id}
           personName={noResultsMsg.personName}
+        />
+      );
+    }
+
+    // Deep Decode Result - floating text bubble
+    if (message.role === "deep-decode-result") {
+      const decodeMsg = message as DeepDecodeResultMessage;
+      return (
+        <DeepDecodeResultBubble
+          key={message.id}
+          result={decodeMsg.decodeResult}
         />
       );
     }

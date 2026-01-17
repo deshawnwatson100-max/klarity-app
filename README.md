@@ -140,10 +140,19 @@ A powerful feature that lets users upload conversation screenshots for comprehen
 - Never labels anyone as "toxic", "narcissistic", etc.
 - Helps users decide for themselves - does not tell them what to do
 
+**Results Display:**
+- Results appear both in a full-screen modal AND as floating text in the decode chat loop
+- Floating bubble shows overview with expandable sections for full analysis
+- Tap "See full analysis" to expand and view all sections inline
+- Full-screen view available via modal for detailed reading
+- Results persist in chat history for reference
+
 **Files:**
 - `src/components/DeepDecodeModal.tsx` - Image upload modal
-- `src/components/DeepDecodeResultView.tsx` - Results display component
+- `src/components/DeepDecodeResultView.tsx` - Full-screen results display component
+- `src/components/DeepDecodeResultBubble.tsx` - Floating text bubble for chat loop
 - `src/api/klarity-api.ts` - `analyzeDeepDecode()` function
+- `src/types/chat.ts` - `DeepDecodeResultMessage` type
 
 ### Screen 1: Input/Welcome Screen
 - **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
