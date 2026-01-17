@@ -736,6 +736,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             paddingTop: 12,
             paddingBottom: Math.max(insets.bottom, 16),
             zIndex: 999,
+            backgroundColor: colors.headerBackground,
           }}
           pointerEvents="box-none"
         >
