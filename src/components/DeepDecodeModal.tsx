@@ -410,7 +410,7 @@ export function DeepDecodeModal({
               borderTopWidth: 1,
               borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
               backgroundColor: colors.background,
-              paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom + 8,
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 10 : insets.bottom + 8,
               paddingTop: 12,
               paddingHorizontal: 16,
             }}
