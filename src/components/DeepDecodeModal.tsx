@@ -11,7 +11,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  InputAccessoryView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,7 +42,6 @@ export function DeepDecodeModal({
   const [additionalContext, setAdditionalContext] = useState("");
   const [isContextFocused, setIsContextFocused] = useState(false);
   const contextInputRef = useRef<TextInput>(null);
-  const inputAccessoryViewID = "deepDecodeInput";
 
   // Handle keyboard hide to reset context focus
   useEffect(() => {
@@ -120,12 +118,10 @@ export function DeepDecodeModal({
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1, backgroundColor: colors.background }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <View
           style={{
             flex: 1,
-            paddingTop: insets.top,
           }}
         >
           {/* Header */}
@@ -501,7 +497,6 @@ export function DeepDecodeModal({
                 placeholderTextColor={colors.textTertiary}
                 multiline
                 editable={!isAnalyzing}
-                inputAccessoryViewID={Platform.OS === "ios" ? inputAccessoryViewID : undefined}
                 style={{
                   flex: 1,
                   color: colors.textPrimary,
@@ -523,56 +518,6 @@ export function DeepDecodeModal({
           </View>
         </View>
       </KeyboardAvoidingView>
-
-      {/* InputAccessoryView - appears above keyboard on iOS */}
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={inputAccessoryViewID}>
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderTopWidth: 1,
-              borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-              }}
-            >
-              <Ionicons
-                name="chatbubble-outline"
-                size={18}
-                color={colors.textTertiary}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  flex: 1,
-                  color: additionalContext ? colors.textPrimary : colors.textTertiary,
-                  fontSize: 15,
-                }}
-              >
-                {additionalContext || "Add context... (optional)"}
-              </Text>
-              {additionalContext.length > 0 && !isAnalyzing && (
-                <Pressable
-                  onPress={() => setAdditionalContext("")}
-                  style={{ padding: 4, marginLeft: 4 }}
-                >
-                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </InputAccessoryView>
-      )}
     </Modal>
   );
 }
