@@ -726,7 +726,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             className="px-4 py-3"
             style={{
               paddingBottom: Math.max(insets.bottom, 12),
-              backgroundColor: colors.headerBackground,
+              backgroundColor: "transparent",
             }}
           >
             <Pressable
