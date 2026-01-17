@@ -146,10 +146,10 @@ export function Header({
             </Pressable>
           )}
 
-          {/* Person Context Icon */}
-          {showPersonContext && onPersonContextPress && (
+          {/* Person Context Icon - HIDDEN FOR NOW */}
+          {/* {showPersonContext && onPersonContextPress && (
             <PersonContextHeaderIcon onPress={onPersonContextPress} />
-          )}
+          )} */}
 
           {/* Mode Toggle (only when onModeChange is provided) */}
           {onModeChange && inputMode && (
