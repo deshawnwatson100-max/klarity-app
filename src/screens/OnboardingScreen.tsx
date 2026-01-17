@@ -734,8 +734,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             right: 0,
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 12),
+            paddingBottom: Math.max(insets.bottom, 16),
+            zIndex: 999,
           }}
+          pointerEvents="box-none"
         >
           <Pressable
             onPress={handleGetStarted}
@@ -743,9 +745,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               width: "100%",
               paddingVertical: 16,
               borderRadius: 16,
-              backgroundColor: "#3A3A3C",
+              backgroundColor: "#2D2D2D",
               alignItems: "center",
               opacity: pressed ? 0.8 : 1,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
             })}
           >
             <Text
