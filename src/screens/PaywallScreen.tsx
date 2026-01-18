@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
+import { KlarityLogo } from "../components/KlarityLogo";
 import {
   getOfferings,
   purchasePackage,
@@ -37,6 +38,16 @@ interface PlanOption {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Sample messages that rotate in the animation
+const SAMPLE_MESSAGES = [
+  { type: "summary", text: "They seem genuinely interested but hesitant..." },
+  { type: "reply", text: "I appreciate you sharing that with me" },
+  { type: "summary", text: "This feels like a test of boundaries..." },
+  { type: "reply", text: "Let me think about that and get back to you" },
+  { type: "summary", text: "They want reassurance without asking directly..." },
+  { type: "reply", text: "I hear what you are saying" },
+];
 
 const FEATURES = [
   {
@@ -92,11 +103,17 @@ export function PaywallScreen({ navigation }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   // Animation values using React Native Animated
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Message animation values - 3 visible messages at a time
+  const message0Anim = useRef(new Animated.Value(0)).current;
+  const message1Anim = useRef(new Animated.Value(0)).current;
+  const message2Anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Fade in animation
@@ -138,8 +155,51 @@ export function PaywallScreen({ navigation }: Props) {
       ])
     ).start();
 
+    // Initialize message animations
+    message0Anim.setValue(1);
+    message1Anim.setValue(1);
+    message2Anim.setValue(1);
+
     loadOfferings();
   }, []);
+
+  // Rotating messages animation
+  useEffect(() => {
+    const animateMessages = () => {
+      // Reset all to visible
+      message0Anim.setValue(1);
+      message1Anim.setValue(1);
+      message2Anim.setValue(1);
+
+      // Staggered fade out from top to bottom
+      Animated.sequence([
+        Animated.delay(500),
+        Animated.timing(message0Anim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(message1Anim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(message2Anim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.delay(300),
+      ]).start(() => {
+        // Move to next set of messages
+        setCurrentMessageIndex((prev) => (prev + 3) % SAMPLE_MESSAGES.length);
+      });
+    };
+
+    animateMessages();
+    const interval = setInterval(animateMessages, 4000);
+    return () => clearInterval(interval);
+  }, [currentMessageIndex]);
 
   const loadOfferings = async () => {
     if (!isRevenueCatEnabled()) {
@@ -282,66 +342,189 @@ export function PaywallScreen({ navigation }: Props) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Animated Orb/Glow */}
+        {/* Animated Messages flowing into title */}
         <Animated.View
           style={{
             alignItems: "center",
-            marginBottom: 24,
+            marginBottom: 8,
             opacity: fadeAnim,
           }}
         >
-          <Animated.View
-            style={{
-              opacity: glowAnim,
-              transform: [{ scale: scaleAnim }],
-            }}
-          >
-            <LinearGradient
-              colors={["#3B82F6", "#1D4ED8", "#60A5FA", "#7DD3C0"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                opacity: 0.4,
-              }}
-            />
-          </Animated.View>
+          {/* Messages container with fade gradient at bottom */}
           <View
             style={{
-              position: "absolute",
-              top: 30,
-              width: 60,
-              height: 60,
-              borderRadius: 30,
-              backgroundColor: isDark ? "#1A1A1C" : "#F5F5F7",
+              height: 140,
+              width: "100%",
+              overflow: "hidden",
               alignItems: "center",
-              justifyContent: "center",
-              shadowColor: "#3B82F6",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.5,
-              shadowRadius: 20,
-              elevation: 10,
+              justifyContent: "flex-end",
             }}
           >
-            <Ionicons name="sparkles" size={28} color="#3B82F6" />
+            {/* Message 0 (top) */}
+            <Animated.View
+              style={{
+                opacity: message0Anim,
+                transform: [
+                  {
+                    translateY: message0Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+                marginBottom: 8,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
+                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? "rgba(59,130,246,0.2)"
+                    : "rgba(16,163,127,0.2)",
+                  maxWidth: SCREEN_WIDTH - 80,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                  }}
+                  numberOfLines={1}
+                >
+                  {SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].text}
+                </Text>
+              </View>
+            </Animated.View>
+
+            {/* Message 1 (middle) */}
+            <Animated.View
+              style={{
+                opacity: message1Anim,
+                transform: [
+                  {
+                    translateY: message1Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+                marginBottom: 8,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
+                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? "rgba(59,130,246,0.2)"
+                    : "rgba(16,163,127,0.2)",
+                  maxWidth: SCREEN_WIDTH - 80,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                  }}
+                  numberOfLines={1}
+                >
+                  {SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].text}
+                </Text>
+              </View>
+            </Animated.View>
+
+            {/* Message 2 (bottom, closest to title) */}
+            <Animated.View
+              style={{
+                opacity: message2Anim,
+                transform: [
+                  {
+                    translateY: message2Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
+                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].type === "summary"
+                    ? "rgba(59,130,246,0.2)"
+                    : "rgba(16,163,127,0.2)",
+                  maxWidth: SCREEN_WIDTH - 80,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                  }}
+                  numberOfLines={1}
+                >
+                  {SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].text}
+                </Text>
+              </View>
+            </Animated.View>
           </View>
+
+          {/* Fade gradient overlay at bottom of messages */}
+          <LinearGradient
+            colors={isDark ? ["transparent", "#050608"] : ["transparent", "#FFFFFF"]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 50,
+            }}
+            pointerEvents="none"
+          />
         </Animated.View>
 
-        {/* Title */}
+        {/* Title with Logo */}
         <Animated.View style={{ opacity: fadeAnim }}>
-          <Text
+          <View
             style={{
-              fontSize: 28,
-              fontWeight: "700",
-              color: colors.textPrimary,
-              textAlign: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               marginBottom: 8,
+              gap: 10,
             }}
           >
-            Klarity Premium
-          </Text>
+            <KlarityLogo size={32} />
+            <Text
+              style={{
+                fontSize: 28,
+                fontWeight: "700",
+                color: colors.textPrimary,
+              }}
+            >
+              Klarity
+            </Text>
+          </View>
           <Text
             style={{
               fontSize: 16,
