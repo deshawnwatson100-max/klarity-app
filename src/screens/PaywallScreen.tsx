@@ -41,13 +41,28 @@ interface PlanOption {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Suggested replies that cycle with typewriter effect
+// Suggested replies with guidance notes that cycle with typewriter effect
 const SUGGESTED_REPLIES = [
-  "I appreciate you sharing that with me",
-  "Let me think about that and get back to you",
-  "I hear what you are saying",
-  "That makes sense, thank you for explaining",
-  "I understand where you are coming from",
+  {
+    text: "I appreciate you sharing that with me",
+    guidanceNote: "Acknowledges their vulnerability without overcommitting",
+  },
+  {
+    text: "Let me think about that and get back to you",
+    guidanceNote: "Buys time while showing you take it seriously",
+  },
+  {
+    text: "I hear what you are saying",
+    guidanceNote: "Validates without necessarily agreeing",
+  },
+  {
+    text: "That makes sense, thank you for explaining",
+    guidanceNote: "Shows understanding and appreciation",
+  },
+  {
+    text: "I understand where you are coming from",
+    guidanceNote: "Demonstrates empathy while staying neutral",
+  },
 ];
 
 const FEATURES = [
@@ -107,7 +122,8 @@ export function PaywallScreen({ navigation }: Props) {
 
   // Suggested reply animation state
   const [currentReplyIndex, setCurrentReplyIndex] = useState(0);
-  const [isTyping, setIsTyping] = useState(true);
+  const [isTypingText, setIsTypingText] = useState(true);
+  const [isTypingGuidance, setIsTypingGuidance] = useState(false);
   const [showReply, setShowReply] = useState(true);
 
   // Animation values
@@ -115,12 +131,17 @@ export function PaywallScreen({ navigation }: Props) {
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(4)).current;
 
-  // Theme-aware colors matching SuggestedReplyCard
+  // Theme-aware colors matching SuggestedReplyCard exactly
   const accentColor = isDark ? "#7DD3C0" : "#34C759";
   const accentColorLight = isDark ? "rgba(125, 211, 192, 0.2)" : "rgba(52, 199, 89, 0.2)";
   const cardBg = isDark ? "#000000" : "#FFFFFF";
   const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
+  const textTertiary = isDark ? "#6B7280" : "#8E8E93";
+  const buttonBg = isDark ? "#1F1F22" : "#F5F5F7";
+  const buttonTextColor = isDark ? "#E5E7EB" : "#1C1C1E";
+  const iconColor = isDark ? "#E5E7EB" : "#636366";
+  const dividerColor = isDark ? "#374151" : "rgba(0, 0, 0, 0.1)";
 
   useEffect(() => {
     // Fade in animation
@@ -149,9 +170,14 @@ export function PaywallScreen({ navigation }: Props) {
     loadOfferings();
   }, []);
 
-  // Cycle through suggested replies
-  const handleTypewriterComplete = () => {
-    setIsTyping(false);
+  // Cycle through suggested replies - text completes first, then guidance
+  const handleTextComplete = () => {
+    setIsTypingText(false);
+    setIsTypingGuidance(true);
+  };
+
+  const handleGuidanceComplete = () => {
+    setIsTypingGuidance(false);
     // Wait, then fade out and show next reply
     setTimeout(() => {
       // Fade out card
@@ -171,7 +197,8 @@ export function PaywallScreen({ navigation }: Props) {
       ]).start(() => {
         // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
-        setIsTyping(true);
+        setIsTypingText(true);
+        setIsTypingGuidance(false);
         setShowReply(false);
 
         // Reset position and fade in
@@ -382,17 +409,17 @@ export function PaywallScreen({ navigation }: Props) {
                   borderRadius: 2,
                 }}
               />
-              {showReply && isTyping ? (
+              {showReply && isTypingText ? (
                 <TypewriterText
                   key={`reply-${currentReplyIndex}`}
-                  text={SUGGESTED_REPLIES[currentReplyIndex]}
+                  text={SUGGESTED_REPLIES[currentReplyIndex].text}
                   style={{
                     fontSize: 15,
                     lineHeight: 24,
                     color: textColor,
                   }}
                   speed={85}
-                  onComplete={handleTypewriterComplete}
+                  onComplete={handleTextComplete}
                 />
               ) : showReply ? (
                 <Text
@@ -402,10 +429,125 @@ export function PaywallScreen({ navigation }: Props) {
                     color: textColor,
                   }}
                 >
-                  {SUGGESTED_REPLIES[currentReplyIndex]}
+                  {SUGGESTED_REPLIES[currentReplyIndex].text}
                 </Text>
               ) : null}
             </View>
+
+            {/* Guidance Note - subtle */}
+            {showReply && !isTypingText && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  marginTop: 8,
+                  paddingLeft: 12,
+                }}
+              >
+                <Ionicons
+                  name="bulb-outline"
+                  size={12}
+                  color={textTertiary}
+                  style={{ marginTop: 2, marginRight: 6 }}
+                />
+                {isTypingGuidance ? (
+                  <View style={{ flex: 1 }}>
+                    <TypewriterText
+                      key={`guidance-${currentReplyIndex}`}
+                      text={SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                      style={{
+                        fontSize: 13,
+                        lineHeight: 18,
+                        color: textTertiary,
+                      }}
+                      speed={70}
+                      onComplete={handleGuidanceComplete}
+                    />
+                  </View>
+                ) : (
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 18,
+                      color: textTertiary,
+                      flex: 1,
+                    }}
+                  >
+                    {SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Action buttons row */}
+            {showReply && !isTypingText && !isTypingGuidance && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 12,
+                }}
+              >
+                {/* Primary action buttons */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  {/* Use this reply button */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      backgroundColor: buttonBg,
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={14} color={buttonTextColor} />
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: buttonTextColor,
+                      }}
+                    >
+                      Use this reply
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Icon buttons row */}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {/* Emoji button */}
+                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="happy-outline" size={16} color={iconColor} />
+                  </View>
+
+                  {/* Shorter button */}
+                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="remove-outline" size={16} color={iconColor} />
+                  </View>
+
+                  {/* Longer button */}
+                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="add-outline" size={16} color={iconColor} />
+                  </View>
+
+                  {/* Divider */}
+                  <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
+
+                  {/* Like button */}
+                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="thumbs-up-outline" size={16} color={iconColor} />
+                  </View>
+
+                  {/* Dislike button */}
+                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="thumbs-down-outline" size={16} color={iconColor} />
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         </Animated.View>
 
