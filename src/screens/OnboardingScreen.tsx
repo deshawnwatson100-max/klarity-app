@@ -22,11 +22,14 @@ import { VoiceProcessingIndicator } from "../components/VoiceProcessingIndicator
 import { getOpenAITextResponse } from "../api/chat-service";
 import { transcribeAudio } from "../api/transcribe-audio";
 import { AIMessage } from "../types/ai";
+import { OnboardingQuestions } from "../components/OnboardingQuestions";
+import { OnboardingAnswers } from "../state/onboardingStore";
 
 type OnboardingStep =
   | "welcome"
   | "name"
   | "situation"
+  | "questions"
   | "followup"
   | "complete";
 
@@ -109,9 +112,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
+  const setOnboardingAnswer = useOnboardingStore((s) => s.setOnboardingAnswer);
   const setHasCompletedOnboarding = useOnboardingStore(
     (s) => s.setHasCompletedOnboarding
   );
+  const [showQuestions, setShowQuestions] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -261,10 +266,39 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       // Get AI response that acknowledges name and asks about conversation types they want help with
       const contextMessage = `The user said their name is "${input}". Greet them by name, mention you want to customize their experience, and ask what types of conversations they would most like help with (work, personal relationships, family, dating, friendships, etc.). Frame it as setting things up for them, not as a personal question.`;
       await getAIResponse(contextMessage);
-    } else if (currentStep === "situation" || currentStep === "followup") {
-      setCurrentStep("followup");
+    } else if (currentStep === "situation") {
+      // After user answers about conversation types, show the questions
+      setCurrentStep("questions");
+      setShowQuestions(true);
+      scrollToBottom();
+    } else if (currentStep === "followup") {
       setInputPlaceholder("Type your response...");
       await getAIResponse(input);
+    }
+  };
+
+  const handleQuestionAnswer = (key: keyof OnboardingAnswers, value: string) => {
+    setOnboardingAnswer(key, value);
+  };
+
+  const handleQuestionsComplete = async () => {
+    setShowQuestions(false);
+    setCurrentStep("followup");
+    setIsTyping(true);
+    scrollToBottom();
+
+    try {
+      // Generate a personalized response based on the user completing the questions
+      const contextMessage = `The user has completed the onboarding questions. Give a brief, warm acknowledgment that you now have a better understanding of how to help them. Then explain how to use Klarity: "Just paste or type any message. Use Decode to understand it, or Reply to craft your response." End with encouragement and the [ONBOARDING_COMPLETE] tag.`;
+      await getAIResponse(contextMessage);
+    } catch (error) {
+      console.error("Error completing questions:", error);
+      setIsTyping(false);
+      addBotMessage(
+        "Perfect! I have a good sense of how to help you now. Just paste or type any message - use Decode to understand it, or Reply to craft your response. You've got this!"
+      );
+      setCurrentStep("complete");
+      setTimeout(() => setShowGetStarted(true), 1000);
     }
   };
 
@@ -342,8 +376,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
           const contextMessage = `The user said their name is "${transcription}". Greet them by name, mention you want to customize their experience, and ask what types of conversations they would most like help with (work, personal relationships, family, dating, friendships, etc.). Frame it as setting things up for them, not as a personal question.`;
           await getAIResponse(contextMessage);
-        } else if (currentStep === "situation" || currentStep === "followup") {
-          setCurrentStep("followup");
+        } else if (currentStep === "situation") {
+          // After user answers about conversation types, show the questions
+          setCurrentStep("questions");
+          setShowQuestions(true);
+          scrollToBottom();
+        } else if (currentStep === "followup") {
           setInputPlaceholder("Type your response...");
           await getAIResponse(transcription);
         }
@@ -605,6 +643,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
           {isTyping && <TypingIndicator />}
 
+          {/* Onboarding Questions UI */}
+          {showQuestions && (
+            <OnboardingQuestions
+              onAnswer={handleQuestionAnswer}
+              onComplete={handleQuestionsComplete}
+            />
+          )}
+
           {/* Voice Recording UI */}
           {isRecording && (
             <View style={{ alignItems: "center", paddingVertical: 24 }}>
@@ -624,7 +670,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && (
+        {!isRecording && !showGetStarted && !showQuestions && (
           <InputBar
             ref={inputRef}
             value={userInput}

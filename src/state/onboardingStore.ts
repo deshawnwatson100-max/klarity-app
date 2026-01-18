@@ -9,10 +9,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * Persists to AsyncStorage so onboarding only shows once.
  */
 
+export interface OnboardingAnswers {
+  conversationTrigger: string | null;
+  responseOutcome: string | null;
+  conversationCost: string | null;
+  afterConfusion: string | null;
+  klarityHelps: string | null;
+  bestOutcome: string | null;
+}
+
 export interface UserProfile {
   name: string;
   primaryUseCase: string | null;
   communicationGoal: string | null;
+  onboardingAnswers: OnboardingAnswers;
 }
 
 interface OnboardingState {
@@ -27,13 +37,24 @@ interface OnboardingState {
   setUserName: (name: string) => void;
   setPrimaryUseCase: (useCase: string) => void;
   setCommunicationGoal: (goal: string) => void;
+  setOnboardingAnswer: (key: keyof OnboardingAnswers, value: string) => void;
   resetOnboarding: () => void;
 }
+
+const defaultOnboardingAnswers: OnboardingAnswers = {
+  conversationTrigger: null,
+  responseOutcome: null,
+  conversationCost: null,
+  afterConfusion: null,
+  klarityHelps: null,
+  bestOutcome: null,
+};
 
 const defaultUserProfile: UserProfile = {
   name: "",
   primaryUseCase: null,
   communicationGoal: null,
+  onboardingAnswers: defaultOnboardingAnswers,
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
@@ -58,6 +79,17 @@ export const useOnboardingStore = create<OnboardingState>()(
       setCommunicationGoal: (goal) =>
         set((state) => ({
           userProfile: { ...state.userProfile, communicationGoal: goal },
+        })),
+
+      setOnboardingAnswer: (key, value) =>
+        set((state) => ({
+          userProfile: {
+            ...state.userProfile,
+            onboardingAnswers: {
+              ...state.userProfile.onboardingAnswers,
+              [key]: value,
+            },
+          },
         })),
 
       resetOnboarding: () =>
