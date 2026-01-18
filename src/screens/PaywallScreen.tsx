@@ -29,24 +29,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const FEATURES = [
   {
-    icon: "infinite-outline" as const,
-    title: "Unlimited Conversations",
-    description: "No daily limits on AI clarity sessions",
+    icon: "eye-outline" as const,
+    title: "Understand intent, tone, and subtext",
   },
   {
-    icon: "search-outline" as const,
-    title: "Deep Search",
-    description: "Comprehensive background insights on people",
+    icon: "chatbubble-outline" as const,
+    title: "Get clear replies when your mind goes blank",
   },
   {
-    icon: "analytics-outline" as const,
-    title: "Advanced Analysis",
-    description: "Deeper emotional and communication insights",
+    icon: "leaf-outline" as const,
+    title: "Avoid overthinking and regret",
   },
   {
-    icon: "shield-checkmark-outline" as const,
-    title: "Priority Support",
-    description: "Fast, dedicated help when you need it",
+    icon: "heart-outline" as const,
+    title: "Feel grounded in real conversations",
   },
 ];
 
@@ -282,7 +278,7 @@ export function PaywallScreen({ navigation }: Props) {
               marginBottom: 8,
             }}
           >
-            Unlock Klarity Premium
+            Klarity Premium
           </Text>
           <Text
             style={{
@@ -290,10 +286,11 @@ export function PaywallScreen({ navigation }: Props) {
               color: colors.textSecondary,
               textAlign: "center",
               marginBottom: 32,
-              lineHeight: 22,
+              lineHeight: 24,
+              paddingHorizontal: 8,
             }}
           >
-            Get deeper insights and unlimited access to all features
+            Understand social dynamics and respond with clarity and confidence when it matters most
           </Text>
         </Animated.View>
 
@@ -305,9 +302,9 @@ export function PaywallScreen({ navigation }: Props) {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 20,
+                marginBottom: 16,
                 paddingHorizontal: 16,
-                paddingVertical: 16,
+                paddingVertical: 14,
                 backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
                 borderRadius: 16,
                 borderWidth: 1,
@@ -316,37 +313,27 @@ export function PaywallScreen({ navigation }: Props) {
             >
               <View
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
                   backgroundColor: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.1)",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 14,
                 }}
               >
-                <Ionicons name={feature.icon} size={22} color="#A855F7" />
+                <Ionicons name={feature.icon} size={20} color="#A855F7" />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.textPrimary,
-                    marginBottom: 2,
-                  }}
-                >
-                  {feature.title}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                  }}
-                >
-                  {feature.description}
-                </Text>
-              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 15,
+                  fontWeight: "500",
+                  color: colors.textPrimary,
+                }}
+              >
+                {feature.title}
+              </Text>
               <Ionicons name="checkmark-circle" size={22} color="#34C759" />
             </View>
           ))}
