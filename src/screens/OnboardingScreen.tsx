@@ -472,8 +472,23 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </Text>
             </View>
 
-            {/* Right - Mode Toggle + New Loop Button */}
+            {/* Right - Deep Decode + Mode Toggle + New Loop Button */}
             <View className="flex-row items-center">
+              {/* Deep Decode Button (magnifying glass) */}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                className="active:opacity-60"
+                style={{ marginRight: 12 }}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={22}
+                  color={colors.textTertiary}
+                />
+              </Pressable>
+
               {/* Mode Toggle */}
               <View
                 style={{
