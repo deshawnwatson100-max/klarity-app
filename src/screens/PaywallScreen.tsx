@@ -407,6 +407,21 @@ export function PaywallScreen({ navigation }: Props) {
               minHeight: 156,
             }}
           >
+            {/* Soft accent gradient left edge - persistent */}
+            <LinearGradient
+              colors={[accentColorLight, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                left: 16,
+                top: 16,
+                height: 48,
+                width: 3,
+                borderRadius: 2,
+              }}
+            />
+
             {/* Reply text with accent glow - matching ReplyItem */}
             <Animated.View
               style={{
@@ -416,20 +431,6 @@ export function PaywallScreen({ navigation }: Props) {
                 minHeight: 48,
               }}
             >
-              {/* Soft accent gradient left edge */}
-              <LinearGradient
-                colors={[accentColorLight, "transparent"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 3,
-                  borderRadius: 2,
-                }}
-              />
               {showReply && isTypingText ? (
                 <TypewriterText
                   key={`reply-${currentReplyIndex}`}
