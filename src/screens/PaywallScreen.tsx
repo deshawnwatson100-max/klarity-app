@@ -188,23 +188,26 @@ export function PaywallScreen({ navigation }: Props) {
         // Smooth fade out the text
         Animated.timing(textOpacity, {
           toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
           // Move to next reply
           setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
-          setIsTypingText(true);
 
-          // Smooth fade text back in
-          Animated.timing(textOpacity, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }).start();
+          // Small delay before starting to type again
+          setTimeout(() => {
+            setIsTypingText(true);
+            // Smooth fade text back in
+            Animated.timing(textOpacity, {
+              toValue: 1,
+              duration: 400,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }).start();
+          }, 150);
         });
-      }, 2000);
+      }, 2500);
     }
   };
 
@@ -217,23 +220,26 @@ export function PaywallScreen({ navigation }: Props) {
       // Smooth fade out the text
       Animated.timing(textOpacity, {
         toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
+        duration: 500,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
         // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
-        setIsTypingText(true);
 
-        // Smooth fade text back in
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 300,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }).start();
+        // Small delay before starting to type again
+        setTimeout(() => {
+          setIsTypingText(true);
+          // Smooth fade text back in
+          Animated.timing(textOpacity, {
+            toValue: 1,
+            duration: 400,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }).start();
+        }, 150);
       });
-    }, 2000);
+    }, 2500);
   };
 
   const loadOfferings = async () => {
@@ -433,7 +439,8 @@ export function PaywallScreen({ navigation }: Props) {
                     lineHeight: 24,
                     color: textColor,
                   }}
-                  speed={85}
+                  speed={75}
+                  startDelay={hasCompletedFirstCycle ? 200 : 0}
                   onComplete={handleTextComplete}
                 />
               ) : showReply ? (
