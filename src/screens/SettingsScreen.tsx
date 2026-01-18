@@ -667,6 +667,7 @@ export function SettingsScreen() {
             if (hapticsEnabled) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
+            navigation.navigate("PaywallScreen");
           }}
           className="mx-4 mt-4 overflow-hidden active:opacity-90"
           style={{ borderRadius: 16 }}
