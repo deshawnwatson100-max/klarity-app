@@ -412,7 +412,7 @@ export function PaywallScreen({ navigation }: Props) {
               style={{
                 paddingLeft: 12,
                 position: "relative",
-                opacity: isTypingText ? 1 : textOpacity,
+                opacity: textOpacity,
                 minHeight: 48,
               }}
             >
@@ -475,10 +475,14 @@ export function PaywallScreen({ navigation }: Props) {
                   opacity: showBulbIcon ? 1 : 0,
                 }}
               />
-              <View
+              <Animated.View
                 style={{
                   flex: 1,
-                  opacity: showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) ? 1 : 0,
+                  opacity: hasCompletedFirstCycle
+                    ? textOpacity
+                    : showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle)
+                    ? 1
+                    : 0,
                 }}
               >
                 {isTypingGuidance && !hasCompletedFirstCycle ? (
@@ -501,12 +505,10 @@ export function PaywallScreen({ navigation }: Props) {
                       color: textTertiary,
                     }}
                   >
-                    {hasCompletedFirstCycle
-                      ? SUGGESTED_REPLIES[0].guidanceNote
-                      : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                    {SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
                   </Text>
                 )}
-              </View>
+              </Animated.View>
             </View>
 
             {/* Action buttons row - always rendered to maintain position */}
