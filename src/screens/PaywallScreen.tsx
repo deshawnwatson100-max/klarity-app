@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   Animated,
+  Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 import { KlarityLogo } from "../components/KlarityLogo";
+import { TypewriterText } from "../components/TypewriterText";
 import {
   getOfferings,
   purchasePackage,
@@ -103,14 +105,22 @@ export function PaywallScreen({ navigation }: Props) {
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
 
-  // Typewriter effect state
+  // Suggested reply animation state
   const [currentReplyIndex, setCurrentReplyIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
+  const [showReply, setShowReply] = useState(true);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const cursorOpacity = useRef(new Animated.Value(1)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(4)).current;
+
+  // Theme-aware colors matching SuggestedReplyCard
+  const accentColor = isDark ? "#7DD3C0" : "#34C759";
+  const accentColorLight = isDark ? "rgba(125, 211, 192, 0.2)" : "rgba(52, 199, 89, 0.2)";
+  const cardBg = isDark ? "#000000" : "#FFFFFF";
+  const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
+  const textColor = isDark ? "#EDEDED" : "#1C1C1E";
 
   useEffect(() => {
     // Fade in animation
@@ -120,57 +130,72 @@ export function PaywallScreen({ navigation }: Props) {
       useNativeDriver: true,
     }).start();
 
-    // Blinking cursor animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cursorOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cursorOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // Card entrance animation - matching SuggestedReplyCard exactly
+    Animated.parallel([
+      Animated.timing(cardOpacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardTranslateY, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     loadOfferings();
   }, []);
 
-  // Typewriter effect
-  useEffect(() => {
-    const currentReply = SUGGESTED_REPLIES[currentReplyIndex];
-    let timeout: NodeJS.Timeout;
-
-    if (!isDeleting) {
-      // Typing
-      if (displayedText.length < currentReply.length) {
-        timeout = setTimeout(() => {
-          setDisplayedText(currentReply.slice(0, displayedText.length + 1));
-        }, 40 + Math.random() * 30); // Variable typing speed for realism
-      } else {
-        // Finished typing, wait then start deleting
-        timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 2000);
-      }
-    } else {
-      // Deleting
-      if (displayedText.length > 0) {
-        timeout = setTimeout(() => {
-          setDisplayedText(displayedText.slice(0, -1));
-        }, 25); // Faster deletion
-      } else {
-        // Finished deleting, move to next reply
-        setIsDeleting(false);
+  // Cycle through suggested replies
+  const handleTypewriterComplete = () => {
+    setIsTyping(false);
+    // Wait, then fade out and show next reply
+    setTimeout(() => {
+      // Fade out card
+      Animated.parallel([
+        Animated.timing(cardOpacity, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardTranslateY, {
+          toValue: -4,
+          duration: 250,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
-      }
-    }
+        setIsTyping(true);
+        setShowReply(false);
 
-    return () => clearTimeout(timeout);
-  }, [displayedText, isDeleting, currentReplyIndex]);
+        // Reset position and fade in
+        cardTranslateY.setValue(4);
+        setTimeout(() => {
+          setShowReply(true);
+          Animated.parallel([
+            Animated.timing(cardOpacity, {
+              toValue: 1,
+              duration: 350,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(cardTranslateY, {
+              toValue: 0,
+              duration: 350,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, 100);
+      });
+    }, 2000);
+  };
 
   const loadOfferings = async () => {
     if (!isRevenueCatEnabled()) {
@@ -313,60 +338,75 @@ export function PaywallScreen({ navigation }: Props) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Typewriter Suggested Reply Bubble */}
+        {/* Suggested Reply Card - matching SuggestedReplyCard exactly */}
         <Animated.View
           style={{
-            alignItems: "center",
+            alignSelf: "flex-start",
+            width: "100%",
             marginBottom: 20,
-            opacity: fadeAnim,
+            opacity: cardOpacity,
+            transform: [{ translateY: cardTranslateY }],
           }}
         >
           <View
             style={{
-              backgroundColor: isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
-              paddingHorizontal: 18,
-              paddingVertical: 14,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: "rgba(16,163,127,0.25)",
-              maxWidth: SCREEN_WIDTH - 60,
-              minHeight: 48,
+              backgroundColor: cardBg,
+              borderRadius: 16,
+              padding: 16,
+              borderWidth: isDark ? 0 : 1,
+              borderColor: cardBorderColor,
+              shadowColor: isDark ? "transparent" : "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0 : 0.06,
+              shadowRadius: 8,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
+            {/* Reply text with accent glow - matching ReplyItem */}
+            <View
+              style={{
+                paddingLeft: 12,
+                position: "relative",
+              }}
+            >
+              {/* Soft accent gradient left edge */}
+              <LinearGradient
+                colors={[accentColorLight, "transparent"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={{
-                  fontSize: 15,
-                  color: isDark ? "#10A37F" : "#0D8A6A",
-                  fontWeight: "500",
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  borderRadius: 2,
                 }}
-              >
-                {displayedText}
-              </Text>
-              <Animated.Text
-                style={{
-                  fontSize: 15,
-                  color: isDark ? "#10A37F" : "#0D8A6A",
-                  fontWeight: "500",
-                  opacity: cursorOpacity,
-                  marginLeft: 1,
-                }}
-              >
-                |
-              </Animated.Text>
+              />
+              {showReply && isTyping ? (
+                <TypewriterText
+                  key={`reply-${currentReplyIndex}`}
+                  text={SUGGESTED_REPLIES[currentReplyIndex]}
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 24,
+                    color: textColor,
+                  }}
+                  speed={85}
+                  onComplete={handleTypewriterComplete}
+                />
+              ) : showReply ? (
+                <Text
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 24,
+                    color: textColor,
+                  }}
+                >
+                  {SUGGESTED_REPLIES[currentReplyIndex]}
+                </Text>
+              ) : null}
             </View>
           </View>
-          <Text
-            style={{
-              fontSize: 11,
-              color: colors.textTertiary,
-              marginTop: 8,
-              fontWeight: "500",
-              letterSpacing: 0.5,
-            }}
-          >
-            SUGGESTED REPLY
-          </Text>
         </Animated.View>
 
         {/* Title with Logo */}
