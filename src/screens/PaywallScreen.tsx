@@ -44,23 +44,23 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Suggested replies with guidance notes that cycle with typewriter effect
 const SUGGESTED_REPLIES = [
   {
-    text: "I appreciate you sharing that with me",
+    text: "I really appreciate you sharing that with me, it means a lot 💙",
     guidanceNote: "Acknowledges their vulnerability without overcommitting",
   },
   {
-    text: "Let me think about that and get back to you",
+    text: "Let me think about that and get back to you soon 🤔",
     guidanceNote: "Buys time while showing you take it seriously",
   },
   {
-    text: "I hear what you are saying",
+    text: "I hear what you are saying and I understand your perspective 👂",
     guidanceNote: "Validates without necessarily agreeing",
   },
   {
-    text: "That makes sense, thank you for explaining",
+    text: "That makes a lot of sense, thank you for explaining it to me 🙏",
     guidanceNote: "Shows understanding and appreciation",
   },
   {
-    text: "I understand where you are coming from",
+    text: "I completely understand where you are coming from on this ❤️",
     guidanceNote: "Demonstrates empathy while staying neutral",
   },
 ];
@@ -126,6 +126,7 @@ export function PaywallScreen({ navigation }: Props) {
   const [isTypingGuidance, setIsTypingGuidance] = useState(false);
   const [showReply, setShowReply] = useState(true);
   const [hasCompletedFirstCycle, setHasCompletedFirstCycle] = useState(false);
+  const [showBulbIcon, setShowBulbIcon] = useState(false);
 
   // Animation for text cycling (used after first cycle)
   const textOpacity = useRef(new Animated.Value(1)).current;
@@ -179,6 +180,7 @@ export function PaywallScreen({ navigation }: Props) {
     setIsTypingText(false);
     if (!hasCompletedFirstCycle) {
       // First cycle: show guidance with typewriter
+      setShowBulbIcon(true);
       setIsTypingGuidance(true);
     } else {
       // After first cycle: wait then cycle to next text only
@@ -444,17 +446,25 @@ export function PaywallScreen({ navigation }: Props) {
                 alignItems: "flex-start",
                 marginTop: 8,
                 paddingLeft: 12,
-                opacity: showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) ? 1 : 0,
               }}
             >
               <Ionicons
                 name="bulb-outline"
                 size={12}
                 color={textTertiary}
-                style={{ marginTop: 2, marginRight: 6 }}
+                style={{
+                  marginTop: 2,
+                  marginRight: 6,
+                  opacity: showBulbIcon ? 1 : 0,
+                }}
               />
-              {isTypingGuidance && !hasCompletedFirstCycle ? (
-                <View style={{ flex: 1 }}>
+              <View
+                style={{
+                  flex: 1,
+                  opacity: showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) ? 1 : 0,
+                }}
+              >
+                {isTypingGuidance && !hasCompletedFirstCycle ? (
                   <TypewriterText
                     key={`guidance-${currentReplyIndex}`}
                     text={SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
@@ -466,21 +476,20 @@ export function PaywallScreen({ navigation }: Props) {
                     speed={70}
                     onComplete={handleGuidanceComplete}
                   />
-                </View>
-              ) : (
-                <Text
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 18,
-                    color: textTertiary,
-                    flex: 1,
-                  }}
-                >
-                  {hasCompletedFirstCycle
-                    ? SUGGESTED_REPLIES[0].guidanceNote
-                    : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
-                </Text>
-              )}
+                ) : (
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 18,
+                      color: textTertiary,
+                    }}
+                  >
+                    {hasCompletedFirstCycle
+                      ? SUGGESTED_REPLIES[0].guidanceNote
+                      : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                  </Text>
+                )}
+              </View>
             </View>
 
             {/* Action buttons row - always rendered to maintain position */}
