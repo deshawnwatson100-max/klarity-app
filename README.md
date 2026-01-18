@@ -74,24 +74,23 @@ A conversational setup experience powered by real AI that feels like getting per
 1. **AI Welcome** - Klarity warmly welcomes the user and asks what they would like to be called
 2. **Name Collection** - User enters their preferred name via text input
 3. **Experience Customization** - AI explains it wants to tailor their experience and asks what types of conversations they would like help with most (work, relationships, family, dating, friendships)
-4. **Conversational Questions** - After the user shares their situation, a series of 6 questions appear one at a time with tap-to-select option bubbles:
+4. **Transition to Questions** - AI acknowledges the user's input and introduces a series of quick questions
+5. **Conversational Questions** - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles:
    - **Question 1:** "When conversations go wrong, what usually starts it?" (5 options)
    - **Question 2:** "When a response doesn't land, what usually happens?" (5 options)
    - **Question 3:** "When this happens, what does it cost you most?" (5 options)
    - **Question 4:** "After a confusing conversation, what do you usually do?" (5 options)
    - **Question 5:** "Using Klarity would help you avoid:" (5 options)
    - **Question 6:** "In these moments, the best outcome would feel like:" (5 options)
-5. **Reassurance** - AI confirms Klarity is built exactly for this - they are in the right place
-6. **How It Works** - AI briefly explains the process: paste any message to decode it or get help crafting the perfect response
-7. **Completion** - "Get Started" button appears when setup is complete
+6. **Completion** - AI summarizes understanding and explains how to use Klarity, then "Get Started" button appears
 
 #### Question Flow Design
-- Each question appears as a message bubble from Klarity
-- Options appear as tap-to-select bubbles below the question
-- When an option is selected, it briefly highlights before transitioning to the next question
-- A progress indicator shows dots for each question (current question highlighted, completed questions filled)
-- Smooth fade/slide animations between questions
+- Questions appear as regular chat messages from Klarity in the conversation
+- Options appear as tappable bubbles below each question
+- When user selects an option, it shows as a user message in the chat
+- Flow continues naturally to the next question
 - Answers are saved to the user profile for personalization
+- Input bar is hidden during question mode - users tap options to respond
 
 #### AI Personality
 - **Helpful guide** - Frames everything as "setting up" or "customizing" their experience
@@ -117,8 +116,8 @@ A conversational setup experience powered by real AI that feels like getting per
 
 #### Files
 - `src/state/onboardingStore.ts` - Zustand store with persistence (includes OnboardingAnswers interface)
-- `src/screens/OnboardingScreen.tsx` - Chat-loop UI component
-- `src/components/OnboardingQuestions.tsx` - Tap-to-select question bubbles component
+- `src/screens/OnboardingScreen.tsx` - Chat-loop UI component with integrated question flow
+- `src/components/QuestionOptions.tsx` - Tappable option bubbles component
 - `src/navigation/RootNavigator.tsx` - Conditional rendering logic
 
 #### Reset Onboarding
