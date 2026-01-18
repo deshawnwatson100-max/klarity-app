@@ -8,6 +8,7 @@ import {
   Dimensions,
   Animated,
   Easing,
+  Switch,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -118,6 +119,7 @@ export function PaywallScreen({ navigation }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
+  const [notifyBeforeCharge, setNotifyBeforeCharge] = useState(true);
 
   // Suggested reply animation state
   const [currentReplyIndex, setCurrentReplyIndex] = useState(0);
@@ -812,6 +814,69 @@ export function PaywallScreen({ navigation }: Props) {
           </View>
         </Animated.View>
 
+        {/* Free Trial Info */}
+        <Animated.View style={{ opacity: fadeAnim, marginTop: 20 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.textSecondary,
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            3 days of full Klarity Pro access · Cancel anytime · Easy to find cancel option
+          </Text>
+        </Animated.View>
+
+        {/* Notification Toggle */}
+        <Animated.View style={{ opacity: fadeAnim, marginTop: 16 }}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setNotifyBeforeCharge(!notifyBeforeCharge);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textPrimary,
+                  flex: 1,
+                }}
+              >
+                Remind me before trial ends
+              </Text>
+            </View>
+            <Switch
+              value={notifyBeforeCharge}
+              onValueChange={(value) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setNotifyBeforeCharge(value);
+              }}
+              trackColor={{ false: isDark ? "#39393D" : "#E5E5EA", true: "#3B82F6" }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={isDark ? "#39393D" : "#E5E5EA"}
+            />
+          </Pressable>
+        </Animated.View>
+
         {/* Error Message */}
         {error && (
           <View
@@ -865,7 +930,7 @@ export function PaywallScreen({ navigation }: Props) {
                     color: "#FFFFFF",
                   }}
                 >
-                  Continue with {selectedPlanData?.title}
+                  Start 3-Day Free Trial
                 </Text>
               )}
             </LinearGradient>
