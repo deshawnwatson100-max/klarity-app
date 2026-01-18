@@ -185,19 +185,24 @@ export function PaywallScreen({ navigation }: Props) {
     } else {
       // After first cycle: wait then cycle to next text only
       setTimeout(() => {
-        // Fade out just the text
+        // Smooth fade out the text
         Animated.timing(textOpacity, {
           toValue: 0,
-          duration: 200,
-          easing: Easing.in(Easing.quad),
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }).start(() => {
           // Move to next reply
           setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
           setIsTypingText(true);
 
-          // Fade text back in
-          textOpacity.setValue(1);
+          // Smooth fade text back in
+          Animated.timing(textOpacity, {
+            toValue: 1,
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }).start();
         });
       }, 2000);
     }
@@ -209,19 +214,24 @@ export function PaywallScreen({ navigation }: Props) {
 
     // Wait, then start cycling only the text
     setTimeout(() => {
-      // Fade out just the text
+      // Smooth fade out the text
       Animated.timing(textOpacity, {
         toValue: 0,
-        duration: 200,
-        easing: Easing.in(Easing.quad),
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start(() => {
         // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
         setIsTypingText(true);
 
-        // Fade text back in
-        textOpacity.setValue(1);
+        // Smooth fade text back in
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }).start();
       });
     }, 2000);
   };
