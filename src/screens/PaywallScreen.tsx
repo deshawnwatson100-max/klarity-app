@@ -6,24 +6,13 @@ import {
   ActivityIndicator,
   ScrollView,
   Dimensions,
-  Platform,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-  withDelay,
-  Easing,
-  FadeIn,
-  FadeInDown,
-} from "react-native-reanimated";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 import {
@@ -70,30 +59,50 @@ export function PaywallScreen({ navigation }: Props) {
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Animation values
-  const glowOpacity = useSharedValue(0.3);
-  const orbScale = useSharedValue(1);
+  // Animation values using React Native Animated
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+
     // Breathing glow animation
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.3, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 0.6,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.3,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
     // Subtle scale pulse
-    orbScale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.05,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
     loadOfferings();
   }, []);
@@ -165,11 +174,6 @@ export function PaywallScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-    transform: [{ scale: orbScale.value }],
-  }));
-
   const priceText = monthlyPackage?.product.priceString ?? "$11.99";
 
   return (
@@ -222,13 +226,18 @@ export function PaywallScreen({ navigation }: Props) {
       >
         {/* Animated Orb/Glow */}
         <Animated.View
-          entering={FadeIn.duration(600)}
           style={{
             alignItems: "center",
             marginBottom: 24,
+            opacity: fadeAnim,
           }}
         >
-          <Animated.View style={glowStyle}>
+          <Animated.View
+            style={{
+              opacity: glowAnim,
+              transform: [{ scale: scaleAnim }],
+            }}
+          >
             <LinearGradient
               colors={["#8B5CF6", "#6366F1", "#A855F7", "#7DD3C0"]}
               start={{ x: 0, y: 0 }}
@@ -263,7 +272,7 @@ export function PaywallScreen({ navigation }: Props) {
         </Animated.View>
 
         {/* Title */}
-        <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           <Text
             style={{
               fontSize: 28,
@@ -289,11 +298,10 @@ export function PaywallScreen({ navigation }: Props) {
         </Animated.View>
 
         {/* Features */}
-        <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           {FEATURES.map((feature, index) => (
-            <Animated.View
+            <View
               key={feature.title}
-              entering={FadeInDown.delay(250 + index * 80).duration(400)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -340,12 +348,12 @@ export function PaywallScreen({ navigation }: Props) {
                 </Text>
               </View>
               <Ionicons name="checkmark-circle" size={22} color="#34C759" />
-            </Animated.View>
+            </View>
           ))}
         </Animated.View>
 
         {/* Pricing Card */}
-        <Animated.View entering={FadeInDown.delay(500).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           <View
             style={{
               marginTop: 8,
@@ -413,7 +421,7 @@ export function PaywallScreen({ navigation }: Props) {
         )}
 
         {/* Subscribe Button */}
-        <Animated.View entering={FadeInDown.delay(600).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           <Pressable
             onPress={handlePurchase}
             disabled={isLoading || isPurchasing || !monthlyPackage}
@@ -451,7 +459,7 @@ export function PaywallScreen({ navigation }: Props) {
         </Animated.View>
 
         {/* Restore Purchases */}
-        <Animated.View entering={FadeInDown.delay(700).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           <Pressable
             onPress={handleRestore}
             disabled={isRestoring}
@@ -477,7 +485,7 @@ export function PaywallScreen({ navigation }: Props) {
         </Animated.View>
 
         {/* Terms & Privacy */}
-        <Animated.View entering={FadeInDown.delay(800).duration(500)}>
+        <Animated.View style={{ opacity: fadeAnim }}>
           <View
             style={{
               marginTop: 20,
