@@ -25,6 +25,17 @@ import type { PurchasesPackage } from "react-native-purchases";
 
 type Props = StackScreenProps<RootStackParamList, "PaywallScreen">;
 
+type PlanType = "weekly" | "monthly" | "annual";
+
+interface PlanOption {
+  id: PlanType;
+  identifier: string;
+  title: string;
+  price: string;
+  subtitle: string;
+  badge?: string;
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const FEATURES = [
@@ -46,13 +57,40 @@ const FEATURES = [
   },
 ];
 
+const DEFAULT_PLANS: PlanOption[] = [
+  {
+    id: "weekly",
+    identifier: "$rc_weekly",
+    title: "Weekly",
+    price: "$4.99",
+    subtitle: "$0.71/day",
+  },
+  {
+    id: "monthly",
+    identifier: "$rc_monthly",
+    title: "Monthly",
+    price: "$11.99",
+    subtitle: "$2.99/week",
+  },
+  {
+    id: "annual",
+    identifier: "$rc_annual",
+    title: "Annual",
+    price: "$59.99",
+    subtitle: "$4.99/mo",
+    badge: "Best Value",
+  },
+];
+
 export function PaywallScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
+  const [packages, setPackages] = useState<Map<string, PurchasesPackage>>(new Map());
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
+  const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
 
   // Animation values using React Native Animated
@@ -112,31 +150,55 @@ export function PaywallScreen({ navigation }: Props) {
 
     const result = await getOfferings();
     if (result.ok && result.data.current) {
-      const monthly = result.data.current.availablePackages.find(
-        (pkg) => pkg.identifier === "$rc_monthly"
-      );
-      setMonthlyPackage(monthly ?? null);
+      const pkgMap = new Map<string, PurchasesPackage>();
+
+      result.data.current.availablePackages.forEach((pkg) => {
+        pkgMap.set(pkg.identifier, pkg);
+      });
+
+      setPackages(pkgMap);
+
+      // Update plans with actual prices from RevenueCat
+      const updatedPlans = DEFAULT_PLANS.map((plan) => {
+        const pkg = pkgMap.get(plan.identifier);
+        if (pkg) {
+          return {
+            ...plan,
+            price: pkg.product.priceString,
+          };
+        }
+        return plan;
+      });
+      setPlans(updatedPlans);
     } else {
       setError("Unable to load subscription options");
     }
     setIsLoading(false);
   };
 
+  const handleSelectPlan = (planId: PlanType) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedPlan(planId);
+  };
+
   const handlePurchase = async () => {
-    if (!monthlyPackage) return;
+    const plan = plans.find((p) => p.id === selectedPlan);
+    if (!plan) return;
+
+    const pkg = packages.get(plan.identifier);
+    if (!pkg) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsPurchasing(true);
     setError(null);
 
-    const result = await purchasePackage(monthlyPackage);
+    const result = await purchasePackage(pkg);
     setIsPurchasing(false);
 
     if (result.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } else if (result.reason === "sdk_error") {
-      // User cancelled or other error
       const errorMessage = result.error instanceof Error ? result.error.message : "Purchase failed";
       if (!errorMessage.includes("cancelled") && !errorMessage.includes("canceled")) {
         setError(errorMessage);
@@ -170,7 +232,7 @@ export function PaywallScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
-  const priceText = monthlyPackage?.product.priceString ?? "$11.99";
+  const selectedPlanData = plans.find((p) => p.id === selectedPlan);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -285,7 +347,7 @@ export function PaywallScreen({ navigation }: Props) {
               fontSize: 16,
               color: colors.textSecondary,
               textAlign: "center",
-              marginBottom: 32,
+              marginBottom: 28,
               lineHeight: 24,
               paddingHorizontal: 8,
             }}
@@ -296,92 +358,156 @@ export function PaywallScreen({ navigation }: Props) {
 
         {/* Features */}
         <Animated.View style={{ opacity: fadeAnim }}>
-          {FEATURES.map((feature, index) => (
+          {FEATURES.map((feature) => (
             <View
               key={feature.title}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 16,
+                marginBottom: 14,
                 paddingHorizontal: 16,
-                paddingVertical: 14,
+                paddingVertical: 12,
                 backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                borderRadius: 16,
+                borderRadius: 14,
                 borderWidth: 1,
                 borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
               }}
             >
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 10,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 9,
                   backgroundColor: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.1)",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 14,
+                  marginRight: 12,
                 }}
               >
-                <Ionicons name={feature.icon} size={20} color="#A855F7" />
+                <Ionicons name={feature.icon} size={18} color="#A855F7" />
               </View>
               <Text
                 style={{
                   flex: 1,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: "500",
                   color: colors.textPrimary,
                 }}
               >
                 {feature.title}
               </Text>
-              <Ionicons name="checkmark-circle" size={22} color="#34C759" />
+              <Ionicons name="checkmark-circle" size={20} color="#34C759" />
             </View>
           ))}
         </Animated.View>
 
-        {/* Pricing Card */}
-        <Animated.View style={{ opacity: fadeAnim }}>
-          <View
-            style={{
-              marginTop: 8,
-              marginBottom: 24,
-              padding: 20,
-              borderRadius: 20,
-              backgroundColor: isDark ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.05)",
-              borderWidth: 2,
-              borderColor: "#8B5CF6",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center" }}>
-              <Text
-                style={{
-                  fontSize: 42,
-                  fontWeight: "700",
-                  color: colors.textPrimary,
-                }}
-              >
-                {priceText}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginLeft: 4,
-                }}
-              >
-                /month
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-                textAlign: "center",
-                marginTop: 4,
-              }}
-            >
-              Cancel anytime
-            </Text>
+        {/* Pricing Options */}
+        <Animated.View style={{ opacity: fadeAnim, marginTop: 20 }}>
+          <View style={{ gap: 12 }}>
+            {plans.map((plan) => {
+              const isSelected = selectedPlan === plan.id;
+              return (
+                <Pressable
+                  key={plan.id}
+                  onPress={() => handleSelectPlan(plan.id)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    padding: 16,
+                    borderRadius: 16,
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? "rgba(139,92,246,0.12)"
+                        : "rgba(139,92,246,0.08)"
+                      : isDark
+                      ? "rgba(255,255,255,0.03)"
+                      : "rgba(0,0,0,0.02)",
+                    borderWidth: 2,
+                    borderColor: isSelected ? "#8B5CF6" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  }}
+                >
+                  {/* Radio button */}
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      borderWidth: 2,
+                      borderColor: isSelected ? "#8B5CF6" : colors.textTertiary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 14,
+                    }}
+                  >
+                    {isSelected && (
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: "#8B5CF6",
+                        }}
+                      />
+                    )}
+                  </View>
+
+                  {/* Plan details */}
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color: colors.textPrimary,
+                        }}
+                      >
+                        {plan.title}
+                      </Text>
+                      {plan.badge && (
+                        <View
+                          style={{
+                            backgroundColor: "#34C759",
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: "700",
+                              color: "#FFFFFF",
+                            }}
+                          >
+                            {plan.badge}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: colors.textSecondary,
+                        marginTop: 2,
+                      }}
+                    >
+                      {plan.subtitle}
+                    </Text>
+                  </View>
+
+                  {/* Price */}
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "700",
+                      color: colors.textPrimary,
+                    }}
+                  >
+                    {plan.price}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </Animated.View>
 
@@ -392,7 +518,7 @@ export function PaywallScreen({ navigation }: Props) {
               backgroundColor: "rgba(239,68,68,0.1)",
               padding: 12,
               borderRadius: 12,
-              marginBottom: 16,
+              marginTop: 16,
             }}
           >
             <Text
@@ -408,10 +534,10 @@ export function PaywallScreen({ navigation }: Props) {
         )}
 
         {/* Subscribe Button */}
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <Animated.View style={{ opacity: fadeAnim, marginTop: 24 }}>
           <Pressable
             onPress={handlePurchase}
-            disabled={isLoading || isPurchasing || !monthlyPackage}
+            disabled={isLoading || isPurchasing || packages.size === 0}
             style={({ pressed }) => ({
               opacity: pressed ? 0.9 : 1,
             })}
@@ -425,7 +551,7 @@ export function PaywallScreen({ navigation }: Props) {
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: isLoading || !monthlyPackage ? 0.5 : 1,
+                opacity: isLoading || packages.size === 0 ? 0.5 : 1,
               }}
             >
               {isPurchasing ? (
@@ -438,7 +564,7 @@ export function PaywallScreen({ navigation }: Props) {
                     color: "#FFFFFF",
                   }}
                 >
-                  Subscribe Now
+                  Continue with {selectedPlanData?.title}
                 </Text>
               )}
             </LinearGradient>
