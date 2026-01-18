@@ -383,6 +383,28 @@ export function PaywallScreen({ navigation }: Props) {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Klarity title above card */}
+        <Animated.View style={{ opacity: fadeAnim, marginBottom: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <KlarityLogo size={28} />
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "700",
+                color: colors.textPrimary,
+              }}
+            >
+              Klarity
+            </Text>
+          </View>
+        </Animated.View>
+
         {/* Suggested Reply Card - matching SuggestedReplyCard exactly */}
         <Animated.View
           style={{
@@ -583,28 +605,8 @@ export function PaywallScreen({ navigation }: Props) {
           </View>
         </Animated.View>
 
-        {/* Title with Logo */}
+        {/* Tagline */}
         <Animated.View style={{ opacity: fadeAnim }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 8,
-              gap: 10,
-            }}
-          >
-            <KlarityLogo size={32} />
-            <Text
-              style={{
-                fontSize: 28,
-                fontWeight: "700",
-                color: colors.textPrimary,
-              }}
-            >
-              Klarity
-            </Text>
-          </View>
           <Text
             style={{
               fontSize: 16,
