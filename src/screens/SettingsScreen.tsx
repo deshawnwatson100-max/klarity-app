@@ -672,44 +672,42 @@ export function SettingsScreen() {
           className="mx-4 mt-4 overflow-hidden active:opacity-90"
           style={{ borderRadius: 16 }}
         >
-          <LinearGradient
-            colors={["#3B82F6", "#1D4ED8"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+          <View
             style={{
               paddingVertical: 20,
               paddingHorizontal: 20,
+              backgroundColor: isDark ? "#2A2A2C" : "#F0F0F2",
             }}
           >
             <View className="flex-row items-center">
               <View className="flex-1">
                 <View className="flex-row items-center mb-1">
-                  <Ionicons name="sparkles" size={18} color="#FFF" />
+                  <Ionicons name="sparkles" size={18} color={isDark ? "#E5E7EB" : "#1C1C1E"} />
                   <Text
                     className="text-base font-bold ml-2"
-                    style={{ color: "#FFF" }}
+                    style={{ color: isDark ? "#E5E7EB" : "#1C1C1E" }}
                   >
                     Subscription
                   </Text>
                 </View>
-                <Text className="text-sm" style={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                <Text className="text-sm" style={{ color: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.5)" }}>
                   Unlock unlimited chats, advanced AI features, and more
                 </Text>
               </View>
               <View
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
                   borderRadius: 20,
                   paddingHorizontal: 14,
                   paddingVertical: 8,
                 }}
               >
-                <Text className="text-sm font-semibold" style={{ color: "#FFF" }}>
+                <Text className="text-sm font-semibold" style={{ color: isDark ? "#E5E7EB" : "#1C1C1E" }}>
                   View
                 </Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </Pressable>
 
         {/* Appearance Section */}
