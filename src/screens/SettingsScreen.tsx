@@ -661,7 +661,7 @@ export function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       >
-        {/* Premium Banner */}
+        {/* Subscription Banner */}
         <Pressable
           onPress={() => {
             if (hapticsEnabled) {
@@ -673,9 +673,9 @@ export function SettingsScreen() {
           style={{ borderRadius: 16 }}
         >
           <LinearGradient
-            colors={["#6366F1", "#8B5CF6", "#A855F7"]}
+            colors={["#3B82F6", "#1D4ED8"]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            end={{ x: 1, y: 0 }}
             style={{
               paddingVertical: 20,
               paddingHorizontal: 20,
@@ -689,7 +689,7 @@ export function SettingsScreen() {
                     className="text-base font-bold ml-2"
                     style={{ color: "#FFF" }}
                   >
-                    Upgrade to Premium
+                    Subscription
                   </Text>
                 </View>
                 <Text className="text-sm" style={{ color: "rgba(255, 255, 255, 0.8)" }}>
