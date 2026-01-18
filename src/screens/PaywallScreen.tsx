@@ -297,7 +297,7 @@ export function PaywallScreen({ navigation }: Props) {
             }}
           >
             <LinearGradient
-              colors={["#8B5CF6", "#6366F1", "#A855F7", "#7DD3C0"]}
+              colors={["#3B82F6", "#1D4ED8", "#60A5FA", "#7DD3C0"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
@@ -318,14 +318,14 @@ export function PaywallScreen({ navigation }: Props) {
               backgroundColor: isDark ? "#1A1A1C" : "#F5F5F7",
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: "#8B5CF6",
+              shadowColor: "#3B82F6",
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.5,
               shadowRadius: 20,
               elevation: 10,
             }}
           >
-            <Ionicons name="sparkles" size={28} color="#A855F7" />
+            <Ionicons name="sparkles" size={28} color="#3B82F6" />
           </View>
         </Animated.View>
 
@@ -378,13 +378,13 @@ export function PaywallScreen({ navigation }: Props) {
                   width: 36,
                   height: 36,
                   borderRadius: 9,
-                  backgroundColor: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.1)",
+                  backgroundColor: isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 12,
                 }}
               >
-                <Ionicons name={feature.icon} size={18} color="#A855F7" />
+                <Ionicons name={feature.icon} size={18} color="#3B82F6" />
               </View>
               <Text
                 style={{
@@ -417,13 +417,13 @@ export function PaywallScreen({ navigation }: Props) {
                     borderRadius: 16,
                     backgroundColor: isSelected
                       ? isDark
-                        ? "rgba(139,92,246,0.12)"
-                        : "rgba(139,92,246,0.08)"
+                        ? "rgba(59,130,246,0.12)"
+                        : "rgba(59,130,246,0.08)"
                       : isDark
                       ? "rgba(255,255,255,0.03)"
                       : "rgba(0,0,0,0.02)",
                     borderWidth: 2,
-                    borderColor: isSelected ? "#8B5CF6" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                    borderColor: isSelected ? "#3B82F6" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
                   }}
                 >
                   {/* Radio button */}
@@ -433,7 +433,7 @@ export function PaywallScreen({ navigation }: Props) {
                       height: 24,
                       borderRadius: 12,
                       borderWidth: 2,
-                      borderColor: isSelected ? "#8B5CF6" : colors.textTertiary,
+                      borderColor: isSelected ? "#3B82F6" : colors.textTertiary,
                       alignItems: "center",
                       justifyContent: "center",
                       marginRight: 14,
@@ -445,7 +445,7 @@ export function PaywallScreen({ navigation }: Props) {
                           width: 12,
                           height: 12,
                           borderRadius: 6,
-                          backgroundColor: "#8B5CF6",
+                          backgroundColor: "#3B82F6",
                         }}
                       />
                     )}
@@ -543,7 +543,7 @@ export function PaywallScreen({ navigation }: Props) {
             })}
           >
             <LinearGradient
-              colors={["#8B5CF6", "#6366F1"]}
+              colors={["#3B82F6", "#1D4ED8"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{
