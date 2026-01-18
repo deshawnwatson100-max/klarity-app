@@ -127,6 +127,9 @@ export function PaywallScreen({ navigation }: Props) {
   const [hasCompletedFirstCycle, setHasCompletedFirstCycle] = useState(false);
   const [showBulbIcon, setShowBulbIcon] = useState(false);
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
   // Animation for text cycling (used after first cycle)
   const textOpacity = useRef(new Animated.Value(1)).current;
 
@@ -172,10 +175,20 @@ export function PaywallScreen({ navigation }: Props) {
     ]).start();
 
     loadOfferings();
+
+    // Cleanup on unmount
+    return () => {
+      isMountedRef.current = false;
+      textOpacity.stopAnimation();
+      fadeAnim.stopAnimation();
+      cardOpacity.stopAnimation();
+      cardTranslateY.stopAnimation();
+    };
   }, []);
 
   // Cycle through suggested replies - text completes first, then guidance
   const handleTextComplete = () => {
+    if (!isMountedRef.current) return;
     setIsTypingText(false);
     if (!hasCompletedFirstCycle) {
       // First cycle: show guidance with typewriter
@@ -184,6 +197,7 @@ export function PaywallScreen({ navigation }: Props) {
     } else {
       // After first cycle: wait then cycle to next text only
       setTimeout(() => {
+        if (!isMountedRef.current) return;
         // Smooth fade out the text
         Animated.timing(textOpacity, {
           toValue: 0,
@@ -191,11 +205,13 @@ export function PaywallScreen({ navigation }: Props) {
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
+          if (!isMountedRef.current) return;
           // Move to next reply
           setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
 
           // Small delay before starting to type again
           setTimeout(() => {
+            if (!isMountedRef.current) return;
             setIsTypingText(true);
             // Smooth fade text back in
             Animated.timing(textOpacity, {
@@ -211,11 +227,13 @@ export function PaywallScreen({ navigation }: Props) {
   };
 
   const handleGuidanceComplete = () => {
+    if (!isMountedRef.current) return;
     setIsTypingGuidance(false);
     setHasCompletedFirstCycle(true);
 
     // Wait, then start cycling only the text
     setTimeout(() => {
+      if (!isMountedRef.current) return;
       // Smooth fade out the text
       Animated.timing(textOpacity, {
         toValue: 0,
@@ -223,11 +241,13 @@ export function PaywallScreen({ navigation }: Props) {
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
+        if (!isMountedRef.current) return;
         // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
 
         // Small delay before starting to type again
         setTimeout(() => {
+          if (!isMountedRef.current) return;
           setIsTypingText(true);
           // Smooth fade text back in
           Animated.timing(textOpacity, {
