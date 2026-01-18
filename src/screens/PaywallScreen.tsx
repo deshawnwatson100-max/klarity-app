@@ -66,16 +66,16 @@ const SUGGESTED_REPLIES = [
 
 const FEATURES = [
   {
-    icon: "eye-outline" as const,
-    title: "Understand intent, tone, and subtext",
+    icon: "leaf-outline" as const,
+    title: "Avoid overthinking and regret",
   },
   {
     icon: "chatbubble-outline" as const,
     title: "Get clear replies when your mind goes blank",
   },
   {
-    icon: "leaf-outline" as const,
-    title: "Avoid overthinking and regret",
+    icon: "eye-outline" as const,
+    title: "Understand intent, tone, and subtext",
   },
   {
     icon: "heart-outline" as const,
