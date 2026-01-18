@@ -39,14 +39,13 @@ interface PlanOption {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Sample messages that rotate in the animation
-const SAMPLE_MESSAGES = [
-  { type: "summary", text: "They seem genuinely interested but hesitant..." },
-  { type: "reply", text: "I appreciate you sharing that with me" },
-  { type: "summary", text: "This feels like a test of boundaries..." },
-  { type: "reply", text: "Let me think about that and get back to you" },
-  { type: "summary", text: "They want reassurance without asking directly..." },
-  { type: "reply", text: "I hear what you are saying" },
+// Suggested replies that cycle with typewriter effect
+const SUGGESTED_REPLIES = [
+  "I appreciate you sharing that with me",
+  "Let me think about that and get back to you",
+  "I hear what you are saying",
+  "That makes sense, thank you for explaining",
+  "I understand where you are coming from",
 ];
 
 const FEATURES = [
@@ -103,17 +102,15 @@ export function PaywallScreen({ navigation }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-  // Animation values using React Native Animated
+  // Typewriter effect state
+  const [currentReplyIndex, setCurrentReplyIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0.3)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  // Message animation values - 3 visible messages at a time
-  const message0Anim = useRef(new Animated.Value(0)).current;
-  const message1Anim = useRef(new Animated.Value(0)).current;
-  const message2Anim = useRef(new Animated.Value(0)).current;
+  const cursorOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Fade in animation
@@ -123,83 +120,57 @@ export function PaywallScreen({ navigation }: Props) {
       useNativeDriver: true,
     }).start();
 
-    // Breathing glow animation
+    // Blinking cursor animation
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 0.6,
-          duration: 2000,
+        Animated.timing(cursorOpacity, {
+          toValue: 0,
+          duration: 500,
           useNativeDriver: true,
         }),
-        Animated.timing(glowAnim, {
-          toValue: 0.3,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Subtle scale pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.05,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
+        Animated.timing(cursorOpacity, {
           toValue: 1,
-          duration: 3000,
+          duration: 500,
           useNativeDriver: true,
         }),
       ])
     ).start();
-
-    // Initialize message animations
-    message0Anim.setValue(1);
-    message1Anim.setValue(1);
-    message2Anim.setValue(1);
 
     loadOfferings();
   }, []);
 
-  // Rotating messages animation
+  // Typewriter effect
   useEffect(() => {
-    const animateMessages = () => {
-      // Reset all to visible
-      message0Anim.setValue(1);
-      message1Anim.setValue(1);
-      message2Anim.setValue(1);
+    const currentReply = SUGGESTED_REPLIES[currentReplyIndex];
+    let timeout: NodeJS.Timeout;
 
-      // Staggered fade out from top to bottom
-      Animated.sequence([
-        Animated.delay(500),
-        Animated.timing(message0Anim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(message1Anim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(message2Anim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.delay(300),
-      ]).start(() => {
-        // Move to next set of messages
-        setCurrentMessageIndex((prev) => (prev + 3) % SAMPLE_MESSAGES.length);
-      });
-    };
+    if (!isDeleting) {
+      // Typing
+      if (displayedText.length < currentReply.length) {
+        timeout = setTimeout(() => {
+          setDisplayedText(currentReply.slice(0, displayedText.length + 1));
+        }, 40 + Math.random() * 30); // Variable typing speed for realism
+      } else {
+        // Finished typing, wait then start deleting
+        timeout = setTimeout(() => {
+          setIsDeleting(true);
+        }, 2000);
+      }
+    } else {
+      // Deleting
+      if (displayedText.length > 0) {
+        timeout = setTimeout(() => {
+          setDisplayedText(displayedText.slice(0, -1));
+        }, 25); // Faster deletion
+      } else {
+        // Finished deleting, move to next reply
+        setIsDeleting(false);
+        setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
+      }
+    }
 
-    animateMessages();
-    const interval = setInterval(animateMessages, 4000);
-    return () => clearInterval(interval);
-  }, [currentMessageIndex]);
+    return () => clearTimeout(timeout);
+  }, [displayedText, isDeleting, currentReplyIndex]);
 
   const loadOfferings = async () => {
     if (!isRevenueCatEnabled()) {
@@ -342,165 +313,60 @@ export function PaywallScreen({ navigation }: Props) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Animated Messages flowing into title */}
+        {/* Typewriter Suggested Reply Bubble */}
         <Animated.View
           style={{
             alignItems: "center",
-            marginBottom: 8,
+            marginBottom: 20,
             opacity: fadeAnim,
           }}
         >
-          {/* Messages container with fade gradient at bottom */}
           <View
             style={{
-              height: 140,
-              width: "100%",
-              overflow: "hidden",
-              alignItems: "center",
-              justifyContent: "flex-end",
+              backgroundColor: isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
+              paddingHorizontal: 18,
+              paddingVertical: 14,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: "rgba(16,163,127,0.25)",
+              maxWidth: SCREEN_WIDTH - 60,
+              minHeight: 48,
             }}
           >
-            {/* Message 0 (top) */}
-            <Animated.View
-              style={{
-                opacity: message0Anim,
-                transform: [
-                  {
-                    translateY: message0Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-                marginBottom: 8,
-              }}
-            >
-              <View
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
                 style={{
-                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
-                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? "rgba(59,130,246,0.2)"
-                    : "rgba(16,163,127,0.2)",
-                  maxWidth: SCREEN_WIDTH - 80,
+                  fontSize: 15,
+                  color: isDark ? "#10A37F" : "#0D8A6A",
+                  fontWeight: "500",
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: colors.textSecondary,
-                    fontStyle: "italic",
-                  }}
-                  numberOfLines={1}
-                >
-                  {SAMPLE_MESSAGES[(currentMessageIndex + 0) % SAMPLE_MESSAGES.length].text}
-                </Text>
-              </View>
-            </Animated.View>
-
-            {/* Message 1 (middle) */}
-            <Animated.View
-              style={{
-                opacity: message1Anim,
-                transform: [
-                  {
-                    translateY: message1Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-                marginBottom: 8,
-              }}
-            >
-              <View
+                {displayedText}
+              </Text>
+              <Animated.Text
                 style={{
-                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
-                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? "rgba(59,130,246,0.2)"
-                    : "rgba(16,163,127,0.2)",
-                  maxWidth: SCREEN_WIDTH - 80,
+                  fontSize: 15,
+                  color: isDark ? "#10A37F" : "#0D8A6A",
+                  fontWeight: "500",
+                  opacity: cursorOpacity,
+                  marginLeft: 1,
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: colors.textSecondary,
-                    fontStyle: "italic",
-                  }}
-                  numberOfLines={1}
-                >
-                  {SAMPLE_MESSAGES[(currentMessageIndex + 1) % SAMPLE_MESSAGES.length].text}
-                </Text>
-              </View>
-            </Animated.View>
-
-            {/* Message 2 (bottom, closest to title) */}
-            <Animated.View
-              style={{
-                opacity: message2Anim,
-                transform: [
-                  {
-                    translateY: message2Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)"
-                    : isDark ? "rgba(16,163,127,0.15)" : "rgba(16,163,127,0.1)",
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].type === "summary"
-                    ? "rgba(59,130,246,0.2)"
-                    : "rgba(16,163,127,0.2)",
-                  maxWidth: SCREEN_WIDTH - 80,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: colors.textSecondary,
-                    fontStyle: "italic",
-                  }}
-                  numberOfLines={1}
-                >
-                  {SAMPLE_MESSAGES[(currentMessageIndex + 2) % SAMPLE_MESSAGES.length].text}
-                </Text>
-              </View>
-            </Animated.View>
+                |
+              </Animated.Text>
+            </View>
           </View>
-
-          {/* Fade gradient overlay at bottom of messages */}
-          <LinearGradient
-            colors={isDark ? ["transparent", "#050608"] : ["transparent", "#FFFFFF"]}
+          <Text
             style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 50,
+              fontSize: 11,
+              color: colors.textTertiary,
+              marginTop: 8,
+              fontWeight: "500",
+              letterSpacing: 0.5,
             }}
-            pointerEvents="none"
-          />
+          >
+            SUGGESTED REPLY
+          </Text>
         </Animated.View>
 
         {/* Title with Logo */}
