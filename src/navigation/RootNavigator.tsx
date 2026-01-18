@@ -10,6 +10,7 @@ import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { PaywallScreen } from "../screens/PaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
 
@@ -33,6 +34,7 @@ export type RootStackParamList = {
     tab?: "terms" | "privacy";
   };
   SettingsScreen: undefined;
+  PaywallScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -337,6 +339,53 @@ export function RootNavigator() {
           gestureDirection: "horizontal",
           cardStyle: { backgroundColor: "#0A0A0B" },
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+
+      {/* Paywall Screen - Modal presentation from bottom */}
+      <Stack.Screen
+        name="PaywallScreen"
+        component={PaywallScreen}
+        options={{
+          presentation: "modal",
+          gestureEnabled: true,
+          gestureDirection: "vertical",
+          cardStyle: { backgroundColor: "#050608" },
+          cardOverlayEnabled: true,
+          cardStyleInterpolator: ({ current, layouts }) => {
+            return {
+              cardStyle: {
+                transform: [
+                  {
+                    translateY: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [layouts.screen.height, 0],
+                    }),
+                  },
+                ],
+              },
+              overlayStyle: {
+                opacity: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.7],
+                }),
+              },
+            };
+          },
+          transitionSpec: {
+            open: {
+              animation: "spring",
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: TransitionSpecs.TransitionIOSSpec,
+          },
         }}
       />
 
