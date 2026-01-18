@@ -386,6 +386,7 @@ export function PaywallScreen({ navigation }: Props) {
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: isDark ? 0 : 0.06,
               shadowRadius: 8,
+              minHeight: 156,
             }}
           >
             {/* Reply text with accent glow - matching ReplyItem */}
@@ -394,6 +395,7 @@ export function PaywallScreen({ navigation }: Props) {
                 paddingLeft: 12,
                 position: "relative",
                 opacity: isTypingText ? 1 : textOpacity,
+                minHeight: 48,
               }}
             >
               {/* Soft accent gradient left edge */}
@@ -435,122 +437,120 @@ export function PaywallScreen({ navigation }: Props) {
               ) : null}
             </Animated.View>
 
-            {/* Guidance Note - subtle */}
-            {showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  marginTop: 8,
-                  paddingLeft: 12,
-                }}
-              >
-                <Ionicons
-                  name="bulb-outline"
-                  size={12}
-                  color={textTertiary}
-                  style={{ marginTop: 2, marginRight: 6 }}
-                />
-                {isTypingGuidance && !hasCompletedFirstCycle ? (
-                  <View style={{ flex: 1 }}>
-                    <TypewriterText
-                      key={`guidance-${currentReplyIndex}`}
-                      text={SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
-                      style={{
-                        fontSize: 13,
-                        lineHeight: 18,
-                        color: textTertiary,
-                      }}
-                      speed={70}
-                      onComplete={handleGuidanceComplete}
-                    />
-                  </View>
-                ) : (
-                  <Text
+            {/* Guidance Note - subtle - always rendered to maintain position */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                marginTop: 8,
+                paddingLeft: 12,
+                opacity: showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) ? 1 : 0,
+              }}
+            >
+              <Ionicons
+                name="bulb-outline"
+                size={12}
+                color={textTertiary}
+                style={{ marginTop: 2, marginRight: 6 }}
+              />
+              {isTypingGuidance && !hasCompletedFirstCycle ? (
+                <View style={{ flex: 1 }}>
+                  <TypewriterText
+                    key={`guidance-${currentReplyIndex}`}
+                    text={SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
                     style={{
                       fontSize: 13,
                       lineHeight: 18,
                       color: textTertiary,
-                      flex: 1,
                     }}
-                  >
-                    {hasCompletedFirstCycle
-                      ? SUGGESTED_REPLIES[0].guidanceNote
-                      : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
-                  </Text>
-                )}
-              </View>
-            )}
+                    speed={70}
+                    onComplete={handleGuidanceComplete}
+                  />
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 18,
+                    color: textTertiary,
+                    flex: 1,
+                  }}
+                >
+                  {hasCompletedFirstCycle
+                    ? SUGGESTED_REPLIES[0].guidanceNote
+                    : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                </Text>
+              )}
+            </View>
 
-            {/* Action buttons row */}
-            {showReply && (hasCompletedFirstCycle || (!isTypingText && !isTypingGuidance)) && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: 12,
-                }}
-              >
-                {/* Primary action buttons */}
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  {/* Use this reply button */}
-                  <View
+            {/* Action buttons row - always rendered to maintain position */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 12,
+                opacity: showReply && (hasCompletedFirstCycle || (!isTypingText && !isTypingGuidance)) ? 1 : 0,
+              }}
+            >
+              {/* Primary action buttons */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                {/* Use this reply button */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 20,
+                    backgroundColor: buttonBg,
+                  }}
+                >
+                  <Ionicons name="copy-outline" size={14} color={buttonTextColor} />
+                  <Text
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 20,
-                      backgroundColor: buttonBg,
+                      fontSize: 13,
+                      fontWeight: "500",
+                      color: buttonTextColor,
                     }}
                   >
-                    <Ionicons name="copy-outline" size={14} color={buttonTextColor} />
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "500",
-                        color: buttonTextColor,
-                      }}
-                    >
-                      Use this reply
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Icon buttons row */}
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {/* Emoji button */}
-                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="happy-outline" size={16} color={iconColor} />
-                  </View>
-
-                  {/* Shorter button */}
-                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="remove-outline" size={16} color={iconColor} />
-                  </View>
-
-                  {/* Longer button */}
-                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="add-outline" size={16} color={iconColor} />
-                  </View>
-
-                  {/* Divider */}
-                  <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
-
-                  {/* Like button */}
-                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="thumbs-up-outline" size={16} color={iconColor} />
-                  </View>
-
-                  {/* Dislike button */}
-                  <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="thumbs-down-outline" size={16} color={iconColor} />
-                  </View>
+                    Use this reply
+                  </Text>
                 </View>
               </View>
-            )}
+
+              {/* Icon buttons row */}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {/* Emoji button */}
+                <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="happy-outline" size={16} color={iconColor} />
+                </View>
+
+                {/* Shorter button */}
+                <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="remove-outline" size={16} color={iconColor} />
+                </View>
+
+                {/* Longer button */}
+                <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="add-outline" size={16} color={iconColor} />
+                </View>
+
+                {/* Divider */}
+                <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
+
+                {/* Like button */}
+                <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="thumbs-up-outline" size={16} color={iconColor} />
+                </View>
+
+                {/* Dislike button */}
+                <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="thumbs-down-outline" size={16} color={iconColor} />
+                </View>
+              </View>
+            </View>
           </View>
         </Animated.View>
 
