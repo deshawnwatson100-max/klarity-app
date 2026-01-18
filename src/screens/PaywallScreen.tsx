@@ -125,6 +125,10 @@ export function PaywallScreen({ navigation }: Props) {
   const [isTypingText, setIsTypingText] = useState(true);
   const [isTypingGuidance, setIsTypingGuidance] = useState(false);
   const [showReply, setShowReply] = useState(true);
+  const [hasCompletedFirstCycle, setHasCompletedFirstCycle] = useState(false);
+
+  // Animation for text cycling (used after first cycle)
+  const textOpacity = useRef(new Animated.Value(1)).current;
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -173,53 +177,49 @@ export function PaywallScreen({ navigation }: Props) {
   // Cycle through suggested replies - text completes first, then guidance
   const handleTextComplete = () => {
     setIsTypingText(false);
-    setIsTypingGuidance(true);
+    if (!hasCompletedFirstCycle) {
+      // First cycle: show guidance with typewriter
+      setIsTypingGuidance(true);
+    } else {
+      // After first cycle: wait then cycle to next text only
+      setTimeout(() => {
+        // Fade out just the text
+        Animated.timing(textOpacity, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }).start(() => {
+          // Move to next reply
+          setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
+          setIsTypingText(true);
+
+          // Fade text back in
+          textOpacity.setValue(1);
+        });
+      }, 2000);
+    }
   };
 
   const handleGuidanceComplete = () => {
     setIsTypingGuidance(false);
-    // Wait, then fade out and show next reply
+    setHasCompletedFirstCycle(true);
+
+    // Wait, then start cycling only the text
     setTimeout(() => {
-      // Fade out card
-      Animated.parallel([
-        Animated.timing(cardOpacity, {
-          toValue: 0,
-          duration: 250,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardTranslateY, {
-          toValue: -4,
-          duration: 250,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
+      // Fade out just the text
+      Animated.timing(textOpacity, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start(() => {
         // Move to next reply
         setCurrentReplyIndex((prev) => (prev + 1) % SUGGESTED_REPLIES.length);
         setIsTypingText(true);
-        setIsTypingGuidance(false);
-        setShowReply(false);
 
-        // Reset position and fade in
-        cardTranslateY.setValue(4);
-        setTimeout(() => {
-          setShowReply(true);
-          Animated.parallel([
-            Animated.timing(cardOpacity, {
-              toValue: 1,
-              duration: 350,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }),
-            Animated.timing(cardTranslateY, {
-              toValue: 0,
-              duration: 350,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, 100);
+        // Fade text back in
+        textOpacity.setValue(1);
       });
     }, 2000);
   };
@@ -389,10 +389,11 @@ export function PaywallScreen({ navigation }: Props) {
             }}
           >
             {/* Reply text with accent glow - matching ReplyItem */}
-            <View
+            <Animated.View
               style={{
                 paddingLeft: 12,
                 position: "relative",
+                opacity: isTypingText ? 1 : textOpacity,
               }}
             >
               {/* Soft accent gradient left edge */}
@@ -432,10 +433,10 @@ export function PaywallScreen({ navigation }: Props) {
                   {SUGGESTED_REPLIES[currentReplyIndex].text}
                 </Text>
               ) : null}
-            </View>
+            </Animated.View>
 
             {/* Guidance Note - subtle */}
-            {showReply && !isTypingText && (
+            {showReply && !isTypingText && (isTypingGuidance || hasCompletedFirstCycle) && (
               <View
                 style={{
                   flexDirection: "row",
@@ -450,7 +451,7 @@ export function PaywallScreen({ navigation }: Props) {
                   color={textTertiary}
                   style={{ marginTop: 2, marginRight: 6 }}
                 />
-                {isTypingGuidance ? (
+                {isTypingGuidance && !hasCompletedFirstCycle ? (
                   <View style={{ flex: 1 }}>
                     <TypewriterText
                       key={`guidance-${currentReplyIndex}`}
@@ -473,14 +474,16 @@ export function PaywallScreen({ navigation }: Props) {
                       flex: 1,
                     }}
                   >
-                    {SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
+                    {hasCompletedFirstCycle
+                      ? SUGGESTED_REPLIES[0].guidanceNote
+                      : SUGGESTED_REPLIES[currentReplyIndex].guidanceNote}
                   </Text>
                 )}
               </View>
             )}
 
             {/* Action buttons row */}
-            {showReply && !isTypingText && !isTypingGuidance && (
+            {showReply && (hasCompletedFirstCycle || (!isTypingText && !isTypingGuidance)) && (
               <View
                 style={{
                   flexDirection: "row",
