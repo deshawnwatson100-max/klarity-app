@@ -389,19 +389,20 @@ export function PaywallScreen({ navigation }: Props) {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 10,
+              justifyContent: "center",
+              gap: 8,
             }}
           >
-            <KlarityLogo size={28} />
             <Text
               style={{
-                fontSize: 24,
+                fontSize: 32,
                 fontWeight: "700",
                 color: colors.textPrimary,
               }}
             >
               Klarity
             </Text>
+            <KlarityLogo size={32} />
           </View>
         </Animated.View>
 
