@@ -16,7 +16,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
-import { KlarityLogo } from "../components/KlarityLogo";
 import { TypewriterText } from "../components/TypewriterText";
 import {
   getOfferings,
@@ -390,7 +389,7 @@ export function PaywallScreen({ navigation }: Props) {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 10,
             }}
           >
             <Text
@@ -402,7 +401,23 @@ export function PaywallScreen({ navigation }: Props) {
             >
               Klarity
             </Text>
-            <KlarityLogo size={32} />
+            {/* New chat loop icon */}
+            <View style={{ position: "relative" }}>
+              <Ionicons name="chatbubble-outline" size={28} color={colors.textPrimary} />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={14} color={colors.textPrimary} />
+              </View>
+            </View>
           </View>
         </Animated.View>
 
