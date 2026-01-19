@@ -1585,7 +1585,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         {isProcessingVoice && <VoiceProcessingIndicator />}
       </KeyboardAvoidingView>
 
-      {/* Get Started Button - shown at bottom when onboarding is complete */}
+      {/* Get Started Button - dark gray button shown at bottom when onboarding is complete */}
       {showGetStarted && !isRecording && (
         <View
           style={{
