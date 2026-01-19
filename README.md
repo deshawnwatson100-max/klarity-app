@@ -74,7 +74,7 @@ A conversational setup experience powered by real AI that feels like getting per
 1. **AI Welcome** - Klarity warmly welcomes the user and asks what they would like to be called
 2. **Name Collection** - User enters their preferred name via text input
 3. **Experience Customization** - AI explains it wants to tailor their experience and asks what types of conversations they would like help with most (work, relationships, family, dating, friendships)
-4. **Transition to Questions** - AI acknowledges the user's input and introduces a series of quick questions
+4. **Intro to Questions** - AI acknowledges the user's input and explains that a few quick questions will help personalize their experience
 5. **Conversational Questions** - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles:
    - **Question 1:** "When conversations go wrong, what usually starts it?" (5 options)
    - **Question 2:** "When a response doesn't land, what usually happens?" (5 options)
@@ -82,7 +82,10 @@ A conversational setup experience powered by real AI that feels like getting per
    - **Question 4:** "After a confusing conversation, what do you usually do?" (5 options)
    - **Question 5:** "Using Klarity would help you avoid:" (5 options)
    - **Question 6:** "In these moments, the best outcome would feel like:" (5 options)
-6. **Completion** - AI summarizes understanding and explains how to use Klarity, then "Get Started" button appears
+6. **Personalized Summary** - AI generates a warm, empathetic summary based on all the user's responses that makes them feel heard, seen, and understood
+7. **Summary Confirmation** - User is asked "Does this feel right to you?" with Yes/No options
+   - If **Yes**: Completion message and Get Started button appear
+   - If **No**: User can type what's really going on for them, AI responds with an updated empathetic acknowledgment, then Get Started button appears
 
 #### Question Flow Design
 - Questions appear as regular chat messages from Klarity in the conversation

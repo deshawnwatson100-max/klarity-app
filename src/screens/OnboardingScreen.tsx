@@ -26,6 +26,7 @@ import { AIMessage } from "../types/ai";
 
 type OnboardingStep =
   | "welcome"
+  | "intro"
   | "name"
   | "situation"
   | "question_1"
@@ -34,15 +35,19 @@ type OnboardingStep =
   | "question_4"
   | "question_5"
   | "question_6"
+  | "summary"
+  | "summary_confirm"
+  | "summary_correction"
   | "complete";
 
 interface Message {
   id: string;
-  type: "bot" | "user" | "options";
+  type: "bot" | "user" | "options" | "confirmation";
   content: string;
   options?: string[];
   questionKey?: keyof OnboardingAnswers;
   selectedOption?: string | null;
+  confirmationType?: "summary";
 }
 
 interface OnboardingScreenProps {
@@ -162,6 +167,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userSituationContext, setUserSituationContext] = useState("");
+  const [generatedSummary, setGeneratedSummary] = useState("");
+  const [localUserName, setLocalUserName] = useState("");
+  const [collectedAnswers, setCollectedAnswers] = useState<Record<string, string>>({});
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setOnboardingAnswer = useOnboardingStore((s) => s.setOnboardingAnswer);
@@ -209,6 +217,21 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         content: "",
         options,
         questionKey,
+        selectedOption: null,
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      scrollToBottom();
+    },
+    [scrollToBottom]
+  );
+
+  const addConfirmationMessage = useCallback(
+    (confirmationType: "summary") => {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        type: "confirmation",
+        content: "",
+        confirmationType,
         selectedOption: null,
       };
       setMessages((prev) => [...prev, newMessage]);
@@ -291,6 +314,50 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     [addBotMessage, addOptionsMessage, scrollToBottom]
   );
 
+  const generateUserSummary = useCallback(
+    async (answers: Record<string, string>, situationContext: string, userName: string) => {
+      setIsTyping(true);
+      scrollToBottom();
+
+      try {
+        const summaryPrompt = `Based on what the user shared during onboarding, create a warm, empathetic summary that makes them feel truly heard and understood.
+
+User's name: ${userName}
+What they need help with: ${situationContext}
+Their answers:
+- What starts conversations going wrong: ${answers.conversationTrigger}
+- What happens when responses don't land: ${answers.responseOutcome}
+- What it costs them most: ${answers.conversationCost}
+- What they do after confusing conversations: ${answers.afterConfusion}
+- What Klarity helps them avoid: ${answers.klarityHelps}
+- What the best outcome feels like: ${answers.bestOutcome}
+
+Write a 2-3 sentence summary that:
+1. Reflects back what you heard in a way that shows deep understanding
+2. Validates their experience without being clinical
+3. Speaks to their core desire (what they want to feel or achieve)
+
+Keep it warm, personal, and conversational. Use "you" to speak directly to them. Don't be overly formal or therapeutic. Make them feel seen.`;
+
+        const response = await getOpenAITextResponse(
+          [
+            { role: "system", content: "You are Klarity's empathetic onboarding assistant. Your goal is to make users feel deeply understood and validated." },
+            { role: "user", content: summaryPrompt },
+          ],
+          { temperature: 0.85, maxTokens: 200 }
+        );
+
+        setIsTyping(false);
+        return response.content;
+      } catch (error) {
+        console.error("Summary generation error:", error);
+        setIsTyping(false);
+        return `I hear you, ${userName}. You want your conversations to feel smoother and more confident - less second-guessing, more clarity. That makes complete sense.`;
+      }
+    },
+    [scrollToBottom]
+  );
+
   const handleOptionSelect = useCallback(
     async (option: string, questionKey: keyof OnboardingAnswers, messageId: string) => {
       // Update the message to show selection
@@ -298,6 +365,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
       // Save the answer
       setOnboardingAnswer(questionKey, option);
+
+      // Track answer locally for summary generation
+      setCollectedAnswers(prev => ({ ...prev, [questionKey]: option }));
 
       // Add user's selection as a message
       setTimeout(() => {
@@ -316,19 +386,36 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           askQuestion(nextIndex);
         }, 500);
       } else {
-        // All questions complete - show final message
-        setIsTyping(true);
-        scrollToBottom();
+        // All questions complete - generate personalized summary
+        setCurrentStep("summary");
+
+        // Collect all answers including this final one
+        const allAnswers = { ...collectedAnswers, [questionKey]: option };
 
         setTimeout(async () => {
-          setIsTyping(false);
-          addBotMessage(
-            "Got it. I have a good sense of how to help you now. Just paste or type any message - use Decode to understand it, or Reply to craft your response."
-          );
+          const summary = await generateUserSummary(allAnswers, userSituationContext, localUserName);
+          setGeneratedSummary(summary);
 
-          setCurrentStep("complete");
-          setTimeout(() => setShowGetStarted(true), 1000);
-        }, 800);
+          // Show the summary
+          addBotMessage(summary);
+
+          // Ask if this resonates
+          setTimeout(() => {
+            setIsTyping(true);
+            scrollToBottom();
+
+            setTimeout(() => {
+              setIsTyping(false);
+              addBotMessage("Does this feel right to you?");
+
+              // Add confirmation options
+              setTimeout(() => {
+                setCurrentStep("summary_confirm");
+                addConfirmationMessage("summary");
+              }, 300);
+            }, 600);
+          }, 800);
+        }, 500);
       }
     },
     [
@@ -339,7 +426,53 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       askQuestion,
       addBotMessage,
       scrollToBottom,
+      generateUserSummary,
+      collectedAnswers,
+      userSituationContext,
+      localUserName,
+      addConfirmationMessage,
     ]
+  );
+
+  const handleSummaryConfirmation = useCallback(
+    async (confirmed: boolean, messageId: string) => {
+      // Update the message to show selection
+      updateOptionSelection(messageId, confirmed ? "Yes" : "No");
+
+      // Add user's response as a message
+      setTimeout(() => {
+        addUserMessage(confirmed ? "Yes, that feels right" : "Not quite");
+      }, 200);
+
+      if (confirmed) {
+        // User agrees - show completion message and Get Started button
+        setIsTyping(true);
+        scrollToBottom();
+
+        setTimeout(() => {
+          setIsTyping(false);
+          addBotMessage(
+            "Great! I am here to help you navigate your conversations with clarity and confidence. Just paste or type any message - use Decode to understand it, or Reply to craft your response."
+          );
+
+          setCurrentStep("complete");
+          setTimeout(() => setShowGetStarted(true), 1000);
+        }, 800);
+      } else {
+        // User disagrees - allow them to share more
+        setCurrentStep("summary_correction");
+        setInputPlaceholder("Share what feels more accurate...");
+
+        setIsTyping(true);
+        scrollToBottom();
+
+        setTimeout(() => {
+          setIsTyping(false);
+          addBotMessage("I want to understand you better. What would you say is really going on for you?");
+        }, 600);
+      }
+    },
+    [updateOptionSelection, addUserMessage, addBotMessage, scrollToBottom]
   );
 
   // Focus input on mount
@@ -404,6 +537,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
     if (currentStep === "name") {
       setUserName(input);
+      setLocalUserName(input);
       setCurrentStep("situation");
       setInputPlaceholder("Type your answer...");
 
@@ -414,25 +548,83 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       // Save the context for later use
       setUserSituationContext(input);
 
-      // Acknowledge their input and transition to questions
+      // Acknowledge their input and transition to intro
       setIsTyping(true);
       scrollToBottom();
 
       setTimeout(async () => {
         setIsTyping(false);
 
-        // Acknowledge based on what they said
-        const acknowledgment = `That makes sense. Let me ask you a few quick questions to understand how I can help you best.`;
-        addBotMessage(acknowledgment);
+        // Acknowledge and explain that questions will help customize
+        addBotMessage("I appreciate you sharing that with me.");
 
-        // Start the question flow
-        setCurrentStep("question_1");
-        setCurrentQuestionIndex(0);
-
+        // Show intro message explaining questions help customize
         setTimeout(() => {
-          askQuestion(0);
+          setIsTyping(true);
+          scrollToBottom();
+
+          setTimeout(() => {
+            setIsTyping(false);
+            addBotMessage("I am going to ask you a few quick questions so I can personalize Klarity just for you. This will help me understand exactly how to support you best.");
+
+            // Start the question flow
+            setCurrentStep("question_1");
+            setCurrentQuestionIndex(0);
+
+            setTimeout(() => {
+              askQuestion(0);
+            }, 800);
+          }, 700);
         }, 600);
       }, 800);
+    } else if (currentStep === "summary_correction") {
+      // User is sharing what they really have going on
+      setIsTyping(true);
+      scrollToBottom();
+
+      try {
+        // Generate a new empathetic response based on their input
+        const correctionPrompt = `The user didn't feel understood by our initial summary. They shared this about what's really going on for them: "${input}"
+
+Write a warm, empathetic 1-2 sentence response that:
+1. Shows you truly hear and understand them now
+2. Validates their experience
+3. Makes them feel seen
+
+Don't apologize excessively. Just reflect back what you now understand with warmth.`;
+
+        const response = await getOpenAITextResponse(
+          [
+            { role: "system", content: "You are Klarity's empathetic onboarding assistant. Your goal is to make users feel deeply understood and validated." },
+            { role: "user", content: correctionPrompt },
+          ],
+          { temperature: 0.85, maxTokens: 150 }
+        );
+
+        setIsTyping(false);
+        addBotMessage(response.content);
+
+        // Show completion message and Get Started button
+        setTimeout(() => {
+          setIsTyping(true);
+          scrollToBottom();
+
+          setTimeout(() => {
+            setIsTyping(false);
+            addBotMessage("I am here to help you navigate your conversations with more clarity. Just paste or type any message when you are ready.");
+
+            setCurrentStep("complete");
+            setTimeout(() => setShowGetStarted(true), 1000);
+          }, 800);
+        }, 1000);
+      } catch (error) {
+        console.error("Correction response error:", error);
+        setIsTyping(false);
+        addBotMessage("Thank you for sharing that. I hear you, and I am here to help.");
+
+        setCurrentStep("complete");
+        setTimeout(() => setShowGetStarted(true), 1000);
+      }
     }
   };
 
@@ -504,6 +696,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         if (currentStep === "name") {
           setUserName(transcription);
+          setLocalUserName(transcription);
           setCurrentStep("situation");
           setInputPlaceholder("Type your answer...");
 
@@ -518,16 +711,74 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           setTimeout(async () => {
             setIsTyping(false);
 
-            const acknowledgment = `That makes sense. Let me ask you a few quick questions to understand how I can help you best.`;
-            addBotMessage(acknowledgment);
+            // Acknowledge and explain that questions will help customize
+            addBotMessage("I appreciate you sharing that with me.");
 
-            setCurrentStep("question_1");
-            setCurrentQuestionIndex(0);
-
+            // Show intro message explaining questions help customize
             setTimeout(() => {
-              askQuestion(0);
+              setIsTyping(true);
+              scrollToBottom();
+
+              setTimeout(() => {
+                setIsTyping(false);
+                addBotMessage("I am going to ask you a few quick questions so I can personalize Klarity just for you. This will help me understand exactly how to support you best.");
+
+                // Start the question flow
+                setCurrentStep("question_1");
+                setCurrentQuestionIndex(0);
+
+                setTimeout(() => {
+                  askQuestion(0);
+                }, 800);
+              }, 700);
             }, 600);
           }, 800);
+        } else if (currentStep === "summary_correction") {
+          // User is sharing what they really have going on via voice
+          setIsTyping(true);
+          scrollToBottom();
+
+          try {
+            const correctionPrompt = `The user didn't feel understood by our initial summary. They shared this about what's really going on for them: "${transcription}"
+
+Write a warm, empathetic 1-2 sentence response that:
+1. Shows you truly hear and understand them now
+2. Validates their experience
+3. Makes them feel seen
+
+Don't apologize excessively. Just reflect back what you now understand with warmth.`;
+
+            const response = await getOpenAITextResponse(
+              [
+                { role: "system", content: "You are Klarity's empathetic onboarding assistant. Your goal is to make users feel deeply understood and validated." },
+                { role: "user", content: correctionPrompt },
+              ],
+              { temperature: 0.85, maxTokens: 150 }
+            );
+
+            setIsTyping(false);
+            addBotMessage(response.content);
+
+            setTimeout(() => {
+              setIsTyping(true);
+              scrollToBottom();
+
+              setTimeout(() => {
+                setIsTyping(false);
+                addBotMessage("I am here to help you navigate your conversations with more clarity. Just paste or type any message when you are ready.");
+
+                setCurrentStep("complete");
+                setTimeout(() => setShowGetStarted(true), 1000);
+              }, 800);
+            }, 1000);
+          } catch (error) {
+            console.error("Correction response error:", error);
+            setIsTyping(false);
+            addBotMessage("Thank you for sharing that. I hear you, and I am here to help.");
+
+            setCurrentStep("complete");
+            setTimeout(() => setShowGetStarted(true), 1000);
+          }
         }
       } catch (transcriptionError) {
         console.error("Transcription error:", transcriptionError);
@@ -595,6 +846,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   // Check if we're in question mode (should hide input bar)
   const isInQuestionMode = currentStep.startsWith("question_");
+  const isInSummaryConfirmMode = currentStep === "summary_confirm" || currentStep === "summary";
 
   const renderMessage = (message: Message) => {
     if (message.type === "user") {
@@ -620,6 +872,74 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           disabled={message.selectedOption !== null}
           selectedOption={message.selectedOption}
         />
+      );
+    }
+
+    if (message.type === "confirmation") {
+      const isDisabled = message.selectedOption !== null;
+      return (
+        <View key={message.id} className="flex-row justify-center mt-4 mb-2" style={{ gap: 12 }}>
+          <Pressable
+            onPress={() => {
+              if (!isDisabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleSummaryConfirmation(true, message.id);
+              }
+            }}
+            disabled={isDisabled}
+            style={({ pressed }) => ({
+              paddingHorizontal: 28,
+              paddingVertical: 14,
+              borderRadius: 20,
+              backgroundColor: message.selectedOption === "Yes"
+                ? (isDark ? "#FFFFFF" : "#1C1C1E")
+                : (isDark ? "#2A2A2C" : "#F2F2F7"),
+              opacity: isDisabled && message.selectedOption !== "Yes" ? 0.5 : (pressed ? 0.8 : 1),
+            })}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: message.selectedOption === "Yes"
+                  ? (isDark ? "#1C1C1E" : "#FFFFFF")
+                  : colors.textPrimary,
+              }}
+            >
+              Yes
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (!isDisabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleSummaryConfirmation(false, message.id);
+              }
+            }}
+            disabled={isDisabled}
+            style={({ pressed }) => ({
+              paddingHorizontal: 28,
+              paddingVertical: 14,
+              borderRadius: 20,
+              backgroundColor: message.selectedOption === "No"
+                ? (isDark ? "#FFFFFF" : "#1C1C1E")
+                : (isDark ? "#2A2A2C" : "#F2F2F7"),
+              opacity: isDisabled && message.selectedOption !== "No" ? 0.5 : (pressed ? 0.8 : 1),
+            })}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: message.selectedOption === "No"
+                  ? (isDark ? "#1C1C1E" : "#FFFFFF")
+                  : colors.textPrimary,
+              }}
+            >
+              Not quite
+            </Text>
+          </Pressable>
+        </View>
       );
     }
 
@@ -823,7 +1143,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInQuestionMode && (
+        {!isRecording && !showGetStarted && !isInQuestionMode && !isInSummaryConfirmMode && (
           <InputBar
             ref={inputRef}
             value={userInput}
