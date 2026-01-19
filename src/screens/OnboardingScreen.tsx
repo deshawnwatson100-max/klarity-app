@@ -8,6 +8,14 @@ import {
   Platform,
   Keyboard,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
@@ -146,6 +154,119 @@ Do NOT:
 - Sound like a therapist or counselor
 - Use clinical language
 - Be overly enthusiastic or use exclamation marks excessively`;
+
+// Shaking button component for "Let's do it!"
+interface ShakingLetsDoItButtonProps {
+  isDisabled: boolean;
+  selectedOption: string | null | undefined;
+  isDark: boolean;
+  colors: { textTertiary: string };
+  onContinue: () => void;
+  onSkip: () => void;
+}
+
+function ShakingLetsDoItButton({
+  isDisabled,
+  selectedOption,
+  isDark,
+  colors,
+  onContinue,
+  onSkip,
+}: ShakingLetsDoItButtonProps) {
+  const shakeX = useSharedValue(0);
+
+  useEffect(() => {
+    if (!isDisabled) {
+      // Start shaking animation after a brief delay
+      const timeout = setTimeout(() => {
+        shakeX.value = withRepeat(
+          withSequence(
+            withTiming(-3, { duration: 50, easing: Easing.linear }),
+            withTiming(3, { duration: 100, easing: Easing.linear }),
+            withTiming(-3, { duration: 100, easing: Easing.linear }),
+            withTiming(3, { duration: 100, easing: Easing.linear }),
+            withTiming(0, { duration: 50, easing: Easing.linear }),
+            withTiming(0, { duration: 2000 }) // Pause between shakes
+          ),
+          -1, // Infinite repeat
+          false
+        );
+
+        // Trigger gentle haptic on each shake cycle
+        const hapticInterval = setInterval(() => {
+          if (!isDisabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        }, 2400); // Match the full animation cycle duration
+
+        return () => clearInterval(hapticInterval);
+      }, 800);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isDisabled, shakeX]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
+
+  return (
+    <View className="mt-4 mb-2" style={{ gap: 20 }}>
+      {/* Continue button - primary action, large and prominent */}
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          onPress={onContinue}
+          disabled={isDisabled}
+          style={({ pressed }) => ({
+            paddingHorizontal: 32,
+            paddingVertical: 20,
+            borderRadius: 20,
+            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+            borderWidth: 1,
+            borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+            opacity: isDisabled && selectedOption !== "Continue" ? 0.5 : (pressed ? 0.85 : 1),
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 5,
+          })}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: isDark ? "#FFFFFF" : "#1C1C1E",
+              textAlign: "center",
+            }}
+          >
+            {"Let's do it!"}
+          </Text>
+        </Pressable>
+      </Animated.View>
+      {/* Skip button - secondary, subtle text link style */}
+      <Pressable
+        onPress={onSkip}
+        disabled={isDisabled}
+        style={({ pressed }) => ({
+          paddingVertical: 10,
+          opacity: isDisabled && selectedOption !== "Skip" ? 0.3 : (pressed ? 0.5 : 1),
+        })}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "400",
+            color: colors.textTertiary,
+            textAlign: "center",
+          }}
+        >
+          Skip for now
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
@@ -971,68 +1092,25 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     if (message.type === "skip_choice") {
       const isDisabled = message.selectedOption !== null;
       return (
-        <View key={message.id} className="mt-4 mb-2" style={{ gap: 20 }}>
-          {/* Continue button - primary action, large and prominent */}
-          <Pressable
-            onPress={() => {
-              if (!isDisabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                handleSkipChoice(true, message.id);
-              }
-            }}
-            disabled={isDisabled}
-            style={({ pressed }) => ({
-              paddingHorizontal: 32,
-              paddingVertical: 20,
-              borderRadius: 20,
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderWidth: 1,
-              borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
-              opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.85 : 1),
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-              elevation: 5,
-            })}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: isDark ? "#FFFFFF" : "#1C1C1E",
-                textAlign: "center",
-              }}
-            >
-              {"Let's do it"}
-            </Text>
-          </Pressable>
-          {/* Skip button - secondary, subtle text link style */}
-          <Pressable
-            onPress={() => {
-              if (!isDisabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                handleSkipChoice(false, message.id);
-              }
-            }}
-            disabled={isDisabled}
-            style={({ pressed }) => ({
-              paddingVertical: 10,
-              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.3 : (pressed ? 0.5 : 1),
-            })}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "400",
-                color: colors.textTertiary,
-                textAlign: "center",
-              }}
-            >
-              Skip for now
-            </Text>
-          </Pressable>
-        </View>
+        <ShakingLetsDoItButton
+          key={message.id}
+          isDisabled={isDisabled}
+          selectedOption={message.selectedOption}
+          isDark={isDark}
+          colors={colors}
+          onContinue={() => {
+            if (!isDisabled) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleSkipChoice(true, message.id);
+            }
+          }}
+          onSkip={() => {
+            if (!isDisabled) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleSkipChoice(false, message.id);
+            }
+          }}
+        />
       );
     }
 
@@ -1304,15 +1382,15 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isInSkipPromptMode && (
+        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && (
           <InputBar
             ref={inputRef}
             value={userInput}
             onChangeText={setUserInput}
             onSend={handleSubmit}
             onVoicePress={handleVoicePress}
-            placeholder={isInQuestionMode ? "Or type your own answer..." : inputPlaceholder}
-            autoFocus={!isInQuestionMode}
+            placeholder={isInQuestionMode || isInSkipPromptMode ? "Or type your own answer..." : inputPlaceholder}
+            autoFocus={!isInQuestionMode && !isInSkipPromptMode}
             isRecording={isRecording}
           />
         )}
