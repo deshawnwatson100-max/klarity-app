@@ -1603,19 +1603,18 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         >
           <Pressable
             onPress={handleGetStarted}
-            style={({ pressed }) => ({
+            style={{
               width: "100%",
               paddingVertical: 16,
               borderRadius: 16,
               backgroundColor: "#4A4A4C",
               alignItems: "center",
-              opacity: pressed ? 0.8 : 1,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
               shadowRadius: 4,
               elevation: 5,
-            })}
+            }}
           >
             <Text
               style={{
