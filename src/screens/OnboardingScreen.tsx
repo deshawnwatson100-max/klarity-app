@@ -1598,13 +1598,14 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             paddingBottom: Math.max(insets.bottom, 16),
             zIndex: 999,
             backgroundColor: colors.headerBackground,
+            alignItems: "flex-start",
           }}
           pointerEvents="box-none"
         >
           <Pressable
             onPress={handleGetStarted}
             style={{
-              width: "100%",
+              paddingHorizontal: 24,
               paddingVertical: 16,
               borderRadius: 16,
               backgroundColor: "#4A4A4C",
@@ -1623,7 +1624,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
                 fontSize: 16,
               }}
             >
-              Get Started
+              Get Started!
             </Text>
           </Pressable>
         </View>
