@@ -938,7 +938,9 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               paddingHorizontal: 32,
               paddingVertical: 20,
               borderRadius: 20,
-              backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+              borderWidth: 1,
+              borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
               opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.85 : 1),
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
@@ -951,7 +953,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               style={{
                 fontSize: 18,
                 fontWeight: "700",
-                color: isDark ? "#1C1C1E" : "#FFFFFF",
+                color: isDark ? "#FFFFFF" : "#1C1C1E",
                 textAlign: "center",
               }}
             >
