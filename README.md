@@ -74,8 +74,11 @@ A conversational setup experience powered by real AI that feels like getting per
 1. **AI Welcome** - Klarity warmly welcomes the user and asks what they would like to be called
 2. **Name Collection** - User enters their preferred name via text input
 3. **Experience Customization** - AI explains it wants to tailor their experience and asks what types of conversations they would like help with most (work, relationships, family, dating, friendships)
-4. **Intro to Questions** - AI acknowledges the user's input and explains that a few quick questions will help personalize their experience
-5. **Conversational Questions** - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles:
+4. **Intro to Questions with Skip Option** - AI acknowledges the user's input and presents:
+   - ETA: "6 quick questions that take about 1 minute"
+   - Benefits: "They help me understand how you communicate so I can give you more personalized insights and better responses"
+   - Two options: "Let's do it" (primary) or "Skip for now" (secondary)
+5. **Conversational Questions** (if user continues) - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles:
    - **Question 1:** "When conversations go wrong, what usually starts it?" (5 options)
    - **Question 2:** "When a response doesn't land, what usually happens?" (5 options)
    - **Question 3:** "When this happens, what does it cost you most?" (5 options)
@@ -86,6 +89,7 @@ A conversational setup experience powered by real AI that feels like getting per
 7. **Summary Confirmation** - User is asked "Does this feel right to you?" with Yes/No options
    - If **Yes**: Completion message and Get Started button appear
    - If **No**: User can type what's really going on for them, AI responds with an updated empathetic acknowledgment, then Get Started button appears
+   - If **Skipped questions**: User goes directly to completion with a friendly message acknowledging they can personalize later
 
 #### Question Flow Design
 - Questions appear as regular chat messages from Klarity in the conversation

@@ -29,6 +29,7 @@ type OnboardingStep =
   | "intro"
   | "name"
   | "situation"
+  | "skip_prompt"
   | "question_1"
   | "question_2"
   | "question_3"
@@ -42,7 +43,7 @@ type OnboardingStep =
 
 interface Message {
   id: string;
-  type: "bot" | "user" | "options" | "confirmation";
+  type: "bot" | "user" | "options" | "confirmation" | "skip_choice";
   content: string;
   options?: string[];
   questionKey?: keyof OnboardingAnswers;
@@ -239,6 +240,17 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     },
     [scrollToBottom]
   );
+
+  const addSkipChoiceMessage = useCallback(() => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: "skip_choice",
+      content: "",
+      selectedOption: null,
+    };
+    setMessages((prev) => [...prev, newMessage]);
+    scrollToBottom();
+  }, [scrollToBottom]);
 
   const updateOptionSelection = useCallback((messageId: string, selectedOption: string) => {
     setMessages((prev) =>
@@ -475,6 +487,43 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     [updateOptionSelection, addUserMessage, addBotMessage, scrollToBottom]
   );
 
+  const handleSkipChoice = useCallback(
+    async (shouldContinue: boolean, messageId: string) => {
+      // Update the message to show selection
+      updateOptionSelection(messageId, shouldContinue ? "Continue" : "Skip");
+
+      // Add user's response as a message
+      setTimeout(() => {
+        addUserMessage(shouldContinue ? "Let's do it" : "Skip for now");
+      }, 200);
+
+      if (shouldContinue) {
+        // User wants to continue with questions
+        setCurrentStep("question_1");
+        setCurrentQuestionIndex(0);
+
+        setTimeout(() => {
+          askQuestion(0);
+        }, 500);
+      } else {
+        // User wants to skip - go straight to completion
+        setIsTyping(true);
+        scrollToBottom();
+
+        setTimeout(() => {
+          setIsTyping(false);
+          addBotMessage(
+            "No problem! You can always come back to personalize your experience later. Just paste or type any message - use Decode to understand it, or Reply to craft your response."
+          );
+
+          setCurrentStep("complete");
+          setTimeout(() => setShowGetStarted(true), 1000);
+        }, 800);
+      }
+    },
+    [updateOptionSelection, addUserMessage, addBotMessage, scrollToBottom, askQuestion]
+  );
+
   // Focus input on mount
   useEffect(() => {
     setTimeout(() => {
@@ -548,32 +597,30 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       // Save the context for later use
       setUserSituationContext(input);
 
-      // Acknowledge their input and transition to intro
+      // Acknowledge their input and transition to skip prompt
       setIsTyping(true);
       scrollToBottom();
 
       setTimeout(async () => {
         setIsTyping(false);
 
-        // Acknowledge and explain that questions will help customize
+        // Acknowledge what they shared
         addBotMessage("I appreciate you sharing that with me.");
 
-        // Show intro message explaining questions help customize
+        // Show intro message with ETA and benefits
         setTimeout(() => {
           setIsTyping(true);
           scrollToBottom();
 
           setTimeout(() => {
             setIsTyping(false);
-            addBotMessage("I am going to ask you a few quick questions so I can personalize Klarity just for you. This will help me understand exactly how to support you best.");
+            addBotMessage("I have 6 quick questions that take about 1 minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
-            // Start the question flow
-            setCurrentStep("question_1");
-            setCurrentQuestionIndex(0);
-
+            // Show the skip choice
             setTimeout(() => {
-              askQuestion(0);
-            }, 800);
+              setCurrentStep("skip_prompt");
+              addSkipChoiceMessage();
+            }, 400);
           }, 700);
         }, 600);
       }, 800);
@@ -711,25 +758,23 @@ Don't apologize excessively. Just reflect back what you now understand with warm
           setTimeout(async () => {
             setIsTyping(false);
 
-            // Acknowledge and explain that questions will help customize
+            // Acknowledge what they shared
             addBotMessage("I appreciate you sharing that with me.");
 
-            // Show intro message explaining questions help customize
+            // Show intro message with ETA and benefits
             setTimeout(() => {
               setIsTyping(true);
               scrollToBottom();
 
               setTimeout(() => {
                 setIsTyping(false);
-                addBotMessage("I am going to ask you a few quick questions so I can personalize Klarity just for you. This will help me understand exactly how to support you best.");
+                addBotMessage("I have 6 quick questions that take about 1 minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
-                // Start the question flow
-                setCurrentStep("question_1");
-                setCurrentQuestionIndex(0);
-
+                // Show the skip choice
                 setTimeout(() => {
-                  askQuestion(0);
-                }, 800);
+                  setCurrentStep("skip_prompt");
+                  addSkipChoiceMessage();
+                }, 400);
               }, 700);
             }, 600);
           }, 800);
@@ -847,6 +892,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
   // Check if we're in question mode (should hide input bar)
   const isInQuestionMode = currentStep.startsWith("question_");
   const isInSummaryConfirmMode = currentStep === "summary_confirm" || currentStep === "summary";
+  const isInSkipPromptMode = currentStep === "skip_prompt";
 
   const renderMessage = (message: Message) => {
     if (message.type === "user") {
@@ -872,6 +918,69 @@ Don't apologize excessively. Just reflect back what you now understand with warm
           disabled={message.selectedOption !== null}
           selectedOption={message.selectedOption}
         />
+      );
+    }
+
+    if (message.type === "skip_choice") {
+      const isDisabled = message.selectedOption !== null;
+      return (
+        <View key={message.id} className="mt-4 mb-2" style={{ gap: 12 }}>
+          {/* Continue button - primary action */}
+          <Pressable
+            onPress={() => {
+              if (!isDisabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleSkipChoice(true, message.id);
+              }
+            }}
+            disabled={isDisabled}
+            style={({ pressed }) => ({
+              paddingHorizontal: 24,
+              paddingVertical: 16,
+              borderRadius: 16,
+              backgroundColor: message.selectedOption === "Continue"
+                ? (isDark ? "#FFFFFF" : "#1C1C1E")
+                : (isDark ? "#FFFFFF" : "#1C1C1E"),
+              opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.8 : 1),
+            })}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: isDark ? "#1C1C1E" : "#FFFFFF",
+                textAlign: "center",
+              }}
+            >
+              {"Let's do it"}
+            </Text>
+          </Pressable>
+          {/* Skip button - secondary action */}
+          <Pressable
+            onPress={() => {
+              if (!isDisabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleSkipChoice(false, message.id);
+              }
+            }}
+            disabled={isDisabled}
+            style={({ pressed }) => ({
+              paddingVertical: 12,
+              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.3 : (pressed ? 0.6 : 1),
+            })}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: colors.textTertiary,
+                textAlign: "center",
+              }}
+            >
+              Skip for now
+            </Text>
+          </Pressable>
+        </View>
       );
     }
 
@@ -1143,7 +1252,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInQuestionMode && !isInSummaryConfirmMode && (
+        {!isRecording && !showGetStarted && !isInQuestionMode && !isInSummaryConfirmMode && !isInSkipPromptMode && (
           <InputBar
             ref={inputRef}
             value={userInput}
