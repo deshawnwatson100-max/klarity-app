@@ -1443,7 +1443,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4"
-          contentContainerStyle={{ paddingVertical: 20 }}
+          contentContainerStyle={{ paddingVertical: 20, paddingBottom: showGetStarted ? 80 : 20 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
