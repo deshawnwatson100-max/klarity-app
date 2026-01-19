@@ -1607,19 +1607,11 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             style={{
               paddingHorizontal: 24,
               paddingVertical: 16,
-              borderRadius: 16,
-              backgroundColor: "#4A4A4C",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 5,
             }}
           >
             <Text
               style={{
-                color: "#FFFFFF",
+                color: "#4A4A4C",
                 fontWeight: "600",
                 fontSize: 16,
               }}
