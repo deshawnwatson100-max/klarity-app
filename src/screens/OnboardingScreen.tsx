@@ -28,7 +28,7 @@ type OnboardingStep =
   | "welcome"
   | "intro"
   | "name"
-  | "situation"
+  | "primary_use_case"
   | "skip_prompt"
   | "question_1"
   | "question_2"
@@ -43,7 +43,7 @@ type OnboardingStep =
 
 interface Message {
   id: string;
-  type: "bot" | "user" | "options" | "confirmation" | "skip_choice";
+  type: "bot" | "user" | "options" | "confirmation" | "skip_choice" | "use_case";
   content: string;
   options?: string[];
   questionKey?: keyof OnboardingAnswers;
@@ -377,6 +377,17 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     scrollToBottom();
   }, [scrollToBottom]);
 
+  const addUseCaseMessage = useCallback(() => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: "use_case",
+      content: "",
+      selectedOption: null,
+    };
+    setMessages((prev) => [...prev, newMessage]);
+    scrollToBottom();
+  }, [scrollToBottom]);
+
   const updateOptionSelection = useCallback((messageId: string, selectedOption: string) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -649,6 +660,42 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     [updateOptionSelection, addUserMessage, addBotMessage, scrollToBottom, askQuestion]
   );
 
+  const setPrimaryUseCase = useOnboardingStore((s) => s.setPrimaryUseCase);
+
+  const handleUseCaseSelect = useCallback(
+    async (useCase: string, messageId: string) => {
+      // Update the message to show selection
+      updateOptionSelection(messageId, useCase);
+
+      // Save to store
+      setPrimaryUseCase(useCase);
+      setUserSituationContext(useCase);
+
+      // Add user's selection as a message
+      setTimeout(() => {
+        addUserMessage(useCase);
+      }, 200);
+
+      // Show intro message with ETA and benefits
+      setTimeout(() => {
+        setIsTyping(true);
+        scrollToBottom();
+
+        setTimeout(() => {
+          setIsTyping(false);
+          addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+
+          // Show the skip choice
+          setTimeout(() => {
+            setCurrentStep("skip_prompt");
+            addSkipChoiceMessage();
+          }, 400);
+        }, 700);
+      }, 500);
+    },
+    [updateOptionSelection, setPrimaryUseCase, addUserMessage, addBotMessage, scrollToBottom, addSkipChoiceMessage]
+  );
+
   // Focus input on mount
   useEffect(() => {
     setTimeout(() => {
@@ -712,85 +759,22 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     if (currentStep === "name") {
       setUserName(input);
       setLocalUserName(input);
-      setCurrentStep("situation");
+      setCurrentStep("primary_use_case");
       setInputPlaceholder("Type your answer...");
 
-      // Ask about conversation types
-      const contextMessage = `The user said their name is "${input}". Acknowledge their name warmly in 1 sentence, then ask what types of communication support they find themselves needing most. Keep it brief and conversational.`;
-      await getAIResponse(contextMessage);
-    } else if (currentStep === "situation") {
-      // Save the context for later use
-      setUserSituationContext(input);
-
-      // Acknowledge their input and transition to skip prompt
+      // Ask about primary use case and show options
       setIsTyping(true);
       scrollToBottom();
 
-      try {
-        // Generate a dynamic response based on the length and content of their message
-        const isLongMessage = input.length > 100;
-        const acknowledgmentPrompt = isLongMessage
-          ? `The user shared this about what they need help with: "${input}"
-
-They wrote a detailed message, which shows they have a lot on their mind. Write a warm, reassuring 1-2 sentence response that:
-1. Acknowledges that they came to the right place
-2. Validates their situation without being clinical
-3. Gives them confidence that Klarity can help with their specific needs
-
-Keep it conversational and supportive. Don't repeat back their exact words.`
-          : `The user shared this about what they need help with: "${input}"
-
-Write a brief, warm 1 sentence acknowledgment that shows you heard them and appreciate them sharing. Keep it simple and conversational.`;
-
-        const response = await getOpenAITextResponse(
-          [
-            { role: "system", content: "You are Klarity's friendly setup assistant. Be warm, brief, and conversational. Never sound clinical or overly enthusiastic." },
-            { role: "user", content: acknowledgmentPrompt },
-          ],
-          { temperature: 0.8, maxTokens: 100 }
-        );
-
+      setTimeout(() => {
         setIsTyping(false);
-        addBotMessage(response.content);
+        addBotMessage(`Nice to meet you, ${input}! What do you mostly need help with?`);
 
-        // Show intro message with ETA and benefits
+        // Add use case options
         setTimeout(() => {
-          setIsTyping(true);
-          scrollToBottom();
-
-          setTimeout(() => {
-            setIsTyping(false);
-            addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
-
-            // Show the skip choice
-            setTimeout(() => {
-              setCurrentStep("skip_prompt");
-              addSkipChoiceMessage();
-            }, 400);
-          }, 700);
-        }, 600);
-      } catch (error) {
-        console.error("Acknowledgment response error:", error);
-        setIsTyping(false);
-        addBotMessage("I appreciate you sharing that with me.");
-
-        // Show intro message with ETA and benefits
-        setTimeout(() => {
-          setIsTyping(true);
-          scrollToBottom();
-
-          setTimeout(() => {
-            setIsTyping(false);
-            addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
-
-            // Show the skip choice
-            setTimeout(() => {
-              setCurrentStep("skip_prompt");
-              addSkipChoiceMessage();
-            }, 400);
-          }, 700);
-        }, 600);
-      }
+          addUseCaseMessage();
+        }, 300);
+      }, 600);
     } else if (currentStep.startsWith("question_")) {
       // User typed their own answer during a question
       const question = ONBOARDING_QUESTIONS[currentQuestionIndex];
@@ -958,82 +942,22 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         if (currentStep === "name") {
           setUserName(transcription);
           setLocalUserName(transcription);
-          setCurrentStep("situation");
+          setCurrentStep("primary_use_case");
           setInputPlaceholder("Type your answer...");
 
-          const contextMessage = `The user said their name is "${transcription}". Acknowledge their name warmly in 1 sentence, then ask what types of communication support they find themselves needing most. Keep it brief and conversational.`;
-          await getAIResponse(contextMessage);
-        } else if (currentStep === "situation") {
-          setUserSituationContext(transcription);
-
+          // Ask about primary use case and show options
           setIsTyping(true);
           scrollToBottom();
 
-          try {
-            // Generate a dynamic response based on the length and content of their message
-            const isLongMessage = transcription.length > 100;
-            const acknowledgmentPrompt = isLongMessage
-              ? `The user shared this about what they need help with: "${transcription}"
-
-They shared a detailed response, which shows they have a lot on their mind. Write a warm, reassuring 1-2 sentence response that:
-1. Acknowledges that they came to the right place
-2. Validates their situation without being clinical
-3. Gives them confidence that Klarity can help with their specific needs
-
-Keep it conversational and supportive. Don't repeat back their exact words.`
-              : `The user shared this about what they need help with: "${transcription}"
-
-Write a brief, warm 1 sentence acknowledgment that shows you heard them and appreciate them sharing. Keep it simple and conversational.`;
-
-            const response = await getOpenAITextResponse(
-              [
-                { role: "system", content: "You are Klarity's friendly setup assistant. Be warm, brief, and conversational. Never sound clinical or overly enthusiastic." },
-                { role: "user", content: acknowledgmentPrompt },
-              ],
-              { temperature: 0.8, maxTokens: 100 }
-            );
-
+          setTimeout(() => {
             setIsTyping(false);
-            addBotMessage(response.content);
+            addBotMessage(`Nice to meet you, ${transcription}! What do you mostly need help with?`);
 
-            // Show intro message with ETA and benefits
+            // Add use case options
             setTimeout(() => {
-              setIsTyping(true);
-              scrollToBottom();
-
-              setTimeout(() => {
-                setIsTyping(false);
-                addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
-
-                // Show the skip choice
-                setTimeout(() => {
-                  setCurrentStep("skip_prompt");
-                  addSkipChoiceMessage();
-                }, 400);
-              }, 700);
-            }, 600);
-          } catch (error) {
-            console.error("Acknowledgment response error:", error);
-            setIsTyping(false);
-            addBotMessage("I appreciate you sharing that with me.");
-
-            // Show intro message with ETA and benefits
-            setTimeout(() => {
-              setIsTyping(true);
-              scrollToBottom();
-
-              setTimeout(() => {
-                setIsTyping(false);
-                addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
-
-                // Show the skip choice
-                setTimeout(() => {
-                  setCurrentStep("skip_prompt");
-                  addSkipChoiceMessage();
-                }, 400);
-              }, 700);
-            }, 600);
-          }
+              addUseCaseMessage();
+            }, 300);
+          }, 600);
         } else if (currentStep === "summary_correction") {
           // User is sharing what they really have going on via voice
           setIsTyping(true);
@@ -1149,6 +1073,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
   const isInQuestionMode = currentStep.startsWith("question_");
   const isInSummaryConfirmMode = currentStep === "summary_confirm" || currentStep === "summary";
   const isInSkipPromptMode = currentStep === "skip_prompt";
+  const isInUseCaseMode = currentStep === "primary_use_case";
   const isComplete = currentStep === "complete";
 
   const renderMessage = (message: Message) => {
@@ -1200,6 +1125,49 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             }
           }}
         />
+      );
+    }
+
+    if (message.type === "use_case") {
+      const useCaseOptions = ["Dating", "Work", "Conflict", "Texting", "Relationships"];
+      const isDisabled = message.selectedOption !== null;
+
+      // Hide options once selected
+      if (isDisabled) {
+        return null;
+      }
+
+      return (
+        <View key={message.id} className="mt-4 mb-2" style={{ gap: 10 }}>
+          {useCaseOptions.map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleUseCaseSelect(option, message.id);
+              }}
+              style={({ pressed }) => ({
+                paddingHorizontal: 20,
+                paddingVertical: 14,
+                borderRadius: 16,
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderWidth: 1,
+                borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  color: colors.textPrimary,
+                }}
+              >
+                {option}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       );
     }
 
@@ -1460,7 +1428,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && (
+        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && !isInUseCaseMode && (
           <InputBar
             ref={inputRef}
             value={userInput}
