@@ -924,8 +924,8 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     if (message.type === "skip_choice") {
       const isDisabled = message.selectedOption !== null;
       return (
-        <View key={message.id} className="mt-4 mb-2" style={{ gap: 12 }}>
-          {/* Continue button - primary action */}
+        <View key={message.id} className="mt-4 mb-2" style={{ gap: 16 }}>
+          {/* Continue button - primary action, larger and prominent */}
           <Pressable
             onPress={() => {
               if (!isDisabled) {
@@ -935,18 +935,23 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             }}
             disabled={isDisabled}
             style={({ pressed }) => ({
-              paddingHorizontal: 24,
-              paddingVertical: 16,
-              borderRadius: 16,
+              paddingHorizontal: 28,
+              paddingVertical: 18,
+              borderRadius: 18,
               backgroundColor: message.selectedOption === "Continue"
                 ? (isDark ? "#FFFFFF" : "#1C1C1E")
                 : (isDark ? "#FFFFFF" : "#1C1C1E"),
               opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.8 : 1),
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 4,
+              elevation: 3,
             })}
           >
             <Text
               style={{
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: "600",
                 color: isDark ? "#1C1C1E" : "#FFFFFF",
                 textAlign: "center",
@@ -955,7 +960,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               {"Let's do it"}
             </Text>
           </Pressable>
-          {/* Skip button - secondary action */}
+          {/* Skip button - secondary action, more subdued */}
           <Pressable
             onPress={() => {
               if (!isDisabled) {
@@ -965,15 +970,22 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             }}
             disabled={isDisabled}
             style={({ pressed }) => ({
-              paddingVertical: 12,
-              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.3 : (pressed ? 0.6 : 1),
+              paddingVertical: 14,
+              paddingHorizontal: 24,
+              borderRadius: 14,
+              backgroundColor: message.selectedOption === "Skip"
+                ? (isDark ? "#2A2A2C" : "#E5E5EA")
+                : (isDark ? "#1C1C1E" : "#F2F2F7"),
+              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.4 : (pressed ? 0.7 : 1),
             })}
           >
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: "500",
-                color: colors.textTertiary,
+                color: message.selectedOption === "Skip"
+                  ? colors.textPrimary
+                  : colors.textSecondary,
                 textAlign: "center",
               }}
             >
