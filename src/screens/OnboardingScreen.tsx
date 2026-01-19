@@ -1584,8 +1584,8 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             left: 0,
             right: 0,
             paddingHorizontal: 16,
-            paddingTop: 8,
-            paddingBottom: Math.max(insets.bottom, 8),
+            paddingTop: 4,
+            paddingBottom: Math.max(insets.bottom, 4),
             zIndex: 999,
             backgroundColor: colors.headerBackground,
             alignItems: "flex-start",
@@ -1596,7 +1596,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             onPress={handleGetStarted}
             style={{
               paddingHorizontal: 24,
-              paddingVertical: 10,
+              paddingVertical: 8,
             }}
           >
             <Text
