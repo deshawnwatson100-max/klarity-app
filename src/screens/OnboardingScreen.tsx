@@ -8,14 +8,6 @@ import {
   Platform,
   Keyboard,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
@@ -173,47 +165,59 @@ function ShakingLetsDoItButton({
   onContinue,
   onSkip,
 }: ShakingLetsDoItButtonProps) {
-  const shakeX = useSharedValue(0);
+  const [shakeOffset, setShakeOffset] = useState(0);
 
   useEffect(() => {
-    if (!isDisabled) {
-      // Start shaking animation after a brief delay
-      const timeout = setTimeout(() => {
-        shakeX.value = withRepeat(
-          withSequence(
-            withTiming(-3, { duration: 50, easing: Easing.linear }),
-            withTiming(3, { duration: 100, easing: Easing.linear }),
-            withTiming(-3, { duration: 100, easing: Easing.linear }),
-            withTiming(3, { duration: 100, easing: Easing.linear }),
-            withTiming(0, { duration: 50, easing: Easing.linear }),
-            withTiming(0, { duration: 2000 }) // Pause between shakes
-          ),
-          -1, // Infinite repeat
-          false
-        );
+    if (isDisabled) return;
 
-        // Trigger gentle haptic on each shake cycle
-        const hapticInterval = setInterval(() => {
-          if (!isDisabled) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }, 2400); // Match the full animation cycle duration
+    let animationFrame: number;
+    let startTime: number | null = null;
+    let hapticTimeout: ReturnType<typeof setTimeout>;
 
-        return () => clearInterval(hapticInterval);
-      }, 800);
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
 
-      return () => clearTimeout(timeout);
-    }
-  }, [isDisabled, shakeX]);
+      // Shake pattern: quick shakes for 400ms, then pause for 2000ms
+      const cycleTime = elapsed % 2400;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
-  }));
+      if (cycleTime < 400) {
+        // During shake phase
+        const shakePhase = cycleTime / 100;
+        const offset = Math.sin(shakePhase * Math.PI * 2) * 3;
+        setShakeOffset(offset);
+      } else {
+        setShakeOffset(0);
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    // Start after a brief delay
+    const timeout = setTimeout(() => {
+      animationFrame = requestAnimationFrame(animate);
+
+      // Trigger haptic at start of each shake cycle
+      const triggerHaptic = () => {
+        if (!isDisabled) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        hapticTimeout = setTimeout(triggerHaptic, 2400);
+      };
+      hapticTimeout = setTimeout(triggerHaptic, 100);
+    }, 800);
+
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(hapticTimeout);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
+  }, [isDisabled]);
 
   return (
     <View className="mt-4 mb-2" style={{ gap: 20 }}>
       {/* Continue button - primary action, large and prominent */}
-      <Animated.View style={animatedStyle}>
+      <View style={{ transform: [{ translateX: shakeOffset }] }}>
         <Pressable
           onPress={onContinue}
           disabled={isDisabled}
@@ -243,7 +247,7 @@ function ShakingLetsDoItButton({
             {"Let's do it!"}
           </Text>
         </Pressable>
-      </Animated.View>
+      </View>
       {/* Skip button - secondary, subtle text link style */}
       <Pressable
         onPress={onSkip}
