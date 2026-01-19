@@ -716,7 +716,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       setInputPlaceholder("Type your answer...");
 
       // Ask about conversation types
-      const contextMessage = `The user said their name is "${input}". Acknowledge their name warmly in 1 sentence, then ask what types of conversations they find themselves needing help with most. Keep it brief and conversational.`;
+      const contextMessage = `The user said their name is "${input}". Acknowledge their name warmly in 1 sentence, then ask what types of communication support they find themselves needing most. Keep it brief and conversational.`;
       await getAIResponse(contextMessage);
     } else if (currentStep === "situation") {
       // Save the context for later use
@@ -919,7 +919,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
           setCurrentStep("situation");
           setInputPlaceholder("Type your answer...");
 
-          const contextMessage = `The user said their name is "${transcription}". Acknowledge their name warmly in 1 sentence, then ask what types of conversations they find themselves needing help with most. Keep it brief and conversational.`;
+          const contextMessage = `The user said their name is "${transcription}". Acknowledge their name warmly in 1 sentence, then ask what types of communication support they find themselves needing most. Keep it brief and conversational.`;
           await getAIResponse(contextMessage);
         } else if (currentStep === "situation") {
           setUserSituationContext(transcription);
