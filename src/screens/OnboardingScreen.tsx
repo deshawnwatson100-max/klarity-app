@@ -974,8 +974,10 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               paddingHorizontal: 24,
               borderRadius: 14,
               backgroundColor: message.selectedOption === "Skip"
-                ? (isDark ? "#2A2A2C" : "#E5E5EA")
-                : (isDark ? "#1C1C1E" : "#F2F2F7"),
+                ? (isDark ? "#3A3A3C" : "#D1D1D6")
+                : "transparent",
+              borderWidth: 1,
+              borderColor: isDark ? "#3A3A3C" : "#C7C7CC",
               opacity: isDisabled && message.selectedOption !== "Skip" ? 0.4 : (pressed ? 0.7 : 1),
             })}
           >
@@ -983,9 +985,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               style={{
                 fontSize: 15,
                 fontWeight: "500",
-                color: message.selectedOption === "Skip"
-                  ? colors.textPrimary
-                  : colors.textSecondary,
+                color: colors.textSecondary,
                 textAlign: "center",
               }}
             >
