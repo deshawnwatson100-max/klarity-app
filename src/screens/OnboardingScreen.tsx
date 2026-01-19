@@ -1149,6 +1149,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
   const isInQuestionMode = currentStep.startsWith("question_");
   const isInSummaryConfirmMode = currentStep === "summary_confirm" || currentStep === "summary";
   const isInSkipPromptMode = currentStep === "skip_prompt";
+  const isComplete = currentStep === "complete";
 
   const renderMessage = (message: Message) => {
     if (message.type === "user") {
@@ -1470,7 +1471,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && (
+        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && (
           <InputBar
             ref={inputRef}
             value={userInput}
