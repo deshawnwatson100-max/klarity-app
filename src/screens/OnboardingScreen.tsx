@@ -726,10 +726,52 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       setIsTyping(true);
       scrollToBottom();
 
-      setTimeout(async () => {
-        setIsTyping(false);
+      try {
+        // Generate a dynamic response based on the length and content of their message
+        const isLongMessage = input.length > 100;
+        const acknowledgmentPrompt = isLongMessage
+          ? `The user shared this about what they need help with: "${input}"
 
-        // Acknowledge what they shared
+They wrote a detailed message, which shows they have a lot on their mind. Write a warm, reassuring 1-2 sentence response that:
+1. Acknowledges that they came to the right place
+2. Validates their situation without being clinical
+3. Gives them confidence that Klarity can help with their specific needs
+
+Keep it conversational and supportive. Don't repeat back their exact words.`
+          : `The user shared this about what they need help with: "${input}"
+
+Write a brief, warm 1 sentence acknowledgment that shows you heard them and appreciate them sharing. Keep it simple and conversational.`;
+
+        const response = await getOpenAITextResponse(
+          [
+            { role: "system", content: "You are Klarity's friendly setup assistant. Be warm, brief, and conversational. Never sound clinical or overly enthusiastic." },
+            { role: "user", content: acknowledgmentPrompt },
+          ],
+          { temperature: 0.8, maxTokens: 100 }
+        );
+
+        setIsTyping(false);
+        addBotMessage(response.content);
+
+        // Show intro message with ETA and benefits
+        setTimeout(() => {
+          setIsTyping(true);
+          scrollToBottom();
+
+          setTimeout(() => {
+            setIsTyping(false);
+            addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+
+            // Show the skip choice
+            setTimeout(() => {
+              setCurrentStep("skip_prompt");
+              addSkipChoiceMessage();
+            }, 400);
+          }, 700);
+        }, 600);
+      } catch (error) {
+        console.error("Acknowledgment response error:", error);
+        setIsTyping(false);
         addBotMessage("I appreciate you sharing that with me.");
 
         // Show intro message with ETA and benefits
@@ -748,7 +790,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
             }, 400);
           }, 700);
         }, 600);
-      }, 800);
+      }
     } else if (currentStep.startsWith("question_")) {
       // User typed their own answer during a question
       const question = ONBOARDING_QUESTIONS[currentQuestionIndex];
@@ -927,10 +969,52 @@ Don't apologize excessively. Just reflect back what you now understand with warm
           setIsTyping(true);
           scrollToBottom();
 
-          setTimeout(async () => {
-            setIsTyping(false);
+          try {
+            // Generate a dynamic response based on the length and content of their message
+            const isLongMessage = transcription.length > 100;
+            const acknowledgmentPrompt = isLongMessage
+              ? `The user shared this about what they need help with: "${transcription}"
 
-            // Acknowledge what they shared
+They shared a detailed response, which shows they have a lot on their mind. Write a warm, reassuring 1-2 sentence response that:
+1. Acknowledges that they came to the right place
+2. Validates their situation without being clinical
+3. Gives them confidence that Klarity can help with their specific needs
+
+Keep it conversational and supportive. Don't repeat back their exact words.`
+              : `The user shared this about what they need help with: "${transcription}"
+
+Write a brief, warm 1 sentence acknowledgment that shows you heard them and appreciate them sharing. Keep it simple and conversational.`;
+
+            const response = await getOpenAITextResponse(
+              [
+                { role: "system", content: "You are Klarity's friendly setup assistant. Be warm, brief, and conversational. Never sound clinical or overly enthusiastic." },
+                { role: "user", content: acknowledgmentPrompt },
+              ],
+              { temperature: 0.8, maxTokens: 100 }
+            );
+
+            setIsTyping(false);
+            addBotMessage(response.content);
+
+            // Show intro message with ETA and benefits
+            setTimeout(() => {
+              setIsTyping(true);
+              scrollToBottom();
+
+              setTimeout(() => {
+                setIsTyping(false);
+                addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+
+                // Show the skip choice
+                setTimeout(() => {
+                  setCurrentStep("skip_prompt");
+                  addSkipChoiceMessage();
+                }, 400);
+              }, 700);
+            }, 600);
+          } catch (error) {
+            console.error("Acknowledgment response error:", error);
+            setIsTyping(false);
             addBotMessage("I appreciate you sharing that with me.");
 
             // Show intro message with ETA and benefits
@@ -949,7 +1033,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
                 }, 400);
               }, 700);
             }, 600);
-          }, 800);
+          }
         } else if (currentStep === "summary_correction") {
           // User is sharing what they really have going on via voice
           setIsTyping(true);
