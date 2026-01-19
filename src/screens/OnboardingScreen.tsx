@@ -1607,7 +1607,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               width: "100%",
               paddingVertical: 16,
               borderRadius: 16,
-              backgroundColor: "#3A3A3C",
+              backgroundColor: "#4A4A4C",
               alignItems: "center",
               opacity: pressed ? 0.8 : 1,
               shadowColor: "#000",
