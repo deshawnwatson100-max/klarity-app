@@ -1204,34 +1204,30 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     }
 
     if (message.type === "confirmation") {
-      const isDisabled = message.selectedOption !== null;
+      // Hide the options once one is selected
+      if (message.selectedOption !== null) {
+        return null;
+      }
       return (
         <View key={message.id} className="flex-row justify-center mt-4 mb-2" style={{ gap: 12 }}>
           <Pressable
             onPress={() => {
-              if (!isDisabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                handleSummaryConfirmation(true, message.id);
-              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleSummaryConfirmation(true, message.id);
             }}
-            disabled={isDisabled}
             style={({ pressed }) => ({
               paddingHorizontal: 28,
               paddingVertical: 14,
               borderRadius: 20,
-              backgroundColor: message.selectedOption === "Yes"
-                ? (isDark ? "#FFFFFF" : "#1C1C1E")
-                : (isDark ? "#2A2A2C" : "#F2F2F7"),
-              opacity: isDisabled && message.selectedOption !== "Yes" ? 0.5 : (pressed ? 0.8 : 1),
+              backgroundColor: isDark ? "#2A2A2C" : "#F2F2F7",
+              opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: message.selectedOption === "Yes"
-                  ? (isDark ? "#1C1C1E" : "#FFFFFF")
-                  : colors.textPrimary,
+                color: colors.textPrimary,
               }}
             >
               Yes
@@ -1239,29 +1235,22 @@ Don't apologize excessively. Just reflect back what you now understand with warm
           </Pressable>
           <Pressable
             onPress={() => {
-              if (!isDisabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                handleSummaryConfirmation(false, message.id);
-              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleSummaryConfirmation(false, message.id);
             }}
-            disabled={isDisabled}
             style={({ pressed }) => ({
               paddingHorizontal: 28,
               paddingVertical: 14,
               borderRadius: 20,
-              backgroundColor: message.selectedOption === "No"
-                ? (isDark ? "#FFFFFF" : "#1C1C1E")
-                : (isDark ? "#2A2A2C" : "#F2F2F7"),
-              opacity: isDisabled && message.selectedOption !== "No" ? 0.5 : (pressed ? 0.8 : 1),
+              backgroundColor: isDark ? "#2A2A2C" : "#F2F2F7",
+              opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: message.selectedOption === "No"
-                  ? (isDark ? "#1C1C1E" : "#FFFFFF")
-                  : colors.textPrimary,
+                color: colors.textPrimary,
               }}
             >
               Not quite
