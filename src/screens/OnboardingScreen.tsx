@@ -624,6 +624,53 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
           }, 700);
         }, 600);
       }, 800);
+    } else if (currentStep.startsWith("question_")) {
+      // User typed their own answer during a question
+      const question = ONBOARDING_QUESTIONS[currentQuestionIndex];
+      if (!question) return;
+
+      // Save the typed answer
+      setOnboardingAnswer(question.key, input);
+      setCollectedAnswers(prev => ({ ...prev, [question.key]: input }));
+
+      const nextIndex = currentQuestionIndex + 1;
+
+      if (nextIndex < ONBOARDING_QUESTIONS.length) {
+        // Ask next question
+        setCurrentQuestionIndex(nextIndex);
+        setCurrentStep(`question_${nextIndex + 1}` as OnboardingStep);
+
+        setTimeout(() => {
+          askQuestion(nextIndex);
+        }, 500);
+      } else {
+        // All questions complete - generate personalized summary
+        setCurrentStep("summary");
+
+        const allAnswers = { ...collectedAnswers, [question.key]: input };
+
+        setTimeout(async () => {
+          const summary = await generateUserSummary(allAnswers, userSituationContext, localUserName);
+          setGeneratedSummary(summary);
+
+          addBotMessage(summary);
+
+          setTimeout(() => {
+            setIsTyping(true);
+            scrollToBottom();
+
+            setTimeout(() => {
+              setIsTyping(false);
+              addBotMessage("Does this feel right to you?");
+
+              setTimeout(() => {
+                setCurrentStep("summary_confirm");
+                addConfirmationMessage("summary");
+              }, 300);
+            }, 600);
+          }, 800);
+        }, 500);
+      }
     } else if (currentStep === "summary_correction") {
       // User is sharing what they really have going on
       setIsTyping(true);
@@ -1257,15 +1304,15 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInQuestionMode && !isInSummaryConfirmMode && !isInSkipPromptMode && (
+        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isInSkipPromptMode && (
           <InputBar
             ref={inputRef}
             value={userInput}
             onChangeText={setUserInput}
             onSend={handleSubmit}
             onVoicePress={handleVoicePress}
-            placeholder={inputPlaceholder}
-            autoFocus={true}
+            placeholder={isInQuestionMode ? "Or type your own answer..." : inputPlaceholder}
+            autoFocus={!isInQuestionMode}
             isRecording={isRecording}
           />
         )}
