@@ -924,8 +924,8 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     if (message.type === "skip_choice") {
       const isDisabled = message.selectedOption !== null;
       return (
-        <View key={message.id} className="mt-4 mb-2" style={{ gap: 16 }}>
-          {/* Continue button - primary action, larger and prominent */}
+        <View key={message.id} className="mt-4 mb-2" style={{ gap: 20 }}>
+          {/* Continue button - primary action, large and prominent */}
           <Pressable
             onPress={() => {
               if (!isDisabled) {
@@ -935,24 +935,22 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             }}
             disabled={isDisabled}
             style={({ pressed }) => ({
-              paddingHorizontal: 28,
-              paddingVertical: 18,
-              borderRadius: 18,
-              backgroundColor: message.selectedOption === "Continue"
-                ? (isDark ? "#FFFFFF" : "#1C1C1E")
-                : (isDark ? "#FFFFFF" : "#1C1C1E"),
-              opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.8 : 1),
+              paddingHorizontal: 32,
+              paddingVertical: 20,
+              borderRadius: 20,
+              backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+              opacity: isDisabled && message.selectedOption !== "Continue" ? 0.5 : (pressed ? 0.85 : 1),
               shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
-              shadowRadius: 4,
-              elevation: 3,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 5,
             })}
           >
             <Text
               style={{
-                fontSize: 17,
-                fontWeight: "600",
+                fontSize: 18,
+                fontWeight: "700",
                 color: isDark ? "#1C1C1E" : "#FFFFFF",
                 textAlign: "center",
               }}
@@ -960,7 +958,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               {"Let's do it"}
             </Text>
           </Pressable>
-          {/* Skip button - secondary action, more subdued */}
+          {/* Skip button - secondary, subtle text link style */}
           <Pressable
             onPress={() => {
               if (!isDisabled) {
@@ -970,22 +968,15 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             }}
             disabled={isDisabled}
             style={({ pressed }) => ({
-              paddingVertical: 14,
-              paddingHorizontal: 24,
-              borderRadius: 14,
-              backgroundColor: message.selectedOption === "Skip"
-                ? (isDark ? "#3A3A3C" : "#D1D1D6")
-                : "transparent",
-              borderWidth: 1,
-              borderColor: isDark ? "#3A3A3C" : "#C7C7CC",
-              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.4 : (pressed ? 0.7 : 1),
+              paddingVertical: 10,
+              opacity: isDisabled && message.selectedOption !== "Skip" ? 0.3 : (pressed ? 0.5 : 1),
             })}
           >
             <Text
               style={{
-                fontSize: 15,
-                fontWeight: "500",
-                color: colors.textSecondary,
+                fontSize: 14,
+                fontWeight: "400",
+                color: colors.textTertiary,
                 textAlign: "center",
               }}
             >
