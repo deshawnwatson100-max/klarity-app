@@ -739,7 +739,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
           setTimeout(() => {
             setIsTyping(false);
-            addBotMessage("I have 6 quick questions that take about 30 seconds. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+            addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
             // Show the skip choice
             setTimeout(() => {
@@ -940,7 +940,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
 
               setTimeout(() => {
                 setIsTyping(false);
-                addBotMessage("I have 6 quick questions that take about 30 seconds. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+                addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
                 // Show the skip choice
                 setTimeout(() => {
