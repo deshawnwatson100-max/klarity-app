@@ -12,12 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { useOnboardingStore, OnboardingAnswers } from "../state/onboardingStore";
 import { useTheme } from "../theme";
 import { InputBar, InputBarRef } from "../components/InputBar";
@@ -765,44 +759,36 @@ function ProgressMeter({
   isVisible,
   isDark,
 }: ProgressMeterProps) {
-  const progress = useSharedValue(0);
-  const opacity = useSharedValue(0);
+  const [progress, setProgress] = useState(0);
+  const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
     if (isVisible) {
-      opacity.value = withTiming(1, { duration: 300 });
-      // Progress is based on completed questions (currentQuestion is 0-indexed, so we add 1 for display)
-      const targetProgress = (currentQuestion + 1) / totalQuestions;
-      progress.value = withTiming(targetProgress, {
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-      });
+      // Fade in
+      const fadeTimer = setTimeout(() => setOpacity(1), 50);
+      // Progress is based on current question (0-indexed, so we add 1 for display)
+      const targetProgress = ((currentQuestion + 1) / totalQuestions) * 100;
+      const progressTimer = setTimeout(() => setProgress(targetProgress), 100);
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(progressTimer);
+      };
     } else {
-      opacity.value = withTiming(0, { duration: 200 });
-      progress.value = 0;
+      setOpacity(0);
+      setProgress(0);
     }
   }, [isVisible, currentQuestion, totalQuestions]);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progress.value * 100}%`,
-  }));
 
   if (!isVisible) return null;
 
   return (
-    <Animated.View
-      style={[
-        {
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          backgroundColor: isDark ? "#1C1C1E" : "#F8F8F8",
-        },
-        containerStyle,
-      ]}
+    <View
+      style={{
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: isDark ? "#1C1C1E" : "#F8F8F8",
+        opacity: opacity,
+      }}
     >
       {/* Progress text */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
@@ -835,18 +821,16 @@ function ProgressMeter({
         }}
       >
         {/* Progress bar fill */}
-        <Animated.View
-          style={[
-            {
-              height: "100%",
-              backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
-              borderRadius: 2,
-            },
-            progressStyle,
-          ]}
+        <View
+          style={{
+            height: "100%",
+            width: `${progress}%`,
+            backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+            borderRadius: 2,
+          }}
         />
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
