@@ -55,7 +55,6 @@ export function RootNavigator() {
     // Check if the store has been hydrated
     const unsubscribe = useOnboardingStore.persist.onFinishHydration(() => {
       const completed = useOnboardingStore.getState().hasCompletedOnboarding;
-      console.log("[Splash] Hydration finished, completed:", completed);
       setShowOnboarding(!completed);
       setShowSplash(completed); // Show splash for returning users
       setIsHydrated(true);
@@ -64,7 +63,6 @@ export function RootNavigator() {
     // If already hydrated (happens on fast loads)
     if (useOnboardingStore.persist.hasHydrated()) {
       const completed = useOnboardingStore.getState().hasCompletedOnboarding;
-      console.log("[Splash] Already hydrated, completed:", completed);
       setShowOnboarding(!completed);
       setShowSplash(completed);
       setIsHydrated(true);
@@ -78,16 +76,13 @@ export function RootNavigator() {
   // Handle splash screen fade out for returning users
   useEffect(() => {
     if (showSplash && isHydrated) {
-      console.log("[Splash] Starting splash timer");
       // Wait 1.2 seconds, then fade out over 400ms
       const timer = setTimeout(() => {
-        console.log("[Splash] Fading out");
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 400,
           useNativeDriver: true,
         }).start(() => {
-          console.log("[Splash] Fade complete");
           setShowSplash(false);
         });
       }, 1200);

@@ -84,10 +84,10 @@ export function InputScreen({ navigation }: Props) {
     if (!activeLoop) {
       createNewLoop();
     }
-    // Focus input bar on mount to bring up keyboard
+    // Focus input bar after splash screen completes (1.2s display + 0.4s fade = 1.6s)
     setTimeout(() => {
       inputBarRef.current?.focus();
-    }, 300);
+    }, 1700);
   }, []);
 
   // Focus input bar when screen gains focus
