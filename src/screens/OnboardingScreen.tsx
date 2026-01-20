@@ -1061,6 +1061,16 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     [updateOptionSelection, setPrimaryUseCase, addUserMessage, addBotMessage, scrollToBottom, addSkipChoiceMessage]
   );
 
+  // Scroll to bottom when Get Started button appears
+  useEffect(() => {
+    if (showGetStarted) {
+      // Delay to allow the padding to update first
+      setTimeout(() => {
+        scrollToBottom();
+      }, 150);
+    }
+  }, [showGetStarted, scrollToBottom]);
+
   // Focus input on mount
   useEffect(() => {
     setTimeout(() => {
@@ -1787,7 +1797,10 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4"
-          contentContainerStyle={{ paddingVertical: 20, paddingBottom: showGetStarted ? 80 : 20 }}
+          contentContainerStyle={{
+            paddingTop: 20,
+            paddingBottom: showGetStarted ? 60 + Math.max(insets.bottom, 16) : 20
+          }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
