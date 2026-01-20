@@ -1276,12 +1276,14 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     }
   }, [showGetStarted, scrollToBottom]);
 
-  // Focus input on mount
+  // Focus input after splash screen completes (only when entering name step)
   useEffect(() => {
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 800);
-  }, []);
+    if (currentStep === "name") {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500);
+    }
+  }, [currentStep]);
 
   // Initial welcome message
   useEffect(() => {
@@ -2109,7 +2111,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isComplete && (
+        {!isRecording && !showGetStarted && !isComplete && !isSplash && (
           <InputBar
             ref={inputRef}
             value={userInput}
