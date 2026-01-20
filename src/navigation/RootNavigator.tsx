@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { View } from "react-native";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
@@ -12,6 +13,7 @@ import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { PaywallScreen } from "../screens/PaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { AppSplashScreen } from "../components/AppSplashScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
 
 export type RootStackParamList = {
@@ -42,18 +44,22 @@ const Stack = createStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const hasCompletedOnboarding = useOnboardingStore((s) => s.hasCompletedOnboarding);
   const [showOnboarding, setShowOnboarding] = useState(!hasCompletedOnboarding);
+  const [showSplash, setShowSplash] = useState(hasCompletedOnboarding);
 
   // Sync state when store changes (e.g., on app restart)
   useEffect(() => {
     setShowOnboarding(!hasCompletedOnboarding);
   }, [hasCompletedOnboarding]);
 
+  // For new users, show onboarding (which has its own splash)
   if (showOnboarding) {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
+  // For returning users, show main app with splash overlay
   return (
-    <Stack.Navigator
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
@@ -389,6 +395,12 @@ export function RootNavigator() {
         }}
       />
 
-    </Stack.Navigator>
+      </Stack.Navigator>
+
+      {/* App splash screen for returning users */}
+      {showSplash && (
+        <AppSplashScreen onComplete={() => setShowSplash(false)} />
+      )}
+    </View>
   );
 }
