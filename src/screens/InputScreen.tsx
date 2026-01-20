@@ -78,6 +78,9 @@ export function InputScreen({ navigation }: Props) {
     })
   ).current;
 
+  // Track if this is the initial mount (for splash screen delay)
+  const isInitialMount = useRef(true);
+
   // Ensure we always have an active loop
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -87,15 +90,18 @@ export function InputScreen({ navigation }: Props) {
     // Focus input bar after splash screen completes (1.2s display + 0.4s fade = 1.6s)
     setTimeout(() => {
       inputBarRef.current?.focus();
-    }, 1700);
+      isInitialMount.current = false;
+    }, 1800);
   }, []);
 
-  // Focus input bar when screen gains focus
+  // Focus input bar when screen gains focus (but not on initial mount - splash handles that)
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      setTimeout(() => {
-        inputBarRef.current?.focus();
-      }, 100);
+      if (!isInitialMount.current) {
+        setTimeout(() => {
+          inputBarRef.current?.focus();
+        }, 100);
+      }
     });
 
     return unsubscribe;
