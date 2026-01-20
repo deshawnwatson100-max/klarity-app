@@ -108,62 +108,10 @@ export function RootNavigator() {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
-  // For returning users, show splash first then main app
-  if (showSplash) {
-    return (
-      <Animated.View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          justifyContent: "center",
-          alignItems: "center",
-          opacity: fadeAnim,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: "700",
-              color: colors.textPrimary,
-              marginRight: 10,
-            }}
-          >
-            Klarity
-          </Text>
-          <View style={{ position: "relative", width: 28, height: 28 }}>
-            <Ionicons
-              name="chatbubble-outline"
-              size={28}
-              color={colors.textPrimary}
-            />
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="add" size={14} color={colors.textPrimary} />
-            </View>
-          </View>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  // Main app
+  // Main app with splash overlay for returning users
   return (
-    <Stack.Navigator
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
@@ -500,5 +448,61 @@ export function RootNavigator() {
       />
 
       </Stack.Navigator>
+
+      {/* Splash screen overlay for returning users */}
+      {showSplash && (
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.background,
+            justifyContent: "center",
+            alignItems: "center",
+            opacity: fadeAnim,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "700",
+                color: colors.textPrimary,
+                marginRight: 10,
+              }}
+            >
+              Klarity
+            </Text>
+            <View style={{ position: "relative", width: 28, height: 28 }}>
+              <Ionicons
+                name="chatbubble-outline"
+                size={28}
+                color={colors.textPrimary}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={14} color={colors.textPrimary} />
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+      )}
+    </View>
   );
 }
