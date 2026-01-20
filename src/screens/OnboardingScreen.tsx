@@ -132,6 +132,15 @@ const GENERIC_QUESTIONS: QuestionSet = [
       "Certain",
     ],
   },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
+    ],
+  },
 ];
 
 // Dating / Relationships questions
@@ -199,6 +208,15 @@ const DATING_QUESTIONS: QuestionSet = [
       "Connected",
       "Clear",
       "Relieved",
+    ],
+  },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
     ],
   },
 ];
@@ -271,6 +289,15 @@ const WORK_QUESTIONS: QuestionSet = [
       "No lingering doubt",
     ],
   },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
+    ],
+  },
 ];
 
 // Conflict / Tense Situations questions
@@ -339,6 +366,15 @@ const CONFLICT_QUESTIONS: QuestionSet = [
       "Emotional clarity",
       "Closure",
       "Relief",
+    ],
+  },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
     ],
   },
 ];
@@ -410,6 +446,15 @@ const TEXTING_QUESTIONS: QuestionSet = [
       "Smooth flow",
     ],
   },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
+    ],
+  },
 ];
 
 // Friends / Family (Relationships) questions
@@ -477,6 +522,15 @@ const RELATIONSHIPS_QUESTIONS: QuestionSet = [
       "Connected",
       "Clear",
       "At ease",
+    ],
+  },
+  {
+    key: "reminderPreference",
+    question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
+    options: [
+      "Yes, that would help",
+      "Maybe occasionally",
+      "Not right now",
     ],
   },
 ];
@@ -1048,7 +1102,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
         setTimeout(() => {
           setIsTyping(false);
-          addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+          addBotMessage("I have 7 quick questions that take about a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
           // Show the skip choice
           setTimeout(() => {
@@ -1163,7 +1217,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
       setTimeout(() => {
         setIsTyping(false);
-        addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+        addBotMessage("I have 7 quick questions that take about a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
         // Show the skip choice
         setTimeout(() => {

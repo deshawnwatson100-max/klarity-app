@@ -16,6 +16,7 @@ export interface OnboardingAnswers {
   afterConfusion: string | null;
   klarityHelps: string | null;
   bestOutcome: string | null;
+  reminderPreference: string | null;
 }
 
 export interface UserProfile {
@@ -48,6 +49,7 @@ const defaultOnboardingAnswers: OnboardingAnswers = {
   afterConfusion: null,
   klarityHelps: null,
   bestOutcome: null,
+  reminderPreference: null,
 };
 
 const defaultUserProfile: UserProfile = {
