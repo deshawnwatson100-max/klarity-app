@@ -49,6 +49,7 @@ export function RootNavigator() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const contentFadeAnim = useRef(new Animated.Value(0)).current;
 
   // Wait for store to hydrate from AsyncStorage
   useEffect(() => {
@@ -73,9 +74,16 @@ export function RootNavigator() {
     };
   }, []);
 
-  // Handle splash screen fade out for returning users
+  // Handle splash screen animations
   useEffect(() => {
     if (showSplash && isHydrated) {
+      // Fade in content smoothly
+      Animated.timing(contentFadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
       // Wait 1.2 seconds, then fade out over 400ms
       const timer = setTimeout(() => {
         Animated.timing(fadeAnim, {
@@ -89,7 +97,7 @@ export function RootNavigator() {
 
       return () => clearTimeout(timer);
     }
-  }, [showSplash, isHydrated, fadeAnim]);
+  }, [showSplash, isHydrated, fadeAnim, contentFadeAnim]);
 
   // Show loading state while hydrating (blank screen with background color)
   if (!isHydrated) {
@@ -459,10 +467,11 @@ export function RootNavigator() {
             opacity: fadeAnim,
           }}
         >
-          <View
+          <Animated.View
             style={{
               flexDirection: "row",
               alignItems: "center",
+              opacity: contentFadeAnim,
             }}
           >
             <Text
@@ -495,7 +504,7 @@ export function RootNavigator() {
                 <Ionicons name="add" size={14} color={colors.textPrimary} />
               </View>
             </View>
-          </View>
+          </Animated.View>
         </Animated.View>
       )}
     </View>
