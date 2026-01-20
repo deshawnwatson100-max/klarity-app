@@ -1162,7 +1162,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
         setTimeout(() => {
           setIsTyping(false);
-          addBotMessage("I have 8 quick questions that take about a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+          addBotMessage("I have 8 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
           // Show the skip choice
           setTimeout(() => {
