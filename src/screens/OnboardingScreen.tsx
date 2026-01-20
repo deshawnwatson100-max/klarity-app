@@ -12,6 +12,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { useOnboardingStore, OnboardingAnswers } from "../state/onboardingStore";
 import { useTheme } from "../theme";
 import { InputBar, InputBarRef } from "../components/InputBar";
@@ -742,6 +748,105 @@ function ShakingLetsDoItButton({
         </Text>
       </Pressable>
     </View>
+  );
+}
+
+// Progress Meter component for onboarding questions
+interface ProgressMeterProps {
+  currentQuestion: number;
+  totalQuestions: number;
+  isVisible: boolean;
+  isDark: boolean;
+}
+
+function ProgressMeter({
+  currentQuestion,
+  totalQuestions,
+  isVisible,
+  isDark,
+}: ProgressMeterProps) {
+  const progress = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (isVisible) {
+      opacity.value = withTiming(1, { duration: 300 });
+      // Progress is based on completed questions (currentQuestion is 0-indexed, so we add 1 for display)
+      const targetProgress = (currentQuestion + 1) / totalQuestions;
+      progress.value = withTiming(targetProgress, {
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+      });
+    } else {
+      opacity.value = withTiming(0, { duration: 200 });
+      progress.value = 0;
+    }
+  }, [isVisible, currentQuestion, totalQuestions]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%`,
+  }));
+
+  if (!isVisible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        {
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          backgroundColor: isDark ? "#1C1C1E" : "#F8F8F8",
+        },
+        containerStyle,
+      ]}
+    >
+      {/* Progress text */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "500",
+            color: isDark ? "#8E8E93" : "#6B6B70",
+          }}
+        >
+          Question {currentQuestion + 1} of {totalQuestions}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "500",
+            color: isDark ? "#8E8E93" : "#6B6B70",
+          }}
+        >
+          {Math.round(((currentQuestion + 1) / totalQuestions) * 100)}%
+        </Text>
+      </View>
+      {/* Progress bar track */}
+      <View
+        style={{
+          height: 4,
+          backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        {/* Progress bar fill */}
+        <Animated.View
+          style={[
+            {
+              height: "100%",
+              backgroundColor: isDark ? "#FFFFFF" : "#1C1C1E",
+              borderRadius: 2,
+            },
+            progressStyle,
+          ]}
+        />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -1906,6 +2011,14 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             </View>
           </View>
         </View>
+
+        {/* Progress Meter - shows during questions */}
+        <ProgressMeter
+          currentQuestion={currentQuestionIndex}
+          totalQuestions={activeQuestions.length}
+          isVisible={isInQuestionMode}
+          isDark={isDark}
+        />
 
         {/* Messages */}
         <ScrollView
