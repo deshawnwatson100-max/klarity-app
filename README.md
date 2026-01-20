@@ -78,13 +78,55 @@ A conversational setup experience powered by real AI that feels like getting per
    - ETA: "6 quick questions that take about 1 minute"
    - Benefits: "They help me understand how you communicate so I can give you more personalized insights and better responses"
    - Two options: "Let's do it" (primary) or "Skip for now" (secondary)
-5. **Conversational Questions** (if user continues) - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles:
-   - **Question 1:** "When conversations go wrong, what usually starts it?" (5 options)
-   - **Question 2:** "When a response doesn't land, what usually happens?" (5 options)
-   - **Question 3:** "When this happens, what does it cost you most?" (5 options)
-   - **Question 4:** "After a confusing conversation, what do you usually do?" (5 options)
-   - **Question 5:** "Using Klarity would help you avoid:" (5 options)
-   - **Question 6:** "In these moments, the best outcome would feel like:" (5 options)
+5. **Conversational Questions** (if user continues) - 6 questions appear one at a time in the chat flow with tap-to-select option bubbles. Questions are customized based on the selected primary use case:
+
+   **Dating Use Case:**
+   - Q1: When things go wrong in dating conversations, what usually causes it?
+   - Q2: When a message does not land, what is the result?
+   - Q3: What do you usually replay afterward?
+   - Q4: What is the biggest thing you want to avoid?
+   - Q5: How often do these moments show up?
+   - Q6: A good outcome would leave you feeling:
+
+   **Work Use Case:**
+   - Q1: What makes work conversations difficult for you?
+   - Q2: When you say the wrong thing at work, what happens?
+   - Q3: What does that usually cost you?
+   - Q4: Afterward, what do you do?
+   - Q5: What would you most like to avoid at work?
+   - Q6: The ideal outcome is:
+
+   **Conflict Use Case:**
+   - Q1: What usually triggers tension in conversations?
+   - Q2: When things escalate, what is the outcome?
+   - Q3: What do you struggle with most in conflict?
+   - Q4: What do you wish you could avoid?
+   - Q5: After conflict, what lingers the most?
+   - Q6: A better outcome would feel like:
+
+   **Texting Use Case:**
+   - Q1: What makes texting hard for you?
+   - Q2: When a text does not land, what happens?
+   - Q3: What do you usually overthink?
+   - Q4: What do you want to avoid in texting?
+   - Q5: How often do you rethink messages after sending?
+   - Q6: The best outcome feels like:
+
+   **Relationships (Friends/Family) Use Case:**
+   - Q1: What makes conversations with friends or family hard?
+   - Q2: When things go wrong, what usually happens?
+   - Q3: What do you often worry about afterward?
+   - Q4: What is the biggest thing you want to avoid?
+   - Q5: How often do these moments happen?
+   - Q6: A good conversation would leave you feeling:
+
+   **Generic Questions (for typed/custom responses):**
+   - Q1: What type of conversations throw you off the most?
+   - Q2: When you respond without clarity, what happens?
+   - Q3: What does that usually cost you?
+   - Q4: What is your default reaction afterward?
+   - Q5: What would you most like to avoid?
+   - Q6: If Klarity worked perfectly, it would help you feel:
 6. **Personalized Summary** - AI generates a warm, empathetic summary based on all the user's responses that makes them feel heard, seen, and understood
 7. **Summary Confirmation** - User is asked "Does this feel right to you?" with Yes/No options
    - If **Yes**: Completion message and Get Started button appear

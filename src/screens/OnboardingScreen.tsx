@@ -57,79 +57,438 @@ interface OnboardingScreenProps {
 
 type InputMode = "understand" | "rewrite";
 
-// Question definitions
-const ONBOARDING_QUESTIONS: {
+// Question type definition
+type QuestionSet = {
   key: keyof OnboardingAnswers;
   question: string;
   options: string[];
-}[] = [
+}[];
+
+// Generic questions (used when user types their own response or selects "Mixed")
+const GENERIC_QUESTIONS: QuestionSet = [
   {
     key: "conversationTrigger",
-    question: "When conversations go wrong, what usually starts it?",
+    question: "What type of conversations throw you off the most?",
     options: [
-      "Mixed signals or unclear tone",
-      "Emotional or tense situations",
-      "Texts that feel off",
-      "Pressure to respond fast",
-      "Not knowing what the other person wants",
+      "Emotional",
+      "High-stakes",
+      "Unexpected",
+      "Text-based",
+      "Time-sensitive",
     ],
   },
   {
     key: "responseOutcome",
-    question: "When a response doesn't land, what usually happens?",
+    question: "When you respond without clarity, what happens?",
     options: [
-      "Awkwardness or distance",
-      "Misunderstanding",
-      "Tension or conflict",
-      "Missed opportunity",
-      "I regret it later",
+      "I regret it",
+      "I overthink later",
+      "It causes confusion",
+      "It escalates",
+      "I avoid responding",
     ],
   },
   {
     key: "conversationCost",
-    question: "When this happens, what does it cost you most?",
+    question: "What does that usually cost you?",
     options: [
-      "Peace of mind",
       "Confidence",
+      "Peace of mind",
       "Connection",
-      "Momentum in the conversation",
-      "Time replaying it in my head",
+      "Time",
+      "Energy",
     ],
   },
   {
     key: "afterConfusion",
-    question: "After a confusing conversation, what do you usually do?",
+    question: "What is your default reaction afterward?",
     options: [
-      "Replay it mentally",
-      "Ask someone else for advice",
-      "Over-explain or follow up",
-      "Avoid responding",
+      "Replay it",
+      "Ask others",
+      "Over-explain",
+      "Avoid follow-up",
+      "Move on but feel off",
+    ],
+  },
+  {
+    key: "klarityHelps",
+    question: "What would you most like to avoid?",
+    options: [
+      "Saying the wrong thing",
+      "Being misunderstood",
+      "Creating tension",
+      "Missing opportunities",
+      "Mental spirals",
+    ],
+  },
+  {
+    key: "bestOutcome",
+    question: "If Klarity worked perfectly, it would help you feel:",
+    options: [
+      "Clear",
+      "Calm",
+      "Confident",
+      "Grounded",
+      "Certain",
+    ],
+  },
+];
+
+// Dating / Relationships questions
+const DATING_QUESTIONS: QuestionSet = [
+  {
+    key: "conversationTrigger",
+    question: "When things go wrong in dating conversations, what usually causes it?",
+    options: [
+      "Mixed signals",
+      "Saying too much",
+      "Saying too little",
+      "Misreading tone",
+      "Responding too fast or too slow",
+    ],
+  },
+  {
+    key: "responseOutcome",
+    question: "When a message does not land, what is the result?",
+    options: [
+      "Awkward silence",
+      "Losing momentum",
+      "Tension or distance",
+      "Confusion",
+      "It fizzles out",
+    ],
+  },
+  {
+    key: "conversationCost",
+    question: "What do you usually replay afterward?",
+    options: [
+      "What I should have said",
+      "How it sounded",
+      "Their reaction",
+      "The timing",
+      "Everything",
+    ],
+  },
+  {
+    key: "afterConfusion",
+    question: "What is the biggest thing you want to avoid?",
+    options: [
+      "Saying something unattractive",
+      "Being misunderstood",
+      "Coming off the wrong way",
+      "Missing a connection",
+      "Regretting the reply",
+    ],
+  },
+  {
+    key: "klarityHelps",
+    question: "How often do these moments show up?",
+    options: [
+      "Almost every interaction",
+      "A few times a week",
+      "Occasionally",
+      "Only in important moments",
+    ],
+  },
+  {
+    key: "bestOutcome",
+    question: "A good outcome would leave you feeling:",
+    options: [
+      "Confident",
+      "Calm",
+      "Connected",
+      "Clear",
+      "Relieved",
+    ],
+  },
+];
+
+// Work / Professional questions
+const WORK_QUESTIONS: QuestionSet = [
+  {
+    key: "conversationTrigger",
+    question: "What makes work conversations difficult for you?",
+    options: [
+      "Choosing the right tone",
+      "Saying things diplomatically",
+      "Navigating power dynamics",
+      "Responding under pressure",
+      "Reading between the lines",
+    ],
+  },
+  {
+    key: "responseOutcome",
+    question: "When you say the wrong thing at work, what happens?",
+    options: [
+      "Misalignment",
+      "Tension",
+      "Loss of credibility",
+      "Confusion",
+      "Missed opportunity",
+    ],
+  },
+  {
+    key: "conversationCost",
+    question: "What does that usually cost you?",
+    options: [
+      "Confidence",
+      "Momentum",
+      "Trust",
+      "Energy",
+      "Peace of mind",
+    ],
+  },
+  {
+    key: "afterConfusion",
+    question: "Afterward, what do you do?",
+    options: [
+      "Replay it",
+      "Draft follow-ups",
+      "Over-correct",
+      "Avoid the topic",
       "Move on but feel uneasy",
     ],
   },
   {
     key: "klarityHelps",
-    question: "Using Klarity would help you avoid:",
+    question: "What would you most like to avoid at work?",
     options: [
-      "Saying something I regret",
       "Being misunderstood",
       "Escalating tension",
+      "Saying something unprofessional",
+      "Damaging relationships",
       "Second-guessing myself",
-      "Losing an important connection",
     ],
   },
   {
     key: "bestOutcome",
-    question: "In these moments, the best outcome would feel like:",
+    question: "The ideal outcome is:",
     options: [
-      "Feeling calm and clear",
-      "Saying the right thing the first time",
-      "Being understood",
-      "Keeping things smooth",
-      "Feeling confident afterward",
+      "Clear alignment",
+      "Calm communication",
+      "Mutual respect",
+      "Confidence in my response",
+      "No lingering doubt",
     ],
   },
 ];
+
+// Conflict / Tense Situations questions
+const CONFLICT_QUESTIONS: QuestionSet = [
+  {
+    key: "conversationTrigger",
+    question: "What usually triggers tension in conversations?",
+    options: [
+      "Emotional topics",
+      "Miscommunication",
+      "Past issues resurfacing",
+      "Poor timing",
+      "Feeling misunderstood",
+    ],
+  },
+  {
+    key: "responseOutcome",
+    question: "When things escalate, what is the outcome?",
+    options: [
+      "Raised emotions",
+      "Distance",
+      "Arguments",
+      "Silence",
+      "Regret afterward",
+    ],
+  },
+  {
+    key: "conversationCost",
+    question: "What do you struggle with most in conflict?",
+    options: [
+      "Staying calm",
+      "Choosing the right words",
+      "Not overreacting",
+      "Being understood",
+      "Knowing when to respond",
+    ],
+  },
+  {
+    key: "afterConfusion",
+    question: "What do you wish you could avoid?",
+    options: [
+      "Saying something hurtful",
+      "Making it worse",
+      "Regretting my response",
+      "Escalating tension",
+      "Losing the relationship",
+    ],
+  },
+  {
+    key: "klarityHelps",
+    question: "After conflict, what lingers the most?",
+    options: [
+      "Mental replay",
+      "Emotional weight",
+      "Uncertainty",
+      "Guilt",
+      "Frustration",
+    ],
+  },
+  {
+    key: "bestOutcome",
+    question: "A better outcome would feel like:",
+    options: [
+      "Calm resolution",
+      "Mutual understanding",
+      "Emotional clarity",
+      "Closure",
+      "Relief",
+    ],
+  },
+];
+
+// Texting / Online Messages questions
+const TEXTING_QUESTIONS: QuestionSet = [
+  {
+    key: "conversationTrigger",
+    question: "What makes texting hard for you?",
+    options: [
+      "Tone is unclear",
+      "No immediate feedback",
+      "Overthinking wording",
+      "Timing responses",
+      "Reading intent",
+    ],
+  },
+  {
+    key: "responseOutcome",
+    question: "When a text does not land, what happens?",
+    options: [
+      "No reply",
+      "Confusion",
+      "Awkward follow-ups",
+      "Misunderstanding",
+      "Regret",
+    ],
+  },
+  {
+    key: "conversationCost",
+    question: "What do you usually overthink?",
+    options: [
+      "Word choice",
+      "Tone",
+      "Length",
+      "Timing",
+      "Their interpretation",
+    ],
+  },
+  {
+    key: "afterConfusion",
+    question: "What do you want to avoid in texting?",
+    options: [
+      "Sounding rude",
+      "Sounding desperate",
+      "Being misunderstood",
+      "Killing momentum",
+      "Over-explaining",
+    ],
+  },
+  {
+    key: "klarityHelps",
+    question: "How often do you rethink messages after sending?",
+    options: [
+      "Almost always",
+      "Often",
+      "Sometimes",
+      "Rarely",
+    ],
+  },
+  {
+    key: "bestOutcome",
+    question: "The best outcome feels like:",
+    options: [
+      "Clear communication",
+      "Confidence",
+      "Ease",
+      "No second-guessing",
+      "Smooth flow",
+    ],
+  },
+];
+
+// Friends / Family (Relationships) questions
+const RELATIONSHIPS_QUESTIONS: QuestionSet = [
+  {
+    key: "conversationTrigger",
+    question: "What makes conversations with friends or family hard?",
+    options: [
+      "Emotional history",
+      "Misunderstandings",
+      "Sensitive topics",
+      "Poor timing",
+      "Tone being misread",
+    ],
+  },
+  {
+    key: "responseOutcome",
+    question: "When things go wrong, what usually happens?",
+    options: [
+      "Awkwardness",
+      "Hurt feelings",
+      "Distance",
+      "Tension",
+      "Unspoken issues",
+    ],
+  },
+  {
+    key: "conversationCost",
+    question: "What do you often worry about afterward?",
+    options: [
+      "How it sounded",
+      "If I hurt them",
+      "If they misunderstood me",
+      "If I should follow up",
+      "If I made it worse",
+    ],
+  },
+  {
+    key: "afterConfusion",
+    question: "What is the biggest thing you want to avoid?",
+    options: [
+      "Conflict",
+      "Hurt feelings",
+      "Being misunderstood",
+      "Long-term tension",
+      "Regret",
+    ],
+  },
+  {
+    key: "klarityHelps",
+    question: "How often do these moments happen?",
+    options: [
+      "Often",
+      "Sometimes",
+      "Rarely",
+      "Only in serious conversations",
+    ],
+  },
+  {
+    key: "bestOutcome",
+    question: "A good conversation would leave you feeling:",
+    options: [
+      "Understood",
+      "Calm",
+      "Connected",
+      "Clear",
+      "At ease",
+    ],
+  },
+];
+
+// Map use cases to question sets
+const USE_CASE_QUESTIONS: Record<string, QuestionSet> = {
+  "Dating": DATING_QUESTIONS,
+  "Work": WORK_QUESTIONS,
+  "Conflict": CONFLICT_QUESTIONS,
+  "Texting": TEXTING_QUESTIONS,
+  "Relationships": RELATIONSHIPS_QUESTIONS,
+};
 
 const SYSTEM_PROMPT = `You are Klarity's friendly setup assistant. Klarity is an app that helps users understand messages and craft better responses.
 
@@ -296,6 +655,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [generatedSummary, setGeneratedSummary] = useState("");
   const [localUserName, setLocalUserName] = useState("");
   const [collectedAnswers, setCollectedAnswers] = useState<Record<string, string>>({});
+  const [activeQuestions, setActiveQuestions] = useState<QuestionSet>(GENERIC_QUESTIONS);
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setOnboardingAnswer = useOnboardingStore((s) => s.setOnboardingAnswer);
@@ -442,7 +802,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   const askQuestion = useCallback(
     async (questionIndex: number, contextMessage?: string) => {
-      const question = ONBOARDING_QUESTIONS[questionIndex];
+      const question = activeQuestions[questionIndex];
       if (!question) return;
 
       setIsTyping(true);
@@ -459,7 +819,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         addOptionsMessage(question.options, question.key);
       }, 300);
     },
-    [addBotMessage, addOptionsMessage, scrollToBottom]
+    [activeQuestions, addBotMessage, addOptionsMessage, scrollToBottom]
   );
 
   const generateUserSummary = useCallback(
@@ -524,7 +884,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
       const nextIndex = currentQuestionIndex + 1;
 
-      if (nextIndex < ONBOARDING_QUESTIONS.length) {
+      if (nextIndex < activeQuestions.length) {
         // Ask next question with brief acknowledgment
         setCurrentQuestionIndex(nextIndex);
         setCurrentStep(`question_${nextIndex + 1}` as OnboardingStep);
@@ -567,6 +927,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       }
     },
     [
+      activeQuestions,
       currentQuestionIndex,
       updateOptionSelection,
       setOnboardingAnswer,
@@ -670,6 +1031,10 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       // Save to store
       setPrimaryUseCase(useCase);
       setUserSituationContext(useCase);
+
+      // Set the appropriate question set based on use case
+      const questions = USE_CASE_QUESTIONS[useCase] || GENERIC_QUESTIONS;
+      setActiveQuestions(questions);
 
       // Add user's selection as a message
       setTimeout(() => {
@@ -775,9 +1140,30 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
           addUseCaseMessage();
         }, 300);
       }, 600);
+    } else if (currentStep === "primary_use_case") {
+      // User typed their own response instead of selecting a use case option
+      // Use generic questions for custom responses
+      setPrimaryUseCase(input);
+      setUserSituationContext(input);
+      setActiveQuestions(GENERIC_QUESTIONS);
+
+      // Show intro message with ETA and benefits
+      setIsTyping(true);
+      scrollToBottom();
+
+      setTimeout(() => {
+        setIsTyping(false);
+        addBotMessage("I have 6 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+
+        // Show the skip choice
+        setTimeout(() => {
+          setCurrentStep("skip_prompt");
+          addSkipChoiceMessage();
+        }, 400);
+      }, 700);
     } else if (currentStep.startsWith("question_")) {
       // User typed their own answer during a question
-      const question = ONBOARDING_QUESTIONS[currentQuestionIndex];
+      const question = activeQuestions[currentQuestionIndex];
       if (!question) return;
 
       // Save the typed answer
@@ -786,7 +1172,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
       const nextIndex = currentQuestionIndex + 1;
 
-      if (nextIndex < ONBOARDING_QUESTIONS.length) {
+      if (nextIndex < activeQuestions.length) {
         // Ask next question
         setCurrentQuestionIndex(nextIndex);
         setCurrentStep(`question_${nextIndex + 1}` as OnboardingStep);
