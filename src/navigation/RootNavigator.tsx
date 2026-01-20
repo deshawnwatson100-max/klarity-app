@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { View } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Animated } from "react-native";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
 import { InputScreen } from "../screens/InputScreen";
 import { ChatScreen } from "../screens/ChatScreen";
 import { RelationshipDirectionScreen } from "../screens/RelationshipDirectionScreen";
@@ -13,8 +14,8 @@ import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { PaywallScreen } from "../screens/PaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
-import { AppSplashScreen } from "../components/AppSplashScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useTheme } from "../theme";
 
 export type RootStackParamList = {
   InputScreen: undefined;
@@ -42,24 +43,96 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
+  const { colors } = useTheme();
   const hasCompletedOnboarding = useOnboardingStore((s) => s.hasCompletedOnboarding);
   const [showOnboarding, setShowOnboarding] = useState(!hasCompletedOnboarding);
   const [showSplash, setShowSplash] = useState(hasCompletedOnboarding);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Sync state when store changes (e.g., on app restart)
   useEffect(() => {
     setShowOnboarding(!hasCompletedOnboarding);
   }, [hasCompletedOnboarding]);
 
+  // Handle splash screen fade out for returning users
+  useEffect(() => {
+    if (showSplash) {
+      // Wait 2 seconds, then fade out over 400ms
+      const timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowSplash(false);
+        });
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSplash, fadeAnim]);
+
   // For new users, show onboarding (which has its own splash)
   if (showOnboarding) {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
-  // For returning users, show main app with splash overlay
+  // For returning users, show splash first then main app
+  if (showSplash) {
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          justifyContent: "center",
+          alignItems: "center",
+          opacity: fadeAnim,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: "700",
+              color: colors.textPrimary,
+              marginRight: 10,
+            }}
+          >
+            Klarity
+          </Text>
+          <View style={{ position: "relative", width: 28, height: 28 }}>
+            <Ionicons
+              name="chatbubble-outline"
+              size={28}
+              color={colors.textPrimary}
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="add" size={14} color={colors.textPrimary} />
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  // Main app
   return (
-    <View style={{ flex: 1 }}>
-      <Stack.Navigator
+    <Stack.Navigator
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
@@ -396,11 +469,5 @@ export function RootNavigator() {
       />
 
       </Stack.Navigator>
-
-      {/* App splash screen for returning users */}
-      {showSplash && (
-        <AppSplashScreen onComplete={() => setShowSplash(false)} />
-      )}
-    </View>
   );
 }
