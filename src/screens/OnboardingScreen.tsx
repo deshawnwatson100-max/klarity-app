@@ -25,6 +25,7 @@ import { transcribeAudio } from "../api/transcribe-audio";
 import { AIMessage } from "../types/ai";
 
 type OnboardingStep =
+  | "splash"
   | "welcome"
   | "intro"
   | "name"
@@ -844,7 +845,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [conversationHistory, setConversationHistory] = useState<AIMessage[]>([
     { role: "system", content: SYSTEM_PROMPT },
   ]);
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>("splash");
   const [isTyping, setIsTyping] = useState(false);
   const [userInput, setUserInput] = useState("");
   const [showGetStarted, setShowGetStarted] = useState(false);
@@ -859,6 +860,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [localUserName, setLocalUserName] = useState("");
   const [collectedAnswers, setCollectedAnswers] = useState<Record<string, string>>({});
   const [activeQuestions, setActiveQuestions] = useState<QuestionSet>(GENERIC_QUESTIONS);
+  const [splashOpacity, setSplashOpacity] = useState(1);
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setOnboardingAnswer = useOnboardingStore((s) => s.setOnboardingAnswer);
@@ -1283,7 +1285,21 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
   // Initial welcome message
   useEffect(() => {
-    const startOnboarding = async () => {
+    // Start with splash screen, then transition to onboarding
+    if (currentStep !== "splash") return;
+
+    const transitionFromSplash = async () => {
+      // Show splash for 2 seconds, then fade out
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Fade out splash
+      setSplashOpacity(0);
+
+      // Wait for fade animation, then start onboarding
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      setCurrentStep("welcome");
+
+      // Start the actual onboarding flow
       setIsTyping(true);
       scrollToBottom();
 
@@ -1320,9 +1336,8 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
       }
     };
 
-    const timer = setTimeout(startOnboarding, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    transitionFromSplash();
+  }, [currentStep]);
 
   const handleSubmit = async () => {
     if (!userInput.trim() || isTyping) return;
@@ -1837,8 +1852,64 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     );
   };
 
+  // Splash screen for onboarding
+  const isSplash = currentStep === "splash";
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Splash Screen */}
+      {isSplash && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.background,
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 100,
+            opacity: splashOpacity,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "700",
+                color: colors.textPrimary,
+              }}
+            >
+              Klarity
+            </Text>
+            {/* Chat loop icon - matching PaywallScreen */}
+            <View style={{ position: "relative" }}>
+              <Ionicons name="chatbubble-outline" size={28} color={colors.textPrimary} />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={14} color={colors.textPrimary} />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
