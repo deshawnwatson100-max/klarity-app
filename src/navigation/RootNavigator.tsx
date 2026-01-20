@@ -76,7 +76,7 @@ export function RootNavigator() {
   // Handle splash screen fade out for returning users
   useEffect(() => {
     if (showSplash && isHydrated) {
-      // Wait 2 seconds, then fade out over 400ms
+      // Wait 1.2 seconds, then fade out over 400ms
       const timer = setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
@@ -85,7 +85,7 @@ export function RootNavigator() {
         }).start(() => {
           setShowSplash(false);
         });
-      }, 2000);
+      }, 1200);
 
       return () => clearTimeout(timer);
     }
