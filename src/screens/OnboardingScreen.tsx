@@ -133,6 +133,16 @@ const GENERIC_QUESTIONS: QuestionSet = [
     ],
   },
   {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
+    ],
+  },
+  {
     key: "reminderPreference",
     question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
     options: [
@@ -208,6 +218,16 @@ const DATING_QUESTIONS: QuestionSet = [
       "Connected",
       "Clear",
       "Relieved",
+    ],
+  },
+  {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
     ],
   },
   {
@@ -290,6 +310,16 @@ const WORK_QUESTIONS: QuestionSet = [
     ],
   },
   {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
+    ],
+  },
+  {
     key: "reminderPreference",
     question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
     options: [
@@ -366,6 +396,16 @@ const CONFLICT_QUESTIONS: QuestionSet = [
       "Emotional clarity",
       "Closure",
       "Relief",
+    ],
+  },
+  {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
     ],
   },
   {
@@ -447,6 +487,16 @@ const TEXTING_QUESTIONS: QuestionSet = [
     ],
   },
   {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
+    ],
+  },
+  {
     key: "reminderPreference",
     question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
     options: [
@@ -522,6 +572,16 @@ const RELATIONSHIPS_QUESTIONS: QuestionSet = [
       "Connected",
       "Clear",
       "At ease",
+    ],
+  },
+  {
+    key: "momentFrequency",
+    question: "How often do moments like this come up?",
+    options: [
+      "Almost daily",
+      "A few times a week",
+      "Occasionally",
+      "Rarely, but they matter",
     ],
   },
   {
@@ -1102,7 +1162,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
         setTimeout(() => {
           setIsTyping(false);
-          addBotMessage("I have 7 quick questions that take about a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+          addBotMessage("I have 8 quick questions that take about a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
 
           // Show the skip choice
           setTimeout(() => {
