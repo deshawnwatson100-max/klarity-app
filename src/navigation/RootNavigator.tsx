@@ -45,18 +45,37 @@ const Stack = createStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const { colors } = useTheme();
   const hasCompletedOnboarding = useOnboardingStore((s) => s.hasCompletedOnboarding);
-  const [showOnboarding, setShowOnboarding] = useState(!hasCompletedOnboarding);
-  const [showSplash, setShowSplash] = useState(hasCompletedOnboarding);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Sync state when store changes (e.g., on app restart)
+  // Wait for store to hydrate from AsyncStorage
   useEffect(() => {
-    setShowOnboarding(!hasCompletedOnboarding);
-  }, [hasCompletedOnboarding]);
+    // Check if the store has been hydrated
+    const unsubscribe = useOnboardingStore.persist.onFinishHydration(() => {
+      const completed = useOnboardingStore.getState().hasCompletedOnboarding;
+      setShowOnboarding(!completed);
+      setShowSplash(completed); // Show splash for returning users
+      setIsHydrated(true);
+    });
+
+    // If already hydrated (happens on fast loads)
+    if (useOnboardingStore.persist.hasHydrated()) {
+      const completed = useOnboardingStore.getState().hasCompletedOnboarding;
+      setShowOnboarding(!completed);
+      setShowSplash(completed);
+      setIsHydrated(true);
+    }
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Handle splash screen fade out for returning users
   useEffect(() => {
-    if (showSplash) {
+    if (showSplash && isHydrated) {
       // Wait 2 seconds, then fade out over 400ms
       const timer = setTimeout(() => {
         Animated.timing(fadeAnim, {
@@ -70,7 +89,14 @@ export function RootNavigator() {
 
       return () => clearTimeout(timer);
     }
-  }, [showSplash, fadeAnim]);
+  }, [showSplash, isHydrated, fadeAnim]);
+
+  // Show loading state while hydrating (blank screen with background color)
+  if (!isHydrated) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }} />
+    );
+  }
 
   // For new users, show onboarding (which has its own splash)
   if (showOnboarding) {
