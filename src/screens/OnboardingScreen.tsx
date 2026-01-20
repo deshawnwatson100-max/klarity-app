@@ -1421,14 +1421,14 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
           }, 800);
         }, 500);
       }
-    } else if (currentStep === "summary_correction") {
-      // User is sharing what they really have going on
+    } else if (currentStep === "summary_confirm" || currentStep === "summary_correction") {
+      // User is sharing what they really have going on (either typed directly or after clicking "Not quite")
       setIsTyping(true);
       scrollToBottom();
 
       try {
         // Generate a new empathetic response based on their input
-        const correctionPrompt = `The user didn't feel understood by our initial summary. They shared this about what's really going on for them: "${input}"
+        const correctionPrompt = `The user shared this about what's really going on for them: "${input}"
 
 Write a warm, empathetic 1-2 sentence response that:
 1. Shows you truly hear and understand them now
@@ -2038,15 +2038,15 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && (
+        {!isRecording && !showGetStarted && !isComplete && (
           <InputBar
             ref={inputRef}
             value={userInput}
             onChangeText={setUserInput}
             onSend={handleSubmit}
             onVoicePress={handleVoicePress}
-            placeholder={isInQuestionMode || isInSkipPromptMode || isInUseCaseMode ? "Or type your own answer..." : inputPlaceholder}
-            autoFocus={!isInQuestionMode && !isInSkipPromptMode && !isInUseCaseMode}
+            placeholder={isInQuestionMode || isInSkipPromptMode || isInUseCaseMode ? "Or type your own answer..." : (isInSummaryConfirmMode ? "Or share what feels more accurate..." : inputPlaceholder)}
+            autoFocus={!isInQuestionMode && !isInSkipPromptMode && !isInUseCaseMode && !isInSummaryConfirmMode}
             isRecording={isRecording}
           />
         )}
