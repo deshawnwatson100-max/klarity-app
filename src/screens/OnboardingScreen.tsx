@@ -1428,15 +1428,15 @@ Don't apologize excessively. Just reflect back what you now understand with warm
         </ScrollView>
 
         {/* Input Area - using InputBar component */}
-        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && !isInUseCaseMode && (
+        {!isRecording && !showGetStarted && !isInSummaryConfirmMode && !isComplete && (
           <InputBar
             ref={inputRef}
             value={userInput}
             onChangeText={setUserInput}
             onSend={handleSubmit}
             onVoicePress={handleVoicePress}
-            placeholder={isInQuestionMode || isInSkipPromptMode ? "Or type your own answer..." : inputPlaceholder}
-            autoFocus={!isInQuestionMode && !isInSkipPromptMode}
+            placeholder={isInQuestionMode || isInSkipPromptMode || isInUseCaseMode ? "Or type your own answer..." : inputPlaceholder}
+            autoFocus={!isInQuestionMode && !isInSkipPromptMode && !isInUseCaseMode}
             isRecording={isRecording}
           />
         )}
