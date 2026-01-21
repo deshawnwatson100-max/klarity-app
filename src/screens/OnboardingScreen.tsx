@@ -747,8 +747,8 @@ function ProgressMeter({
     if (isVisible) {
       // Fade in
       const fadeTimer = setTimeout(() => setOpacity(1), 50);
-      // Progress is based on current question (0-indexed, so we add 1 for display)
-      const targetProgress = ((currentQuestion + 1) / totalQuestions) * 100;
+      // Progress is based on current question (0-indexed), showing completed questions
+      const targetProgress = (currentQuestion / totalQuestions) * 100;
       const progressTimer = setTimeout(() => setProgress(targetProgress), 100);
       return () => {
         clearTimeout(fadeTimer);
@@ -789,7 +789,7 @@ function ProgressMeter({
             color: isDark ? "#8E8E93" : "#6B6B70",
           }}
         >
-          {Math.round(((currentQuestion + 1) / totalQuestions) * 100)}%
+          {Math.round((currentQuestion / totalQuestions) * 100)}%
         </Text>
       </View>
       {/* Progress bar track */}
