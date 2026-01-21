@@ -91,49 +91,11 @@ interface GPT5Message {
   content: string;
 }
 
-// Model options - use fast model for simple operations, full model for complex analysis
-const MODEL_FAST = "o4-mini-2025-04-16"; // Faster, for simple tasks
-const MODEL_FULL = "gpt-4o-2024-11-20"; // More capable, for complex analysis
+// Model options
+const MODEL_FULL = "gpt-4o-2024-11-20"; // Main model for all operations
 
 /**
- * Send a chat request to the fast model (o4-mini)
- * Use for simpler tasks like red flags detection, emotional analysis, etc.
- * Note: o4-mini doesn't support custom temperature, only default (1)
- */
-async function callFastModel(
-  messages: GPT5Message[],
-  maxTokens: number = 800,
-  useJsonMode: boolean = false
-): Promise<string> {
-  const client = getOpenAIClient();
-
-  const params: any = {
-    model: MODEL_FAST,
-    messages: messages as any,
-    max_completion_tokens: maxTokens,
-    // Note: o4-mini only supports temperature=1 (default), so we don't set it
-  };
-
-  if (useJsonMode) {
-    params.response_format = { type: "json_object" };
-  }
-
-  try {
-    const completion = await client.chat.completions.create(params);
-    const content = completion.choices[0]?.message?.content || "";
-
-    if (!content) {
-      throw new Error("Empty response from API");
-    }
-
-    return content;
-  } catch (error: any) {
-    throw new Error(`API failed: ${error.message || "Unknown error"}`);
-  }
-}
-
-/**
- * Send a chat request to GPT-5 Mini (legacy name, uses full model)
+ * Send a chat request to GPT-4o
  */
 async function callGPT5Mini(
   messages: GPT5Message[],
@@ -244,8 +206,8 @@ Respond with valid JSON only:
     : `Based on this situation: "${userMessage}"\n\nIdentify what type of situation this is and what dynamics may be at play.`;
 
   try {
-    // Use fast model for dysfunctional summary - it's a simple analysis task
-    const response = await callFastModel(
+    // Use full model - o4-mini was unreliable
+    const response = await callGPT5Mini(
       [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -530,8 +492,8 @@ Provide a JSON object with:
   ];
 
   try {
-    // Use fast model for emotional analysis - it's a quick classification task
-    const response = await callFastModel(messages, 800, true);
+    // Use full model for emotional analysis - o4-mini was unreliable
+    const response = await callGPT5Mini(messages, 800, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -2032,7 +1994,7 @@ Return valid JSON only.`;
 
   try {
     // Use fast model for red flags detection - it's a pattern recognition task
-    const response = await callFastModel(
+    const response = await callGPT5Mini(
       [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
