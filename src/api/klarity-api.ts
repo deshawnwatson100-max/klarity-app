@@ -387,12 +387,12 @@ Before finalizing, ask:
 3. Is it appropriate for the tone of the conversation?
 4. Would the user feel good sending this?
 ${preferencesSection}
-Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) — practical, not emotional.
+Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
 
 Respond with valid JSON first, then the notation block:
 {
   "text": "string (the suggested reply — ready to send as-is)",
-  "guidanceNote": "string (brief, practical note about this approach)"
+  "guidanceNote": "string (brief note about how this reply will impact the recipient)"
 }
 
 [[KLARITY_NOTES]]
@@ -444,7 +444,7 @@ Respond with valid JSON first, then the notation block:
     return {
       id: Date.now().toString(),
       text: parsed.text || "Thanks for sharing that.",
-      guidanceNote: parsed.guidanceNote || "Keeps things simple and open.",
+      guidanceNote: parsed.guidanceNote || "This keeps the door open and lets them feel heard.",
       notation: notation || undefined,
     };
   } catch (error) {
@@ -452,7 +452,7 @@ Respond with valid JSON first, then the notation block:
     return {
       id: Date.now().toString(),
       text: "Let me think about this and get back to you.",
-      guidanceNote: "Buys time while keeping things neutral.",
+      guidanceNote: "This gives them space while showing you are taking it seriously.",
       notation: {
         mode: "reply",
         confidence: "low",
@@ -901,13 +901,13 @@ export async function generateIntentionBasedReplies(
 
   const guidanceContext: Record<typeof intention, string> = {
     improve:
-      "This invites connection while staying grounded.",
+      "This will likely make them feel valued and open to dialogue.",
     distance:
-      "This creates space clearly without drama.",
+      "This will give them clarity about where you stand without escalating.",
     maintain:
-      "This keeps things steady without forcing resolution.",
+      "This will help them feel acknowledged without pressure.",
     clarity:
-      "This seeks understanding directly.",
+      "This will encourage them to share more openly.",
   };
 
   const systemPrompt = `You are Klarity AI. ${intentionContext[intention]}.
@@ -941,7 +941,7 @@ Read the conversation carefully. The reply should DIRECTLY RESPOND to what was s
 
 Generate 1 suggested reply that fits this intention AND actually responds to the conversation. The reply should be 1-2 sentences and sound natural.
 
-Also provide a brief guidance note (1 sentence) — practical, not emotional.
+Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
 
 Respond with valid JSON only containing:
 - replies: array of { id: string, text: string, guidanceNote: string }`;
@@ -1150,11 +1150,11 @@ export async function generateModulatedReplies(
 
   const guidanceContext: Record<typeof modulationTone, string> = {
     direct:
-      "Clear and to the point. Respectful but leaves no ambiguity.",
+      "This will give them clarity and show you mean what you say.",
     gentle:
-      "Softer approach that maintains warmth while still holding the line.",
+      "This will help them feel respected while understanding your position.",
     neutral:
-      "Clean and balanced. Neither too warm nor too firm.",
+      "This will come across as calm and measured, keeping things steady.",
   };
 
   const systemPrompt = `You are Klarity — a personal communication calibrator.
@@ -1192,11 +1192,11 @@ ${toneContext[modulationTone]}
 
 Generate ONE reply (1-3 sentences) that fits the ${modulationTone} tone AND actually responds to the conversation.
 
-Also provide a brief guidance note (1 sentence) — practical, not emotional.
+Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
 
 Respond with valid JSON only:
 {
-  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "brief note" }]
+  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "brief note about recipient impact" }]
 }`;
 
   const messages: GPT5Message[] = [
@@ -1246,21 +1246,21 @@ Respond with valid JSON only:
         {
           id: "1",
           text: "Got it. That's not going to work for me though.",
-          guidanceNote: "Clear and grounded. No ambiguity.",
+          guidanceNote: "This will make your position clear without leaving room for misinterpretation.",
         },
       ],
       gentle: [
         {
           id: "1",
           text: "I understand where you are coming from. This is not something I can take on.",
-          guidanceNote: "Warm but still holding your ground.",
+          guidanceNote: "This will help them feel heard while understanding your boundary.",
         },
       ],
       neutral: [
         {
           id: "1",
           text: "I understand. That does not work for me.",
-          guidanceNote: "Clean and balanced. Says what needs to be said.",
+          guidanceNote: "This will come across as calm and clear without being cold.",
         },
       ],
     };
@@ -2263,7 +2263,7 @@ Respond with valid JSON only:
   "updatedReply": {
     "id": "string",
     "text": "the updated suggested reply (1-3 sentences) — actually responding to what they said",
-    "guidanceNote": "brief, practical note about this approach"
+    "guidanceNote": "brief note about how this reply will impact the recipient"
   },
   "approachShift": "optional — only include if the new message requires adjusting the previous approach, explain in 1 sentence"
 }`;
