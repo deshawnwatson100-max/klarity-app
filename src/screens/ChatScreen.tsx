@@ -1993,22 +1993,9 @@ export function ChatScreen({ navigation, route }: Props) {
       return <TypingIndicator key={message.id} />;
     }
 
-    // Chat loading bubble (new unified loading indicator)
+    // Chat loading - use simple TypingIndicator to match reply loop
     if (message.role === "chat-loading") {
-      const loadingMsg = message as ChatLoadingMessage;
-      return (
-        <ChatLoadingBubble
-          key={message.id}
-          type={loadingMsg.loadingType}
-          state={loadingMsg.loadingState}
-          customAction={loadingMsg.customAction}
-          errorMessage={loadingMsg.errorMessage}
-          onRetry={() => {
-            // Remove error message and let user try again
-            removeMessageFromActiveLoop(message.id);
-          }}
-        />
-      );
+      return <TypingIndicator key={message.id} />;
     }
 
     // Deep Search loading state
