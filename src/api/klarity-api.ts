@@ -2964,6 +2964,164 @@ Return ONLY the title, nothing else.`;
 }
 
 /**
+ * Light Decode Image Analysis for the decode chat loop
+ * A lighter version of Deep Decode that provides quick, conversational analysis
+ * of conversation screenshots within the chat flow
+ */
+export interface LightDecodeImageResult {
+  overview: string;
+  toneRead: string;
+  keyObservation: string;
+  possibleMeanings: string[];
+  thingToConsider: string;
+}
+
+export async function analyzeLightDecodeImage(
+  imageBase64: string,
+  conversationHistory: { role: "user" | "assistant"; content: string }[] = []
+): Promise<LightDecodeImageResult> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are Klarity — a communication analyst helping someone understand a message or conversation they received.
+
+## YOUR ROLE
+Help people see social and communication dynamics more clearly. You do not diagnose, judge, or label people. You surface patterns and observations that help the user understand what they are looking at.
+
+## WHAT TO DO
+1. Read the conversation screenshot carefully
+2. Identify the overall dynamic and tone
+3. Note what stands out without labeling it as "good" or "bad"
+4. Offer possible interpretations the user might not have considered
+
+## VOICE & TONE
+- Calm and observational
+- Neutral but insightful
+- Direct without being harsh
+- Human and grounded
+- Never clinical or therapy-speak
+- Never use words like "toxic," "narcissistic," "manipulative," "gaslighting"
+
+## IF THE IMAGE IS NOT A CONVERSATION
+If the image does not contain a text conversation (e.g., a photo, meme, or unrelated image), respond with:
+{
+  "overview": "This image does not appear to contain a text conversation.",
+  "toneRead": "N/A",
+  "keyObservation": "Could you check that you attached the right screenshot? I am looking for a text or messaging conversation to help you decode.",
+  "possibleMeanings": [],
+  "thingToConsider": "Try sending a screenshot of the conversation you want help understanding."
+}
+
+## RESPONSE FORMAT
+Provide your analysis in this JSON structure:
+
+{
+  "overview": "1-2 sentences describing what this conversation is about and who seems to be involved",
+  "toneRead": "A short phrase describing the overall tone (e.g., 'Friendly but distant', 'Warm', 'Tense', 'Casual', 'Uncertain')",
+  "keyObservation": "1-2 sentences noting the most important thing you observe about this exchange — what stands out",
+  "possibleMeanings": [
+    "2-3 possible interpretations of what the other person might mean or what might be happening (use phrases like 'They could be...', 'This might mean...', 'One possibility is...')"
+  ],
+  "thingToConsider": "1 sentence — a grounded question or thought for the user to reflect on"
+}
+
+## ABSOLUTE DO NOTs
+- Do NOT diagnose or label anyone
+- Do NOT tell the user how they should feel
+- Do NOT assume the worst interpretation
+- Do NOT use therapy language or clinical terms
+- Do NOT say "I can see you sent two images" or reference image count
+- Do NOT ask "what do you want to get out of this" — just analyze`;
+
+  try {
+    console.log("[analyzeLightDecodeImage] Starting light decode analysis");
+
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail: string } }>;
+    }> = [{ role: "system", content: systemPrompt }];
+
+    // Add relevant conversation history for context (last few exchanges)
+    if (conversationHistory.length > 0) {
+      const recentHistory = conversationHistory.slice(-4);
+      for (const msg of recentHistory) {
+        messages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      }
+    }
+
+    // Add the image with prompt
+    messages.push({
+      role: "user",
+      content: [
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${imageBase64}`,
+            detail: "high",
+          },
+        },
+        {
+          type: "text",
+          text: "Help me understand this conversation. Provide your analysis in the JSON format specified.",
+        },
+      ],
+    });
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+      max_completion_tokens: 800,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    console.log("[analyzeLightDecodeImage] API response received");
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      console.warn("[analyzeLightDecodeImage] Empty content from API");
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    console.log("[analyzeLightDecodeImage] Analysis complete");
+
+    return {
+      overview: parsed.overview || "I had trouble reading this conversation clearly.",
+      toneRead: parsed.toneRead || "Unclear",
+      keyObservation: parsed.keyObservation || "Could you tell me more about what you are wondering about?",
+      possibleMeanings: Array.isArray(parsed.possibleMeanings) ? parsed.possibleMeanings.slice(0, 3) : [],
+      thingToConsider: parsed.thingToConsider || "What part of this feels most unclear to you?",
+    };
+  } catch (error) {
+    console.error("[analyzeLightDecodeImage] Error:", error);
+    return {
+      overview: "I had trouble analyzing this image.",
+      toneRead: "Unknown",
+      keyObservation: "Could you try sending the screenshot again? Make sure it shows the conversation clearly.",
+      possibleMeanings: [],
+      thingToConsider: "If this keeps happening, try describing the situation instead.",
+    };
+  }
+}
+
+/**
  * Deep Decode: Analyze multiple conversation images to understand communication dynamics
  * Takes an array of base64 images and provides comprehensive analysis
  */

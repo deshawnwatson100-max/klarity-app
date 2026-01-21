@@ -66,6 +66,7 @@ import {
   analyzeImageContinuation,
   addEmojisToReply,
   generateDecodeResponse,
+  analyzeLightDecodeImage,
   analyzeDeepDecode,
   DeepDecodeResult,
 } from "../api/klarity-api";
@@ -1696,7 +1697,51 @@ export function ChatScreen({ navigation, route }: Props) {
         }
       }
 
-      // Generate decode response
+      // Check if user sent an image - use light decode image analysis
+      if (userMessage.imageBase64) {
+        const imageResult = await analyzeLightDecodeImage(
+          userMessage.imageBase64,
+          conversationHistory
+        );
+
+        // Remove loading bubble
+        removeMessageFromActiveLoop(loadingMsgId);
+
+        // Format the response as a conversational message
+        let responseContent = `**Overview:** ${imageResult.overview}\n\n`;
+        responseContent += `**Tone:** ${imageResult.toneRead}\n\n`;
+        responseContent += `**What stands out:** ${imageResult.keyObservation}\n\n`;
+
+        if (imageResult.possibleMeanings.length > 0) {
+          responseContent += `**Possible meanings:**\n`;
+          for (const meaning of imageResult.possibleMeanings) {
+            responseContent += `• ${meaning}\n`;
+          }
+          responseContent += `\n`;
+        }
+
+        responseContent += `**Something to consider:** ${imageResult.thingToConsider}`;
+
+        // Add assistant response
+        const assistantMsg: ChatMessage = {
+          id: Date.now().toString() + "_decode_image_response",
+          role: "assistant",
+          content: responseContent,
+          timestamp: Date.now(),
+        };
+        addMessageToActiveLoop(assistantMsg);
+
+        // Scroll to show response
+        setTimeout(() => {
+          decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+
+        setIsLoading(false);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Generate decode response for text-only messages
       const result = await generateDecodeResponse(
         userMessage.content,
         conversationHistory
