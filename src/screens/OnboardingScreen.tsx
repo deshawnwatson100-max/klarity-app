@@ -222,16 +222,6 @@ const DATING_QUESTIONS: QuestionSet = [
     ],
   },
   {
-    key: "momentFrequency",
-    question: "How often do moments like this come up?",
-    options: [
-      "Almost daily",
-      "A few times a week",
-      "Occasionally",
-      "Rarely, but they matter",
-    ],
-  },
-  {
     key: "reminderPreference",
     question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
     options: [
