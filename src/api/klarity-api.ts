@@ -98,12 +98,12 @@ const MODEL_FULL = "gpt-4o-2024-11-20"; // More capable, for complex analysis
 /**
  * Send a chat request to the fast model (o4-mini)
  * Use for simpler tasks like red flags detection, emotional analysis, etc.
+ * Note: o4-mini doesn't support custom temperature, only default (1)
  */
 async function callFastModel(
   messages: GPT5Message[],
   maxTokens: number = 800,
-  useJsonMode: boolean = false,
-  temperature: number = 0.75
+  useJsonMode: boolean = false
 ): Promise<string> {
   const client = getOpenAIClient();
 
@@ -111,7 +111,7 @@ async function callFastModel(
     model: MODEL_FAST,
     messages: messages as any,
     max_completion_tokens: maxTokens,
-    temperature,
+    // Note: o4-mini only supports temperature=1 (default), so we don't set it
   };
 
   if (useJsonMode) {
@@ -128,7 +128,6 @@ async function callFastModel(
 
     return content;
   } catch (error: any) {
-    console.error("Fast API Error:", error.message);
     throw new Error(`API failed: ${error.message || "Unknown error"}`);
   }
 }
