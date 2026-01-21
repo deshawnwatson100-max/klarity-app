@@ -125,7 +125,7 @@ const renderFormattedText = (text: string, baseStyle: any, isDark: boolean) => {
               marginTop: 12,
               marginBottom: 8,
               borderLeftWidth: 3,
-              borderLeftColor: "#6366F1",
+              borderLeftColor: bulletColor,
             }}
           >
             {codeBlockContent.map((codeLine, i) => (
