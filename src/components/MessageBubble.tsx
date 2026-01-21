@@ -28,7 +28,7 @@ const renderFormattedText = (text: string, baseStyle: any, isDark: boolean) => {
     2: isDark ? "#F3F4F6" : "#374151",
     3: isDark ? "#E5E7EB" : "#4B5563",
   };
-  const bulletColor = isDark ? "#818CF8" : "#6366F1";
+  const bulletColor = isDark ? "#60A5FA" : "#2563EB";
   const quoteTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const quoteBorderColor = isDark ? "#6B7280" : "#D1D5DB";
   const codeBlockBg = isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.04)";
