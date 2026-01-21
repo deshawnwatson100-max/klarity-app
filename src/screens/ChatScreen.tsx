@@ -197,6 +197,14 @@ export function ChatScreen({ navigation, route }: Props) {
     });
   };
 
+  // Helper to add message with a specific mode (used when mode must be preserved across async operations)
+  const addMessageWithMode = (message: ChatMessage, mode: MessageMode) => {
+    addMessageToActiveLoopRaw({
+      ...message,
+      mode,
+    });
+  };
+
   const allMessages = useLoopsStore((s) => {
     const activeLoop = s.loops.find((loop) => loop.id === s.activeLoopId);
     return activeLoop?.messages || [];
@@ -814,6 +822,10 @@ export function ChatScreen({ navigation, route }: Props) {
     setIsLoading(true);
     setCurrentUserMessage(userMessage.content);
 
+    // Capture the mode at submission time - this ensures all responses go to the correct loop
+    // even if user switches modes while waiting for the response
+    const capturedMode = inputModeRef.current as MessageMode;
+
     try {
       // Show typing indicator
       const typingMsg: TypingMessage = {
@@ -822,7 +834,7 @@ export function ChatScreen({ navigation, route }: Props) {
         content: "",
         timestamp: Date.now(),
       };
-      addMessageToActiveLoop(typingMsg);
+      addMessageWithMode(typingMsg, capturedMode);
 
       let dysfunctionalSummary: { summary: string; patterns?: string[] };
       let analysis: EmotionalAnalysis | null = null;
@@ -847,7 +859,7 @@ export function ChatScreen({ navigation, route }: Props) {
             content: clarificationMessage,
             timestamp: Date.now(),
           };
-          addMessageToActiveLoop(assistantMsg);
+          addMessageWithMode(assistantMsg, capturedMode);
 
           // Save minimal context - awaiting user clarification
           setConversationContext({
@@ -906,7 +918,7 @@ export function ChatScreen({ navigation, route }: Props) {
         summary: dysfunctionalSummary.summary,
         patterns: dysfunctionalSummary.patterns,
       };
-      addMessageToActiveLoop(dysfunctionalMsg);
+      addMessageWithMode(dysfunctionalMsg, capturedMode);
 
       await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -925,7 +937,7 @@ export function ChatScreen({ navigation, route }: Props) {
           introText: redFlagsResult.introText,
           flags: redFlagsResult.flags,
         };
-        addMessageToActiveLoop(redFlagsMsg);
+        addMessageWithMode(redFlagsMsg, capturedMode);
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
@@ -936,7 +948,7 @@ export function ChatScreen({ navigation, route }: Props) {
         content: "",
         timestamp: Date.now(),
       };
-      addMessageToActiveLoop(typingMsg2);
+      addMessageWithMode(typingMsg2, capturedMode);
 
       // STEP 2: Generate and show Suggested Reply
       const preferenceSummary = getPreferenceSummary();
@@ -974,7 +986,7 @@ export function ChatScreen({ navigation, route }: Props) {
           content: promptMessage,
           timestamp: Date.now(),
         };
-        addMessageToActiveLoop(assistantMsg);
+        addMessageWithMode(assistantMsg, capturedMode);
       }
 
       const replyMsg: SuggestedReplyCardMessage = {
@@ -985,7 +997,7 @@ export function ChatScreen({ navigation, route }: Props) {
         replies: [suggestedReply],
         intention: "maintain", // Default neutral intention
       };
-      addMessageToActiveLoop(replyMsg);
+      addMessageWithMode(replyMsg, capturedMode);
 
       // Save conversation context for potential mid-loop image continuation
       setConversationContext({
@@ -998,12 +1010,12 @@ export function ChatScreen({ navigation, route }: Props) {
 
     } catch (error) {
       console.error("Error processing message:", error);
-      addMessageToActiveLoop({
+      addMessageWithMode({
         id: Date.now().toString(),
         role: "assistant",
         content: "I encountered an error processing your message. Please try again.",
         timestamp: Date.now(),
-      });
+      }, capturedMode);
     } finally {
       setIsLoading(false);
       setIsProcessing(false);
@@ -1603,6 +1615,9 @@ export function ChatScreen({ navigation, route }: Props) {
     setIsProcessing(true);
     setIsLoading(true);
 
+    // Capture the mode at submission time - this ensures all responses go to the correct loop
+    const capturedMode: MessageMode = "understand";
+
     // Generate a unique ID for the loading bubble
     const loadingMsgId = `chat-loading-${Date.now()}`;
 
@@ -1635,7 +1650,7 @@ export function ChatScreen({ navigation, route }: Props) {
           content: "I can help you learn more about someone. Fill out the details below and I will search across the web to find publicly available information.",
           timestamp: Date.now(),
         };
-        addMessageToActiveLoop(assistantMsg);
+        addMessageWithMode(assistantMsg, capturedMode);
 
         // Add the PersonContextCard for user to fill out
         const personContextCardMsg: PersonContextCardMessage = {
@@ -1735,7 +1750,7 @@ export function ChatScreen({ navigation, route }: Props) {
           content: responseContent,
           timestamp: Date.now(),
         };
-        addMessageToActiveLoop(assistantMsg);
+        addMessageWithMode(assistantMsg, capturedMode);
 
         // Scroll to show response
         setTimeout(() => {
@@ -1763,7 +1778,7 @@ export function ChatScreen({ navigation, route }: Props) {
         content: result.response,
         timestamp: Date.now(),
       };
-      addMessageToActiveLoop(assistantMsg);
+      addMessageWithMode(assistantMsg, capturedMode);
 
       // Check if user wants more from a completed search
       const activeLoop = getActiveLoop();
@@ -1880,6 +1895,9 @@ export function ChatScreen({ navigation, route }: Props) {
     setIsProcessing(true);
     setIsLoading(true);
 
+    // Capture the mode at submission time
+    const capturedMode = inputModeRef.current as MessageMode;
+
     try {
       // Show typing indicator
       const typingMsg: TypingMessage = {
@@ -1888,7 +1906,7 @@ export function ChatScreen({ navigation, route }: Props) {
         content: "",
         timestamp: Date.now(),
       };
-      addMessageToActiveLoop(typingMsg);
+      addMessageWithMode(typingMsg, capturedMode);
 
       // Analyze image as continuation
       const result = await analyzeImageContinuation(
@@ -1909,7 +1927,7 @@ export function ChatScreen({ navigation, route }: Props) {
         whatChanged: result.whatChanged,
         approachShift: result.approachShift,
       };
-      addMessageToActiveLoop(continuationMsg);
+      addMessageWithMode(continuationMsg, capturedMode);
 
       await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -1922,7 +1940,7 @@ export function ChatScreen({ navigation, route }: Props) {
         replies: [result.updatedReply],
         intention: "maintain",
       };
-      addMessageToActiveLoop(replyMsg);
+      addMessageWithMode(replyMsg, capturedMode);
 
       // Update conversation context with new info
       setConversationContext({
