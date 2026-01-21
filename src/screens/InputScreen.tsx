@@ -117,11 +117,14 @@ export function InputScreen({ navigation }: Props) {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Ensure we have an active loop
-    let activeLoop = getActiveLoop();
+    // Always create a new loop when sending from InputScreen
+    // This ensures each new conversation starts fresh
+    createNewLoop();
+    const activeLoop = getActiveLoop();
+
     if (!activeLoop) {
-      createNewLoop();
-      activeLoop = getActiveLoop();
+      console.error("[InputScreen] Failed to create new loop");
+      return;
     }
 
     // Add user message to active loop with mode
@@ -168,12 +171,9 @@ export function InputScreen({ navigation }: Props) {
       setShowDeepDecodeModal(false);
       setShowDeepDecodeResults(true);
 
-      // Add the result to the decode chat loop as floating text
-      let activeLoop = getActiveLoop();
-      if (!activeLoop) {
-        createNewLoop();
-        activeLoop = getActiveLoop();
-      }
+      // Always create a new loop for Deep Decode from InputScreen
+      createNewLoop();
+      const activeLoop = getActiveLoop();
 
       if (activeLoop) {
         const deepDecodeMsg: DeepDecodeResultMessage = {
@@ -283,11 +283,14 @@ export function InputScreen({ navigation }: Props) {
         // Analyze the transcription with AI
         setProcessingMessage("Analyzing your message...");
 
-        // Ensure we have an active loop
-        let activeLoop = getActiveLoop();
+        // Always create a new loop when sending from InputScreen
+        createNewLoop();
+        const activeLoop = getActiveLoop();
+
         if (!activeLoop) {
-          createNewLoop();
-          activeLoop = getActiveLoop();
+          console.error("[InputScreen] Failed to create new loop for voice message");
+          setIsProcessing(false);
+          return;
         }
 
         // Add user message to active loop
