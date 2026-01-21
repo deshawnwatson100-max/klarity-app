@@ -908,22 +908,60 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(dysfunctionalMsg);
 
-      // Generate suggested reply directly - skip red flags for faster response
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // STEP 1.5: Detect and show Red Flags (if any)
+      const redFlagsResult = await detectRedFlags(
+        userMessage.content,
+        dysfunctionalSummary.patterns
+      );
+
+      if (redFlagsResult.detected && redFlagsResult.flags.length > 0) {
+        const redFlagsMsg: RedFlagsMessage = {
+          id: Date.now().toString() + "_redflags",
+          role: "red-flags",
+          content: "",
+          timestamp: Date.now(),
+          introText: redFlagsResult.introText,
+          flags: redFlagsResult.flags,
+        };
+        addMessageToActiveLoop(redFlagsMsg);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
+      // Show typing for reply generation
+      const typingMsg2: TypingMessage = {
+        id: Date.now().toString() + "_typing2",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageToActiveLoop(typingMsg2);
+
+      // STEP 2: Generate and show Suggested Reply
       const preferenceSummary = getPreferenceSummary();
 
-      const suggestedReply = imageAnalysisResult?.suggestedResponse
-        ? {
-            id: Date.now().toString(),
-            text: imageAnalysisResult.suggestedResponse,
-            guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
-          }
-        : await generateQuickSuggestedReply(
-            userMessage.content,
-            analysis || undefined,
-            preferenceSummary || undefined
-          );
+      let suggestedReply;
 
-      // STEP 2: Show Suggested Reply
+      if (imageAnalysisResult?.suggestedResponse) {
+        // Use the reply from image analysis directly
+        suggestedReply = {
+          id: Date.now().toString(),
+          text: imageAnalysisResult.suggestedResponse,
+          guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
+        };
+      } else {
+        // Generate reply for text-only input with user preferences
+        suggestedReply = await generateQuickSuggestedReply(
+          userMessage.content,
+          analysis || undefined,
+          preferenceSummary || undefined
+        );
+      }
+
+      removeMessageFromActiveLoop(typingMsg2.id);
+
+      // STEP 3: Show Suggested Reply
       // For image input, show acknowledgment + question as floating text
       if (imageAnalysisResult) {
         const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
