@@ -91,11 +91,50 @@ interface GPT5Message {
   content: string;
 }
 
-// Using gpt-5.2 which is the latest model available
-const MODEL = "gpt-5.2";
+// Model options - use fast model for simple operations, full model for complex analysis
+const MODEL_FAST = "o4-mini-2025-04-16"; // Faster, for simple tasks
+const MODEL_FULL = "gpt-4o-2024-11-20"; // More capable, for complex analysis
 
 /**
- * Send a chat request to GPT-5 Mini
+ * Send a chat request to the fast model (o4-mini)
+ * Use for simpler tasks like red flags detection, emotional analysis, etc.
+ */
+async function callFastModel(
+  messages: GPT5Message[],
+  maxTokens: number = 800,
+  useJsonMode: boolean = false,
+  temperature: number = 0.75
+): Promise<string> {
+  const client = getOpenAIClient();
+
+  const params: any = {
+    model: MODEL_FAST,
+    messages: messages as any,
+    max_completion_tokens: maxTokens,
+    temperature,
+  };
+
+  if (useJsonMode) {
+    params.response_format = { type: "json_object" };
+  }
+
+  try {
+    const completion = await client.chat.completions.create(params);
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      throw new Error("Empty response from API");
+    }
+
+    return content;
+  } catch (error: any) {
+    console.error("Fast API Error:", error.message);
+    throw new Error(`API failed: ${error.message || "Unknown error"}`);
+  }
+}
+
+/**
+ * Send a chat request to GPT-5 Mini (legacy name, uses full model)
  */
 async function callGPT5Mini(
   messages: GPT5Message[],
@@ -106,7 +145,7 @@ async function callGPT5Mini(
   const client = getOpenAIClient();
 
   const params: any = {
-    model: MODEL,
+    model: MODEL_FULL,
     messages: messages as any,
     max_completion_tokens: maxTokens,
     temperature,
@@ -118,14 +157,12 @@ async function callGPT5Mini(
   }
 
   try {
-    console.log("Calling OpenAI with model:", MODEL);
     const completion = await client.chat.completions.create(params);
-    console.log("API Response:", JSON.stringify(completion, null, 2));
 
     const content = completion.choices[0]?.message?.content || "";
 
     if (!content) {
-      console.error("Empty response from API. Full completion:", JSON.stringify(completion));
+      console.error("Empty response from API");
       throw new Error("Empty response from API");
     }
 
@@ -208,12 +245,13 @@ Respond with valid JSON only:
     : `Based on this situation: "${userMessage}"\n\nIdentify what type of situation this is and what dynamics may be at play.`;
 
   try {
-    const response = await callGPT5Mini(
+    // Use fast model for dysfunctional summary - it's a simple analysis task
+    const response = await callFastModel(
       [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      1500,
+      600,
       true
     );
 
@@ -421,17 +459,12 @@ Respond with valid JSON first, then the notation block:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      2500,
+      1200, // Reduced from 2500 - replies are short
       false // Not using JSON mode since we have notation block
     );
 
     // Parse notation from response
     const { userResponse, notation } = parseKlarityNotation(response);
-
-    // Log notation for internal tracking
-    if (notation) {
-      console.log("[generateQuickSuggestedReply] Klarity Notation:", JSON.stringify(notation, null, 2));
-    }
 
     // Parse the JSON from user response
     let jsonStr = userResponse.trim();
@@ -498,8 +531,8 @@ Provide a JSON object with:
   ];
 
   try {
-    // GPT-5.2 model with sufficient tokens
-    const response = await callGPT5Mini(messages, 3000, true);
+    // Use fast model for emotional analysis - it's a quick classification task
+    const response = await callFastModel(messages, 800, true);
 
     // Try to parse JSON
     let jsonStr = response.trim();
@@ -737,8 +770,6 @@ When the image is invalid (not a conversation screenshot):
 
 
   try {
-    console.log("[analyzeImageToxicity] Starting image analysis, base64 length:", imageBase64?.length);
-
     const completion = await client.chat.completions.create({
       model: "gpt-4o-2024-11-20",
       messages: [
@@ -753,7 +784,7 @@ When the image is invalid (not a conversation screenshot):
               type: "image_url",
               image_url: {
                 url: `data:image/jpeg;base64,${imageBase64}`,
-                detail: "high",
+                detail: "low", // Use low detail for faster processing
               },
             },
             {
@@ -763,21 +794,20 @@ When the image is invalid (not a conversation screenshot):
           ],
         },
       ],
-      max_completion_tokens: 1500,
+      max_completion_tokens: 1000,
       temperature: 1,
       response_format: { type: "json_object" },
     });
 
-    console.log("[analyzeImageToxicity] API response received");
     const content = completion.choices[0]?.message?.content || "";
 
     if (!content) {
-      console.warn("[analyzeImageToxicity] Empty content from API, using fallback");
       return {
         summary: "Unable to analyze this image.",
         labels: [],
         emotionalImpact: "",
         suggestedResponse: "",
+        guidanceNote: "",
         isInvalidInput: true,
       };
     }
@@ -2002,29 +2032,19 @@ If no red flags detected, return:
 Return valid JSON only.`;
 
   try {
-    const client = getOpenAIClient();
-
-    const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
-      messages: [
+    // Use fast model for red flags detection - it's a pattern recognition task
+    const response = await callFastModel(
+      [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_completion_tokens: 1500,
-      temperature: 1,
-      response_format: { type: "json_object" },
-    });
+      600,
+      true
+    );
 
-    const responseText = completion.choices[0]?.message?.content;
-    if (!responseText) {
-      console.log("[detectRedFlags] No response from API");
-      return { detected: false, introText: "", flags: [] };
-    }
-
-    const parsed = JSON.parse(responseText);
+    const parsed = JSON.parse(response);
 
     if (parsed.detected === true && Array.isArray(parsed.flags) && parsed.flags.length > 0) {
-      console.log("[detectRedFlags] Red flags detected:", parsed.flags.length);
       return {
         detected: true,
         introText: parsed.introText || "Here are a few things worth noticing — not conclusions, just signals.",
@@ -2034,10 +2054,8 @@ Return valid JSON only.`;
       };
     }
 
-    console.log("[detectRedFlags] No red flags detected");
     return { detected: false, introText: "", flags: [] };
   } catch (error) {
-    console.error("[detectRedFlags] Error:", error);
     return { detected: false, introText: "", flags: [] };
   }
 }
