@@ -389,16 +389,17 @@ Before finalizing, ask:
 ${preferencesSection}
 Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) about the emotional impact on the recipient.
 
-GUIDANCE NOTE RULES:
-- Focus ONLY on how the recipient will feel when they read this reply
-- Examples: "This will make them feel heard", "This might catch them off guard", "This will reassure them you care"
-- NEVER say "this responds to..." or describe what the reply does mechanically
-- Keep it short and insightful
+GUIDANCE NOTE RULES (CRITICAL):
+- The guidance note is about how the RECIPIENT will FEEL emotionally
+- Good examples: "This will make them feel heard", "This might catch them off guard", "This will reassure them you care", "This could ease their anxiety"
+- BAD (never write these): "This responds directly to...", "This addresses the last message", "This directly responds to what they said"
+- The guidance note should NEVER reference "the last message", "the conversation", or describe what the reply does
+- Keep it emotional and human, not mechanical
 
 Respond with valid JSON first, then the notation block:
 {
   "text": "string (the suggested reply — ready to send as-is)",
-  "guidanceNote": "string (how the recipient will feel when they read this)"
+  "guidanceNote": "string (the recipient's emotional reaction, e.g. 'This will make them feel valued')"
 }
 
 [[KLARITY_NOTES]]
@@ -949,10 +950,11 @@ Generate 1 suggested reply that fits this intention AND actually responds to the
 
 Also provide a brief guidance note (1 sentence) about the emotional impact on the recipient.
 
-GUIDANCE NOTE RULES:
-- Focus ONLY on how the recipient will feel when they read this reply
-- Examples: "This will make them feel heard", "This might ease their worry", "This shows you are taking them seriously"
-- NEVER say "this responds to..." or describe what the reply does mechanically
+GUIDANCE NOTE RULES (CRITICAL):
+- The guidance note is about how the RECIPIENT will FEEL emotionally
+- Good examples: "This will make them feel heard", "This might ease their worry", "This shows you are taking them seriously"
+- BAD (never write these): "This responds directly to...", "This addresses the last message", "This directly responds to what they said"
+- The guidance note should NEVER reference "the last message", "the conversation", or describe what the reply does
 
 Respond with valid JSON only containing:
 - replies: array of { id: string, text: string, guidanceNote: string }`;
@@ -1205,14 +1207,15 @@ Generate ONE reply (1-3 sentences) that fits the ${modulationTone} tone AND actu
 
 Also provide a brief guidance note (1 sentence) about how the recipient will feel.
 
-GUIDANCE NOTE RULES:
-- Focus ONLY on the recipient's emotional reaction when they read this
-- Examples: "This will reassure them", "This might surprise them", "This will make them feel respected"
-- NEVER describe what the reply does mechanically
+GUIDANCE NOTE RULES (CRITICAL):
+- The guidance note is about how the RECIPIENT will FEEL emotionally
+- Good examples: "This will reassure them", "This might surprise them", "This will make them feel respected"
+- BAD (never write these): "This responds directly to...", "This addresses the last message", "This directly responds to what they said"
+- The guidance note should NEVER reference "the last message", "the conversation", or describe what the reply does
 
 Respond with valid JSON only:
 {
-  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "how the recipient will feel" }]
+  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "the recipient's emotional reaction" }]
 }`;
 
   const messages: GPT5Message[] = [
@@ -2272,10 +2275,11 @@ The reply you generate should DIRECTLY RESPOND to the LAST MESSAGE shown in the 
 - Over-explain or justify
 - Sound like a therapy script
 
-## GUIDANCE NOTE RULES
-- Focus ONLY on the recipient's emotional reaction when they read the reply
-- Examples: "This will make them feel heard", "This might ease the tension", "This shows you care"
-- NEVER describe what the reply does mechanically (e.g., never say "this responds to...")
+## GUIDANCE NOTE RULES (CRITICAL)
+- The guidance note is about how the RECIPIENT will FEEL emotionally
+- Good examples: "This will make them feel heard", "This might ease the tension", "This shows you care"
+- BAD (never write these): "This responds directly to...", "This addresses the last message", "This directly responds to what they said"
+- The guidance note should NEVER reference "the last message", "the conversation", or describe what the reply does
 
 Respond with valid JSON only:
 {
@@ -2284,7 +2288,7 @@ Respond with valid JSON only:
   "updatedReply": {
     "id": "string",
     "text": "the updated suggested reply (1-3 sentences) — actually responding to what they said",
-    "guidanceNote": "how the recipient will feel when they read this"
+    "guidanceNote": "the recipient's emotional reaction (e.g. 'This will make them feel valued')"
   },
   "approachShift": "optional — only include if the new message requires adjusting the previous approach, explain in 1 sentence"
 }`;
