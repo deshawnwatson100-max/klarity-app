@@ -1243,7 +1243,8 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
         setTimeout(() => {
           setIsTyping(false);
-          addBotMessage("I have 7 quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.");
+          const questionCount = useCase === "Dating" ? 7 : 8;
+          addBotMessage(`I have ${questionCount} quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.`);
 
           // Show the skip choice
           setTimeout(() => {
