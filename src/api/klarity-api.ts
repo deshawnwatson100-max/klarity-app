@@ -387,12 +387,18 @@ Before finalizing, ask:
 3. Is it appropriate for the tone of the conversation?
 4. Would the user feel good sending this?
 ${preferencesSection}
-Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
+Generate ONE reply (1-3 sentences). Also provide a brief guidance note (1 sentence) about the emotional impact on the recipient.
+
+GUIDANCE NOTE RULES:
+- Focus ONLY on how the recipient will feel when they read this reply
+- Examples: "This will make them feel heard", "This might catch them off guard", "This will reassure them you care"
+- NEVER say "this responds to..." or describe what the reply does mechanically
+- Keep it short and insightful
 
 Respond with valid JSON first, then the notation block:
 {
   "text": "string (the suggested reply — ready to send as-is)",
-  "guidanceNote": "string (brief note about how this reply will impact the recipient)"
+  "guidanceNote": "string (how the recipient will feel when they read this)"
 }
 
 [[KLARITY_NOTES]]
@@ -941,7 +947,12 @@ Read the conversation carefully. The reply should DIRECTLY RESPOND to what was s
 
 Generate 1 suggested reply that fits this intention AND actually responds to the conversation. The reply should be 1-2 sentences and sound natural.
 
-Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
+Also provide a brief guidance note (1 sentence) about the emotional impact on the recipient.
+
+GUIDANCE NOTE RULES:
+- Focus ONLY on how the recipient will feel when they read this reply
+- Examples: "This will make them feel heard", "This might ease their worry", "This shows you are taking them seriously"
+- NEVER say "this responds to..." or describe what the reply does mechanically
 
 Respond with valid JSON only containing:
 - replies: array of { id: string, text: string, guidanceNote: string }`;
@@ -1192,11 +1203,16 @@ ${toneContext[modulationTone]}
 
 Generate ONE reply (1-3 sentences) that fits the ${modulationTone} tone AND actually responds to the conversation.
 
-Also provide a brief guidance note (1 sentence) explaining how this reply will likely make the recipient feel or how it will impact them.
+Also provide a brief guidance note (1 sentence) about how the recipient will feel.
+
+GUIDANCE NOTE RULES:
+- Focus ONLY on the recipient's emotional reaction when they read this
+- Examples: "This will reassure them", "This might surprise them", "This will make them feel respected"
+- NEVER describe what the reply does mechanically
 
 Respond with valid JSON only:
 {
-  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "brief note about recipient impact" }]
+  "replies": [{ "id": "1", "text": "the reply", "guidanceNote": "how the recipient will feel" }]
 }`;
 
   const messages: GPT5Message[] = [
@@ -2256,6 +2272,11 @@ The reply you generate should DIRECTLY RESPOND to the LAST MESSAGE shown in the 
 - Over-explain or justify
 - Sound like a therapy script
 
+## GUIDANCE NOTE RULES
+- Focus ONLY on the recipient's emotional reaction when they read the reply
+- Examples: "This will make them feel heard", "This might ease the tension", "This shows you care"
+- NEVER describe what the reply does mechanically (e.g., never say "this responds to...")
+
 Respond with valid JSON only:
 {
   "continuationSummary": "1-2 sentences briefly summarizing what the new message adds to the situation",
@@ -2263,7 +2284,7 @@ Respond with valid JSON only:
   "updatedReply": {
     "id": "string",
     "text": "the updated suggested reply (1-3 sentences) — actually responding to what they said",
-    "guidanceNote": "brief note about how this reply will impact the recipient"
+    "guidanceNote": "how the recipient will feel when they read this"
   },
   "approachShift": "optional — only include if the new message requires adjusting the previous approach, explain in 1 sentence"
 }`;
