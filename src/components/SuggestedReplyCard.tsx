@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator, Animated, Easing } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
@@ -174,8 +175,10 @@ function ReplyItem({
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Copy to clipboard so user can paste directly
+    await Clipboard.setStringAsync(reply.text);
     onSelectReply(reply.text);
     setCopied(true);
     // Reset after 2 seconds
