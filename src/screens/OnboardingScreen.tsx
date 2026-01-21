@@ -566,16 +566,6 @@ const RELATIONSHIPS_QUESTIONS: QuestionSet = [
     ],
   },
   {
-    key: "momentFrequency",
-    question: "How often do moments like this come up?",
-    options: [
-      "Almost daily",
-      "A few times a week",
-      "Occasionally",
-      "Rarely, but they matter",
-    ],
-  },
-  {
     key: "reminderPreference",
     question: "If Klarity helps you handle these moments better, would you want reminders or tips outside the app?",
     options: [
@@ -1243,7 +1233,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
 
         setTimeout(() => {
           setIsTyping(false);
-          const questionCount = useCase === "Dating" ? 7 : 8;
+          const questionCount = (useCase === "Dating" || useCase === "Texting" || useCase === "Relationships") ? 7 : 8;
           addBotMessage(`I have ${questionCount} quick questions that take 30 seconds to a minute. They help me understand how you communicate so I can give you more personalized insights and better responses.`);
 
           // Show the skip choice
