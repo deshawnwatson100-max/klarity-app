@@ -1011,7 +1011,8 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   const handleSelectReply = (replyText: string) => {
-    setCurrentInput(replyText);
+    // Reply is already copied to clipboard by the SuggestedReplyCard component
+    // No need to set it in the input bar
   };
 
   const handleModifyReplyLength = async (
