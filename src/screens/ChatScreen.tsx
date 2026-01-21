@@ -864,10 +864,12 @@ export function ChatScreen({ navigation, route }: Props) {
           return;
         }
 
-        dysfunctionalSummary = await generateDysfunctionalCommunicationSummary(
-          userMessage.content,
-          imageAnalysisResult
-        );
+        // For images, use the image analysis summary directly - skip extra API call
+        dysfunctionalSummary = {
+          summary: imageAnalysisResult.summary || "Analyzing the conversation shared.",
+          patterns: imageAnalysisResult.labels?.map((l: any) => l.tag) || [],
+        };
+
         // Create analysis from image - use actual tone from analysis
         analysis = {
           emotionalClarity: 70,
@@ -906,41 +908,20 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(dysfunctionalMsg);
 
-      // OPTIMIZATION: Start red flags detection and reply generation in PARALLEL
-      // while the user is viewing the dysfunctional communication card
+      // Generate suggested reply directly - skip red flags for faster response
       const preferenceSummary = getPreferenceSummary();
 
-      // Prepare reply generation promise (only for non-image input)
-      const replyPromise = imageAnalysisResult?.suggestedResponse
-        ? Promise.resolve({
+      const suggestedReply = imageAnalysisResult?.suggestedResponse
+        ? {
             id: Date.now().toString(),
             text: imageAnalysisResult.suggestedResponse,
             guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
-          })
-        : generateQuickSuggestedReply(
+          }
+        : await generateQuickSuggestedReply(
             userMessage.content,
             analysis || undefined,
             preferenceSummary || undefined
           );
-
-      // Run red flags detection and reply generation in parallel
-      const [redFlagsResult, suggestedReply] = await Promise.all([
-        detectRedFlags(userMessage.content, dysfunctionalSummary.patterns),
-        replyPromise,
-      ]);
-
-      // STEP 1.5: Show Red Flags (if any)
-      if (redFlagsResult.detected && redFlagsResult.flags.length > 0) {
-        const redFlagsMsg: RedFlagsMessage = {
-          id: Date.now().toString() + "_redflags",
-          role: "red-flags",
-          content: "",
-          timestamp: Date.now(),
-          introText: redFlagsResult.introText,
-          flags: redFlagsResult.flags,
-        };
-        addMessageToActiveLoop(redFlagsMsg);
-      }
 
       // STEP 2: Show Suggested Reply
       // For image input, show acknowledgment + question as floating text
@@ -1032,15 +1013,19 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   const handleGenerateDifferentReply = async (currentMessageId: string) => {
+    // Get fresh messages from the store
+    const activeLoop = getActiveLoop();
+    const currentMessages = activeLoop?.messages || [];
+
     // Find the most recent user message before this reply card
-    const currentMsgIndex = messages.findIndex((m) => m.id === currentMessageId);
+    const currentMsgIndex = currentMessages.findIndex((m) => m.id === currentMessageId);
     let userMessageContent = currentUserMessage;
 
     // If currentUserMessage is empty, try to find the user message from history
     if (!userMessageContent) {
       for (let i = currentMsgIndex - 1; i >= 0; i--) {
-        if (messages[i].role === "user" && messages[i].content) {
-          userMessageContent = messages[i].content;
+        if (currentMessages[i].role === "user" && currentMessages[i].content) {
+          userMessageContent = currentMessages[i].content;
           break;
         }
       }
@@ -1050,7 +1035,7 @@ export function ChatScreen({ navigation, route }: Props) {
     if (!userMessageContent) return;
 
     // Get the current reply card to use its reply as context for variation
-    const currentReplyCard = messages.find(
+    const currentReplyCard = currentMessages.find(
       (m) => m.id === currentMessageId
     ) as SuggestedReplyCardMessage | undefined;
     const existingReply = currentReplyCard?.replies?.[0]?.text;
@@ -1061,7 +1046,7 @@ export function ChatScreen({ navigation, route }: Props) {
       content: "",
       timestamp: Date.now(),
     };
-    insertMessageAfter(currentMessageId, typingMsg);
+    addMessageToActiveLoop(typingMsg);
 
     try {
       // If we have the last message from the conversation, include it for better context
@@ -1106,7 +1091,7 @@ export function ChatScreen({ navigation, route }: Props) {
         replies: [newReply],
         intention: "maintain",
       };
-      insertMessageAfter(currentMessageId, newReplyMsg);
+      addMessageToActiveLoop(newReplyMsg);
     } catch (error) {
       console.error("Error generating different reply:", error);
       removeMessageFromActiveLoop(typingMsg.id);
