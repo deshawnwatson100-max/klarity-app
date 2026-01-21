@@ -1440,7 +1440,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             { role: "system", content: "You are Klarity's empathetic onboarding assistant. Your goal is to make users feel deeply understood and validated." },
             { role: "user", content: correctionPrompt },
           ],
-          { temperature: 0.85, maxTokens: 150 }
+          { temperature: 0.85, maxTokens: 250 }
         );
 
         setIsTyping(false);
@@ -1575,7 +1575,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
                 { role: "system", content: "You are Klarity's empathetic onboarding assistant. Your goal is to make users feel deeply understood and validated." },
                 { role: "user", content: correctionPrompt },
               ],
-              { temperature: 0.85, maxTokens: 150 }
+              { temperature: 0.85, maxTokens: 250 }
             );
 
             setIsTyping(false);
