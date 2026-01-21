@@ -3072,7 +3072,7 @@ Provide your analysis in this JSON structure:
     const completion = await client.chat.completions.create({
       model: "gpt-4o-2024-11-20",
       messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
-      max_completion_tokens: 800,
+      max_completion_tokens: 1200,
       temperature: 0.7,
       response_format: { type: "json_object" },
     });
