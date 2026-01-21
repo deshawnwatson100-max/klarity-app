@@ -95,6 +95,7 @@ export interface ImageAnalysis {
   labels: DysfunctionLabel[];
   emotionalImpact: string;
   suggestedResponse: string;
+  guidanceNote?: string; // How the recipient will feel when they receive the suggested reply
   isInvalidInput?: boolean; // True when input is not a valid conversation to analyze
   lastMessage?: string; // The last message from the conversation
   acknowledgment?: string; // Kind acknowledgment of what is in the image

@@ -944,7 +944,7 @@ export function ChatScreen({ navigation, route }: Props) {
         suggestedReply = {
           id: Date.now().toString(),
           text: imageAnalysisResult.suggestedResponse,
-          guidanceNote: "This responds directly to the last message in the conversation.",
+          guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
         };
       } else {
         // Generate reply for text-only input with user preferences

@@ -716,8 +716,16 @@ Respond with valid JSON only containing:
 - labels: array of { tag: string, description: string } for any notable dynamics (empty array if invalid)
 - emotionalImpact: 1-2 sentences on how this conversation might feel (for invalid: can be empty or general)
 - suggestedResponse: A natural reply (for invalid: empty string - do NOT generate a reply for invalid input)
+- guidanceNote: How the recipient will FEEL when they receive this reply (for invalid: empty string). Examples: "This will make them feel heard", "This might ease the tension", "This shows you care about their perspective"
 - acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic].")
 - responseContext: A brief context phrase to complete "How do you want to respond to..." (e.g., "their question about meeting up" or "this apology" or "what they shared")
+
+## GUIDANCE NOTE RULES (CRITICAL)
+- The guidanceNote describes the RECIPIENT'S emotional reaction to your suggested reply
+- It should describe how they will FEEL, not what the reply does
+- Good examples: "This will make them feel valued", "This shows you are listening", "This might reassure them"
+- BAD (never write these): "This responds directly to...", "This addresses the...", "This directly responds to what they said"
+- NEVER mention "the last message", "the conversation", or describe the mechanics of the reply
 
 ## FOR INVALID INPUT
 
@@ -803,6 +811,7 @@ When the image is invalid (not a conversation screenshot):
       labels: parsed.labels,
       emotionalImpact: parsed.emotionalImpact || "",
       suggestedResponse: parsed.isInvalidInput ? "" : (parsed.suggestedResponse || ""),
+      guidanceNote: parsed.isInvalidInput ? "" : (parsed.guidanceNote || "This will help keep the conversation flowing."),
       isInvalidInput: Boolean(parsed.isInvalidInput),
       lastMessage: parsed.lastMessage || "",
       acknowledgment: parsed.acknowledgment || "",
@@ -818,6 +827,7 @@ When the image is invalid (not a conversation screenshot):
       labels: [],
       emotionalImpact: "",
       suggestedResponse: "",
+      guidanceNote: "",
       isInvalidInput: true,
     };
   }
