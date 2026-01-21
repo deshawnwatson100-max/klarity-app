@@ -881,11 +881,13 @@ export function ChatScreen({ navigation, route }: Props) {
           fullAnalysis: imageAnalysisResult.summary,
         };
       } else {
-        // Text flow: analyze text
-        analysis = await generateEmotionalAnalysis(userMessage.content);
-        dysfunctionalSummary = await generateDysfunctionalCommunicationSummary(
-          userMessage.content
-        );
+        // Text flow: analyze text - run emotional analysis and dysfunctional summary in PARALLEL
+        const [analysisResult, dysfunctionalResult] = await Promise.all([
+          generateEmotionalAnalysis(userMessage.content),
+          generateDysfunctionalCommunicationSummary(userMessage.content),
+        ]);
+        analysis = analysisResult;
+        dysfunctionalSummary = dysfunctionalResult;
       }
 
       setCurrentAnalysis(analysis);
@@ -904,14 +906,30 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageToActiveLoop(dysfunctionalMsg);
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // OPTIMIZATION: Start red flags detection and reply generation in PARALLEL
+      // while the user is viewing the dysfunctional communication card
+      const preferenceSummary = getPreferenceSummary();
 
-      // STEP 1.5: Detect and show Red Flags (if any)
-      const redFlagsResult = await detectRedFlags(
-        userMessage.content,
-        dysfunctionalSummary.patterns
-      );
+      // Prepare reply generation promise (only for non-image input)
+      const replyPromise = imageAnalysisResult?.suggestedResponse
+        ? Promise.resolve({
+            id: Date.now().toString(),
+            text: imageAnalysisResult.suggestedResponse,
+            guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
+          })
+        : generateQuickSuggestedReply(
+            userMessage.content,
+            analysis || undefined,
+            preferenceSummary || undefined
+          );
 
+      // Run red flags detection and reply generation in parallel
+      const [redFlagsResult, suggestedReply] = await Promise.all([
+        detectRedFlags(userMessage.content, dysfunctionalSummary.patterns),
+        replyPromise,
+      ]);
+
+      // STEP 1.5: Show Red Flags (if any)
       if (redFlagsResult.detected && redFlagsResult.flags.length > 0) {
         const redFlagsMsg: RedFlagsMessage = {
           id: Date.now().toString() + "_redflags",
@@ -922,42 +940,9 @@ export function ChatScreen({ navigation, route }: Props) {
           flags: redFlagsResult.flags,
         };
         addMessageToActiveLoop(redFlagsMsg);
-        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      // Show typing for reply generation
-      const typingMsg2: TypingMessage = {
-        id: Date.now().toString() + "_typing2",
-        role: "typing",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageToActiveLoop(typingMsg2);
-
-      // STEP 2: Generate and show Suggested Reply
-      // Note: Invalid input is already handled above with early return
-
-      let suggestedReply;
-
-      if (imageAnalysisResult?.suggestedResponse) {
-        // Use the reply from image analysis directly - it already responds to the last message
-        suggestedReply = {
-          id: Date.now().toString(),
-          text: imageAnalysisResult.suggestedResponse,
-          guidanceNote: imageAnalysisResult.guidanceNote || "This will help keep the conversation flowing.",
-        };
-      } else {
-        // Generate reply for text-only input with user preferences
-        const preferenceSummary = getPreferenceSummary();
-        suggestedReply = await generateQuickSuggestedReply(
-          userMessage.content,
-          analysis || undefined,
-          preferenceSummary || undefined
-        );
-      }
-
-      removeMessageFromActiveLoop(typingMsg2.id);
-
+      // STEP 2: Show Suggested Reply
       // For image input, show acknowledgment + question as floating text
       if (imageAnalysisResult) {
         const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
@@ -971,9 +956,6 @@ export function ChatScreen({ navigation, route }: Props) {
           timestamp: Date.now(),
         };
         addMessageToActiveLoop(assistantMsg);
-
-        // Small delay before showing suggested reply
-        await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
       const replyMsg: SuggestedReplyCardMessage = {
