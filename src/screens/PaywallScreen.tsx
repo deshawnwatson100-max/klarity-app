@@ -28,7 +28,7 @@ import type { PurchasesPackage } from "react-native-purchases";
 
 type Props = StackScreenProps<RootStackParamList, "PaywallScreen">;
 
-type PlanType = "weekly" | "monthly" | "annual";
+type PlanType = "monthly" | "annual";
 
 interface PlanOption {
   id: PlanType;
@@ -85,13 +85,6 @@ const FEATURES = [
 ];
 
 const DEFAULT_PLANS: PlanOption[] = [
-  {
-    id: "weekly",
-    identifier: "$rc_weekly",
-    title: "Weekly",
-    price: "$4.99",
-    subtitle: "$0.71/day",
-  },
   {
     id: "monthly",
     identifier: "$rc_monthly",
