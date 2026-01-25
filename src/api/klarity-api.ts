@@ -92,10 +92,10 @@ interface GPT5Message {
 }
 
 // Model options
-const MODEL_FULL = "gpt-4o-2024-11-20"; // Main model for all operations
+const MODEL_FULL = "gpt-5.2"; // Main model for all operations
 
 /**
- * Send a chat request to GPT-4o
+ * Send a chat request to GPT-5.2
  */
 async function callGPT5Mini(
   messages: GPT5Message[],
