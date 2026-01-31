@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, Keyboard } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -81,9 +81,6 @@ export function InputScreen({ navigation }: Props) {
   // Track if this is the initial mount (for splash screen delay)
   const isInitialMount = useRef(true);
 
-  // Track if we're navigating away (to allow keyboard to dismiss)
-  const isNavigatingAway = useRef(false);
-
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -99,25 +96,6 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Keep keyboard open - re-focus whenever it tries to hide
-  useEffect(() => {
-    const keyboardHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        // Only re-focus if we're not navigating away and not in initial mount
-        if (!isNavigatingAway.current && !isInitialMount.current) {
-          setTimeout(() => {
-            inputBarRef.current?.focus();
-          }, 10);
-        }
-      }
-    );
-
-    return () => {
-      keyboardHideListener.remove();
-    };
-  }, []);
-
   // Re-focus input when drawer closes
   useEffect(() => {
     if (!isDrawerOpen && !isInitialMount.current) {
@@ -130,9 +108,6 @@ export function InputScreen({ navigation }: Props) {
   // Focus input bar when screen gains focus (but not on initial mount - splash handles that)
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      // Reset navigation flag when returning to this screen
-      isNavigatingAway.current = false;
-
       if (!isInitialMount.current) {
         setTimeout(() => {
           inputBarRef.current?.focus();
@@ -145,7 +120,6 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
-    isNavigatingAway.current = true;
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
@@ -416,23 +390,26 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <View style={{ flex: 1 }}>
-            {/* Header */}
-            <Header
-              onMenuPress={() => {
-                setIsDrawerOpen(true);
-              }}
-              inputMode={inputMode}
-              onModeChange={(mode) => {
-                setInputMode(mode);
-              }}
-              onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-              showDeepDecode={true}
-              showPersonContext={false}
-            />
+          <View style={{ flex: 1 }} pointerEvents="box-none">
+            {/* Header - needs to receive touches */}
+            <View pointerEvents="box-none">
+              <Header
+                onMenuPress={() => {
+                  setIsDrawerOpen(true);
+                }}
+                inputMode={inputMode}
+                onModeChange={(mode) => {
+                  setInputMode(mode);
+                }}
+                onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+                showDeepDecode={true}
+                showPersonContext={false}
+              />
+            </View>
 
-            {/* Center Content */}
+            {/* Center Content - completely ignore touches */}
             <View
+              pointerEvents="none"
               style={{
                 flex: 1,
                 alignItems: "center",
@@ -455,21 +432,23 @@ export function InputScreen({ navigation }: Props) {
               ) : null}
             </View>
 
-            {/* Input Bar */}
-            <InputBar
-              ref={inputBarRef}
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
-              isRecording={isRecording}
-              inputMode={inputMode}
-              autoFocus
-            />
+            {/* Input Bar - needs to receive touches */}
+            <View pointerEvents="box-none">
+              <InputBar
+                ref={inputBarRef}
+                value={currentInput}
+                onChangeText={setCurrentInput}
+                onSend={handleSend}
+                onVoicePress={handleVoicePress}
+                onImageSelected={handleImageSelected}
+                onClearImage={handleClearImage}
+                selectedImageUri={selectedImageUri}
+                placeholder="Type a message..."
+                isRecording={isRecording}
+                inputMode={inputMode}
+                autoFocus
+              />
+            </View>
           </View>
 
           {/* Processing Overlay */}
