@@ -131,6 +131,12 @@ export function ChatScreen({ navigation, route }: Props) {
   const [deepDecodeResult, setDeepDecodeResult] = useState<DeepDecodeResult | null>(null);
   const [showDeepDecodeResults, setShowDeepDecodeResults] = useState(false);
 
+  // Input bar collapse/expand state
+  const [isInputBarCollapsed, setIsInputBarCollapsed] = useState(false);
+  const inputBarTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<"up" | "down" | null>(null);
+
   // Track conversation context for mid-loop image continuation
   const [conversationContext, setConversationContext] = useState<{
     originalMessage: string;
@@ -2039,7 +2045,66 @@ Generate a new reply that follows the user's instruction while still responding 
     console.log("Voice input pressed");
   };
 
+  // Check if there's any generated content in the chat
+  const hasGeneratedContent = useMemo(() => {
+    const activeLoop = getActiveLoop();
+    const messages = activeLoop?.messages || [];
+    return messages.some(m => m.role === "assistant" || m.role === "suggested-reply-card" || m.role === "dysfunctional-communication");
+  }, [replyMessages, decodeMessages]);
+
+  // Collapse input bar animation
+  const collapseInputBar = useCallback(() => {
+    if (!hasGeneratedContent || isInputBarCollapsed) return;
+    setIsInputBarCollapsed(true);
+    Animated.timing(inputBarTranslateY, {
+      toValue: 100, // Slide down off screen
+      duration: 200,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+      useNativeDriver: true,
+    }).start();
+  }, [hasGeneratedContent, isInputBarCollapsed, inputBarTranslateY]);
+
+  // Expand input bar animation
+  const expandInputBar = useCallback(() => {
+    if (!isInputBarCollapsed) return;
+    setIsInputBarCollapsed(false);
+    Animated.timing(inputBarTranslateY, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
+      useNativeDriver: true,
+    }).start();
+  }, [isInputBarCollapsed, inputBarTranslateY]);
+
+  // Handle scroll for collapsing/expanding input bar
+  const handleScroll = useCallback((event: any) => {
+    if (!hasGeneratedContent) return;
+
+    const currentY = event.nativeEvent.contentOffset.y;
+    const diff = currentY - lastScrollY.current;
+
+    // Only respond to significant scroll
+    if (Math.abs(diff) > 5) {
+      if (diff > 0 && currentY > 50) {
+        // Scrolling down - collapse input bar
+        collapseInputBar();
+      }
+      scrollDirection.current = diff > 0 ? "down" : "up";
+    }
+
+    lastScrollY.current = currentY;
+  }, [hasGeneratedContent, collapseInputBar]);
+
+  // Handle input bar tap to expand
+  const handleInputBarTap = useCallback(() => {
+    if (isInputBarCollapsed) {
+      expandInputBar();
+    }
+  }, [isInputBarCollapsed, expandInputBar]);
+
   const handleInputFocus = () => {
+    // Expand input bar when focused
+    expandInputBar();
     // Scroll to bottom when input is focused
     setTimeout(() => {
       if (inputMode === "rewrite") {
@@ -3004,6 +3069,8 @@ Generate a new reply that follows the user's instruction while still responding 
                   contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
                   ListEmptyComponent={
                     <View className="flex-1 items-center justify-center py-20">
                       <Text className="text-gray-500 text-center text-base">
@@ -3040,6 +3107,8 @@ Generate a new reply that follows the user's instruction while still responding 
                   contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
                   ListEmptyComponent={
                     <View className="flex-1 items-center justify-center py-20">
                       <Text className="text-gray-500 text-center text-base">
@@ -3060,24 +3129,29 @@ Generate a new reply that follows the user's instruction while still responding 
           <Animated.View
             style={{
               opacity: bottomOpacity,
-              transform: [{ translateY: bottomTranslateY }],
+              transform: [
+                { translateY: bottomTranslateY },
+                { translateY: inputBarTranslateY },
+              ],
             }}
           >
-            <InputBar
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type a message..."}
-              disabled={isLoading}
-              inputMode={inputMode}
-              onInputFocus={handleInputFocus}
-              isEditing={isEditingMessage}
-              onCancelEdit={handleCancelEdit}
-            />
+            <Pressable onPress={handleInputBarTap}>
+              <InputBar
+                value={currentInput}
+                onChangeText={setCurrentInput}
+                onSend={handleSend}
+                onVoicePress={handleVoicePress}
+                onImageSelected={handleImageSelected}
+                onClearImage={handleClearImage}
+                selectedImageUri={selectedImageUri}
+                placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type a message..."}
+                disabled={isLoading}
+                inputMode={inputMode}
+                onInputFocus={handleInputFocus}
+                isEditing={isEditingMessage}
+                onCancelEdit={handleCancelEdit}
+              />
+            </Pressable>
           </Animated.View>
 
           <LoopHistoryPanel

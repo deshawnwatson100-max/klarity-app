@@ -376,13 +376,17 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content */}
-          <View
+          {/* Center Content - doesn't dismiss keyboard when tapped */}
+          <Pressable
             style={{
               flex: 1,
               alignItems: "center",
               justifyContent: "center",
               paddingHorizontal: 24,
+            }}
+            onPress={() => {
+              // Focus the input bar instead of dismissing keyboard
+              inputBarRef.current?.focus();
             }}
           >
             {isRecording ? (
@@ -398,7 +402,7 @@ export function InputScreen({ navigation }: Props) {
                 </Text>
               </View>
             ) : null}
-          </View>
+          </Pressable>
 
           {/* Input Bar */}
           <View>
