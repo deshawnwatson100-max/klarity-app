@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
+import { View, Text, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, Keyboard, EmitterSubscription } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -81,6 +81,9 @@ export function InputScreen({ navigation }: Props) {
   // Track if this is the initial mount (for splash screen delay)
   const isInitialMount = useRef(true);
 
+  // Track if navigation is happening (allow keyboard to dismiss)
+  const allowKeyboardDismiss = useRef(false);
+
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -96,6 +99,23 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
+  // Prevent keyboard from dismissing - re-focus immediately on keyboardWillHide
+  useEffect(() => {
+    const handleKeyboardWillHide = () => {
+      if (!allowKeyboardDismiss.current && !isInitialMount.current) {
+        // Immediately re-focus to prevent keyboard from hiding
+        inputBarRef.current?.focus();
+      }
+    };
+
+    const subscription: EmitterSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      handleKeyboardWillHide
+    );
+
+    return () => subscription.remove();
+  }, []);
+
   // Re-focus input when drawer closes
   useEffect(() => {
     if (!isDrawerOpen && !isInitialMount.current) {
@@ -105,9 +125,10 @@ export function InputScreen({ navigation }: Props) {
     }
   }, [isDrawerOpen]);
 
-  // Focus input bar when screen gains focus (but not on initial mount - splash handles that)
+  // Focus input bar when screen gains focus
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
+      allowKeyboardDismiss.current = false;
       if (!isInitialMount.current) {
         setTimeout(() => {
           inputBarRef.current?.focus();
@@ -120,6 +141,8 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
+    allowKeyboardDismiss.current = true;
+    Keyboard.dismiss();
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
@@ -390,66 +413,59 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <View style={{ flex: 1 }} pointerEvents="box-none">
-            {/* Header - needs to receive touches */}
-            <View pointerEvents="box-none">
-              <Header
-                onMenuPress={() => {
-                  setIsDrawerOpen(true);
-                }}
-                inputMode={inputMode}
-                onModeChange={(mode) => {
-                  setInputMode(mode);
-                }}
-                onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-                showDeepDecode={true}
-                showPersonContext={false}
-              />
-            </View>
+          {/* Header */}
+          <Header
+            onMenuPress={() => {
+              setIsDrawerOpen(true);
+            }}
+            inputMode={inputMode}
+            onModeChange={(mode) => {
+              setInputMode(mode);
+            }}
+            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+            showDeepDecode={true}
+            showPersonContext={false}
+          />
 
-            {/* Center Content - completely ignore touches */}
-            <View
-              pointerEvents="none"
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-              }}
-            >
-              {isRecording ? (
-                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                  <Text
-                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* Input Bar - needs to receive touches */}
-            <View pointerEvents="box-none">
-              <InputBar
-                ref={inputBarRef}
-                value={currentInput}
-                onChangeText={setCurrentInput}
-                onSend={handleSend}
-                onVoicePress={handleVoicePress}
-                onImageSelected={handleImageSelected}
-                onClearImage={handleClearImage}
-                selectedImageUri={selectedImageUri}
-                placeholder="Type a message..."
-                isRecording={isRecording}
-                inputMode={inputMode}
-                autoFocus
-              />
-            </View>
+          {/* Center Content */}
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 24,
+            }}
+          >
+            {isRecording ? (
+              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                >
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : null}
           </View>
+
+          {/* Input Bar */}
+          <InputBar
+            ref={inputBarRef}
+            value={currentInput}
+            onChangeText={setCurrentInput}
+            onSend={handleSend}
+            onVoicePress={handleVoicePress}
+            onImageSelected={handleImageSelected}
+            onClearImage={handleClearImage}
+            selectedImageUri={selectedImageUri}
+            placeholder="Type a message..."
+            isRecording={isRecording}
+            inputMode={inputMode}
+            autoFocus
+          />
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
