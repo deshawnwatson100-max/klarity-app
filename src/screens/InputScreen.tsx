@@ -103,10 +103,8 @@ export function InputScreen({ navigation }: Props) {
   useEffect(() => {
     const handleKeyboardWillHide = () => {
       if (!allowKeyboardDismiss.current && !isInitialMount.current) {
-        // Re-focus to prevent keyboard from hiding
-        requestAnimationFrame(() => {
-          inputBarRef.current?.focus();
-        });
+        // Re-focus immediately to prevent keyboard from hiding
+        inputBarRef.current?.focus();
       }
     };
 
@@ -382,6 +380,7 @@ export function InputScreen({ navigation }: Props) {
         <LinearGradient
           colors={isDark ? ["#050608", "#0A0A0C", "#050608"] : ["#FFFFFF", "#F8F9FA", "#FFFFFF"]}
           locations={[0, 0.5, 1]}
+          pointerEvents="none"
           style={{
             position: "absolute",
             left: 0,
@@ -392,10 +391,18 @@ export function InputScreen({ navigation }: Props) {
         />
 
         {/* Soft flares - monochromatic minimal glow - Layer 1 (dark mode only) */}
-        {isDark && <SoftFlares />}
+        {isDark && (
+          <View pointerEvents="none">
+            <SoftFlares />
+          </View>
+        )}
 
         {/* Floating particles - cool-toned minimal - Layer 2 (dark mode only) */}
-        {isDark && <FloatingParticles count={20} />}
+        {isDark && (
+          <View pointerEvents="none">
+            <FloatingParticles count={20} />
+          </View>
+        )}
 
         {/* Left edge swipe zone for drawer - separate from main content */}
         <View
@@ -415,7 +422,7 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* Header */}
+          {/* Header - allows touches */}
           <Header
             onMenuPress={() => {
               setIsDrawerOpen(true);
@@ -429,32 +436,40 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - pointerEvents="none" prevents touches from dismissing keyboard */}
+          {/* Center Content - pointerEvents="box-none" allows children to receive touches but ignores touches on this view itself */}
           <View
-            pointerEvents="none"
+            pointerEvents="box-none"
             style={{
               flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingHorizontal: 24,
             }}
           >
-            {isRecording ? (
-              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                <Text
-                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                >
-                  Recording...
-                </Text>
-                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                  Tap the stop button when done
-                </Text>
-              </View>
-            ) : null}
+            {/* This inner view ignores ALL touches */}
+            <View
+              pointerEvents="none"
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+              }}
+            >
+              {isRecording ? (
+                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                  <Text
+                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                  >
+                    Recording...
+                  </Text>
+                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                    Tap the stop button when done
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </View>
 
-          {/* Input Bar */}
+          {/* Input Bar - allows touches */}
           <InputBar
             ref={inputBarRef}
             value={currentInput}
