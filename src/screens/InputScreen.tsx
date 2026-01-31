@@ -402,8 +402,9 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - no touch handling, just display */}
+          {/* Center Content - pointerEvents="none" prevents touches from dismissing keyboard */}
           <View
+            pointerEvents="none"
             style={{
               flex: 1,
               alignItems: "center",
