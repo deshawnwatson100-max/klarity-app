@@ -350,7 +350,6 @@ export function InputScreen({ navigation }: Props) {
           flex: 1,
           transform: [{ translateX: mainContentTranslateX }],
         }}
-        {...panResponder.panHandlers}
       >
         {/* Deep charcoal background for dark mode, clean white for light mode */}
         <LinearGradient
@@ -370,6 +369,19 @@ export function InputScreen({ navigation }: Props) {
 
         {/* Floating particles - cool-toned minimal - Layer 2 (dark mode only) */}
         {isDark && <FloatingParticles count={20} />}
+
+        {/* Left edge swipe zone for drawer - separate from main content */}
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 30,
+            zIndex: 10,
+          }}
+          {...panResponder.panHandlers}
+        />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -431,8 +443,12 @@ export function InputScreen({ navigation }: Props) {
             </Pressable>
           </ScrollView>
 
-          {/* Input Bar - outside ScrollView so it handles its own touches */}
-          <View>
+          {/* Input Bar - needs keyboardShouldPersistTaps wrapper too */}
+          <ScrollView
+            scrollEnabled={false}
+            keyboardShouldPersistTaps="always"
+            contentContainerStyle={{ flexGrow: 0 }}
+          >
             <InputBar
               ref={inputBarRef}
               value={currentInput}
@@ -447,7 +463,7 @@ export function InputScreen({ navigation }: Props) {
               inputMode={inputMode}
               autoFocus
             />
-          </View>
+          </ScrollView>
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
