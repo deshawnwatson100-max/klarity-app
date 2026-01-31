@@ -388,10 +388,11 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* Main content wrapper with keyboardShouldPersistTaps */}
+          {/* ScrollView with keyboardShouldPersistTaps="handled" keeps keyboard open */}
           <ScrollView
             contentContainerStyle={{ flex: 1 }}
-            keyboardShouldPersistTaps="always"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -404,7 +405,6 @@ export function InputScreen({ navigation }: Props) {
               inputMode={inputMode}
               onModeChange={(mode) => {
                 setInputMode(mode);
-                // Keep keyboard open after mode change
                 setTimeout(() => inputBarRef.current?.focus(), 50);
               }}
               onDeepDecodePress={() => setShowDeepDecodeModal(true)}
@@ -412,7 +412,7 @@ export function InputScreen({ navigation }: Props) {
               showPersonContext={false}
             />
 
-            {/* Center Content - takes remaining space */}
+            {/* Center Content - tapping here keeps keyboard open */}
             <Pressable
               style={{
                 flex: 1,
@@ -420,10 +420,7 @@ export function InputScreen({ navigation }: Props) {
                 justifyContent: "center",
                 paddingHorizontal: 24,
               }}
-              onPress={() => {
-                // Focus the input to ensure keyboard stays open
-                inputBarRef.current?.focus();
-              }}
+              onPress={() => inputBarRef.current?.focus()}
             >
               {isRecording ? (
                 <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
@@ -440,7 +437,7 @@ export function InputScreen({ navigation }: Props) {
               ) : null}
             </Pressable>
 
-            {/* Input Bar - always at bottom */}
+            {/* Input Bar */}
             <InputBar
               ref={inputBarRef}
               value={currentInput}

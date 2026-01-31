@@ -366,6 +366,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               onSubmitEditing={handleSend}
               returnKeyType="send"
               multiline
+              blurOnSubmit={false}
               maxLength={1000}
               autoFocus={autoFocus}
               style={{
