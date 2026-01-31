@@ -147,6 +147,7 @@ async function callGPT5Mini(
 /**
  * Send a streaming chat request to GPT-5.2
  * Returns chunks in real-time via callback
+ * Falls back to non-streaming if streaming fails
  */
 async function callGPT5MiniStreaming(
   messages: GPT5Message[],
@@ -156,19 +157,20 @@ async function callGPT5MiniStreaming(
 ): Promise<string> {
   const client = getOpenAIClient();
 
-  const params: any = {
+  const baseParams: any = {
     model: MODEL_FULL,
     messages: messages as any,
     max_completion_tokens: maxTokens,
     temperature,
-    stream: true,
   };
 
   try {
-    const stream = await client.chat.completions.create(params);
+    // Try streaming first
+    const streamParams = { ...baseParams, stream: true };
+    const stream: any = await client.chat.completions.create(streamParams);
 
     let fullContent = "";
-    for await (const chunk of stream as any) {
+    for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content || "";
       if (content) {
         fullContent += content;
@@ -176,12 +178,18 @@ async function callGPT5MiniStreaming(
       }
     }
 
-    if (!fullContent) {
-      console.error("Empty response from streaming API");
-      throw new Error("Empty response from API");
+    if (fullContent) {
+      return fullContent;
     }
 
-    return fullContent;
+    // If streaming returned empty, fall back to non-streaming
+    console.log("[callGPT5MiniStreaming] Empty response, falling back to non-streaming");
+    const response = await client.chat.completions.create(baseParams);
+    const content = response.choices[0]?.message?.content || "";
+    if (content) {
+      onStream(content, content);
+    }
+    return content;
   } catch (error: any) {
     console.error("Streaming API Error details:", {
       message: error.message,
@@ -189,7 +197,20 @@ async function callGPT5MiniStreaming(
       type: error.type,
       code: error.code,
     });
-    throw new Error(`Streaming API failed: ${error.message || "Unknown error"}`);
+
+    // Try non-streaming as fallback
+    try {
+      console.log("[callGPT5MiniStreaming] Error occurred, trying non-streaming fallback");
+      const response = await client.chat.completions.create(baseParams);
+      const content = response.choices[0]?.message?.content || "";
+      if (content) {
+        onStream(content, content);
+      }
+      return content;
+    } catch (fallbackError: any) {
+      console.error("Non-streaming fallback also failed:", fallbackError.message);
+      throw new Error(`API failed: ${error.message || "Unknown error"}`);
+    }
   }
 }
 
