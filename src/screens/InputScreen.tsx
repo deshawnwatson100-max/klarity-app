@@ -358,7 +358,6 @@ export function InputScreen({ navigation }: Props) {
         <LinearGradient
           colors={isDark ? ["#050608", "#0A0A0C", "#050608"] : ["#FFFFFF", "#F8F9FA", "#FFFFFF"]}
           locations={[0, 0.5, 1]}
-          pointerEvents="none"
           style={{
             position: "absolute",
             left: 0,
@@ -369,18 +368,10 @@ export function InputScreen({ navigation }: Props) {
         />
 
         {/* Soft flares - monochromatic minimal glow - Layer 1 (dark mode only) */}
-        {isDark && (
-          <View pointerEvents="none">
-            <SoftFlares />
-          </View>
-        )}
+        {isDark && <SoftFlares />}
 
         {/* Floating particles - cool-toned minimal - Layer 2 (dark mode only) */}
-        {isDark && (
-          <View pointerEvents="none">
-            <FloatingParticles count={20} />
-          </View>
-        )}
+        {isDark && <FloatingParticles count={20} />}
 
         {/* Left edge swipe zone for drawer - separate from main content */}
         <View
@@ -401,7 +392,7 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* Header - allows touches */}
+          {/* Header */}
           <Header
             onMenuPress={() => {
               setIsDrawerOpen(true);
@@ -415,9 +406,8 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - ignores all touches */}
+          {/* Center Content */}
           <View
-            pointerEvents="none"
             style={{
               flex: 1,
               alignItems: "center",
@@ -440,7 +430,7 @@ export function InputScreen({ navigation }: Props) {
             ) : null}
           </View>
 
-          {/* Input Bar - allows touches */}
+          {/* Input Bar */}
           <InputBar
             ref={inputBarRef}
             value={currentInput}
