@@ -66,20 +66,3 @@ export async function generateImage(
   }
 }
 
-/**
- * Convert aspect ratio to size format
- * @param aspectRatio The aspect ratio to convert
- * @returns The corresponding size format
- */
-export function convertAspectRatioToSize(aspectRatio: string): "1024x1024" | "1536x1024" | "1024x1536" | "auto" {
-  switch (aspectRatio) {
-    case "1:1":
-      return "1024x1024";
-    case "3:2":
-      return "1536x1024";
-    case "2:3":
-      return "1024x1536";
-    default:
-      return "auto";
-  }
-}
