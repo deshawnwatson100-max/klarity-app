@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -388,71 +388,59 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* ScrollView with keyboardShouldPersistTaps="handled" keeps keyboard open */}
-          <ScrollView
-            contentContainerStyle={{ flex: 1 }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="none"
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
+          {/* Header */}
+          <Header
+            onMenuPress={() => {
+              setIsDrawerOpen(true);
+            }}
+            inputMode={inputMode}
+            onModeChange={(mode) => {
+              setInputMode(mode);
+            }}
+            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+            showDeepDecode={true}
+            showPersonContext={false}
+          />
+
+          {/* Center Content - no touch handling, just display */}
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 24,
+            }}
           >
-            {/* Header */}
-            <Header
-              onMenuPress={() => {
-                setIsDrawerOpen(true);
-              }}
-              inputMode={inputMode}
-              onModeChange={(mode) => {
-                setInputMode(mode);
-                setTimeout(() => inputBarRef.current?.focus(), 50);
-              }}
-              onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-              showDeepDecode={true}
-              showPersonContext={false}
-            />
+            {isRecording ? (
+              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                >
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
-            {/* Center Content - tapping here keeps keyboard open */}
-            <Pressable
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-              }}
-              onPress={() => inputBarRef.current?.focus()}
-            >
-              {isRecording ? (
-                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                  <Text
-                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-
-            {/* Input Bar */}
-            <InputBar
-              ref={inputBarRef}
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
-              isRecording={isRecording}
-              inputMode={inputMode}
-              autoFocus
-            />
-          </ScrollView>
+          {/* Input Bar */}
+          <InputBar
+            ref={inputBarRef}
+            value={currentInput}
+            onChangeText={setCurrentInput}
+            onSend={handleSend}
+            onVoicePress={handleVoicePress}
+            onImageSelected={handleImageSelected}
+            onClearImage={handleClearImage}
+            selectedImageUri={selectedImageUri}
+            placeholder="Type a message..."
+            isRecording={isRecording}
+            inputMode={inputMode}
+            autoFocus
+          />
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
