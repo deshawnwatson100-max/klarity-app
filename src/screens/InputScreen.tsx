@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, Keyboard, EmitterSubscription } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import Reanimated from "react-native-reanimated";
+import RNAnimated from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -438,7 +438,7 @@ export function InputScreen({ navigation }: Props) {
 
           {/* Center Content - GestureDetector blocks taps from dismissing keyboard */}
           <GestureDetector gesture={blockTapGesture}>
-            <Reanimated.View
+            <RNAnimated.View
               style={{
                 flex: 1,
                 alignItems: "center",
@@ -459,7 +459,7 @@ export function InputScreen({ navigation }: Props) {
                   </Text>
                 </View>
               ) : null}
-            </Reanimated.View>
+            </RNAnimated.View>
           </GestureDetector>
 
           {/* Input Bar */}
