@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, Keyboard, EmitterSubscription } from "react-native";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -84,11 +83,6 @@ export function InputScreen({ navigation }: Props) {
 
   // Track if navigation is happening (allow keyboard to dismiss)
   const allowKeyboardDismiss = useRef(false);
-
-  // Gesture that consumes all taps on the body area (prevents keyboard dismiss)
-  const blockTapGesture = Gesture.Tap().onStart(() => {
-    // Do nothing - just consume the tap
-  });
 
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
@@ -435,31 +429,30 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - GestureDetector blocks taps from dismissing keyboard */}
-          <GestureDetector gesture={blockTapGesture}>
-            <Animated.View
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-              }}
-            >
-              {isRecording ? (
-                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                  <Text
-                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
-            </Animated.View>
-          </GestureDetector>
+          {/* Center Content - pointerEvents="none" prevents touches from dismissing keyboard */}
+          <View
+            pointerEvents="none"
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 24,
+            }}
+          >
+            {isRecording ? (
+              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                >
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
           {/* Input Bar */}
           <InputBar
