@@ -1020,6 +1020,86 @@ export function ChatScreen({ navigation, route }: Props) {
     }
   };
 
+  /**
+   * Process a follow-up instruction in Reply mode (e.g., "Let's give a kind reply")
+   * This regenerates the suggested reply based on the user's instruction
+   * without re-analyzing the original conversation
+   */
+  const processReplyFollowUp = async (userMessage: ChatMessage) => {
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    const capturedMode = inputModeRef.current as MessageMode;
+
+    try {
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageWithMode(typingMsg, capturedMode);
+
+      // Get the original context
+      const originalContext = conversationContext;
+      if (!originalContext) {
+        throw new Error("No conversation context found");
+      }
+
+      // Build context for generating a new reply
+      const contextForReply = `Original conversation context: ${originalContext.previousSummary || originalContext.originalMessage}
+
+Last message from the other person: ${originalContext.lastMessageFromOther || "Not specified"}
+
+Previous suggested reply: ${originalContext.previousReply || "None"}
+
+User's instruction for the new reply: ${userMessage.content}
+
+Generate a new reply that follows the user's instruction while still responding appropriately to the conversation context.`;
+
+      // Generate new reply based on user's instruction
+      const preferenceSummary = getPreferenceSummary();
+      const newReply = await generateQuickSuggestedReply(
+        contextForReply,
+        currentAnalysis || undefined,
+        preferenceSummary || undefined
+      );
+
+      // Remove typing indicator
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Add new suggested reply card
+      const replyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_reply_followup",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: [newReply],
+        intention: "maintain",
+      };
+      addMessageWithMode(replyMsg, capturedMode);
+
+      // Update conversation context with the new reply
+      setConversationContext({
+        ...originalContext,
+        previousReply: newReply.text,
+      });
+
+    } catch (error) {
+      console.error("Error processing reply follow-up:", error);
+      addMessageWithMode({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "I had trouble generating a new reply. Please try again.",
+        timestamp: Date.now(),
+      }, capturedMode);
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
   const handleSelectReply = (replyText: string) => {
     // Reply is already copied to clipboard by the SuggestedReplyCard component
     // No need to set it in the input bar
@@ -1382,7 +1462,16 @@ export function ChatScreen({ navigation, route }: Props) {
       setSelectedImageUri(undefined);
       setSelectedImageBase64(undefined);
 
-      await processUserMessage(userMessage);
+      // Check if this is a follow-up instruction (no image, has existing conversation context)
+      // If so, treat it as a request to regenerate/modify the reply
+      const hasExistingContext = conversationContext !== null && conversationContext.originalMessage;
+      const isFollowUpInstruction = !userMessage.imageBase64 && hasExistingContext;
+
+      if (isFollowUpInstruction) {
+        await processReplyFollowUp(userMessage);
+      } else {
+        await processUserMessage(userMessage);
+      }
       return;
     }
 
