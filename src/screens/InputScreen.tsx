@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, Keyboard, EmitterSubscription } from "react-native";
+import { View, Text, Dimensions, Platform, Animated, PanResponder, Keyboard } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -84,8 +84,8 @@ export function InputScreen({ navigation }: Props) {
   // Track if navigation is happening (allow keyboard to dismiss)
   const allowKeyboardDismiss = useRef(false);
 
-  // Track keyboard visibility
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // Keyboard height animation
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
@@ -102,34 +102,41 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Track keyboard visibility and re-focus when it hides unexpectedly
+  // Handle keyboard show/hide with animation
   useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener(
+    const keyboardWillShow = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => setKeyboardVisible(true)
+      (e) => {
+        Animated.timing(keyboardHeight, {
+          toValue: e.endCoordinates.height,
+          duration: e.duration || 250,
+          useNativeDriver: false,
+        }).start();
+      }
     );
 
-    const keyboardHideListener = Keyboard.addListener(
+    const keyboardWillHide = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-        // If keyboard hides and we're not navigating away, re-show it
-        if (!allowKeyboardDismiss.current && !isInitialMount.current) {
-          // Small delay to let the hide complete, then re-focus
-          setTimeout(() => {
-            if (!allowKeyboardDismiss.current) {
-              inputBarRef.current?.focus();
-            }
-          }, 50);
+      (e) => {
+        // Only animate down if we're allowing dismiss (navigating away)
+        if (allowKeyboardDismiss.current) {
+          Animated.timing(keyboardHeight, {
+            toValue: 0,
+            duration: e.duration || 250,
+            useNativeDriver: false,
+          }).start();
+        } else if (!isInitialMount.current) {
+          // Re-focus to keep keyboard open
+          inputBarRef.current?.focus();
         }
       }
     );
 
     return () => {
-      keyboardShowListener.remove();
-      keyboardHideListener.remove();
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
     };
-  }, []);
+  }, [keyboardHeight]);
 
   // Re-focus input when drawer closes
   useEffect(() => {
@@ -432,11 +439,8 @@ export function InputScreen({ navigation }: Props) {
           {...panResponder.panHandlers}
         />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={0}
-        >
+        {/* Main content with manual keyboard handling */}
+        <View style={{ flex: 1 }}>
           {/* Header - allows touches */}
           <Header
             onMenuPress={() => {
@@ -451,37 +455,29 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - pointerEvents="box-none" allows children to receive touches but ignores touches on this view itself */}
+          {/* Center Content - ignores all touches */}
           <View
-            pointerEvents="box-none"
+            pointerEvents="none"
             style={{
               flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 24,
             }}
           >
-            {/* This inner view ignores ALL touches */}
-            <View
-              pointerEvents="none"
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-              }}
-            >
-              {isRecording ? (
-                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                  <Text
-                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
-            </View>
+            {isRecording ? (
+              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                >
+                  Recording...
+                </Text>
+                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                  Tap the stop button when done
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           {/* Input Bar - allows touches */}
@@ -500,9 +496,12 @@ export function InputScreen({ navigation }: Props) {
             autoFocus
           />
 
+          {/* Keyboard spacer - animated to match keyboard height */}
+          <Animated.View style={{ height: keyboardHeight }} />
+
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
-        </KeyboardAvoidingView>
+        </View>
       </Animated.View>
 
       {/* Slide Over Drawer - outside main content so it's not affected by transform */}
