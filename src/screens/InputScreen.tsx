@@ -388,67 +388,59 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* ScrollView with keyboardShouldPersistTaps keeps keyboard open on all touches */}
+          {/* Main content wrapper with keyboardShouldPersistTaps */}
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ flex: 1 }}
             keyboardShouldPersistTaps="always"
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
+            bounces={false}
           >
+            {/* Header */}
+            <Header
+              onMenuPress={() => {
+                setIsDrawerOpen(true);
+              }}
+              inputMode={inputMode}
+              onModeChange={(mode) => {
+                setInputMode(mode);
+                // Keep keyboard open after mode change
+                setTimeout(() => inputBarRef.current?.focus(), 50);
+              }}
+              onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+              showDeepDecode={true}
+              showPersonContext={false}
+            />
+
+            {/* Center Content - takes remaining space */}
             <Pressable
-              style={{ flex: 1 }}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+              }}
               onPress={() => {
                 // Focus the input to ensure keyboard stays open
                 inputBarRef.current?.focus();
               }}
             >
-              <Header
-                onMenuPress={() => {
-                  setIsDrawerOpen(true);
-                }}
-                inputMode={inputMode}
-                onModeChange={(mode) => {
-                  setInputMode(mode);
-                  // Keep keyboard open after mode change
-                  setTimeout(() => inputBarRef.current?.focus(), 50);
-                }}
-                onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-                showDeepDecode={true}
-                showPersonContext={false}
-              />
-
-              {/* Center Content */}
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingHorizontal: 24,
-                }}
-              >
-                {isRecording ? (
-                  <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                    <Text
-                      style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                    >
-                      Recording...
-                    </Text>
-                    <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                    <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                      Tap the stop button when done
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
+              {isRecording ? (
+                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                  <Text
+                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                  >
+                    Recording...
+                  </Text>
+                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                    Tap the stop button when done
+                  </Text>
+                </View>
+              ) : null}
             </Pressable>
-          </ScrollView>
 
-          {/* Input Bar - needs keyboardShouldPersistTaps wrapper too */}
-          <ScrollView
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="always"
-            contentContainerStyle={{ flexGrow: 0 }}
-          >
+            {/* Input Bar - always at bottom */}
             <InputBar
               ref={inputBarRef}
               value={currentInput}
