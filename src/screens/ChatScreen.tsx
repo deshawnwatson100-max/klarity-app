@@ -133,6 +133,8 @@ export function ChatScreen({ navigation, route }: Props) {
 
   // Input bar collapse/expand state
   const [isInputBarCollapsed, setIsInputBarCollapsed] = useState(false);
+  // Keep type bar visible (no scroll-to-collapse) until user sends a message
+  const [inputBarPermanentUntilSend, setInputBarPermanentUntilSend] = useState(false);
   const inputBarTranslateY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<"up" | "down" | null>(null);
@@ -1391,6 +1393,9 @@ Generate a new reply that follows the user's instruction while still responding 
     });
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
 
+    // User did an input: type bar can collapse on scroll again
+    setInputBarPermanentUntilSend(false);
+
     // Handle editing an existing message
     if (isEditingMessage && editingMessageId) {
       // Find the index of the message being edited
@@ -2052,9 +2057,9 @@ Generate a new reply that follows the user's instruction while still responding 
     return messages.some(m => m.role === "assistant" || m.role === "suggested-reply-card" || m.role === "dysfunctional-communication");
   }, [replyMessages, decodeMessages]);
 
-  // Collapse input bar animation
+  // Collapse input bar animation (skip when bar should stay permanent until user sends)
   const collapseInputBar = useCallback(() => {
-    if (!hasGeneratedContent || isInputBarCollapsed) return;
+    if (!hasGeneratedContent || isInputBarCollapsed || inputBarPermanentUntilSend) return;
     setIsInputBarCollapsed(true);
     Animated.timing(inputBarTranslateY, {
       toValue: 100, // Slide down off screen
@@ -2062,7 +2067,7 @@ Generate a new reply that follows the user's instruction while still responding 
       easing: Easing.bezier(0.25, 0.1, 0.25, 1.0),
       useNativeDriver: true,
     }).start();
-  }, [hasGeneratedContent, isInputBarCollapsed, inputBarTranslateY]);
+  }, [hasGeneratedContent, isInputBarCollapsed, inputBarPermanentUntilSend, inputBarTranslateY]);
 
   // Expand input bar animation
   const expandInputBar = useCallback(() => {
@@ -2076,9 +2081,9 @@ Generate a new reply that follows the user's instruction while still responding 
     }).start();
   }, [isInputBarCollapsed, inputBarTranslateY]);
 
-  // Handle scroll for collapsing/expanding input bar
+  // Handle scroll for collapsing/expanding input bar (no collapse while inputBarPermanentUntilSend)
   const handleScroll = useCallback((event: any) => {
-    if (!hasGeneratedContent) return;
+    if (!hasGeneratedContent || inputBarPermanentUntilSend) return;
 
     const currentY = event.nativeEvent.contentOffset.y;
     const diff = currentY - lastScrollY.current;
@@ -2093,18 +2098,22 @@ Generate a new reply that follows the user's instruction while still responding 
     }
 
     lastScrollY.current = currentY;
-  }, [hasGeneratedContent, collapseInputBar]);
+  }, [hasGeneratedContent, inputBarPermanentUntilSend, collapseInputBar]);
 
   // Handle input bar tap to expand
   const handleInputBarTap = useCallback(() => {
     if (isInputBarCollapsed) {
       expandInputBar();
     }
+    // Keep type bar visible until user sends
+    setInputBarPermanentUntilSend(true);
   }, [isInputBarCollapsed, expandInputBar]);
 
   const handleInputFocus = () => {
     // Expand input bar when focused
     expandInputBar();
+    // Keep type bar visible until user sends
+    setInputBarPermanentUntilSend(true);
     // Scroll to bottom when input is focused
     setTimeout(() => {
       if (inputMode === "rewrite") {
