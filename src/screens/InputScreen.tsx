@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -376,33 +376,40 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content - doesn't dismiss keyboard when tapped */}
-          <Pressable
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingHorizontal: 24,
-            }}
-            onPress={() => {
-              // Focus the input bar instead of dismissing keyboard
-              inputBarRef.current?.focus();
-            }}
+          {/* ScrollView wrapper to prevent keyboard dismissal */}
+          <ScrollView
+            contentContainerStyle={{ flex: 1 }}
+            keyboardShouldPersistTaps="always"
+            scrollEnabled={false}
           >
-            {isRecording ? (
-              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                <Text
-                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                >
-                  Recording...
-                </Text>
-                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                  Tap the stop button when done
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
+            {/* Center Content - doesn't dismiss keyboard when tapped */}
+            <Pressable
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+              }}
+              onPress={() => {
+                // Focus the input bar instead of dismissing keyboard
+                inputBarRef.current?.focus();
+              }}
+            >
+              {isRecording ? (
+                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                  <Text
+                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                  >
+                    Recording...
+                  </Text>
+                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                    Tap the stop button when done
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+          </ScrollView>
 
           {/* Input Bar */}
           <View>
