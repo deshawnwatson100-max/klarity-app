@@ -94,6 +94,15 @@ export function InputScreen({ navigation }: Props) {
     }, 1800);
   }, []);
 
+  // Re-focus input when drawer closes
+  useEffect(() => {
+    if (!isDrawerOpen && !isInitialMount.current) {
+      setTimeout(() => {
+        inputBarRef.current?.focus();
+      }, 100);
+    }
+  }, [isDrawerOpen]);
+
   // Focus input bar when screen gains focus (but not on initial mount - splash handles that)
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -367,51 +376,62 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <Header
-            onMenuPress={() => setIsDrawerOpen(true)}
-            inputMode={inputMode}
-            onModeChange={setInputMode}
-            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-            showDeepDecode={true}
-            showPersonContext={false}
-          />
-
-          {/* ScrollView wrapper to prevent keyboard dismissal */}
+          {/* ScrollView with keyboardShouldPersistTaps keeps keyboard open on all touches */}
           <ScrollView
-            contentContainerStyle={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="always"
             scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
           >
-            {/* Center Content - doesn't dismiss keyboard when tapped */}
             <Pressable
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-              }}
+              style={{ flex: 1 }}
               onPress={() => {
-                // Focus the input bar instead of dismissing keyboard
+                // Focus the input to ensure keyboard stays open
                 inputBarRef.current?.focus();
               }}
             >
-              {isRecording ? (
-                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                  <Text
-                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                  >
-                    Recording...
-                  </Text>
-                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                    Tap the stop button when done
-                  </Text>
-                </View>
-              ) : null}
+              <Header
+                onMenuPress={() => {
+                  setIsDrawerOpen(true);
+                }}
+                inputMode={inputMode}
+                onModeChange={(mode) => {
+                  setInputMode(mode);
+                  // Keep keyboard open after mode change
+                  setTimeout(() => inputBarRef.current?.focus(), 50);
+                }}
+                onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+                showDeepDecode={true}
+                showPersonContext={false}
+              />
+
+              {/* Center Content */}
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 24,
+                }}
+              >
+                {isRecording ? (
+                  <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                    <Text
+                      style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                    >
+                      Recording...
+                    </Text>
+                    <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                      Tap the stop button when done
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </Pressable>
           </ScrollView>
 
-          {/* Input Bar */}
+          {/* Input Bar - outside ScrollView so it handles its own touches */}
           <View>
             <InputBar
               ref={inputBarRef}
