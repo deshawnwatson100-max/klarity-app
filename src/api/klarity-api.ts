@@ -164,18 +164,46 @@ async function callGPT5MiniStreaming(
     temperature,
   };
 
+  // Helper function for non-streaming fallback
+  const doNonStreamingFallback = async (): Promise<string> => {
+    console.log("[callGPT5MiniStreaming] Using non-streaming fallback");
+    const response = await client.chat.completions.create(baseParams);
+    const content = response.choices[0]?.message?.content || "";
+    if (content) {
+      onStream(content, content);
+    }
+    return content;
+  };
+
   try {
     // Try streaming first
     const streamParams = { ...baseParams, stream: true };
     const stream: any = await client.chat.completions.create(streamParams);
 
+    // Check if stream is valid and iterable before attempting iteration
+    if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
+      console.log("[callGPT5MiniStreaming] Stream not iterable, falling back to non-streaming");
+      return await doNonStreamingFallback();
+    }
+
     let fullContent = "";
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || "";
-      if (content) {
-        fullContent += content;
-        onStream(content, fullContent);
+    try {
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullContent += content;
+          onStream(content, fullContent);
+        }
       }
+    } catch (iterationError: any) {
+      // Handle "no body" error during iteration
+      console.log("[callGPT5MiniStreaming] Stream iteration error:", iterationError.message);
+      if (fullContent) {
+        // Return what we got so far
+        return fullContent;
+      }
+      // Fall back to non-streaming
+      return await doNonStreamingFallback();
     }
 
     if (fullContent) {
@@ -183,30 +211,13 @@ async function callGPT5MiniStreaming(
     }
 
     // If streaming returned empty, fall back to non-streaming
-    console.log("[callGPT5MiniStreaming] Empty response, falling back to non-streaming");
-    const response = await client.chat.completions.create(baseParams);
-    const content = response.choices[0]?.message?.content || "";
-    if (content) {
-      onStream(content, content);
-    }
-    return content;
+    return await doNonStreamingFallback();
   } catch (error: any) {
-    console.error("Streaming API Error details:", {
-      message: error.message,
-      status: error.status,
-      type: error.type,
-      code: error.code,
-    });
+    console.log("[callGPT5MiniStreaming] Error occurred:", error.message);
 
     // Try non-streaming as fallback
     try {
-      console.log("[callGPT5MiniStreaming] Error occurred, trying non-streaming fallback");
-      const response = await client.chat.completions.create(baseParams);
-      const content = response.choices[0]?.message?.content || "";
-      if (content) {
-        onStream(content, content);
-      }
-      return content;
+      return await doNonStreamingFallback();
     } catch (fallbackError: any) {
       console.error("Non-streaming fallback also failed:", fallbackError.message);
       throw new Error(`API failed: ${error.message || "Unknown error"}`);
