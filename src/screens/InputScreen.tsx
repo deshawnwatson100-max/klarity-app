@@ -84,6 +84,9 @@ export function InputScreen({ navigation }: Props) {
   // Track if navigation is happening (allow keyboard to dismiss)
   const allowKeyboardDismiss = useRef(false);
 
+  // Track keyboard visibility
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -99,21 +102,33 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Prevent keyboard from dismissing
+  // Track keyboard visibility and re-focus when it hides unexpectedly
   useEffect(() => {
-    const handleKeyboardWillHide = () => {
-      if (!allowKeyboardDismiss.current && !isInitialMount.current) {
-        // Re-focus immediately to prevent keyboard from hiding
-        inputBarRef.current?.focus();
-      }
-    };
-
-    const subscription: EmitterSubscription = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      handleKeyboardWillHide
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardVisible(true)
     );
 
-    return () => subscription.remove();
+    const keyboardHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+        // If keyboard hides and we're not navigating away, re-show it
+        if (!allowKeyboardDismiss.current && !isInitialMount.current) {
+          // Small delay to let the hide complete, then re-focus
+          setTimeout(() => {
+            if (!allowKeyboardDismiss.current) {
+              inputBarRef.current?.focus();
+            }
+          }, 50);
+        }
+      }
+    );
+
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
   }, []);
 
   // Re-focus input when drawer closes
