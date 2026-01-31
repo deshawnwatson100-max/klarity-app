@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, TouchableWithoutFeedback } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -388,60 +388,64 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          {/* Header */}
-          <Header
-            onMenuPress={() => {
-              setIsDrawerOpen(true);
-            }}
-            inputMode={inputMode}
-            onModeChange={(mode) => {
-              setInputMode(mode);
-            }}
-            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-            showDeepDecode={true}
-            showPersonContext={false}
-          />
+          {/* Wrap in TouchableWithoutFeedback that does nothing - blocks touch from dismissing keyboard */}
+          <TouchableWithoutFeedback>
+            <View style={{ flex: 1 }}>
+              {/* Header */}
+              <Header
+                onMenuPress={() => {
+                  setIsDrawerOpen(true);
+                }}
+                inputMode={inputMode}
+                onModeChange={(mode) => {
+                  setInputMode(mode);
+                }}
+                onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+                showDeepDecode={true}
+                showPersonContext={false}
+              />
 
-          {/* Center Content - pointerEvents="none" prevents touches from dismissing keyboard */}
-          <View
-            pointerEvents="none"
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingHorizontal: 24,
-            }}
-          >
-            {isRecording ? (
-              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                <Text
-                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                >
-                  Recording...
-                </Text>
-                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                  Tap the stop button when done
-                </Text>
+              {/* Center Content */}
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 24,
+                }}
+              >
+                {isRecording ? (
+                  <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                    <Text
+                      style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                    >
+                      Recording...
+                    </Text>
+                    <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                      Tap the stop button when done
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
-          </View>
 
-          {/* Input Bar */}
-          <InputBar
-            ref={inputBarRef}
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            isRecording={isRecording}
-            inputMode={inputMode}
-            autoFocus
-          />
+              {/* Input Bar */}
+              <InputBar
+                ref={inputBarRef}
+                value={currentInput}
+                onChangeText={setCurrentInput}
+                onSend={handleSend}
+                onVoicePress={handleVoicePress}
+                onImageSelected={handleImageSelected}
+                onClearImage={handleClearImage}
+                selectedImageUri={selectedImageUri}
+                placeholder="Type a message..."
+                isRecording={isRecording}
+                inputMode={inputMode}
+                autoFocus
+              />
+            </View>
+          </TouchableWithoutFeedback>
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
