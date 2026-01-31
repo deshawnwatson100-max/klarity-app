@@ -81,6 +81,9 @@ export function InputScreen({ navigation }: Props) {
   // Track if this is the initial mount (for splash screen delay)
   const isInitialMount = useRef(true);
 
+  // Track if keyboard should stay open (until user sends)
+  const keepKeyboardOpen = useRef(true);
+
   // Ensure we always have an active loop and show keyboard on mount
   useEffect(() => {
     const activeLoop = getActiveLoop();
@@ -96,6 +99,21 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
+  // Keep keyboard open by immediately re-focusing when it tries to hide
+  useEffect(() => {
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        if (keepKeyboardOpen.current && !isInitialMount.current) {
+          // Immediately re-focus to cancel the hide animation
+          inputBarRef.current?.focus();
+        }
+      }
+    );
+
+    return () => hideSubscription.remove();
+  }, []);
+
   // Re-focus input when drawer closes
   useEffect(() => {
     if (!isDrawerOpen && !isInitialMount.current) {
@@ -108,6 +126,8 @@ export function InputScreen({ navigation }: Props) {
   // Focus input bar when screen gains focus
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
+      // Reset flag when returning to this screen
+      keepKeyboardOpen.current = true;
       if (!isInitialMount.current) {
         setTimeout(() => {
           inputBarRef.current?.focus();
@@ -120,6 +140,8 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
+    // Allow keyboard to dismiss when navigating
+    keepKeyboardOpen.current = false;
     Keyboard.dismiss();
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
@@ -406,8 +428,9 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content */}
+          {/* Center Content - pointerEvents none to prevent keyboard dismiss */}
           <View
+            pointerEvents="none"
             style={{
               flex: 1,
               alignItems: "center",
