@@ -95,6 +95,11 @@ interface GPT5Message {
 const MODEL_FULL = "gpt-5.2"; // Main model for all operations
 
 /**
+ * Streaming callback type for real-time text updates
+ */
+export type StreamCallback = (chunk: string, fullText: string) => void;
+
+/**
  * Send a chat request to GPT-5.2
  */
 async function callGPT5Mini(
@@ -136,6 +141,55 @@ async function callGPT5Mini(
       code: error.code,
     });
     throw new Error(`API failed: ${error.message || "Unknown error"}`);
+  }
+}
+
+/**
+ * Send a streaming chat request to GPT-5.2
+ * Returns chunks in real-time via callback
+ */
+async function callGPT5MiniStreaming(
+  messages: GPT5Message[],
+  onStream: StreamCallback,
+  maxTokens: number = 1000,
+  temperature: number = 0.75
+): Promise<string> {
+  const client = getOpenAIClient();
+
+  const params: any = {
+    model: MODEL_FULL,
+    messages: messages as any,
+    max_completion_tokens: maxTokens,
+    temperature,
+    stream: true,
+  };
+
+  try {
+    const stream = await client.chat.completions.create(params);
+
+    let fullContent = "";
+    for await (const chunk of stream as any) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullContent += content;
+        onStream(content, fullContent);
+      }
+    }
+
+    if (!fullContent) {
+      console.error("Empty response from streaming API");
+      throw new Error("Empty response from API");
+    }
+
+    return fullContent;
+  } catch (error: any) {
+    console.error("Streaming API Error details:", {
+      message: error.message,
+      status: error.status,
+      type: error.type,
+      code: error.code,
+    });
+    throw new Error(`Streaming API failed: ${error.message || "Unknown error"}`);
   }
 }
 
@@ -2842,6 +2896,144 @@ You MUST maintain perfect continuity with the conversation. Before responding:
         clarification_needed: "yes",
         loop_integrity: "pass",
       },
+    };
+  }
+}
+
+/**
+ * Generate a decode response with streaming support
+ * Calls onStream with each chunk of text as it arrives
+ */
+export async function generateDecodeResponseStreaming(
+  userMessage: string,
+  conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
+  onStream: StreamCallback
+): Promise<{ response: string; notation?: KlarityNotation }> {
+  const systemPrompt = `You are Klarity operating in Decode Mode - a warm, insightful thinking partner for self-reflection.
+
+## Your Identity
+
+You are like ChatGPT but specialized for helping people understand themselves and their relationships better. When someone is self-reflecting, you help them:
+
+- See their situation from new angles
+- Understand their own feelings and reactions
+- Recognize patterns in their behavior or relationships
+- Feel validated while also gaining clarity
+- Discover insights they hadn't considered
+
+## Conversational Style
+
+**Be warm and present.** Write like you're having a meaningful conversation with a friend who really gets it. Use natural language that flows.
+
+**Mirror their energy.** If they're confused, acknowledge the confusion with compassion. If they're excited, share in that energy. If they're hurt, be gentle.
+
+**Think out loud with them.** Share your reasoning process:
+- "What stands out to me is..."
+- "I'm noticing something interesting here..."
+- "Let me think through this with you..."
+
+**Ask thoughtful questions.** Not interrogation-style, but genuine curiosity:
+- "What do you think that feeling is trying to tell you?"
+- "I'm curious - has this come up before?"
+- "What would it look like if you trusted your gut here?"
+
+## Response Structure
+
+Use **bold text** to emphasize key insights or realizations.
+
+Use bullet points sparingly - only when listing distinct options or observations:
+- Keep them conversational, not clinical
+- Make each point feel like part of a flowing thought
+
+Break up longer thoughts into natural paragraphs. Let the response breathe.
+
+When offering perspectives, frame them as possibilities:
+- "One way to look at this..."
+- "It could be that..."
+- "Something I'm wondering..."
+
+## Avoid
+
+- Therapy jargon ("boundaries", "trauma", "attachment styles") unless they use it first
+- Generic advice ("communication is key", "be yourself")
+- Rushing to solutions before they've fully explored the feeling
+- Being preachy or lecturing
+- Lists without context (don't just bullet-point everything)
+- Starting with "I" too often - vary your openings
+
+## Scope
+
+Focus on social and relational situations:
+- Dating, relationships, situationships
+- Friendships and social dynamics
+- Family relationships
+- Workplace interactions
+- Self-understanding in social contexts
+
+If asked about unrelated topics, gently redirect: "I'm most helpful with relationship and social stuff - but I'd love to hear more about what's on your mind in that space."
+
+## Success
+
+A great Decode response leaves someone feeling:
+- "They really get what I'm going through"
+- "I hadn't thought about it that way before"
+- "I feel clearer about what I'm feeling"
+- "I want to keep exploring this"
+
+Keep responses **2-4 paragraphs** typically. Be concise but meaningful - every sentence should add value.
+
+## CONTEXT CONTINUITY (CRITICAL)
+
+You MUST maintain perfect continuity with the conversation. Before responding:
+1. Recall any names, relationships, or situations mentioned earlier
+2. Reference specific details the user shared (not generic summaries)
+3. Build on insights from previous exchanges
+4. If the user asks a follow-up like "is there anything else" or "what else", understand they want you to continue analyzing the SAME situation - do not ask them to repeat context
+5. Never say "I don't have context" if prior messages exist - use them
+
+IMPORTANT: Do NOT include any notation blocks in your response. Just respond naturally.`;
+
+  // Build context-aware messages with conversation summary for long chats
+  const messages: GPT5Message[] = [{ role: "system", content: systemPrompt }];
+
+  // If conversation is getting long, add a context summary at the start
+  if (conversationHistory.length > 6) {
+    const contextSummary = buildContextSummary(conversationHistory);
+    if (contextSummary) {
+      messages.push({
+        role: "system",
+        content: `[CONVERSATION CONTEXT SUMMARY]\n${contextSummary}\n[END SUMMARY - Use this to maintain continuity]`,
+      });
+    }
+  }
+
+  // Add conversation history
+  messages.push(
+    ...conversationHistory.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }))
+  );
+
+  // Add current user message
+  messages.push({ role: "user", content: userMessage });
+
+  try {
+    // Use streaming for faster perceived response
+    const rawResponse = await callGPT5MiniStreaming(messages, onStream, 2500, 0.7);
+
+    // Apply subtle emoji integration to decode responses
+    const responseWithEmoji = processDecodeResponseWithEmoji(rawResponse);
+
+    return {
+      response: responseWithEmoji,
+      notation: undefined, // Streaming version doesn't use notation for simplicity
+    };
+  } catch (error) {
+    console.error("[generateDecodeResponseStreaming] Error:", error);
+    return {
+      response: "I want to make sure I understand what is going on here. What part of this situation feels most confusing or unclear to you?",
+      notation: undefined,
     };
   }
 }

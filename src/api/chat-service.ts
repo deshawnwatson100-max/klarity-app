@@ -8,16 +8,56 @@ import { getOpenAIClient } from "./openai";
 import { getGrokClient } from "./grok";
 
 /**
- * Get a text response from OpenAI
+ * Streaming callback type for real-time text updates
+ */
+export type StreamCallback = (chunk: string, fullText: string) => void;
+
+/**
+ * Get a text response from OpenAI with optional streaming
  * @param messages - The messages to send to the AI
  * @param options - The options for the request
+ * @param onStream - Optional callback for streaming chunks
  * @returns The response from the AI
  */
-export const getOpenAITextResponse = async (messages: AIMessage[], options?: AIRequestOptions): Promise<AIResponse> => {
+export const getOpenAITextResponse = async (
+  messages: AIMessage[],
+  options?: AIRequestOptions,
+  onStream?: StreamCallback
+): Promise<AIResponse> => {
   try {
     const client = getOpenAIClient();
     const defaultModel = "gpt-4o"; //accepts images as well, use this for image analysis
 
+    // Use streaming if callback provided
+    if (onStream) {
+      const stream = await client.chat.completions.create({
+        model: options?.model || defaultModel,
+        messages: messages,
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens || 2048,
+        stream: true,
+      });
+
+      let fullContent = "";
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullContent += content;
+          onStream(content, fullContent);
+        }
+      }
+
+      return {
+        content: fullContent,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
+      };
+    }
+
+    // Non-streaming request
     const response = await client.chat.completions.create({
       model: options?.model || defaultModel,
       messages: messages,
@@ -49,16 +89,51 @@ export const getOpenAIChatResponse = async (prompt: string): Promise<AIResponse>
 };
 
 /**
- * Get a text response from Grok
+ * Get a text response from Grok with optional streaming
  * @param messages - The messages to send to the AI
  * @param options - The options for the request
+ * @param onStream - Optional callback for streaming chunks
  * @returns The response from the AI
  */
-export const getGrokTextResponse = async (messages: AIMessage[], options?: AIRequestOptions): Promise<AIResponse> => {
+export const getGrokTextResponse = async (
+  messages: AIMessage[],
+  options?: AIRequestOptions,
+  onStream?: StreamCallback
+): Promise<AIResponse> => {
   try {
     const client = getGrokClient();
     const defaultModel = "grok-3-beta";
 
+    // Use streaming if callback provided
+    if (onStream) {
+      const stream = await client.chat.completions.create({
+        model: options?.model || defaultModel,
+        messages: messages,
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens || 2048,
+        stream: true,
+      });
+
+      let fullContent = "";
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullContent += content;
+          onStream(content, fullContent);
+        }
+      }
+
+      return {
+        content: fullContent,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
+      };
+    }
+
+    // Non-streaming request
     const response = await client.chat.completions.create({
       model: options?.model || defaultModel,
       messages: messages,

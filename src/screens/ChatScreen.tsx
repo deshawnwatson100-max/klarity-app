@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
   View,
-  ScrollView,
+  FlatList,
   Platform,
   Text,
   Dimensions,
@@ -66,6 +66,7 @@ import {
   analyzeImageContinuation,
   addEmojisToReply,
   generateDecodeResponse,
+  generateDecodeResponseStreaming,
   analyzeLightDecodeImage,
   analyzeDeepDecode,
   DeepDecodeResult,
@@ -242,9 +243,9 @@ export function ChatScreen({ navigation, route }: Props) {
     });
   }, [allMessages, inputMode]);
 
-  // Refs for both ScrollViews
-  const replyScrollViewRef = useRef<ScrollView>(null);
-  const decodeScrollViewRef = useRef<ScrollView>(null);
+  // Refs for both FlatLists (named as ScrollView refs for backward compatibility)
+  const replyScrollViewRef = useRef<FlatList<ChatMessage>>(null);
+  const decodeScrollViewRef = useRef<FlatList<ChatMessage>>(null);
 
   // Handle mode change with slide animation
   const handleModeChangeWithAnimation = useCallback((newMode: InputMode) => {
@@ -920,8 +921,6 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageWithMode(dysfunctionalMsg, capturedMode);
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       // STEP 1.5: Detect and show Red Flags (if any)
       const redFlagsResult = await detectRedFlags(
         userMessage.content,
@@ -938,7 +937,6 @@ export function ChatScreen({ navigation, route }: Props) {
           flags: redFlagsResult.flags,
         };
         addMessageWithMode(redFlagsMsg, capturedMode);
-        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
       // Show typing for reply generation
@@ -1260,8 +1258,6 @@ export function ChatScreen({ navigation, route }: Props) {
         patterns: dysfunctionalSummary.patterns,
       };
       addMessageToActiveLoop(dysfunctionalMsg);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Generate new suggested reply with user preferences
       const typingMsg2: TypingMessage = {
@@ -1624,25 +1620,6 @@ export function ChatScreen({ navigation, route }: Props) {
     try {
       // Check if user is requesting a deep search
       if (isDeepSearchRequest(userMessage.content)) {
-        // Show loading bubble briefly
-        const loadingMsg: ChatLoadingMessage = {
-          id: loadingMsgId,
-          role: "chat-loading",
-          content: "",
-          timestamp: Date.now(),
-          loadingType: "chat",
-          loadingState: "loading",
-          customAction: "Processing request",
-          mode: "understand",
-        };
-        addMessageToActiveLoopRaw(loadingMsg);
-
-        // Brief delay for natural feel
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Remove loading bubble
-        removeMessageFromActiveLoop(loadingMsgId);
-
         // Add assistant message explaining deep search
         const assistantMsg: ChatMessage = {
           id: Date.now().toString() + "_deep_search_intro",
@@ -1762,23 +1739,33 @@ export function ChatScreen({ navigation, route }: Props) {
         return;
       }
 
-      // Generate decode response for text-only messages
-      const result = await generateDecodeResponse(
-        userMessage.content,
-        conversationHistory
-      );
+      // Generate decode response for text-only messages with streaming
+      const assistantMsgId = Date.now().toString() + "_decode_response";
 
-      // Remove loading bubble
-      removeMessageFromActiveLoop(loadingMsgId);
-
-      // Add assistant response as a regular message bubble
+      // Create assistant message placeholder for streaming
       const assistantMsg: ChatMessage = {
-        id: Date.now().toString() + "_decode_response",
+        id: assistantMsgId,
         role: "assistant",
-        content: result.response,
+        content: "",
         timestamp: Date.now(),
       };
+
+      // Remove loading bubble and add empty assistant message
+      removeMessageFromActiveLoop(loadingMsgId);
       addMessageWithMode(assistantMsg, capturedMode);
+
+      // Stream the response
+      await generateDecodeResponseStreaming(
+        userMessage.content,
+        conversationHistory,
+        (_chunk, fullText) => {
+          // Update the message content as chunks arrive
+          updateMessageInActiveLoop(assistantMsgId, {
+            ...assistantMsg,
+            content: fullText,
+          });
+        }
+      );
 
       // Check if user wants more from a completed search
       const activeLoop = getActiveLoop();
@@ -1807,9 +1794,6 @@ export function ChatScreen({ navigation, route }: Props) {
           const followUp = getBestFollowUpQuestion(missingDataTypes, personContext);
 
           if (followUp) {
-            // Small delay before showing follow-up
-            await new Promise((resolve) => setTimeout(resolve, 400));
-
             const followUpMessage: DeepDiveFollowUpMessage = {
               id: `search-more-followup-${Date.now()}`,
               role: "deep-dive-follow-up",
@@ -1825,11 +1809,6 @@ export function ChatScreen({ navigation, route }: Props) {
               mode: "understand",
             };
             addMessageToActiveLoopRaw(followUpMessage);
-
-            // Scroll to show the follow-up
-            setTimeout(() => {
-              decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
           }
         }
       } else {
@@ -1844,9 +1823,6 @@ export function ChatScreen({ navigation, route }: Props) {
           !hasSuggestionCardAlready &&
           shouldSuggestDeepSearch(userMessage.content, conversationHistory)
         ) {
-          // Small delay before showing suggestion
-          await new Promise((resolve) => setTimeout(resolve, 400));
-
           // Add the Deep Search suggestion card
           const suggestionMsg: DeepSearchSuggestionMessage = {
             id: `deep-search-suggestion-${Date.now()}`,
@@ -1858,11 +1834,6 @@ export function ChatScreen({ navigation, route }: Props) {
             mode: "understand",
           };
           addMessageToActiveLoopRaw(suggestionMsg);
-
-          // Scroll to show the suggestion
-          setTimeout(() => {
-            decodeScrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 100);
         }
       }
     } catch (error) {
@@ -1928,8 +1899,6 @@ export function ChatScreen({ navigation, route }: Props) {
         approachShift: result.approachShift,
       };
       addMessageWithMode(continuationMsg, capturedMode);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Add updated suggested reply
       const replyMsg: SuggestedReplyCardMessage = {
@@ -2006,7 +1975,7 @@ export function ChatScreen({ navigation, route }: Props) {
   };
 
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
-  const renderDecodeMessage = (message: ChatMessage) => {
+  const renderDecodeMessage = useCallback((message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
     }
@@ -2647,9 +2616,9 @@ export function ChatScreen({ navigation, route }: Props) {
 
     // Skip all card types in Decode mode
     return null;
-  };
+  }, [handleEditMessage, getPersonContextById, updatePersonContext, removeMessageFromActiveLoop, updateMessageInActiveLoop, addMessageToActiveLoopRaw, getActiveLoop, activeLoopPersonContextId]);
 
-  const renderMessage = (message: ChatMessage) => {
+  const renderMessage = useCallback((message: ChatMessage) => {
     if (message.role === "typing") {
       return <TypingIndicator key={message.id} />;
     }
@@ -2736,7 +2705,7 @@ export function ChatScreen({ navigation, route }: Props) {
         messageId={message.id}
       />
     );
-  };
+  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply]);
 
   const handleNavigateBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -2937,24 +2906,28 @@ export function ChatScreen({ navigation, route }: Props) {
                   transform: [{ translateX: replySlideX }],
                 }}
               >
-                <ScrollView
+                <FlatList
                   ref={replyScrollViewRef}
+                  data={replyMessages}
+                  renderItem={({ item }) => renderMessage(item)}
+                  keyExtractor={(item) => item.id}
                   className="flex-1"
-                  contentContainerClassName="px-4 pt-4 pb-4"
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
-                >
-                  {replyMessages.length === 0 ? (
+                  ListEmptyComponent={
                     <View className="flex-1 items-center justify-center py-20">
                       <Text className="text-gray-500 text-center text-base">
                         Reply mode - craft your response
                       </Text>
                     </View>
-                  ) : (
-                    replyMessages.map(renderMessage)
-                  )}
-                  <View style={{ height: 20 }} />
-                </ScrollView>
+                  }
+                  ListFooterComponent={<View style={{ height: 20 }} />}
+                  removeClippedSubviews={true}
+                  initialNumToRender={15}
+                  maxToRenderPerBatch={10}
+                  windowSize={10}
+                />
               </Animated.View>
 
               {/* Decode Mode Chat Loop */}
@@ -2969,24 +2942,28 @@ export function ChatScreen({ navigation, route }: Props) {
                   transform: [{ translateX: decodeSlideX }],
                 }}
               >
-                <ScrollView
+                <FlatList
                   ref={decodeScrollViewRef}
+                  data={decodeMessages}
+                  renderItem={({ item }) => renderDecodeMessage(item)}
+                  keyExtractor={(item) => item.id}
                   className="flex-1"
-                  contentContainerClassName="px-4 pt-4 pb-4"
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
-                >
-                  {decodeMessages.length === 0 ? (
+                  ListEmptyComponent={
                     <View className="flex-1 items-center justify-center py-20">
                       <Text className="text-gray-500 text-center text-base">
                         Decode mode - understand the message
                       </Text>
                     </View>
-                  ) : (
-                    decodeMessages.map(renderDecodeMessage)
-                  )}
-                  <View style={{ height: 20 }} />
-                </ScrollView>
+                  }
+                  ListFooterComponent={<View style={{ height: 20 }} />}
+                  removeClippedSubviews={true}
+                  initialNumToRender={15}
+                  maxToRenderPerBatch={10}
+                  windowSize={10}
+                />
               </Animated.View>
             </View>
           </Animated.View>
