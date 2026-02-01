@@ -29,8 +29,10 @@ interface InputBarProps {
   onInputFocus?: () => void;
   isEditing?: boolean;
   onCancelEdit?: () => void;
-  /** When set, input refocuses on blur so keyboard stays open until parent sets ref to false (e.g. after first send). */
+  /** When set, parent uses keyboardShouldPersistTaps so keyboard stays open until first send; no refocus. */
   keepKeyboardUntilSendRef?: React.MutableRefObject<boolean>;
+  /** If false, keyboard is not dismissed after send (stays open by default). Default true. */
+  dismissKeyboardOnSend?: boolean;
 }
 
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
@@ -51,6 +53,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   isEditing = false,
   onCancelEdit,
   keepKeyboardUntilSendRef,
+  dismissKeyboardOnSend = true,
 }, ref) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -167,7 +170,9 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     if ((value.trim() || selectedImageUri) && !disabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSend();
-      Keyboard.dismiss();
+      if (dismissKeyboardOnSend) {
+        Keyboard.dismiss();
+      }
     }
   };
 
@@ -362,13 +367,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 setIsFocused(true);
                 onInputFocus?.();
               }}
-              onBlur={() => {
-                if (keepKeyboardUntilSendRef?.current) {
-                  setTimeout(() => inputRef.current?.focus(), 0);
-                  return;
-                }
-                setIsFocused(false);
-              }}
+              onBlur={() => setIsFocused(false)}
               placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : placeholder) : ""}
               placeholderTextColor={colors.inputPlaceholder}
               editable={!disabled}

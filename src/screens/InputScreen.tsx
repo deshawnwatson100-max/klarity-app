@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Dimensions, Platform, Animated, PanResponder, Keyboard, KeyboardAvoidingView } from "react-native";
+import { View, Text, Dimensions, Platform, Animated, PanResponder, KeyboardAvoidingView, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -99,21 +99,6 @@ export function InputScreen({ navigation }: Props) {
     return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Keep keyboard open by immediately re-focusing when it tries to hide
-  useEffect(() => {
-    const hideSubscription = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        if (keepKeyboardOpen.current && !isInitialMount.current) {
-          // Immediately re-focus to cancel the hide animation
-          inputBarRef.current?.focus();
-        }
-      }
-    );
-
-    return () => hideSubscription.remove();
-  }, []);
-
   // Re-focus input when drawer closes
   useEffect(() => {
     if (!isDrawerOpen && !isInitialMount.current) {
@@ -140,9 +125,7 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
-    // Allow keyboard to dismiss when navigating
     keepKeyboardOpen.current = false;
-    Keyboard.dismiss();
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
@@ -415,6 +398,13 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            scrollEnabled={false}
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none"
+          >
           {/* Header */}
           <Header
             onMenuPress={() => {
@@ -473,6 +463,7 @@ export function InputScreen({ navigation }: Props) {
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
+          </ScrollView>
         </KeyboardAvoidingView>
       </Animated.View>
 

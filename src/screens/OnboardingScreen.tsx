@@ -842,6 +842,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [collectedAnswers, setCollectedAnswers] = useState<Record<string, string>>({});
   const [activeQuestions, setActiveQuestions] = useState<QuestionSet>(GENERIC_QUESTIONS);
   const [splashOpacity, setSplashOpacity] = useState(1);
+  const [keyboardPersistUntilSend, setKeyboardPersistUntilSend] = useState(true);
 
   const setUserName = useOnboardingStore((s) => s.setUserName);
   const setOnboardingAnswer = useOnboardingStore((s) => s.setOnboardingAnswer);
@@ -1327,6 +1328,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
     if (!userInput.trim() || isTyping) return;
 
     keepKeyboardOpenRef.current = false;
+    setKeyboardPersistUntilSend(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
 
@@ -2069,7 +2071,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             paddingBottom: showGetStarted ? 60 + Math.max(insets.bottom, 16) : 20
           }}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps={keyboardPersistUntilSend ? "always" : "never"}
         >
           {messages.map(renderMessage)}
 

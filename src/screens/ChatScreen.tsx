@@ -3076,7 +3076,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   keyExtractor={(item) => item.id}
                   className="flex-1"
                   contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
-                  keyboardShouldPersistTaps="handled"
+                  keyboardShouldPersistTaps="never"
                   showsVerticalScrollIndicator={false}
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
@@ -3114,7 +3114,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   keyExtractor={(item) => item.id}
                   className="flex-1"
                   contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 }}
-                  keyboardShouldPersistTaps="handled"
+                  keyboardShouldPersistTaps="never"
                   showsVerticalScrollIndicator={false}
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
@@ -3159,6 +3159,7 @@ Generate a new reply that follows the user's instruction while still responding 
                 onInputFocus={handleInputFocus}
                 isEditing={isEditingMessage}
                 onCancelEdit={handleCancelEdit}
+                dismissKeyboardOnSend={false}
               />
             </Pressable>
           </Animated.View>
