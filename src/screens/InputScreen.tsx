@@ -346,60 +346,65 @@ export function InputScreen({ navigation }: Props) {
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <Header
-            onMenuPress={() => setIsDrawerOpen(true)}
-            inputMode={inputMode}
-            onModeChange={setInputMode}
-            onDeepDecodePress={() => setShowDeepDecodeModal(true)}
-            showDeepDecode={true}
-            showPersonContext={false}
-          />
-
-          {/* Center Content - pointerEvents none so taps don't dismiss keyboard */}
-          <View
-            pointerEvents="none"
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingHorizontal: 24,
-            }}
+          <ScrollView
+            contentContainerStyle={{ flex: 1 }}
+            keyboardShouldPersistTaps="always"
+            scrollEnabled={false}
           >
-            {isRecording ? (
-              <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
-                <Text
-                  style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
-                >
-                  Recording...
-                </Text>
-                <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
-                <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
-                  Tap the stop button when done
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Input Bar */}
-          <View>
-            <InputBar
-              ref={inputBarRef}
-              value={currentInput}
-              onChangeText={setCurrentInput}
-              onSend={handleSend}
-              onVoicePress={handleVoicePress}
-              onImageSelected={handleImageSelected}
-              onClearImage={handleClearImage}
-              selectedImageUri={selectedImageUri}
-              placeholder="Type a message..."
-              isRecording={isRecording}
+            <Header
+              onMenuPress={() => setIsDrawerOpen(true)}
               inputMode={inputMode}
-              autoFocus
+              onModeChange={setInputMode}
+              onDeepDecodePress={() => setShowDeepDecodeModal(true)}
+              showDeepDecode={true}
+              showPersonContext={false}
             />
-          </View>
 
-          {/* Processing Overlay */}
-          {isProcessing && <VoiceProcessingIndicator />}
+            {/* Center Content */}
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+              }}
+            >
+              {isRecording ? (
+                <View style={{ alignItems: "center", justifyContent: "center", width: "100%" }}>
+                  <Text
+                    style={{ fontSize: 20, fontWeight: "500", marginBottom: 24, color: colors.textSecondary }}
+                  >
+                    Recording...
+                  </Text>
+                  <VoiceRecordingVisualizer isRecording={isRecording} barCount={35} />
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 24 }}>
+                    Tap the stop button when done
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Input Bar */}
+            <View>
+              <InputBar
+                ref={inputBarRef}
+                value={currentInput}
+                onChangeText={setCurrentInput}
+                onSend={handleSend}
+                onVoicePress={handleVoicePress}
+                onImageSelected={handleImageSelected}
+                onClearImage={handleClearImage}
+                selectedImageUri={selectedImageUri}
+                placeholder="Type a message..."
+                isRecording={isRecording}
+                inputMode={inputMode}
+                autoFocus
+              />
+            </View>
+
+            {/* Processing Overlay */}
+            {isProcessing && <VoiceProcessingIndicator />}
+          </ScrollView>
         </KeyboardAvoidingView>
       </Animated.View>
 
