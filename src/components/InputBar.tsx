@@ -29,10 +29,6 @@ interface InputBarProps {
   onInputFocus?: () => void;
   isEditing?: boolean;
   onCancelEdit?: () => void;
-  /** When set, parent uses keyboardShouldPersistTaps so keyboard stays open until first send; no refocus. */
-  keepKeyboardUntilSendRef?: React.MutableRefObject<boolean>;
-  /** If false, keyboard is not dismissed after send (stays open by default). Default true. */
-  dismissKeyboardOnSend?: boolean;
 }
 
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
@@ -52,8 +48,6 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   onInputFocus,
   isEditing = false,
   onCancelEdit,
-  keepKeyboardUntilSendRef,
-  dismissKeyboardOnSend = true,
 }, ref) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -170,9 +164,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     if ((value.trim() || selectedImageUri) && !disabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSend();
-      if (dismissKeyboardOnSend) {
-        Keyboard.dismiss();
-      }
+      Keyboard.dismiss();
     }
   };
 
@@ -331,14 +323,10 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 }}
                 pointerEvents="none"
               >
-                {/* Reply Placeholder - centered, slides horizontally */}
+                {/* Reply Placeholder */}
                 <Animated.Text
                   style={{
                     position: "absolute",
-                    left: 0,
-                    right: 0,
-                    width: "100%",
-                    textAlign: "center",
                     color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: replyOpacity,
@@ -348,14 +336,10 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                   Type how you want to reply...
                 </Animated.Text>
 
-                {/* Decode Placeholder - centered, slides horizontally */}
+                {/* Decode Placeholder */}
                 <Animated.Text
                   style={{
                     position: "absolute",
-                    left: 0,
-                    right: 0,
-                    width: "100%",
-                    textAlign: "center",
                     color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: decodeOpacity,
@@ -382,7 +366,6 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               onSubmitEditing={handleSend}
               returnKeyType="send"
               multiline
-              blurOnSubmit={false}
               maxLength={1000}
               autoFocus={autoFocus}
               style={{

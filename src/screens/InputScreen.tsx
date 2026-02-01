@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Dimensions, Platform, Animated, PanResponder, KeyboardAvoidingView, ScrollView } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -81,38 +81,22 @@ export function InputScreen({ navigation }: Props) {
   // Track if this is the initial mount (for splash screen delay)
   const isInitialMount = useRef(true);
 
-  // Track if keyboard should stay open (until user sends)
-  const keepKeyboardOpen = useRef(true);
-
-  // Ensure we always have an active loop and show keyboard on mount
+  // Ensure we always have an active loop
   useEffect(() => {
     const activeLoop = getActiveLoop();
     if (!activeLoop) {
       createNewLoop();
     }
-    // Focus input bar after splash screen completes
-    const focusTimeout = setTimeout(() => {
+    // Focus input bar after splash screen completes (1.2s display + 0.4s fade = 1.6s)
+    setTimeout(() => {
       inputBarRef.current?.focus();
       isInitialMount.current = false;
     }, 1800);
-
-    return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Re-focus input when drawer closes
-  useEffect(() => {
-    if (!isDrawerOpen && !isInitialMount.current) {
-      setTimeout(() => {
-        inputBarRef.current?.focus();
-      }, 100);
-    }
-  }, [isDrawerOpen]);
-
-  // Focus input bar when screen gains focus
+  // Focus input bar when screen gains focus (but not on initial mount - splash handles that)
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      // Reset flag when returning to this screen
-      keepKeyboardOpen.current = true;
       if (!isInitialMount.current) {
         setTimeout(() => {
           inputBarRef.current?.focus();
@@ -125,14 +109,12 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
-    keepKeyboardOpen.current = false;
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
   const handleSend = () => {
     if (!currentInput.trim() && !selectedImageUri) return;
 
-    keepKeyboardOpen.current = false;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Always create a new loop when sending from InputScreen
@@ -359,6 +341,7 @@ export function InputScreen({ navigation }: Props) {
           flex: 1,
           transform: [{ translateX: mainContentTranslateX }],
         }}
+        {...panResponder.panHandlers}
       >
         {/* Deep charcoal background for dark mode, clean white for light mode */}
         <LinearGradient
@@ -379,50 +362,22 @@ export function InputScreen({ navigation }: Props) {
         {/* Floating particles - cool-toned minimal - Layer 2 (dark mode only) */}
         {isDark && <FloatingParticles count={20} />}
 
-        {/* Left edge swipe zone for drawer - separate from main content */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 30,
-            zIndex: 10,
-          }}
-          {...panResponder.panHandlers}
-        />
-
-        {/* Main content with KeyboardAvoidingView */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="always"
-            keyboardDismissMode="none"
-          >
-          {/* Header */}
           <Header
-            onMenuPress={() => {
-              setIsDrawerOpen(true);
-            }}
+            onMenuPress={() => setIsDrawerOpen(true)}
             inputMode={inputMode}
-            onModeChange={(mode) => {
-              setInputMode(mode);
-            }}
+            onModeChange={setInputMode}
             onDeepDecodePress={() => setShowDeepDecodeModal(true)}
             showDeepDecode={true}
             showPersonContext={false}
-            refocusInputRef={inputBarRef}
           />
 
-          {/* Center Content - pointerEvents none to prevent keyboard dismiss */}
+          {/* Center Content */}
           <View
-            pointerEvents="none"
             style={{
               flex: 1,
               alignItems: "center",
@@ -446,25 +401,25 @@ export function InputScreen({ navigation }: Props) {
           </View>
 
           {/* Input Bar */}
-          <InputBar
-            ref={inputBarRef}
-            value={currentInput}
-            onChangeText={setCurrentInput}
-            onSend={handleSend}
-            onVoicePress={handleVoicePress}
-            onImageSelected={handleImageSelected}
-            onClearImage={handleClearImage}
-            selectedImageUri={selectedImageUri}
-            placeholder="Type a message..."
-            isRecording={isRecording}
-            inputMode={inputMode}
-            autoFocus
-            keepKeyboardUntilSendRef={keepKeyboardOpen}
-          />
+          <View>
+            <InputBar
+              ref={inputBarRef}
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder="Type a message..."
+              isRecording={isRecording}
+              inputMode={inputMode}
+              autoFocus
+            />
+          </View>
 
           {/* Processing Overlay */}
           {isProcessing && <VoiceProcessingIndicator />}
-          </ScrollView>
         </KeyboardAvoidingView>
       </Animated.View>
 
