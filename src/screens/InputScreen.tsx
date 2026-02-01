@@ -376,8 +376,9 @@ export function InputScreen({ navigation }: Props) {
             showPersonContext={false}
           />
 
-          {/* Center Content */}
+          {/* Center Content - pointerEvents none so taps don't dismiss keyboard */}
           <View
+            pointerEvents="none"
             style={{
               flex: 1,
               alignItems: "center",
