@@ -820,6 +820,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const { colors, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<InputBarRef>(null);
+  const keepKeyboardOpenRef = useRef(true);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<AIMessage[]>([
@@ -1325,6 +1326,7 @@ Keep it warm, personal, and conversational. Use "you" to speak directly to them.
   const handleSubmit = async () => {
     if (!userInput.trim() || isTyping) return;
 
+    keepKeyboardOpenRef.current = false;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
 
@@ -2102,6 +2104,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             placeholder={isInQuestionMode || isInSkipPromptMode || isInUseCaseMode ? "Or type your own answer..." : (isInSummaryConfirmMode ? "Or share what feels more accurate..." : inputPlaceholder)}
             autoFocus={!isInQuestionMode && !isInSkipPromptMode && !isInUseCaseMode && !isInSummaryConfirmMode}
             isRecording={isRecording}
+            keepKeyboardUntilSendRef={keepKeyboardOpenRef}
           />
         )}
 

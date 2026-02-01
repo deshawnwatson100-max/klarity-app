@@ -149,6 +149,7 @@ export function InputScreen({ navigation }: Props) {
   const handleSend = () => {
     if (!currentInput.trim() && !selectedImageUri) return;
 
+    keepKeyboardOpen.current = false;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Always create a new loop when sending from InputScreen
@@ -467,6 +468,7 @@ export function InputScreen({ navigation }: Props) {
             isRecording={isRecording}
             inputMode={inputMode}
             autoFocus
+            keepKeyboardUntilSendRef={keepKeyboardOpen}
           />
 
           {/* Processing Overlay */}

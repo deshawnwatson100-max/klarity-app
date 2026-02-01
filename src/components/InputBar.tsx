@@ -29,6 +29,8 @@ interface InputBarProps {
   onInputFocus?: () => void;
   isEditing?: boolean;
   onCancelEdit?: () => void;
+  /** When set, input refocuses on blur so keyboard stays open until parent sets ref to false (e.g. after first send). */
+  keepKeyboardUntilSendRef?: React.MutableRefObject<boolean>;
 }
 
 export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar({
@@ -48,6 +50,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   onInputFocus,
   isEditing = false,
   onCancelEdit,
+  keepKeyboardUntilSendRef,
 }, ref) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -359,7 +362,13 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 setIsFocused(true);
                 onInputFocus?.();
               }}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                if (keepKeyboardUntilSendRef?.current) {
+                  setTimeout(() => inputRef.current?.focus(), 0);
+                  return;
+                }
+                setIsFocused(false);
+              }}
               placeholder={isFocused ? (inputMode === "rewrite" ? "Type how you want to reply..." : placeholder) : ""}
               placeholderTextColor={colors.inputPlaceholder}
               editable={!disabled}
