@@ -417,6 +417,7 @@ export function InputScreen({ navigation }: Props) {
             onDeepDecodePress={() => setShowDeepDecodeModal(true)}
             showDeepDecode={true}
             showPersonContext={false}
+            refocusInputRef={inputBarRef}
           />
 
           {/* Center Content - pointerEvents none to prevent keyboard dismiss */}

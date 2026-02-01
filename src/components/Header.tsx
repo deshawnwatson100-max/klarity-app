@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { useLoopsStore } from "../state/loopsStore";
 import { PersonContextHeaderIcon } from "./PersonContextHeaderIcon";
 import { useTheme } from "../theme";
+import type { InputBarRef } from "./InputBar";
 
 export type InputMode = "understand" | "rewrite";
 
@@ -23,6 +24,8 @@ interface HeaderProps {
   showPersonContext?: boolean;
   onDeepDecodePress?: () => void;
   showDeepDecode?: boolean;
+  /** When set, refocuses the input after header taps (e.g. on InputScreen to keep keyboard open). */
+  refocusInputRef?: React.RefObject<InputBarRef | null>;
 }
 
 /**
@@ -49,7 +52,13 @@ export function Header({
   showPersonContext = true,
   onDeepDecodePress,
   showDeepDecode = true,
+  refocusInputRef,
 }: HeaderProps) {
+  const refocusInput = () => {
+    if (refocusInputRef?.current) {
+      setTimeout(() => refocusInputRef.current?.focus(), 50);
+    }
+  };
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -60,6 +69,7 @@ export function Header({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     createNewLoop();
     navigation.navigate("InputScreen" as never);
+    refocusInput();
   };
 
   const handleBackPress = () => {
@@ -76,11 +86,13 @@ export function Header({
     if (onMenuPress) {
       onMenuPress();
     }
+    refocusInput();
   };
 
   const handleModeChange = (mode: InputMode) => {
     Haptics.selectionAsync();
     onModeChange?.(mode);
+    refocusInput();
   };
 
   // Render the left side menu based on screen type
@@ -134,6 +146,7 @@ export function Header({
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onDeepDecodePress();
+                refocusInput();
               }}
               className="active:opacity-60"
               style={{ marginRight: 12 }}
