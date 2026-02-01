@@ -3153,7 +3153,7 @@ Generate a new reply that follows the user's instruction while still responding 
                 onImageSelected={handleImageSelected}
                 onClearImage={handleClearImage}
                 selectedImageUri={selectedImageUri}
-                placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type a message..."}
+                placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type how you want to reply..."}
                 disabled={isLoading}
                 inputMode={inputMode}
                 onInputFocus={handleInputFocus}

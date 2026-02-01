@@ -331,10 +331,14 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 }}
                 pointerEvents="none"
               >
-                {/* Reply Placeholder */}
+                {/* Reply Placeholder - centered, slides horizontally */}
                 <Animated.Text
                   style={{
                     position: "absolute",
+                    left: 0,
+                    right: 0,
+                    width: "100%",
+                    textAlign: "center",
                     color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: replyOpacity,
@@ -344,10 +348,14 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                   Type how you want to reply...
                 </Animated.Text>
 
-                {/* Decode Placeholder */}
+                {/* Decode Placeholder - centered, slides horizontally */}
                 <Animated.Text
                   style={{
                     position: "absolute",
+                    left: 0,
+                    right: 0,
+                    width: "100%",
+                    textAlign: "center",
                     color: colors.inputPlaceholder,
                     fontSize: 16,
                     opacity: decodeOpacity,
