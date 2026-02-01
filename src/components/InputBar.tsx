@@ -368,6 +368,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               multiline
               maxLength={1000}
               autoFocus={autoFocus}
+              blurOnSubmit={false}
+              keyboardType="default"
               style={{
                 color: colors.textPrimary,
                 fontSize: 16,
