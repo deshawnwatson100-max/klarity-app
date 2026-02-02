@@ -1848,6 +1848,7 @@ Generate a new reply that follows the user's instruction while still responding 
         role: "assistant",
         content: "",
         timestamp: Date.now(),
+        mode: capturedMode, // Include mode so updates preserve it
       };
 
       // Remove loading bubble and add empty assistant message
