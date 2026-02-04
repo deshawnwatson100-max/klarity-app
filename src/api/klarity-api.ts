@@ -172,8 +172,8 @@ async function callGPT5MiniStreaming(
     for (let i = 0; i < words.length; i++) {
       accumulated += (i === 0 ? "" : " ") + words[i];
       onStream(words[i], accumulated);
-      // Small delay between words for typewriter effect
-      await new Promise(resolve => setTimeout(resolve, 15));
+      // Delay between words for natural typewriter effect
+      await new Promise(resolve => setTimeout(resolve, 35));
     }
   };
 
