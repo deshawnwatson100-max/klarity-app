@@ -2889,9 +2889,10 @@ Generate a new reply that follows the user's instruction while still responding 
         imageUrl={message.imageUrl}
         onEdit={message.role === "user" ? handleEditMessage : undefined}
         messageId={message.id}
+        isStreaming={message.role === "assistant" && message.id === streamingMessageId}
       />
     );
-  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply]);
+  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply, streamingMessageId]);
 
   const handleNavigateBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
