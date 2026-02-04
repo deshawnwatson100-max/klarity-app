@@ -302,6 +302,7 @@ interface MessageBubbleProps {
   onRegenerate?: () => void; // Callback for regenerate action
   onEdit?: (content: string, messageId: string) => void; // Callback for edit action (user messages)
   messageId?: string; // Message ID for edit tracking
+  isStreaming?: boolean; // Whether content is actively streaming in
 }
 
 export function MessageBubble({
@@ -314,11 +315,14 @@ export function MessageBubble({
   onRegenerate,
   onEdit,
   messageId,
+  isStreaming = false,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const { colors, isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
+  const textOpacity = useRef(new Animated.Value(0.4)).current; // Start partially visible for streaming
+  const prevContentLength = useRef(0);
 
   // Action states
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -345,6 +349,28 @@ export function MessageBubble({
       }),
     ]).start();
   }, []);
+
+  // Animate text opacity as content streams in
+  useEffect(() => {
+    if (isStreaming && content.length > prevContentLength.current) {
+      // Content is growing - pulse the opacity up
+      textOpacity.setValue(0.7);
+      Animated.timing(textOpacity, {
+        toValue: 1,
+        duration: 150,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    } else if (!isStreaming && content.length > 0) {
+      // Streaming complete - ensure full opacity
+      Animated.timing(textOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevContentLength.current = content.length;
+  }, [content, isStreaming]);
 
   useEffect(() => {
     if (imageUrl) {
@@ -553,9 +579,9 @@ export function MessageBubble({
         </View>
       )}
 
-      {/* Text aligned to the left */}
+      {/* Text aligned to the left with streaming fade effect */}
       {hasText && (
-        <View style={{ maxWidth: "90%", paddingRight: 20 }}>
+        <Animated.View style={{ maxWidth: "90%", paddingRight: 20, opacity: isStreaming ? textOpacity : 1 }}>
           {renderFormattedText(content, {
             fontSize: 17,
             lineHeight: 26,
@@ -563,7 +589,7 @@ export function MessageBubble({
             letterSpacing: 0.2,
             fontWeight: "400",
           }, isDark)}
-        </View>
+        </Animated.View>
       )}
 
       {/* Action buttons - ChatGPT style */}

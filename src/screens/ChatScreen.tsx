@@ -125,6 +125,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>(route.params?.inputMode || "understand");
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null); // Track which message is streaming
 
   // Deep Decode state
   const [showDeepDecodeModal, setShowDeepDecodeModal] = useState(false);
@@ -1853,6 +1854,9 @@ Generate a new reply that follows the user's instruction while still responding 
         mode: capturedMode, // Include mode so updates preserve it
       };
 
+      // Mark this message as streaming for fade animation
+      setStreamingMessageId(assistantMsgId);
+
       // Stream the response - keep loading indicator until first content arrives
       await generateDecodeResponseStreaming(
         userMessage.content,
@@ -1872,6 +1876,9 @@ Generate a new reply that follows the user's instruction while still responding 
           }
         }
       );
+
+      // Streaming complete - clear streaming state
+      setStreamingMessageId(null);
 
       // If no chunks were received (edge case), clean up loading indicator
       if (!hasReceivedFirstChunk) {
@@ -2788,13 +2795,14 @@ Generate a new reply that follows the user's instruction while still responding 
           showActions={message.role === "assistant"} // Show action buttons for assistant messages
           onEdit={message.role === "user" ? handleEditMessage : undefined}
           messageId={message.id}
+          isStreaming={message.role === "assistant" && message.id === streamingMessageId}
         />
       );
     }
 
     // Skip all card types in Decode mode
     return null;
-  }, [handleEditMessage, getPersonContextById, updatePersonContext, removeMessageFromActiveLoop, updateMessageInActiveLoop, addMessageToActiveLoopRaw, getActiveLoop, activeLoopPersonContextId]);
+  }, [handleEditMessage, getPersonContextById, updatePersonContext, removeMessageFromActiveLoop, updateMessageInActiveLoop, addMessageToActiveLoopRaw, getActiveLoop, activeLoopPersonContextId, streamingMessageId]);
 
   const renderMessage = useCallback((message: ChatMessage) => {
     if (message.role === "typing") {
