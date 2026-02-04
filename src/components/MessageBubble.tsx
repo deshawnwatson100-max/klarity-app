@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import * as ContextMenu from "zeego/context-menu";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { useTheme } from "../theme";
+import { TypewriterText } from "./TypewriterText";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -321,9 +322,10 @@ export function MessageBubble({
   const { colors, isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
-  const textOpacity = useRef(new Animated.Value(1)).current;
-  const prevContentLength = useRef(0);
-  const isFirstChunk = useRef(true);
+
+  // Track if typewriter animation has completed for this content
+  const [hasAnimatedText, setHasAnimatedText] = useState(false);
+  const lastAnimatedContent = useRef("");
 
   // Action states
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -351,36 +353,24 @@ export function MessageBubble({
     ]).start();
   }, []);
 
-  // Animate text opacity as content streams in
+  // Reset animation state when streaming starts with new content
   useEffect(() => {
-    if (isStreaming) {
-      if (content.length > prevContentLength.current) {
-        if (isFirstChunk.current) {
-          // First chunk - start from low opacity
-          textOpacity.setValue(0.3);
-          isFirstChunk.current = false;
-        }
-        // Content growing - animate opacity up smoothly
-        Animated.timing(textOpacity, {
-          toValue: 0.5 + (content.length / 500) * 0.5, // Gradually increase to full opacity
-          duration: 80,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }).start();
-      }
-    } else {
-      // Not streaming - ensure full opacity
-      if (content.length > 0) {
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-      }
-      isFirstChunk.current = true;
+    if (isStreaming && content !== lastAnimatedContent.current) {
+      setHasAnimatedText(false);
     }
-    prevContentLength.current = content.length;
-  }, [content, isStreaming]);
+  }, [isStreaming, content]);
+
+  // Mark animation complete when streaming ends
+  useEffect(() => {
+    if (!isStreaming && content) {
+      lastAnimatedContent.current = content;
+      // Small delay to let typewriter finish
+      const timer = setTimeout(() => {
+        setHasAnimatedText(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isStreaming, content]);
 
   useEffect(() => {
     if (imageUrl) {
@@ -389,6 +379,9 @@ export function MessageBubble({
   }, [imageUrl]);
 
   const hasText = content && content !== "[Image]";
+
+  // Theme-aware text color for assistant messages (matching SuggestedReplyCard)
+  const textColor = isDark ? "#EDEDED" : "#1C1C1E";
 
   // Smaller image dimensions for chat screenshots
   const imageWidth = SCREEN_WIDTH * 0.55; // 55% of screen width
@@ -589,17 +582,43 @@ export function MessageBubble({
         </View>
       )}
 
-      {/* Text aligned to the left with streaming fade effect */}
-      {hasText && (
-        <Animated.View style={{ maxWidth: "90%", paddingRight: 20, opacity: textOpacity }}>
+      {/* Text aligned to the left with typewriter animation for streaming */}
+      {hasText && !isUser && (
+        <View style={{ maxWidth: "90%", paddingRight: 20 }}>
+          {(isStreaming || !hasAnimatedText) ? (
+            <TypewriterText
+              text={content}
+              style={{
+                fontSize: 15,
+                lineHeight: 24,
+                color: textColor,
+              }}
+              speed={35}
+              onComplete={() => setHasAnimatedText(true)}
+            />
+          ) : (
+            renderFormattedText(content, {
+              fontSize: 15,
+              lineHeight: 24,
+              color: textColor,
+              letterSpacing: 0.2,
+              fontWeight: "400",
+            }, isDark)
+          )}
+        </View>
+      )}
+
+      {/* User message text */}
+      {hasText && isUser && (
+        <View style={{ maxWidth: "90%", paddingRight: 20 }}>
           {renderFormattedText(content, {
-            fontSize: 17,
-            lineHeight: 26,
-            color: isDark ? "#EDEDED" : "#1C1C1E",
+            fontSize: 15,
+            lineHeight: 24,
+            color: textColor,
             letterSpacing: 0.2,
             fontWeight: "400",
           }, isDark)}
-        </Animated.View>
+        </View>
       )}
 
       {/* Action buttons - ChatGPT style */}
