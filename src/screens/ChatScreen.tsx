@@ -1842,6 +1842,7 @@ Generate a new reply that follows the user's instruction while still responding 
 
       // Generate decode response for text-only messages with streaming
       const assistantMsgId = Date.now().toString() + "_decode_response";
+      let hasReceivedFirstChunk = false;
 
       // Create assistant message placeholder for streaming
       const assistantMsg: ChatMessage = {
@@ -1852,22 +1853,34 @@ Generate a new reply that follows the user's instruction while still responding 
         mode: capturedMode, // Include mode so updates preserve it
       };
 
-      // Remove loading bubble and add empty assistant message
-      removeMessageFromActiveLoop(loadingMsgId);
-      addMessageWithMode(assistantMsg, capturedMode);
-
-      // Stream the response
+      // Stream the response - keep loading indicator until first content arrives
       await generateDecodeResponseStreaming(
         userMessage.content,
         conversationHistory,
         (_chunk, fullText) => {
-          // Update the message content as chunks arrive
-          updateMessageInActiveLoop(assistantMsgId, {
-            ...assistantMsg,
-            content: fullText,
-          });
+          // On first chunk, remove loading and add assistant message
+          if (!hasReceivedFirstChunk) {
+            hasReceivedFirstChunk = true;
+            removeMessageFromActiveLoop(loadingMsgId);
+            addMessageWithMode({ ...assistantMsg, content: fullText }, capturedMode);
+          } else {
+            // Update the message content as chunks arrive
+            updateMessageInActiveLoop(assistantMsgId, {
+              ...assistantMsg,
+              content: fullText,
+            });
+          }
         }
       );
+
+      // If no chunks were received (edge case), clean up loading indicator
+      if (!hasReceivedFirstChunk) {
+        removeMessageFromActiveLoop(loadingMsgId);
+        addMessageWithMode({
+          ...assistantMsg,
+          content: "I want to make sure I understand. Could you tell me more about what you are trying to figure out?",
+        }, capturedMode);
+      }
 
       // Check if user wants more from a completed search
       const activeLoop = getActiveLoop();

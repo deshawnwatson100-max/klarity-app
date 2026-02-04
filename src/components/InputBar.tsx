@@ -285,19 +285,19 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
                 right: -2,
                 bottom: -2,
                 borderRadius: 30,
-                backgroundColor: isDark ? "rgba(156, 163, 175, 0.12)" : "rgba(0, 0, 0, 0.08)",
-                shadowColor: isDark ? "#9CA3AF" : "#000",
+                backgroundColor: isDark ? "rgba(156, 163, 175, 0.15)" : "rgba(0, 122, 255, 0.08)",
+                shadowColor: isDark ? "#9CA3AF" : "#007AFF",
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: isDark ? 0.3 : 0.1,
-                shadowRadius: 8,
+                shadowOpacity: isDark ? 0.3 : 0.15,
+                shadowRadius: 10,
               }}
             />
           )}
 
-          {/* Inner input with pitch black background */}
+          {/* Inner input with themed background */}
           <View
             style={{
-              backgroundColor: isDark ? "#000000" : "#FFFFFF",
+              backgroundColor: isDark ? "#1A1A1C" : "#FFFFFF",
               borderRadius: 28,
               paddingHorizontal: 16,
               paddingVertical: 12,
@@ -305,8 +305,8 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
               maxHeight: 100,
               justifyContent: "center",
               overflow: "hidden",
-              borderWidth: isDark ? 0 : 1,
-              borderColor: isDark ? "transparent" : colors.border,
+              borderWidth: 1,
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.12)",
             }}
           >
             {/* Sliding Placeholder Container */}
