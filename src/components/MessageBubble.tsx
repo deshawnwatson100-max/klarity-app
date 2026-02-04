@@ -360,15 +360,10 @@ export function MessageBubble({
     }
   }, [isStreaming, content]);
 
-  // Mark animation complete when streaming ends
+  // Track content for animation state (TypewriterText onComplete handles setting hasAnimatedText)
   useEffect(() => {
     if (!isStreaming && content) {
       lastAnimatedContent.current = content;
-      // Small delay to let typewriter finish
-      const timer = setTimeout(() => {
-        setHasAnimatedText(true);
-      }, 100);
-      return () => clearTimeout(timer);
     }
   }, [isStreaming, content]);
 
@@ -585,8 +580,9 @@ export function MessageBubble({
       {/* Text aligned to the left with typewriter animation for streaming */}
       {hasText && !isUser && (
         <View style={{ maxWidth: "90%", paddingRight: 20 }}>
-          {(isStreaming || !hasAnimatedText) ? (
+          {!hasAnimatedText ? (
             <TypewriterText
+              key={`typewriter-${content.length}`}
               text={content}
               style={{
                 fontSize: 15,
