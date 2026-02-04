@@ -321,8 +321,9 @@ export function MessageBubble({
   const { colors, isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
-  const textOpacity = useRef(new Animated.Value(0.4)).current; // Start partially visible for streaming
+  const textOpacity = useRef(new Animated.Value(1)).current;
   const prevContentLength = useRef(0);
+  const isFirstChunk = useRef(true);
 
   // Action states
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -352,22 +353,31 @@ export function MessageBubble({
 
   // Animate text opacity as content streams in
   useEffect(() => {
-    if (isStreaming && content.length > prevContentLength.current) {
-      // Content is growing - pulse the opacity up
-      textOpacity.setValue(0.7);
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 150,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start();
-    } else if (!isStreaming && content.length > 0) {
-      // Streaming complete - ensure full opacity
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+    if (isStreaming) {
+      if (content.length > prevContentLength.current) {
+        if (isFirstChunk.current) {
+          // First chunk - start from low opacity
+          textOpacity.setValue(0.3);
+          isFirstChunk.current = false;
+        }
+        // Content growing - animate opacity up smoothly
+        Animated.timing(textOpacity, {
+          toValue: 0.5 + (content.length / 500) * 0.5, // Gradually increase to full opacity
+          duration: 80,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }).start();
+      }
+    } else {
+      // Not streaming - ensure full opacity
+      if (content.length > 0) {
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+      isFirstChunk.current = true;
     }
     prevContentLength.current = content.length;
   }, [content, isStreaming]);
@@ -581,7 +591,7 @@ export function MessageBubble({
 
       {/* Text aligned to the left with streaming fade effect */}
       {hasText && (
-        <Animated.View style={{ maxWidth: "90%", paddingRight: 20, opacity: isStreaming ? textOpacity : 1 }}>
+        <Animated.View style={{ maxWidth: "90%", paddingRight: 20, opacity: textOpacity }}>
           {renderFormattedText(content, {
             fontSize: 17,
             lineHeight: 26,
