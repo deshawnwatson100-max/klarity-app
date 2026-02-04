@@ -164,28 +164,16 @@ async function callGPT5MiniStreaming(
     temperature,
   };
 
-  // Helper function to simulate typewriter effect for better UX
-  const simulateTypewriter = async (content: string): Promise<void> => {
-    const words = content.split(" ");
-    let accumulated = "";
-
-    for (let i = 0; i < words.length; i++) {
-      accumulated += (i === 0 ? "" : " ") + words[i];
-      onStream(words[i], accumulated);
-      // Delay between words for natural typewriter effect
-      await new Promise(resolve => setTimeout(resolve, 35));
-    }
-  };
-
-  // Helper function for non-streaming fallback with typewriter simulation
+  // Helper function for non-streaming fallback
+  // Delivers content all at once - TypewriterText component handles animation
   const doNonStreamingFallback = async (): Promise<string> => {
-    console.log("[callGPT5MiniStreaming] Using non-streaming with typewriter simulation");
+    console.log("[callGPT5MiniStreaming] Using non-streaming fallback");
     const response = await client.chat.completions.create(baseParams);
     const content = response.choices[0]?.message?.content || "";
     console.log("[callGPT5MiniStreaming] Response length:", content.length);
     if (content) {
-      // Simulate typewriter effect
-      await simulateTypewriter(content);
+      // Deliver all content at once - UI handles animation
+      onStream(content, content);
     }
     return content;
   };
@@ -197,7 +185,7 @@ async function callGPT5MiniStreaming(
 
     // Check if stream is valid and iterable before attempting iteration
     if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
-      console.log("[callGPT5MiniStreaming] Stream not iterable, using typewriter fallback");
+      console.log("[callGPT5MiniStreaming] Stream not iterable, using fallback");
       return await doNonStreamingFallback();
     }
 

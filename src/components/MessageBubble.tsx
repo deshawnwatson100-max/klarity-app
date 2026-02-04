@@ -593,7 +593,7 @@ export function MessageBubble({
                 lineHeight: 24,
                 color: textColor,
               }}
-              speed={35}
+              speed={85}
               onComplete={() => setHasAnimatedText(true)}
             />
           ) : (
