@@ -10,6 +10,7 @@ import {
   PanResponder,
   Pressable,
   Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -2924,11 +2925,10 @@ Generate a new reply that follows the user's instruction while still responding 
         {isDark && <SoftFlares />}
         {isDark && <FloatingParticles count={20} />}
 
-        <Animated.View
-          style={{
-            flex: 1,
-            paddingBottom: keyboardHeight,
-          }}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}
         >
           <Header
             isAnalyzing={isLoading}
@@ -3168,7 +3168,7 @@ Generate a new reply that follows the user's instruction while still responding 
             visible={isHistoryPanelOpen}
             onClose={() => setHistoryPanelOpen(false)}
           />
-        </Animated.View>
+        </KeyboardAvoidingView>
       </Animated.View>
 
       {/* Drawer - slides over the screen from the left */}
