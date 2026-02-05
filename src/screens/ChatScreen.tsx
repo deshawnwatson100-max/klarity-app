@@ -3158,33 +3158,27 @@ Generate a new reply that follows the user's instruction while still responding 
             </View>
           </Animated.View>
 
-          <Animated.View
+          <View
             style={{
-              transform: [
-                { translateY: bottomTranslateY },
-                { translateY: inputBarTranslateY },
-              ],
               backgroundColor: colors.headerBackground,
             }}
           >
-            <Pressable onPress={handleInputBarTap}>
-              <InputBar
-                value={currentInput}
-                onChangeText={setCurrentInput}
-                onSend={handleSend}
-                onVoicePress={handleVoicePress}
-                onImageSelected={handleImageSelected}
-                onClearImage={handleClearImage}
-                selectedImageUri={selectedImageUri}
-                placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type how you want to reply..."}
-                disabled={isLoading}
-                inputMode={inputMode}
-                onInputFocus={handleInputFocus}
-                isEditing={isEditingMessage}
-                onCancelEdit={handleCancelEdit}
-              />
-            </Pressable>
-          </Animated.View>
+            <InputBar
+              value={currentInput}
+              onChangeText={setCurrentInput}
+              onSend={handleSend}
+              onVoicePress={handleVoicePress}
+              onImageSelected={handleImageSelected}
+              onClearImage={handleClearImage}
+              selectedImageUri={selectedImageUri}
+              placeholder={inputMode === "understand" ? "Ask Klarity social nuances…" : "Type how you want to reply..."}
+              disabled={isLoading}
+              inputMode={inputMode}
+              onInputFocus={handleInputFocus}
+              isEditing={isEditingMessage}
+              onCancelEdit={handleCancelEdit}
+            />
+          </View>
 
           <LoopHistoryPanel
             visible={isHistoryPanelOpen}
