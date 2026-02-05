@@ -3111,10 +3111,11 @@ Generate a new reply that follows the user's instruction while still responding 
                     </View>
                   }
                   ListFooterComponent={<View style={{ height: 20 }} />}
-                  removeClippedSubviews={true}
-                  initialNumToRender={15}
-                  maxToRenderPerBatch={10}
-                  windowSize={10}
+                  removeClippedSubviews={Platform.OS === "android"}
+                  initialNumToRender={8}
+                  maxToRenderPerBatch={5}
+                  windowSize={5}
+                  updateCellsBatchingPeriod={50}
                 />
               </Animated.View>
 
@@ -3149,10 +3150,11 @@ Generate a new reply that follows the user's instruction while still responding 
                     </View>
                   }
                   ListFooterComponent={<View style={{ height: 20 }} />}
-                  removeClippedSubviews={true}
-                  initialNumToRender={15}
-                  maxToRenderPerBatch={10}
-                  windowSize={10}
+                  removeClippedSubviews={Platform.OS === "android"}
+                  initialNumToRender={8}
+                  maxToRenderPerBatch={5}
+                  windowSize={5}
+                  updateCellsBatchingPeriod={50}
                 />
               </Animated.View>
             </View>
