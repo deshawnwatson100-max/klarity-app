@@ -11,21 +11,41 @@
  * These are automatically injected into the workspace by the Vibecode service once the user sets up RevenueCat in the Payments tab.
  *
  * Platform Support:
- * - iOS/Android: Fully supported via app stores
+ * - iOS/Android: Fully supported via app stores (development builds only; Expo Go not supported)
  * - Web: Disabled (RevenueCat only supports native app stores)
  *
  * The module automatically selects the correct key based on __DEV__ mode.
- * 
+ *
  * This module is used to get the current customer info, offerings, and purchase packages.
  * These exported functions are found at the bottom of the file.
  */
 
 import { Platform } from "react-native";
-import Purchases, {
-  type PurchasesOfferings,
-  type CustomerInfo,
-  type PurchasesPackage,
+import Constants from "expo-constants";
+import type {
+  PurchasesOfferings,
+  CustomerInfo,
+  PurchasesPackage,
 } from "react-native-purchases";
+
+// RevenueCat SDK does not work in Expo Go - native module is unavailable and causes crashes.
+// Only load it in development builds or production.
+const isExpoGo = Constants.appOwnership === "expo";
+
+// Lazy-load Purchases to avoid crash when native module is unavailable (Expo Go)
+let PurchasesModule: typeof import("react-native-purchases").default | null =
+  null;
+if (!isExpoGo && Platform.OS !== "web") {
+  try {
+    PurchasesModule = require("react-native-purchases").default;
+  } catch {
+    // Native module not available
+  }
+}
+
+
+// Re-export types for consumers
+export type { PurchasesOfferings, CustomerInfo, PurchasesPackage };
 
 // Check if running on web
 const isWeb = Platform.OS === "web";
@@ -46,8 +66,8 @@ const getApiKey = (): string | undefined => {
 
 const apiKey = getApiKey();
 
-// Track if RevenueCat is enabled
-const isEnabled = !!apiKey && !isWeb;
+// Track if RevenueCat is enabled (requires Purchases SDK + valid key + not web)
+const isEnabled = !!apiKey && !isWeb && !!PurchasesModule;
 
 const LOG_PREFIX = "[RevenueCat]";
 
@@ -72,7 +92,7 @@ const guardRevenueCatUsage = async <T>(
     return { ok: false, reason: "web_not_supported" };
   }
 
-  if (!isEnabled) {
+  if (!isEnabled || !PurchasesModule) {
     console.log(`${LOG_PREFIX} ${action} skipped: RevenueCat not configured`);
     return { ok: false, reason: "not_configured" };
   }
@@ -86,20 +106,17 @@ const guardRevenueCatUsage = async <T>(
   }
 };
 
-// Initialize RevenueCat if key exists
-if (isEnabled) {
+// Initialize RevenueCat if key exists and SDK is available (not in Expo Go)
+if (isEnabled && PurchasesModule) {
   try {
+    const P = PurchasesModule;
     // Set up custom log handler to suppress Test Store and expected errors
-    // These are non-errors thrown as errors by the SDK, and will be confusing to the user.
-    Purchases.setLogHandler((logLevel, message) => {
-
-      // Log ERROR messages normally
-      if (logLevel === Purchases.LOG_LEVEL.ERROR) {
+    P.setLogHandler((logLevel, message) => {
+      if (logLevel === P.LOG_LEVEL.ERROR) {
         console.log(LOG_PREFIX, message);
       }
     });
-
-    Purchases.configure({ apiKey: apiKey! });
+    P.configure({ apiKey: apiKey! });
     console.log(`${LOG_PREFIX} SDK initialized successfully`);
   } catch (error) {
     console.error(`${LOG_PREFIX} Failed to initialize:`, error);
@@ -136,7 +153,9 @@ export const isRevenueCatEnabled = (): boolean => {
 export const getOfferings = (): Promise<
   RevenueCatResult<PurchasesOfferings>
 > => {
-  return guardRevenueCatUsage("getOfferings", () => Purchases.getOfferings());
+  return guardRevenueCatUsage("getOfferings", () =>
+    PurchasesModule!.getOfferings(),
+  );
 };
 
 /**
@@ -155,7 +174,8 @@ export const purchasePackage = (
   packageToPurchase: PurchasesPackage,
 ): Promise<RevenueCatResult<CustomerInfo>> => {
   return guardRevenueCatUsage("purchasePackage", async () => {
-    const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+    const { customerInfo } =
+      await PurchasesModule!.purchasePackage(packageToPurchase);
     return customerInfo;
   });
 };
@@ -176,7 +196,7 @@ export const purchasePackage = (
  */
 export const getCustomerInfo = (): Promise<RevenueCatResult<CustomerInfo>> => {
   return guardRevenueCatUsage("getCustomerInfo", () =>
-    Purchases.getCustomerInfo(),
+    PurchasesModule!.getCustomerInfo(),
   );
 };
 
@@ -195,7 +215,7 @@ export const restorePurchases = (): Promise<
   RevenueCatResult<CustomerInfo>
 > => {
   return guardRevenueCatUsage("restorePurchases", () =>
-    Purchases.restorePurchases(),
+    PurchasesModule!.restorePurchases(),
   );
 };
 
@@ -213,7 +233,7 @@ export const restorePurchases = (): Promise<
  */
 export const setUserId = (userId: string): Promise<RevenueCatResult<void>> => {
   return guardRevenueCatUsage("setUserId", async () => {
-    await Purchases.logIn(userId);
+    await PurchasesModule!.logIn(userId);
   });
 };
 
@@ -230,7 +250,7 @@ export const setUserId = (userId: string): Promise<RevenueCatResult<void>> => {
  */
 export const logoutUser = (): Promise<RevenueCatResult<void>> => {
   return guardRevenueCatUsage("logoutUser", async () => {
-    await Purchases.logOut();
+    await PurchasesModule!.logOut();
   });
 };
 
@@ -321,7 +341,8 @@ export const getPackage = async (
 
   const pkg =
     offeringsResult.data.current?.availablePackages.find(
-      (availablePackage) => availablePackage.identifier === packageIdentifier,
+      (availablePackage: PurchasesPackage) =>
+        availablePackage.identifier === packageIdentifier,
     ) ?? null;
 
   return { ok: true, data: pkg };

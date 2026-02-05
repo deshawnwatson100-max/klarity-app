@@ -23,8 +23,8 @@ import {
   purchasePackage,
   restorePurchases,
   isRevenueCatEnabled,
+  type PurchasesPackage,
 } from "../lib/revenuecatClient";
-import type { PurchasesPackage } from "react-native-purchases";
 
 type Props = StackScreenProps<RootStackParamList, "PaywallScreen">;
 
@@ -267,7 +267,7 @@ export function PaywallScreen({ navigation }: Props) {
     if (result.ok && result.data.current) {
       const pkgMap = new Map<string, PurchasesPackage>();
 
-      result.data.current.availablePackages.forEach((pkg) => {
+      result.data.current.availablePackages.forEach((pkg: PurchasesPackage) => {
         pkgMap.set(pkg.identifier, pkg);
       });
 

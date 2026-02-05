@@ -6,16 +6,21 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "plugins": [
       [
         "expo-build-properties",
         {
           "ios": {
-            "ccacheEnabled": true
+            "ccacheEnabled": false,
+            "deploymentTarget": "15.1"
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-asset",
+      "expo-video",
+      "expo-web-browser"
     ],
     "ios": {
       "supportsTablet": true,
