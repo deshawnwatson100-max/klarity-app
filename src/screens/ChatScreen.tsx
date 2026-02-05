@@ -3160,7 +3160,6 @@ Generate a new reply that follows the user's instruction while still responding 
 
           <Animated.View
             style={{
-              opacity: bottomOpacity,
               transform: [
                 { translateY: bottomTranslateY },
                 { translateY: inputBarTranslateY },
