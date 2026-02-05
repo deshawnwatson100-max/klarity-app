@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Klarity Chat",
+    "name": "Klarity",
     "slug": "klarity",
     "scheme": "vibecode",
     "version": "1.0.0",
@@ -12,10 +12,10 @@
       "bundleIdentifier": "com.vibecode.klaritychat.5rxldv",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Klarity Chat uses the camera to capture photos inside the app before you publish them.",
-        "NSMicrophoneUsageDescription": "Klarity Chat uses the microphone to record audio tracks that the app attaches to your creations.",
-        "NSPhotoLibraryUsageDescription": "Klarity Chat accesses your photo library to let you choose media that appears in the app.",
-        "NSSpeechRecognitionUsageDescription": "Klarity Chat uses speech recognition to turn your spoken words into text inside the app."
+        "NSCameraUsageDescription": "Klarity uses the camera to capture photos inside the app before you publish them.",
+        "NSMicrophoneUsageDescription": "Klarity uses the microphone to record audio tracks that the app attaches to your creations.",
+        "NSPhotoLibraryUsageDescription": "Klarity accesses your photo library to let you choose media that appears in the app.",
+        "NSSpeechRecognitionUsageDescription": "Klarity uses speech recognition to turn your spoken words into text inside the app."
       }
     },
     "android": {
