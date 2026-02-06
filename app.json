@@ -34,7 +34,8 @@
       }
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.vibecode.klaritychat.x5rxldv"
     },
     "icon": "./icon.png"
   }
