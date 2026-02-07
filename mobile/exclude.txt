@@ -10,6 +10,7 @@ public/image-1769323953.png
 public/image-1769832883.png
 public/image-1770294209.png
 public/image-1770286886.png
+public/image-1770358737.png
 public/image-1769829023.png
 public/image-1768976215.png
 public/image-1769832511.png
