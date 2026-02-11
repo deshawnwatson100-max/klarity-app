@@ -767,9 +767,17 @@ export async function analyzeImageToxicity(
 
 ## CRITICAL: IDENTIFYING WHO IS WHO
 
-In text message screenshots (iMessage, WhatsApp, etc.):
-- BLUE or RIGHT-ALIGNED messages = The USER (the person asking for help)
-- GRAY or LEFT-ALIGNED messages = The OTHER PERSON (who the user is talking to)
+In text message screenshots (iMessage, WhatsApp, Android Messages, etc.):
+- RIGHT-ALIGNED messages (usually BLUE, GREEN, or colored) = The USER (the person asking for help)
+- LEFT-ALIGNED messages (usually GRAY, WHITE, or darker) = The OTHER PERSON (who the user is talking to)
+
+IMPORTANT: Color varies by platform and theme:
+- iMessage: Blue (user) vs Gray (other)
+- Android/SMS: Green (user) vs Gray/White (other)
+- WhatsApp: Green (user) vs White (other)
+- Dark mode: Colors may be inverted or different
+
+ALWAYS use message ALIGNMENT (left vs right) as the primary identifier, not just color.
 
 The USER is the one who uploaded this screenshot and wants help crafting a reply.
 Your suggested reply will be sent BY THE USER TO THE OTHER PERSON.
@@ -791,7 +799,7 @@ Your suggested reply will be sent BY THE USER TO THE OTHER PERSON.
 
 ## FOR VALID CONVERSATIONS
 
-- Identify the last message from the OTHER PERSON (gray/left-aligned)
+- Identify the last message from the OTHER PERSON (LEFT-aligned messages)
 - Generate a reply FROM the USER TO the OTHER PERSON
 - The suggested reply must ACTUALLY RESPOND to what the other person said
 - Match the tone and energy of the conversation
@@ -799,6 +807,7 @@ Your suggested reply will be sent BY THE USER TO THE OTHER PERSON.
 - If they shared something, acknowledge it appropriately
 - Do NOT assume the conversation is toxic or problematic
 - Do NOT generate defensive or boundary-setting responses unless clearly needed
+- If the last message is from the USER (right-aligned), look for the most recent message from the OTHER PERSON to respond to, or acknowledge that the user already replied
 
 ## RESPONSE FORMAT
 
@@ -909,17 +918,20 @@ When the image is invalid (not a conversation screenshot):
       responseContext: parsed.responseContext || "",
     };
   } catch (error: any) {
-    console.warn("[analyzeImageToxicity] Analysis failed, using fallback response");
+    console.warn("[analyzeImageToxicity] Analysis failed:", error?.message || error);
 
-    // Return fallback analysis - graceful degradation
+    // Return fallback that allows continuing with a helpful message
     return {
       summary:
-        "Unable to analyze this image. Please share a clear screenshot of a text conversation.",
+        "I had a little trouble reading this screenshot. It might be the image quality or format.",
       labels: [],
       emotionalImpact: "",
       suggestedResponse: "",
       guidanceNote: "",
-      isInvalidInput: true,
+      isInvalidInput: false, // Don't mark as invalid - let the user continue
+      lastMessage: "",
+      acknowledgment: "I can see you shared a conversation screenshot.",
+      responseContext: "this conversation",
     };
   }
 }
