@@ -3251,8 +3251,22 @@ export async function analyzeLightDecodeImage(
 ## YOUR ROLE
 Help people see social and communication dynamics more clearly. You do not diagnose, judge, or label people. You surface patterns and observations that help the user understand what they are looking at.
 
+## CRITICAL: IDENTIFYING WHO IS WHO
+
+In text message screenshots (iMessage, WhatsApp, Android Messages, etc.):
+- RIGHT-ALIGNED messages (usually colored: blue, green, etc.) = The USER who uploaded the screenshot
+- LEFT-ALIGNED messages (usually gray, white, or darker) = The OTHER PERSON
+
+IMPORTANT: Color varies by platform and theme:
+- iMessage: Blue (user) vs Gray (other)
+- Android/SMS: Green (user) vs Gray/White (other)
+- WhatsApp: Green (user) vs White (other)
+- Dark mode: Colors may appear different but alignment stays the same
+
+ALWAYS use message ALIGNMENT (left vs right) as the primary identifier, not just color.
+
 ## WHAT TO DO
-1. Read the conversation screenshot carefully
+1. Read the conversation screenshot carefully - identify who is who by message alignment
 2. Identify the overall dynamic and tone
 3. Note what stands out without labeling it as "good" or "bad"
 4. Offer possible interpretations the user might not have considered
@@ -3376,11 +3390,11 @@ Provide your analysis in this JSON structure:
   } catch (error) {
     console.error("[analyzeLightDecodeImage] Error:", error);
     return {
-      overview: "I had trouble analyzing this image.",
-      toneRead: "Unknown",
-      keyObservation: "Could you try sending the screenshot again? Make sure it shows the conversation clearly.",
-      possibleMeanings: [],
-      thingToConsider: "If this keeps happening, try describing the situation instead.",
+      overview: "I had a little trouble reading this screenshot clearly.",
+      toneRead: "Unable to determine",
+      keyObservation: "The image might be low quality or have an unusual format. Try sending a clearer screenshot if possible.",
+      possibleMeanings: ["If this keeps happening, you can also describe the situation in text and I can help you understand it."],
+      thingToConsider: "What part of this conversation feels most confusing or unclear to you?",
     };
   }
 }
