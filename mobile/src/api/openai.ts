@@ -16,5 +16,6 @@ export const getOpenAIClient = () => {
   }
   return new OpenAI({
     apiKey: apiKey,
+    dangerouslyAllowBrowser: true, // Required for React Native / browser environments
   });
 };

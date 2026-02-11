@@ -840,6 +840,22 @@ When the image is invalid (not a conversation screenshot):
 
 
   try {
+    console.log("[analyzeImageToxicity] Starting image analysis");
+    console.log("[analyzeImageToxicity] Image base64 length:", imageBase64?.length || 0);
+
+    // Detect image MIME type from base64 header
+    let mimeType = "image/jpeg"; // Default
+    if (imageBase64.startsWith("/9j/")) {
+      mimeType = "image/jpeg";
+    } else if (imageBase64.startsWith("iVBOR")) {
+      mimeType = "image/png";
+    } else if (imageBase64.startsWith("R0lGOD")) {
+      mimeType = "image/gif";
+    } else if (imageBase64.startsWith("UklGR")) {
+      mimeType = "image/webp";
+    }
+    console.log("[analyzeImageToxicity] Detected MIME type:", mimeType);
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-2024-11-20",
       messages: [
@@ -853,7 +869,7 @@ When the image is invalid (not a conversation screenshot):
             {
               type: "image_url",
               image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`,
+                url: `data:${mimeType};base64,${imageBase64}`,
                 detail: "low", // Use low detail for faster processing
               },
             },
@@ -918,7 +934,11 @@ When the image is invalid (not a conversation screenshot):
       responseContext: parsed.responseContext || "",
     };
   } catch (error: any) {
-    console.warn("[analyzeImageToxicity] Analysis failed:", error?.message || error);
+    console.error("[analyzeImageToxicity] Analysis failed:", error?.message || error);
+    console.error("[analyzeImageToxicity] Error name:", error?.name);
+    console.error("[analyzeImageToxicity] Error status:", error?.status || error?.response?.status);
+    console.error("[analyzeImageToxicity] Error code:", error?.code || error?.error?.code);
+    console.error("[analyzeImageToxicity] Full error:", JSON.stringify(error, null, 2)?.substring(0, 1000));
 
     // Return fallback that allows continuing with a helpful message
     return {
@@ -3312,6 +3332,21 @@ Provide your analysis in this JSON structure:
 
   try {
     console.log("[analyzeLightDecodeImage] Starting light decode analysis");
+    console.log("[analyzeLightDecodeImage] Image base64 length:", imageBase64?.length || 0);
+    console.log("[analyzeLightDecodeImage] Conversation history length:", conversationHistory.length);
+
+    // Detect image MIME type from base64 header
+    let mimeType = "image/jpeg"; // Default
+    if (imageBase64.startsWith("/9j/")) {
+      mimeType = "image/jpeg";
+    } else if (imageBase64.startsWith("iVBOR")) {
+      mimeType = "image/png";
+    } else if (imageBase64.startsWith("R0lGOD")) {
+      mimeType = "image/gif";
+    } else if (imageBase64.startsWith("UklGR")) {
+      mimeType = "image/webp";
+    }
+    console.log("[analyzeLightDecodeImage] Detected MIME type:", mimeType);
 
     const messages: Array<{
       role: "system" | "user" | "assistant";
@@ -3336,7 +3371,7 @@ Provide your analysis in this JSON structure:
         {
           type: "image_url",
           image_url: {
-            url: `data:image/jpeg;base64,${imageBase64}`,
+            url: `data:${mimeType};base64,${imageBase64}`,
             detail: "high",
           },
         },
@@ -3387,8 +3422,13 @@ Provide your analysis in this JSON structure:
       possibleMeanings: Array.isArray(parsed.possibleMeanings) ? parsed.possibleMeanings.slice(0, 3) : [],
       thingToConsider: parsed.thingToConsider || "What part of this feels most unclear to you?",
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[analyzeLightDecodeImage] Error:", error);
+    console.error("[analyzeLightDecodeImage] Error message:", error?.message);
+    console.error("[analyzeLightDecodeImage] Error name:", error?.name);
+    console.error("[analyzeLightDecodeImage] Error status:", error?.status || error?.response?.status);
+    console.error("[analyzeLightDecodeImage] Error code:", error?.code || error?.error?.code);
+    console.error("[analyzeLightDecodeImage] Full error:", JSON.stringify(error, null, 2)?.substring(0, 1000));
     return {
       overview: "I had a little trouble reading this screenshot clearly.",
       toneRead: "Unable to determine",
