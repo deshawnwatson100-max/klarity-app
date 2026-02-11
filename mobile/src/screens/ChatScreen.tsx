@@ -1770,9 +1770,13 @@ Generate a new reply that follows the user's instruction while still responding 
 
       // Build conversation history from decode messages for context
       // Include search results context so the chatbot knows what was found
+      // IMPORTANT: Exclude the current message (by ID) since it will be passed separately
       const conversationHistory: { role: "user" | "assistant"; content: string }[] = [];
 
       for (const msg of decodeMessages) {
+        // Skip the current user message - it will be passed separately to avoid duplication
+        if (msg.id === userMessage.id) continue;
+
         if (msg.role === "user" || msg.role === "assistant") {
           conversationHistory.push({
             role: msg.role as "user" | "assistant",
@@ -1840,6 +1844,13 @@ Generate a new reply that follows the user's instruction while still responding 
         setIsProcessing(false);
         return;
       }
+
+      // Log conversation history for debugging
+      console.log("[processDecodeMessage] Conversation history:", {
+        historyLength: conversationHistory.length,
+        currentMessage: userMessage.content.substring(0, 50),
+        messages: conversationHistory.map(m => ({ role: m.role, content: m.content.substring(0, 30) }))
+      });
 
       // Generate decode response for text-only messages with streaming
       const assistantMsgId = Date.now().toString() + "_decode_response";
