@@ -4,7 +4,7 @@ An emotionally intelligent mobile app that brings clarity to communication and r
 
 ## Overview
 
-Klarity AI is a ChatGPT-style conversation app built with React Native and Expo, powered by GPT-5 Mini. It provides:
+Klarity AI is a ChatGPT-style conversation app built with React Native and Expo, powered by GPT-4o. It provides:
 
 - **Real-time AI conversations** with emotional intelligence
 - **Emotional analysis** of messages (clarity %, detected state, relationship risk)

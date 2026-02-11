@@ -92,7 +92,7 @@ interface GPT5Message {
 }
 
 // Model options
-const MODEL_FULL = "gpt-5.2"; // Main model for all operations
+const MODEL_FULL = "gpt-4o-2024-11-20"; // Main model for all operations
 
 /**
  * Streaming callback type for real-time text updates
@@ -1443,7 +1443,7 @@ Generate a two-part reflective understanding response. Return valid JSON only.`;
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-4o-2024-11-20",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1534,7 +1534,7 @@ Return valid JSON only with this structure:
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-4o-2024-11-20",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -1762,7 +1762,7 @@ Generate a personal impact analysis explaining how this might affect someone. Re
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-4o-2024-11-20",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1868,7 +1868,7 @@ Return valid JSON only.`;
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-4o-2024-11-20",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1969,7 +1969,7 @@ Generate a boundary clarity summary to help the user understand their boundaries
     const client = getOpenAIClient();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-4o-2024-11-20",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
