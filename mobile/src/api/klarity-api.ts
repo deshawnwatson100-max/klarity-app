@@ -165,8 +165,11 @@ async function callGPT5MiniStreaming(
     messageCount: messages?.length,
     maxTokens,
     temperature,
+    firstMessageRole: messages?.[0]?.role,
+    lastMessageContent: messages?.[messages.length - 1]?.content?.substring(0, 50),
   });
   const client = getOpenAIClient();
+  console.log("[callGPT5MiniStreaming] OpenAI client obtained, starting API call...");
 
   const baseParams: any = {
     model: MODEL_FULL,
@@ -178,7 +181,7 @@ async function callGPT5MiniStreaming(
   // Helper function for non-streaming fallback
   // Delivers content all at once - TypewriterText component handles animation
   const doNonStreamingFallback = async (): Promise<string> => {
-    console.log("[callGPT5MiniStreaming] Using non-streaming fallback");
+    console.log("[callGPT5MiniStreaming] Using non-streaming fallback, starting request...");
 
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -186,9 +189,10 @@ async function callGPT5MiniStreaming(
     });
 
     const responsePromise = client.chat.completions.create(baseParams);
+    console.log("[callGPT5MiniStreaming] Non-streaming request started, waiting for response...");
     const response = await Promise.race([responsePromise, timeoutPromise]);
     const content = response.choices[0]?.message?.content || "";
-    console.log("[callGPT5MiniStreaming] Response length:", content.length);
+    console.log("[callGPT5MiniStreaming] Non-streaming response length:", content.length, "first 50 chars:", content.substring(0, 50));
     if (content) {
       // Deliver all content at once - UI handles animation
       onStream(content, content);
@@ -198,8 +202,10 @@ async function callGPT5MiniStreaming(
 
   try {
     // Try streaming first
+    console.log("[callGPT5MiniStreaming] Starting streaming request...");
     const streamParams = { ...baseParams, stream: true };
     const stream: any = await client.chat.completions.create(streamParams);
+    console.log("[callGPT5MiniStreaming] Stream created, checking if iterable...");
 
     // Check if stream is valid and iterable before attempting iteration
     if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
@@ -207,15 +213,22 @@ async function callGPT5MiniStreaming(
       return await doNonStreamingFallback();
     }
 
+    console.log("[callGPT5MiniStreaming] Stream is iterable, starting iteration...");
     let fullContent = "";
+    let chunkCount = 0;
     try {
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           fullContent += content;
+          chunkCount++;
+          if (chunkCount === 1) {
+            console.log("[callGPT5MiniStreaming] First chunk received:", content.substring(0, 30));
+          }
           onStream(content, fullContent);
         }
       }
+      console.log("[callGPT5MiniStreaming] Stream iteration complete, chunks:", chunkCount, "total length:", fullContent.length);
     } catch (iterationError: any) {
       // Handle "no body" error during iteration
       console.log("[callGPT5MiniStreaming] Stream iteration error:", iterationError.message);
