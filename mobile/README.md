@@ -854,7 +854,26 @@ The image analysis feature uses GPT-4o's vision capabilities:
 - JSON structured output for consistent parsing
 - Analyzes text in screenshots for communication patterns
 
-API key is accessed via: `process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY`
+All AI calls are routed through the backend API for security - the OpenAI API key is never exposed to the mobile app.
+
+### Backend API Architecture
+The app uses a secure backend proxy for all OpenAI operations:
+
+**Endpoints:**
+- `POST /api/chat` - Main chat endpoint with rate limiting
+- `POST /api/chat/completions` - Direct OpenAI Chat Completions passthrough (supports web_search_options)
+- `POST /api/chat/responses` - OpenAI Responses API passthrough
+- `POST /api/transcribe` - Audio transcription
+- `GET /health` - Health check (returns `{ ok: true }`)
+
+**Security:**
+- `X-APP-KEY` header required for all requests
+- Rate limiting: 60 requests/minute for chat, 30/minute for transcription
+- OpenAI API key stored server-side only (never exposed to client)
+
+**Environment Variables (Backend):**
+- `OPENAI_API_KEY` - OpenAI API key (server-only, required)
+- `APP_CLIENT_KEY` - Shared secret for mobile app authentication (server-only, required)
 
 ## User Flow
 

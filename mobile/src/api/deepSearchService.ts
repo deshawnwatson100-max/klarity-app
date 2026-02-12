@@ -10,6 +10,8 @@
  * ENHANCED: Now includes page fetching and second-wave search triggers.
  */
 
+import { getBackendUrl } from "../lib/config";
+import { APP_CLIENT_KEY } from "./openai";
 import { PersonContext } from "../types/personContext";
 import {
   DEEP_SEARCH_SYSTEM_PROMPT,
@@ -1245,9 +1247,6 @@ async function callPassSearch(
   personName: string,
   passName: string = "Search"
 ): Promise<{ content: string | null; searchesExecuted: number }> {
-  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-  if (!apiKey) return { content: null, searchesExecuted: 0 };
-
   // Ensure we have at least MIN_SEARCHES_REQUIRED queries
   const minQueries = Math.max(queries.length, MIN_SEARCHES_REQUIRED);
 
@@ -1290,11 +1289,11 @@ Results: [what you found]
 [Organized findings by category]`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(`${getBackendUrl()}/api/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "X-APP-KEY": APP_CLIENT_KEY,
       },
       body: JSON.stringify({
         model: "gpt-4o-search-preview",
@@ -2250,13 +2249,6 @@ async function callDeepSearchLLM(params: LLMCallParams): Promise<string | null> 
 
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
 
-  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-
-  if (!apiKey) {
-    console.error("Missing OpenAI API key");
-    return null;
-  }
-
   // Build numbered query list for explicit multi-search enforcement
   const numberedQueries = searchQueries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
 
@@ -2281,11 +2273,11 @@ Total searches required: ${Math.max(searchQueries.length, MIN_SEARCHES_REQUIRED)
 
   try {
     // Use OpenAI Responses API with web_search tool for real internet search
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch(`${getBackendUrl()}/api/chat/responses`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "X-APP-KEY": APP_CLIENT_KEY,
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -2371,12 +2363,6 @@ Total searches required: ${Math.max(searchQueries.length, MIN_SEARCHES_REQUIRED)
 async function callDeepSearchLLMFallback(params: LLMCallParams): Promise<string | null> {
   const { systemPrompt, developerPrompt, userPrompt, searchQueries } = params;
 
-  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-
-  if (!apiKey) {
-    return null;
-  }
-
   // Build numbered query list for explicit multi-search enforcement
   const numberedQueries = searchQueries.slice(0, 20).map((q, i) => `${i + 1}. ${q}`).join("\n");
 
@@ -2422,11 +2408,11 @@ BEGIN SEARCHING NOW:`;
     ];
 
     // Try gpt-4o-search-preview first
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(`${getBackendUrl()}/api/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "X-APP-KEY": APP_CLIENT_KEY,
       },
       body: JSON.stringify({
         model: "gpt-4o-search-preview",
@@ -2455,11 +2441,11 @@ BEGIN SEARCHING NOW:`;
 
     // If search preview fails, try with regular gpt-4o
     console.log("[DeepSearch Fallback] Trying regular gpt-4o...");
-    const regularResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const regularResponse = await fetch(`${getBackendUrl()}/api/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "X-APP-KEY": APP_CLIENT_KEY,
       },
       body: JSON.stringify({
         model: "gpt-4o",

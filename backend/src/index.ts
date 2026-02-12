@@ -29,7 +29,7 @@ app.use(
 app.use("*", logger());
 
 // Health check endpoint
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get("/health", (c) => c.json({ ok: true }));
 
 // Routes
 app.route("/api/sample", sampleRouter);
