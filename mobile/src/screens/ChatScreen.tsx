@@ -1021,8 +1021,14 @@ export function ChatScreen({ navigation, route }: Props) {
         lastMessageFromOther: imageAnalysisResult?.lastMessage,
       });
 
-    } catch (error) {
-      console.error("Error processing message:", error);
+    } catch (error: any) {
+      console.error("Error processing message:", error?.message || error);
+      // Remove any lingering typing indicators
+      const allCurrentMessages = getActiveLoop()?.messages || [];
+      const typingMsgs = allCurrentMessages.filter((m) => m.role === "typing");
+      for (const tm of typingMsgs) {
+        removeMessageFromActiveLoop(tm.id);
+      }
       addMessageWithMode({
         id: Date.now().toString(),
         role: "assistant",
@@ -1978,8 +1984,8 @@ Generate a new reply that follows the user's instruction while still responding 
           addMessageToActiveLoopRaw(suggestionMsg);
         }
       }
-    } catch (error) {
-      console.error("Error processing decode message:", error);
+    } catch (error: any) {
+      console.error("Error processing decode message:", error?.message || error);
       // Remove loading bubble if it exists
       removeMessageFromActiveLoop(loadingMsgId);
 

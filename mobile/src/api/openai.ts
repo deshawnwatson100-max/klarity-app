@@ -9,13 +9,24 @@ gpt-4o-2024-11-20
 */
 import OpenAI from "openai";
 
+let cachedClient: OpenAI | null = null;
+
 export const getOpenAIClient = () => {
-  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-  if (!apiKey) {
-    console.warn("OpenAI API key not found in environment variables");
+  if (cachedClient) {
+    return cachedClient;
   }
-  return new OpenAI({
-    apiKey: apiKey,
+
+  const apiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
+  console.log("[OpenAI] Initializing client, API key present:", !!apiKey, "key length:", apiKey?.length || 0);
+
+  if (!apiKey) {
+    console.error("[OpenAI] API key not found in environment variables!");
+  }
+
+  cachedClient = new OpenAI({
+    apiKey: apiKey || "missing-key",
     dangerouslyAllowBrowser: true, // Required for React Native / browser environments
   });
+
+  return cachedClient;
 };

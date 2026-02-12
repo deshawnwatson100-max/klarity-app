@@ -122,8 +122,14 @@ async function callGPT5Mini(
     params.response_format = { type: "json_object" };
   }
 
+  // Add timeout to prevent hanging
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error("API request timed out after 30s")), 30000);
+  });
+
   try {
-    const completion = await client.chat.completions.create(params);
+    const completionPromise = client.chat.completions.create(params);
+    const completion = await Promise.race([completionPromise, timeoutPromise]);
 
     const content = completion.choices[0]?.message?.content || "";
 
@@ -173,7 +179,14 @@ async function callGPT5MiniStreaming(
   // Delivers content all at once - TypewriterText component handles animation
   const doNonStreamingFallback = async (): Promise<string> => {
     console.log("[callGPT5MiniStreaming] Using non-streaming fallback");
-    const response = await client.chat.completions.create(baseParams);
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("API request timed out after 30s")), 30000);
+    });
+
+    const responsePromise = client.chat.completions.create(baseParams);
+    const response = await Promise.race([responsePromise, timeoutPromise]);
     const content = response.choices[0]?.message?.content || "";
     console.log("[callGPT5MiniStreaming] Response length:", content.length);
     if (content) {
@@ -3117,10 +3130,13 @@ IMPORTANT: Do NOT include any notation blocks in your response. Just respond nat
       response: responseWithEmoji,
       notation: undefined, // Streaming version doesn't use notation for simplicity
     };
-  } catch (error) {
-    console.error("[generateDecodeResponseStreaming] Error:", error);
+  } catch (error: any) {
+    console.error("[generateDecodeResponseStreaming] Error:", error?.message || error);
+    // Call onStream with fallback so the UI shows something
+    const fallbackResponse = "I want to make sure I understand what is going on here. What part of this situation feels most confusing or unclear to you?";
+    onStream(fallbackResponse, fallbackResponse);
     return {
-      response: "I want to make sure I understand what is going on here. What part of this situation feels most confusing or unclear to you?",
+      response: fallbackResponse,
       notation: undefined,
     };
   }
