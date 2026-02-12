@@ -1328,14 +1328,21 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
             <View
               style={{
                 position: "absolute",
-                bottom: insets.bottom + 20,
+                bottom: 0,
                 left: 0,
                 right: 0,
                 paddingHorizontal: 20,
-                flexDirection: "row",
-                gap: 10,
+                paddingTop: 16,
+                paddingBottom: insets.bottom + 20,
+                backgroundColor: colors.drawerBackground,
               }}
             >
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 10,
+                }}
+              >
               {/* Settings Button */}
               <Pressable
                 onPress={() => {
@@ -1408,6 +1415,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
                 </View>
               </Pressable>
+              </View>
             </View>
           </>
         )}
