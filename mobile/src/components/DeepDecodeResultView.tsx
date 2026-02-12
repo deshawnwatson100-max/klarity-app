@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Clipboard from "expo-clipboard";
 import { useTheme } from "../theme";
 import { DeepDecodeResult } from "../api/klarity-api";
 
@@ -21,6 +22,20 @@ export function DeepDecodeResultView({
   const { colors, isDark } = useTheme();
 
   const accentColor = isDark ? "#7DD3C0" : "#059669";
+
+  // Get health gauge color based on score
+  const getHealthColor = (score: number) => {
+    if (score >= 70) return "#10B981"; // Green
+    if (score >= 40) return "#F59E0B"; // Yellow/Orange
+    return "#EF4444"; // Red
+  };
+
+  const healthColor = getHealthColor(result.healthScore);
+
+  const handleCopyResponse = async (response: string) => {
+    await Clipboard.setStringAsync(response);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
 
   return (
     <View
@@ -62,7 +77,7 @@ export function DeepDecodeResultView({
               fontWeight: "600",
             }}
           >
-            Deep Decode
+            Decode
           </Text>
           <Pressable
             onPress={() => {
@@ -84,38 +99,69 @@ export function DeepDecodeResultView({
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Overview Section */}
-        <View style={{ marginBottom: 24 }}>
+        {/* Health Gauge */}
+        <View
+          style={{
+            backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 20,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "600" }}>
+              Conversation Health
+            </Text>
+            <View
+              style={{
+                backgroundColor: healthColor + "20",
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 12,
+              }}
+            >
+              <Text style={{ color: healthColor, fontSize: 13, fontWeight: "600" }}>
+                {result.healthLabel}
+              </Text>
+            </View>
+          </View>
+
+          {/* Progress Bar */}
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
+              height: 8,
+              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+              borderRadius: 4,
+              overflow: "hidden",
             }}
           >
             <View
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 10,
+                height: "100%",
+                width: `${result.healthScore}%`,
+                backgroundColor: healthColor,
+                borderRadius: 4,
               }}
-            >
-              <Ionicons name="scan" size={18} color={accentColor} />
-            </View>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              Overview
-            </Text>
+            />
           </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+            <Text style={{ color: colors.textTertiary, fontSize: 11 }}>Toxic</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 11 }}>Healthy</Text>
+          </View>
+        </View>
+
+        {/* Overview Section */}
+        <View style={{ marginBottom: 20 }}>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: 14,
+              fontWeight: "600",
+              marginBottom: 8,
+            }}
+          >
+            Overview
+          </Text>
           <Text
             style={{
               color: colors.textSecondary,
@@ -127,238 +173,21 @@ export function DeepDecodeResultView({
           </Text>
         </View>
 
-        {/* Communication Dynamics */}
-        {result.communicationDynamics.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 10,
-                }}
-              >
-                <Ionicons name="git-network-outline" size={18} color={accentColor} />
-              </View>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Communication Dynamics
-              </Text>
-            </View>
-            <View style={{ gap: 12 }}>
-              {result.communicationDynamics.map((dynamic, index) => (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-                    borderRadius: 12,
-                    padding: 14,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: "600",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {dynamic.pattern}
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 14,
-                      lineHeight: 20,
-                    }}
-                  >
-                    {dynamic.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Tone Analysis */}
-        <View style={{ marginBottom: 24 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 10,
-              }}
-            >
-              <Ionicons name="pulse-outline" size={18} color={accentColor} />
-            </View>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              Tone Analysis
-            </Text>
-          </View>
-          <View
-            style={{
-              backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-              borderRadius: 12,
-              padding: 14,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-              <Text style={{ color: colors.textTertiary, fontSize: 13 }}>
-                Overall:{" "}
-              </Text>
-              <Text
-                style={{
-                  color: accentColor,
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
-              >
-                {result.toneAnalysis.overallTone}
-              </Text>
-            </View>
-            {result.toneAnalysis.toneShifts && (
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: 14,
-                  lineHeight: 20,
-                }}
-              >
-                {result.toneAnalysis.toneShifts}
-              </Text>
-            )}
-          </View>
+        {/* Tone */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600", marginBottom: 8 }}>
+            Tone
+          </Text>
+          <Text style={{ color: accentColor, fontSize: 15, fontWeight: "500" }}>
+            {result.tone}
+          </Text>
         </View>
 
-        {/* Key Observations */}
-        {result.keyObservations.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 10,
-                }}
-              >
-                <Ionicons name="eye-outline" size={18} color={accentColor} />
-              </View>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Key Observations
-              </Text>
-            </View>
-            <View style={{ gap: 10 }}>
-              {result.keyObservations.map((observation, index) => (
-                <View
-                  key={index}
-                  style={{ flexDirection: "row", alignItems: "flex-start" }}
-                >
-                  <View
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: "#000000",
-                      marginTop: 7,
-                      marginRight: 10,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      flex: 1,
-                    }}
-                  >
-                    {observation}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* What Might Be Happening */}
-        <View style={{ marginBottom: 24 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 10,
-              }}
-            >
-              <Ionicons name="bulb-outline" size={18} color={accentColor} />
-            </View>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              What Might Be Happening
-            </Text>
-          </View>
+        {/* What Stands Out */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600", marginBottom: 8 }}>
+            What stands out
+          </Text>
           <Text
             style={{
               color: colors.textSecondary,
@@ -366,68 +195,36 @@ export function DeepDecodeResultView({
               lineHeight: 22,
             }}
           >
-            {result.whatMightBeHappening}
+            {result.whatStandsOut}
           </Text>
         </View>
 
-        {/* Things to Consider */}
-        {result.thingsToConsider.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  backgroundColor: isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(5, 150, 105, 0.1)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 10,
-                }}
-              >
-                <Ionicons name="help-circle-outline" size={18} color={accentColor} />
-              </View>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Things to Consider
-              </Text>
-            </View>
+        {/* Hidden Undertones */}
+        {result.hiddenUndertones.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600", marginBottom: 12 }}>
+              Possible meanings
+            </Text>
             <View style={{ gap: 10 }}>
-              {result.thingsToConsider.map((item, index) => (
+              {result.hiddenUndertones.map((item, index) => (
                 <View
                   key={index}
-                  style={{ flexDirection: "row", alignItems: "flex-start" }}
+                  style={{
+                    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+                    borderRadius: 12,
+                    padding: 14,
+                    borderLeftWidth: 3,
+                    borderLeftColor: accentColor,
+                  }}
                 >
-                  <Text
-                    style={{
-                      color: accentColor,
-                      fontSize: 14,
-                      fontWeight: "600",
-                      marginRight: 8,
-                    }}
-                  >
-                    {index + 1}.
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      flex: 1,
-                    }}
-                  >
-                    {item}
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                    <Ionicons name="bulb-outline" size={16} color={accentColor} style={{ marginRight: 6 }} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
+                      {item.undertone}
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>
+                    {item.explanation}
                   </Text>
                 </View>
               ))}
@@ -435,7 +232,50 @@ export function DeepDecodeResultView({
           </View>
         )}
 
-        {/* Navigation Guidance */}
+        {/* Suggested Responses */}
+        {result.suggestedResponses.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600", marginBottom: 12 }}>
+              How to respond
+            </Text>
+            <View style={{ gap: 10 }}>
+              {result.suggestedResponses.map((item, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => handleCopyResponse(item.response)}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed
+                      ? isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"
+                      : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
+                    borderRadius: 12,
+                    padding: 14,
+                  })}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <View
+                      style={{
+                        backgroundColor: accentColor + "20",
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ color: accentColor, fontSize: 12, fontWeight: "600" }}>
+                        {item.tone}
+                      </Text>
+                    </View>
+                    <Ionicons name="copy-outline" size={16} color={colors.textTertiary} />
+                  </View>
+                  <Text style={{ color: colors.textPrimary, fontSize: 15, lineHeight: 21 }}>
+                    {item.response}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Something to Consider */}
         <View
           style={{
             backgroundColor: isDark ? "rgba(125, 211, 192, 0.08)" : "rgba(5, 150, 105, 0.06)",
@@ -453,7 +293,7 @@ export function DeepDecodeResultView({
             }}
           >
             <Ionicons
-              name="compass-outline"
+              name="help-circle-outline"
               size={18}
               color={accentColor}
               style={{ marginRight: 8 }}
@@ -465,7 +305,7 @@ export function DeepDecodeResultView({
                 fontWeight: "600",
               }}
             >
-              Moving Forward
+              Something to consider
             </Text>
           </View>
           <Text
@@ -475,7 +315,7 @@ export function DeepDecodeResultView({
               lineHeight: 21,
             }}
           >
-            {result.navigationGuidance}
+            {result.somethingToConsider}
           </Text>
         </View>
       </ScrollView>

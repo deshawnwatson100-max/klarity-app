@@ -408,18 +408,19 @@ export interface DeepDecodeResultMessage extends Message {
   role: "deep-decode-result";
   decodeResult: {
     overview: string;
-    communicationDynamics: {
-      pattern: string;
-      description: string;
+    healthScore: number;
+    healthLabel: "Healthy" | "Mostly Healthy" | "Mixed Signals" | "Concerning" | "Toxic";
+    tone: string;
+    whatStandsOut: string;
+    hiddenUndertones: {
+      undertone: string;
+      explanation: string;
     }[];
-    toneAnalysis: {
-      overallTone: string;
-      toneShifts: string;
-    };
-    keyObservations: string[];
-    whatMightBeHappening: string;
-    thingsToConsider: string[];
-    navigationGuidance: string;
+    suggestedResponses: {
+      tone: string;
+      response: string;
+    }[];
+    somethingToConsider: string;
   };
 }
 

@@ -3430,18 +3430,19 @@ Provide your analysis in this JSON structure:
  */
 export interface DeepDecodeResult {
   overview: string;
-  communicationDynamics: {
-    pattern: string;
-    description: string;
+  healthScore: number; // 0-100, where 0 is toxic and 100 is healthy
+  healthLabel: "Healthy" | "Mostly Healthy" | "Mixed Signals" | "Concerning" | "Toxic";
+  tone: string;
+  whatStandsOut: string;
+  hiddenUndertones: {
+    undertone: string;
+    explanation: string;
   }[];
-  toneAnalysis: {
-    overallTone: string;
-    toneShifts: string;
-  };
-  keyObservations: string[];
-  whatMightBeHappening: string;
-  thingsToConsider: string[];
-  navigationGuidance: string;
+  suggestedResponses: {
+    tone: string;
+    response: string;
+  }[];
+  somethingToConsider: string;
 }
 
 export async function analyzeDeepDecode(
@@ -3450,64 +3451,76 @@ export async function analyzeDeepDecode(
 ): Promise<DeepDecodeResult> {
   const client = getOpenAIClient();
 
-  const systemPrompt = `You are Klarity in Deep Decode mode — a communication analyst helping someone understand a conversation they are concerned about.
+  const systemPrompt = `You are Klarity in Decode mode — a communication analyst helping someone understand a conversation and decode potential hidden undertones.
 
 ## YOUR ROLE
-You help people see social and communication dynamics more clearly. You do not diagnose, judge, or label people. You surface patterns and observations that help the user decide what matters to them.
+You help people decode conversations to understand:
+1. Whether this is a healthy or concerning interaction
+2. What hidden undertones or meanings might exist beneath the surface
+3. How they could respond effectively
 
 ## ANALYSIS APPROACH
-1. Read through all conversation screenshots carefully
-2. Note the flow, tone shifts, and dynamics between participants
-3. Identify patterns without labeling them as "good" or "bad"
-4. Offer observations that help the user see things they might not have noticed
+1. Read through the conversation screenshots carefully
+2. Assess the overall health of the communication dynamic
+3. Identify any hidden meanings, undertones, or subtext
+4. Provide suggested responses at different tones
 
-## VOICE & TONE
-- Calm and observational
-- Neutral but insightful
-- Direct without being harsh
-- Human and grounded
-- Never clinical or therapy-speak
-- Never use words like "toxic," "narcissistic," "manipulative," "gaslighting"
+## HEALTH SCORE GUIDELINES
+Rate the conversation health from 0-100:
+- 90-100 (Healthy): Positive, supportive, clear communication
+- 70-89 (Mostly Healthy): Generally good with minor concerns
+- 40-69 (Mixed Signals): Unclear intentions, some concerning patterns
+- 20-39 (Concerning): Multiple red flags, dismissive or manipulative patterns
+- 0-19 (Toxic): Clearly harmful, disrespectful, or abusive communication
 
 ## RESPONSE FORMAT
 Provide your analysis in this JSON structure:
 
 {
-  "overview": "2-3 sentences summarizing what this conversation is about and the overall dynamic at play",
+  "overview": "1-2 sentences summarizing what this conversation is about",
 
-  "communicationDynamics": [
+  "healthScore": 75,
+  "healthLabel": "Mostly Healthy",
+
+  "tone": "1-3 words describing the dominant tone (e.g., 'Loving and supportive', 'Distant', 'Passive-aggressive')",
+
+  "whatStandsOut": "2-3 sentences about what specifically stands out in this conversation — the notable moments, phrases, or dynamics",
+
+  "hiddenUndertones": [
     {
-      "pattern": "Short name for the pattern (e.g., 'Indirect communication', 'Shifting focus', 'Unbalanced effort')",
-      "description": "1-2 sentences describing what you observe without judgment"
+      "undertone": "Short name for the possible meaning (e.g., 'Testing boundaries', 'Seeking validation', 'Avoiding commitment')",
+      "explanation": "1-2 sentences explaining what this undertone might mean and why you see it"
     }
   ],
 
-  "toneAnalysis": {
-    "overallTone": "1-2 words describing the dominant tone (e.g., 'Tense but cordial', 'Warm', 'Guarded', 'Dismissive')",
-    "toneShifts": "Brief note on any notable tone changes throughout the conversation"
-  },
-
-  "keyObservations": [
-    "3-5 specific, neutral observations about the communication (what was said, how it was said, what was not said)"
+  "suggestedResponses": [
+    {
+      "tone": "Warm & appreciative",
+      "response": "A natural response they could send in this tone"
+    },
+    {
+      "tone": "Playful",
+      "response": "A lighthearted response option"
+    },
+    {
+      "tone": "Direct",
+      "response": "A straightforward response option"
+    }
   ],
 
-  "whatMightBeHappening": "2-3 sentences offering a grounded interpretation of the underlying dynamic. Use phrases like 'This could be...', 'One possibility is...', 'It seems like...'",
-
-  "thingsToConsider": [
-    "2-3 questions or points for the user to reflect on — things that might help them decide how they feel about this"
-  ],
-
-  "navigationGuidance": "1-2 sentences of practical, grounded guidance on how to approach this situation going forward"
+  "somethingToConsider": "A thoughtful question or reflection point that helps the user think deeper about this interaction"
 }
 
-## ABSOLUTE DO NOTs
-- Do NOT diagnose or label anyone
-- Do NOT tell the user how they should feel
-- Do NOT assume the worst interpretation
-- Do NOT use therapy language or clinical terms
-- Do NOT be preachy or moralistic
-- Do NOT make assumptions about intentions without evidence
-- Do NOT tell the user what to do — help them see clearly so they can decide`;
+## VOICE & TONE
+- Be insightful and helpful
+- Direct but not harsh
+- Focus on being useful, not preachy
+
+## SUGGESTED RESPONSES GUIDELINES
+- Make them sound natural and human (use casual language, emojis where appropriate)
+- Each should reflect a different communication style
+- Keep them concise (1-2 sentences max)
+- Make them actually usable — something they could copy and send`;
 
   try {
     console.log("[analyzeDeepDecode] Starting analysis of", imagesBase64.length, "images");
@@ -3576,23 +3589,28 @@ Please take this into account in your analysis. Provide your analysis in the JSO
     }
 
     // Validate and return
+    const healthScore = Math.min(100, Math.max(0, parsed.healthScore || 50));
+    const getHealthLabel = (score: number): DeepDecodeResult["healthLabel"] => {
+      if (score >= 90) return "Healthy";
+      if (score >= 70) return "Mostly Healthy";
+      if (score >= 40) return "Mixed Signals";
+      if (score >= 20) return "Concerning";
+      return "Toxic";
+    };
+
     return {
       overview: parsed.overview || "Unable to fully analyze this conversation.",
-      communicationDynamics: Array.isArray(parsed.communicationDynamics)
-        ? parsed.communicationDynamics.slice(0, 4)
+      healthScore,
+      healthLabel: parsed.healthLabel || getHealthLabel(healthScore),
+      tone: parsed.tone || "Unclear",
+      whatStandsOut: parsed.whatStandsOut || "More context would help understand this situation better.",
+      hiddenUndertones: Array.isArray(parsed.hiddenUndertones)
+        ? parsed.hiddenUndertones.slice(0, 3)
         : [],
-      toneAnalysis: {
-        overallTone: parsed.toneAnalysis?.overallTone || "Unclear",
-        toneShifts: parsed.toneAnalysis?.toneShifts || "No notable shifts observed",
-      },
-      keyObservations: Array.isArray(parsed.keyObservations)
-        ? parsed.keyObservations.slice(0, 5)
+      suggestedResponses: Array.isArray(parsed.suggestedResponses)
+        ? parsed.suggestedResponses.slice(0, 3)
         : [],
-      whatMightBeHappening: parsed.whatMightBeHappening || "More context would help understand this situation better.",
-      thingsToConsider: Array.isArray(parsed.thingsToConsider)
-        ? parsed.thingsToConsider.slice(0, 3)
-        : [],
-      navigationGuidance: parsed.navigationGuidance || "Take time to reflect on what feels important to you here.",
+      somethingToConsider: parsed.somethingToConsider || "Take time to reflect on what feels important to you here.",
     };
   } catch (error: any) {
     console.error("[analyzeDeepDecode] Analysis failed:", error);
@@ -3600,15 +3618,13 @@ Please take this into account in your analysis. Provide your analysis in the JSO
     // Return a graceful fallback
     return {
       overview: "Unable to analyze this conversation. Please try again with clearer screenshots.",
-      communicationDynamics: [],
-      toneAnalysis: {
-        overallTone: "Unable to determine",
-        toneShifts: "",
-      },
-      keyObservations: [],
-      whatMightBeHappening: "Could not complete the analysis.",
-      thingsToConsider: ["Try uploading clearer screenshots", "Make sure the conversation text is readable"],
-      navigationGuidance: "Please try again with different images.",
+      healthScore: 50,
+      healthLabel: "Mixed Signals",
+      tone: "Unable to determine",
+      whatStandsOut: "Could not complete the analysis.",
+      hiddenUndertones: [],
+      suggestedResponses: [],
+      somethingToConsider: "Try uploading clearer screenshots with readable text.",
     };
   }
 }
