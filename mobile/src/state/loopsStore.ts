@@ -274,11 +274,29 @@ export const useLoopsStore = create<LoopsState>()(
       // Message Management Actions
       addMessageToActiveLoop: (message: ChatMessage) => {
         const state = get();
+        console.log("[loopsStore] addMessageToActiveLoop - state check:", {
+          activeLoopId: state.activeLoopId,
+          loopsCount: state.loops.length,
+          messageRole: message.role,
+        });
         const activeLoop = state.loops.find(
           (loop) => loop.id === state.activeLoopId
         );
 
-        if (!activeLoop) return;
+        if (!activeLoop) {
+          console.warn("[loopsStore] No active loop found! Creating one...");
+          // Auto-create a loop if none exists
+          const newLoop = createNewLoop();
+          set((s) => ({
+            loops: [newLoop, ...s.loops],
+            activeLoopId: newLoop.id,
+          }));
+          // Retry adding message to the new loop
+          setTimeout(() => {
+            get().addMessageToActiveLoop(message);
+          }, 50);
+          return;
+        }
 
         // Check if we need to generate a smart title
         const shouldGenerateTitle =

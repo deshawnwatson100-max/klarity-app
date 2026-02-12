@@ -829,6 +829,11 @@ export function ChatScreen({ navigation, route }: Props) {
    * 3. "Need a Different Approach?" Card (appears only after suggested reply)
    */
   const processUserMessage = async (userMessage: ChatMessage) => {
+    console.log("[processUserMessage] Called with:", {
+      messageContent: userMessage.content?.substring(0, 50),
+      hasImage: !!userMessage.imageBase64,
+      currentMode: inputModeRef.current,
+    });
     setIsProcessing(true);
     setIsLoading(true);
     setCurrentUserMessage(userMessage.content);
@@ -1710,6 +1715,10 @@ Generate a new reply that follows the user's instruction while still responding 
 
   // Process message in Decode mode - conversational exploration for clarity
   const processDecodeMessage = async (userMessage: ChatMessage) => {
+    console.log("[processDecodeMessage] Called with:", {
+      messageContent: userMessage.content?.substring(0, 50),
+      hasImage: !!userMessage.imageBase64,
+    });
     setIsProcessing(true);
     setIsLoading(true);
 

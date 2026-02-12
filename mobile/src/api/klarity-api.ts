@@ -155,6 +155,11 @@ async function callGPT5MiniStreaming(
   maxTokens: number = 1000,
   temperature: number = 0.75
 ): Promise<string> {
+  console.log("[callGPT5MiniStreaming] Called with:", {
+    messageCount: messages?.length,
+    maxTokens,
+    temperature,
+  });
   const client = getOpenAIClient();
 
   const baseParams: any = {
@@ -2987,6 +2992,11 @@ export async function generateDecodeResponseStreaming(
   conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
   onStream: StreamCallback
 ): Promise<{ response: string; notation?: KlarityNotation }> {
+  console.log("[generateDecodeResponseStreaming] Called with:", {
+    userMessageLength: userMessage?.length,
+    historyLength: conversationHistory?.length,
+    hasOnStream: !!onStream,
+  });
   const systemPrompt = `You are Klarity operating in Decode Mode - a warm, insightful thinking partner for self-reflection.
 
 ## Your Identity
