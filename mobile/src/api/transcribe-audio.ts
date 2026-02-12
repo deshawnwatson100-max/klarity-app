@@ -1,20 +1,23 @@
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
-This is a custom audio transcription service that uses a custom API endpoint maintained by Vibecode.
-You can use this function to transcribe audio files, and it will return the text of the audio file.
+This is a custom audio transcription service that routes through the backend.
+The OpenAI API key is stored securely on the server - never exposed to the mobile app.
 */
+
+import { getBackendUrl } from "../lib/config";
+import { APP_CLIENT_KEY } from "./openai";
 
 /**
  * Transcribe an audio file
  * @param localAudioUri - The local URI of the audio file to transcribe. Obtained via the expo-av library.
  * @returns The text of the audio file
  */
-export const transcribeAudio = async (localAudioUri: string) => {
+export const transcribeAudio = async (localAudioUri: string): Promise<string> => {
   try {
-    const OPENAI_API_KEY = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not set");
-    }
+    const backendUrl = getBackendUrl();
+    const url = `${backendUrl}/api/transcribe`;
+
+    console.log("[Transcribe] Making request to backend:", url);
 
     // Create FormData for the audio file
     const formData = new FormData();
@@ -26,28 +29,31 @@ export const transcribeAudio = async (localAudioUri: string) => {
       uri: fileUri,
       type: "audio/m4a",
       name: "recording.m4a",
-    } as any);
+    } as unknown as Blob);
     formData.append("model", "gpt-4o-transcribe");
 
-    // API call to OpenAI's gpt-4o-transcribe
-    const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    // API call to backend transcription endpoint
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "multipart/form-data",
+        "X-APP-KEY": APP_CLIENT_KEY,
       },
       body: formData,
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Transcription failed: ${errorText}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Transcribe] Backend error:", errorData);
+      throw new Error(
+        (errorData as { message?: string })?.message || `Transcription failed: ${response.status}`
+      );
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { text: string; requestId?: string };
+    console.log("[Transcribe] Success, text length:", result.text?.length || 0);
     return result.text;
   } catch (error) {
-    console.error("Transcription error:", error);
+    console.error("[Transcribe] Error:", error);
     throw error;
   }
 };

@@ -9,6 +9,12 @@ const envSchema = z.object({
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.string().optional(),
   BACKEND_URL: z.url("BACKEND_URL must be a valid URL").default("http://localhost:3000"), // Set via the Vibecode enviroment at run-time
+
+  // OpenAI Configuration (server-only, never exposed to client)
+  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
+
+  // App Client Key for mobile app authentication (server-only)
+  APP_CLIENT_KEY: z.string().min(1, "APP_CLIENT_KEY is required"),
 });
 
 /**
