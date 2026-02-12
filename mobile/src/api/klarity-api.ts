@@ -202,10 +202,16 @@ async function callGPT5MiniStreaming(
 
   try {
     // Try streaming first
-    console.log("[callGPT5MiniStreaming] Starting streaming request...");
+    console.log("[callGPT5MiniStreaming] Starting streaming request with params:", JSON.stringify({
+      model: baseParams.model,
+      messageCount: messages.length,
+      maxTokens: baseParams.max_completion_tokens,
+      temperature: baseParams.temperature,
+    }));
     const streamParams = { ...baseParams, stream: true };
+    console.log("[callGPT5MiniStreaming] About to call OpenAI API...");
     const stream: any = await client.chat.completions.create(streamParams);
-    console.log("[callGPT5MiniStreaming] Stream created, checking if iterable...");
+    console.log("[callGPT5MiniStreaming] Stream created successfully, checking if iterable...");
 
     // Check if stream is valid and iterable before attempting iteration
     if (!stream || typeof stream[Symbol.asyncIterator] !== "function") {
