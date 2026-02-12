@@ -3,6 +3,7 @@ import { View, TextInput, Pressable, Keyboard, Image, Text, Animated, Dimensions
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../theme";
 
@@ -183,18 +184,62 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
       return;
     }
 
-    // Pick image with base64 encoding
+    // Pick image without base64 first - we'll compress and convert after
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: false,
-      quality: 0.8,
-      base64: true,
+      quality: 1, // Get full quality, we'll resize it ourselves
     });
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
-      if (asset.uri && asset.base64) {
-        onImageSelected?.(asset.uri, asset.base64);
+      if (asset.uri) {
+        try {
+          // Resize the image to max 1024px on longest side for faster uploads
+          // This significantly reduces payload size for GPT-4o vision
+          const MAX_DIMENSION = 1024;
+          const width = asset.width || 1024;
+          const height = asset.height || 1024;
+
+          let resizeConfig: { width?: number; height?: number } = {};
+          if (width > height && width > MAX_DIMENSION) {
+            resizeConfig = { width: MAX_DIMENSION };
+          } else if (height > MAX_DIMENSION) {
+            resizeConfig = { height: MAX_DIMENSION };
+          }
+
+          // Use ImageManipulator to resize and compress
+          const manipResult = await ImageManipulator.manipulateAsync(
+            asset.uri,
+            resizeConfig.width || resizeConfig.height ? [{ resize: resizeConfig }] : [],
+            {
+              compress: 0.7,
+              format: ImageManipulator.SaveFormat.JPEG,
+              base64: true
+            }
+          );
+
+          if (manipResult.base64) {
+            console.log("[InputBar] Image compressed:", {
+              originalSize: asset.fileSize ? `${Math.round(asset.fileSize / 1024)}KB` : "unknown",
+              compressedSize: `${Math.round(manipResult.base64.length * 0.75 / 1024)}KB`,
+              dimensions: `${manipResult.width}x${manipResult.height}`,
+            });
+            onImageSelected?.(manipResult.uri, manipResult.base64);
+          }
+        } catch (error) {
+          console.error("[InputBar] Error compressing image:", error);
+          // Fallback: try to use original with lower quality
+          const fallbackResult = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: false,
+            quality: 0.3,
+            base64: true,
+          });
+          if (!fallbackResult.canceled && fallbackResult.assets[0]?.base64) {
+            onImageSelected?.(fallbackResult.assets[0].uri, fallbackResult.assets[0].base64);
+          }
+        }
       }
     }
   };
