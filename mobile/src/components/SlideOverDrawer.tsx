@@ -763,6 +763,8 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // Handle visibility changes
   useEffect(() => {
     if (visible) {
+      // Dismiss keyboard when drawer opens
+      Keyboard.dismiss();
       setIsRendered(true);
       Animated.timing(drawerProgress, {
         toValue: 1,
