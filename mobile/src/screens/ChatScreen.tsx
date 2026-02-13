@@ -1826,20 +1826,28 @@ Generate a new reply that follows the user's instruction while still responding 
         // Remove loading bubble
         removeMessageFromActiveLoop(loadingMsgId);
 
-        // Format the response as a conversational message
+        // Format the response with the new decode format
         let responseContent = `**Overview:** ${imageResult.overview}\n\n`;
-        responseContent += `**Tone:** ${imageResult.toneRead}\n\n`;
-        responseContent += `**What stands out:** ${imageResult.keyObservation}\n\n`;
+        responseContent += `**Tone:** ${imageResult.tone}\n\n`;
+        responseContent += `**What stands out:** ${imageResult.whatStandsOut}\n\n`;
 
-        if (imageResult.possibleMeanings.length > 0) {
-          responseContent += `**Possible meanings:**\n`;
-          for (const meaning of imageResult.possibleMeanings) {
-            responseContent += `• ${meaning}\n`;
+        if (imageResult.hiddenUndertones.length > 0) {
+          responseContent += `**Hidden undertones:**\n`;
+          for (const undertone of imageResult.hiddenUndertones) {
+            responseContent += `• **${undertone.undertone}:** ${undertone.explanation}\n`;
           }
           responseContent += `\n`;
         }
 
-        responseContent += `**Something to consider:** ${imageResult.thingToConsider}`;
+        if (imageResult.suggestedResponses.length > 0) {
+          responseContent += `**Suggested responses:**\n`;
+          for (const suggestion of imageResult.suggestedResponses) {
+            responseContent += `• **${suggestion.tone}:** "${suggestion.response}"\n`;
+          }
+          responseContent += `\n`;
+        }
+
+        responseContent += `**Something to consider:** ${imageResult.somethingToConsider}`;
 
         // Add assistant response
         const assistantMsg: ChatMessage = {

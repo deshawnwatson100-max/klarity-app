@@ -3234,15 +3234,23 @@ Return ONLY the title, nothing else.`;
 
 /**
  * Light Decode Image Analysis for the decode chat loop
- * A lighter version of Deep Decode that provides quick, conversational analysis
- * of conversation screenshots within the chat flow
+ * Provides analysis with hidden undertones and suggested responses
  */
 export interface LightDecodeImageResult {
   overview: string;
-  toneRead: string;
-  keyObservation: string;
-  possibleMeanings: string[];
-  thingToConsider: string;
+  healthScore: number;
+  healthLabel: "Healthy" | "Mostly Healthy" | "Mixed Signals" | "Concerning" | "Toxic";
+  tone: string;
+  whatStandsOut: string;
+  hiddenUndertones: {
+    undertone: string;
+    explanation: string;
+  }[];
+  suggestedResponses: {
+    tone: string;
+    response: string;
+  }[];
+  somethingToConsider: string;
 }
 
 export async function analyzeLightDecodeImage(
@@ -3251,10 +3259,13 @@ export async function analyzeLightDecodeImage(
 ): Promise<LightDecodeImageResult> {
   const client = getOpenAIClient();
 
-  const systemPrompt = `You are Klarity — a communication analyst helping someone understand a message or conversation they received.
+  const systemPrompt = `You are Klarity in Decode mode — a communication analyst helping someone understand a conversation and decode potential hidden undertones.
 
 ## YOUR ROLE
-Help people see social and communication dynamics more clearly. You do not diagnose, judge, or label people. You surface patterns and observations that help the user understand what they are looking at.
+You help people decode conversations to understand:
+1. Whether this is a healthy or concerning interaction
+2. What hidden undertones or meanings might exist beneath the surface
+3. How they could respond effectively
 
 ## CRITICAL: IDENTIFYING WHO IS WHO
 
@@ -3270,50 +3281,81 @@ IMPORTANT: Color varies by platform and theme:
 
 ALWAYS use message ALIGNMENT (left vs right) as the primary identifier, not just color.
 
-## WHAT TO DO
-1. Read the conversation screenshot carefully - identify who is who by message alignment
-2. Identify the overall dynamic and tone
-3. Note what stands out without labeling it as "good" or "bad"
-4. Offer possible interpretations the user might not have considered
+## ANALYSIS APPROACH
+1. Read through the conversation screenshot carefully - identify who is who
+2. Assess the overall health of the communication dynamic
+3. Identify any hidden meanings, undertones, or subtext
+4. Provide suggested responses at different tones
 
-## VOICE & TONE
-- Calm and observational
-- Neutral but insightful
-- Direct without being harsh
-- Human and grounded
-- Never clinical or therapy-speak
-- Never use words like "toxic," "narcissistic," "manipulative," "gaslighting"
+## HEALTH SCORE GUIDELINES
+Rate the conversation health from 0-100:
+- 90-100 (Healthy): Positive, supportive, clear communication
+- 70-89 (Mostly Healthy): Generally good with minor concerns
+- 40-69 (Mixed Signals): Unclear intentions, some concerning patterns
+- 20-39 (Concerning): Multiple red flags, dismissive or manipulative patterns
+- 0-19 (Toxic): Clearly harmful, disrespectful, or abusive communication
 
 ## IF THE IMAGE IS NOT A CONVERSATION
 If the image does not contain a text conversation (e.g., a photo, meme, or unrelated image), respond with:
 {
   "overview": "This image does not appear to contain a text conversation.",
-  "toneRead": "N/A",
-  "keyObservation": "Could you check that you attached the right screenshot? I am looking for a text or messaging conversation to help you decode.",
-  "possibleMeanings": [],
-  "thingToConsider": "Try sending a screenshot of the conversation you want help understanding."
+  "healthScore": 50,
+  "healthLabel": "Mixed Signals",
+  "tone": "N/A",
+  "whatStandsOut": "Could you check that you attached the right screenshot? I am looking for a text or messaging conversation to help you decode.",
+  "hiddenUndertones": [],
+  "suggestedResponses": [],
+  "somethingToConsider": "Try sending a screenshot of the conversation you want help understanding."
 }
 
 ## RESPONSE FORMAT
 Provide your analysis in this JSON structure:
 
 {
-  "overview": "1-2 sentences describing what this conversation is about and who seems to be involved",
-  "toneRead": "A short phrase describing the overall tone (e.g., 'Friendly but distant', 'Warm', 'Tense', 'Casual', 'Uncertain')",
-  "keyObservation": "1-2 sentences noting the most important thing you observe about this exchange — what stands out",
-  "possibleMeanings": [
-    "2-3 possible interpretations of what the other person might mean or what might be happening (use phrases like 'They could be...', 'This might mean...', 'One possibility is...')"
+  "overview": "1-2 sentences summarizing what this conversation is about",
+
+  "healthScore": 75,
+  "healthLabel": "Mostly Healthy",
+
+  "tone": "1-3 words describing the dominant tone (e.g., 'Loving and supportive', 'Distant', 'Passive-aggressive')",
+
+  "whatStandsOut": "2-3 sentences about what specifically stands out in this conversation — the notable moments, phrases, or dynamics",
+
+  "hiddenUndertones": [
+    {
+      "undertone": "Short name for the possible meaning (e.g., 'Testing boundaries', 'Seeking validation', 'Avoiding commitment')",
+      "explanation": "1-2 sentences explaining what this undertone might mean and why you see it"
+    }
   ],
-  "thingToConsider": "1 sentence — a grounded question or thought for the user to reflect on"
+
+  "suggestedResponses": [
+    {
+      "tone": "Warm & appreciative",
+      "response": "A natural response they could send in this tone"
+    },
+    {
+      "tone": "Playful",
+      "response": "A lighthearted response option"
+    },
+    {
+      "tone": "Direct",
+      "response": "A straightforward response option"
+    }
+  ],
+
+  "somethingToConsider": "A thoughtful question or reflection point that helps the user think deeper about this interaction"
 }
 
-## ABSOLUTE DO NOTs
-- Do NOT diagnose or label anyone
-- Do NOT tell the user how they should feel
-- Do NOT assume the worst interpretation
-- Do NOT use therapy language or clinical terms
-- Do NOT say "I can see you sent two images" or reference image count
-- Do NOT ask "what do you want to get out of this" — just analyze`;
+## VOICE & TONE
+- Be insightful and helpful
+- Direct but not harsh
+- Focus on being useful, not preachy
+
+## SUGGESTED RESPONSES GUIDELINES
+- Make them sound natural and human (use casual language, emojis where appropriate)
+- Each should reflect a different communication style
+- Keep them concise (1-2 sentences max)
+- Make them actually usable — something they could copy and send`;
 
   try {
     console.log("[analyzeLightDecodeImage] Starting light decode analysis");
@@ -3400,12 +3442,24 @@ Provide your analysis in this JSON structure:
 
     console.log("[analyzeLightDecodeImage] Analysis complete");
 
+    const healthScore = Math.min(100, Math.max(0, parsed.healthScore || 50));
+    const getHealthLabel = (score: number): LightDecodeImageResult["healthLabel"] => {
+      if (score >= 90) return "Healthy";
+      if (score >= 70) return "Mostly Healthy";
+      if (score >= 40) return "Mixed Signals";
+      if (score >= 20) return "Concerning";
+      return "Toxic";
+    };
+
     return {
       overview: parsed.overview || "I had trouble reading this conversation clearly.",
-      toneRead: parsed.toneRead || "Unclear",
-      keyObservation: parsed.keyObservation || "Could you tell me more about what you are wondering about?",
-      possibleMeanings: Array.isArray(parsed.possibleMeanings) ? parsed.possibleMeanings.slice(0, 3) : [],
-      thingToConsider: parsed.thingToConsider || "What part of this feels most unclear to you?",
+      healthScore,
+      healthLabel: parsed.healthLabel || getHealthLabel(healthScore),
+      tone: parsed.tone || "Unclear",
+      whatStandsOut: parsed.whatStandsOut || "Could you tell me more about what you are wondering about?",
+      hiddenUndertones: Array.isArray(parsed.hiddenUndertones) ? parsed.hiddenUndertones.slice(0, 3) : [],
+      suggestedResponses: Array.isArray(parsed.suggestedResponses) ? parsed.suggestedResponses.slice(0, 3) : [],
+      somethingToConsider: parsed.somethingToConsider || "What part of this feels most unclear to you?",
     };
   } catch (error: any) {
     console.error("[analyzeLightDecodeImage] Error:", error);
@@ -3416,10 +3470,13 @@ Provide your analysis in this JSON structure:
     console.error("[analyzeLightDecodeImage] Full error:", JSON.stringify(error, null, 2)?.substring(0, 1000));
     return {
       overview: "I had a little trouble reading this screenshot clearly.",
-      toneRead: "Unable to determine",
-      keyObservation: "The image might be low quality or have an unusual format. Try sending a clearer screenshot if possible.",
-      possibleMeanings: ["If this keeps happening, you can also describe the situation in text and I can help you understand it."],
-      thingToConsider: "What part of this conversation feels most confusing or unclear to you?",
+      healthScore: 50,
+      healthLabel: "Mixed Signals",
+      tone: "Unable to determine",
+      whatStandsOut: "The image might be low quality or have an unusual format. Try sending a clearer screenshot if possible.",
+      hiddenUndertones: [],
+      suggestedResponses: [],
+      somethingToConsider: "What part of this conversation feels most confusing or unclear to you?",
     };
   }
 }
