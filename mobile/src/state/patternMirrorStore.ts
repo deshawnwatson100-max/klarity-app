@@ -6,6 +6,7 @@ import {
   BehavioralSignalType,
   BehavioralPattern,
   PatternMirrorInsight,
+  PatternScope,
 } from "../types/chat";
 
 // Minimum occurrences before surfacing a pattern
@@ -41,21 +42,32 @@ const GROWTH_ADJUSTMENTS: Record<BehavioralSignalType, string> = {
   response_speed: "Match their tempo. If they're slow, you're slower.",
 };
 
+// Key for contact-specific insight cooldowns
+type InsightCooldownKey = string; // "global:{type}" or "contact:{contactId}:{type}"
+
 interface PatternMirrorState {
   // All recorded signals
   signals: BehavioralSignal[];
 
-  // Aggregated patterns (computed from signals)
-  patterns: BehavioralPattern[];
+  // Aggregated patterns - both global and contact-specific
+  globalPatterns: BehavioralPattern[];
+  contactPatterns: Map<string, BehavioralPattern[]>; // contactId -> patterns
 
   // Last time an insight was shown (to avoid spam)
-  lastInsightShown: Partial<Record<BehavioralSignalType, number>>;
+  lastInsightShown: Partial<Record<InsightCooldownKey, number>>;
 
   // Actions
-  recordSignal: (type: BehavioralSignalType, context?: string, severity?: "low" | "medium" | "high") => void;
-  getPatterns: () => BehavioralPattern[];
-  getInsightIfReady: () => PatternMirrorInsight | null;
-  markInsightShown: (type: BehavioralSignalType) => void;
+  recordSignal: (
+    type: BehavioralSignalType,
+    context?: string,
+    severity?: "low" | "medium" | "high",
+    contactId?: string,
+    contactName?: string
+  ) => void;
+  getGlobalPatterns: () => BehavioralPattern[];
+  getContactPatterns: (contactId: string) => BehavioralPattern[];
+  getInsightIfReady: (contactId?: string, contactName?: string) => PatternMirrorInsight | null;
+  markInsightShown: (type: BehavioralSignalType, scope: PatternScope, contactId?: string) => void;
   clearOldSignals: () => void;
   resetPatterns: () => void;
 }
@@ -73,8 +85,8 @@ function computeAvgSeverity(signals: BehavioralSignal[]): "low" | "medium" | "hi
   return "low";
 }
 
-// Helper to aggregate signals into patterns
-function aggregatePatterns(signals: BehavioralSignal[]): BehavioralPattern[] {
+// Helper to aggregate signals into patterns (for a specific set of signals)
+function aggregateSignalsToPatterns(signals: BehavioralSignal[], contactId?: string, contactName?: string): BehavioralPattern[] {
   const byType = new Map<BehavioralSignalType, BehavioralSignal[]>();
 
   // Group signals by type
@@ -95,6 +107,8 @@ function aggregatePatterns(signals: BehavioralSignal[]): BehavioralPattern[] {
         lastSeen: sortedByTime[0].timestamp,
         avgSeverity: computeAvgSeverity(typeSignals),
         contexts: sortedByTime.slice(0, 3).map(s => s.context || "").filter(Boolean),
+        contactId,
+        contactName,
       });
     }
   }
@@ -102,19 +116,53 @@ function aggregatePatterns(signals: BehavioralSignal[]): BehavioralPattern[] {
   return patterns;
 }
 
+// Recompute all patterns from signals
+function recomputeAllPatterns(signals: BehavioralSignal[]): {
+  globalPatterns: BehavioralPattern[];
+  contactPatterns: Map<string, BehavioralPattern[]>;
+} {
+  // Global patterns (all signals)
+  const globalPatterns = aggregateSignalsToPatterns(signals);
+
+  // Contact-specific patterns
+  const contactPatterns = new Map<string, BehavioralPattern[]>();
+  const byContact = new Map<string, BehavioralSignal[]>();
+
+  for (const signal of signals) {
+    if (signal.contactId) {
+      const existing = byContact.get(signal.contactId) || [];
+      existing.push(signal);
+      byContact.set(signal.contactId, existing);
+    }
+  }
+
+  for (const [contactId, contactSignals] of byContact) {
+    const contactName = contactSignals[0]?.contactName;
+    const patterns = aggregateSignalsToPatterns(contactSignals, contactId, contactName);
+    if (patterns.length > 0) {
+      contactPatterns.set(contactId, patterns);
+    }
+  }
+
+  return { globalPatterns, contactPatterns };
+}
+
 export const usePatternMirrorStore = create<PatternMirrorState>()(
   persist(
     (set, get) => ({
       signals: [],
-      patterns: [],
-      lastInsightShown: {} as Partial<Record<BehavioralSignalType, number>>,
+      globalPatterns: [],
+      contactPatterns: new Map(),
+      lastInsightShown: {},
 
-      recordSignal: (type, context, severity = "medium") => {
+      recordSignal: (type, context, severity = "medium", contactId, contactName) => {
         const newSignal: BehavioralSignal = {
           type,
           timestamp: Date.now(),
           context,
           severity,
+          contactId,
+          contactName,
         };
 
         set((state) => {
@@ -123,29 +171,77 @@ export const usePatternMirrorStore = create<PatternMirrorState>()(
           const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
           const filteredSignals = updatedSignals.filter(s => s.timestamp > cutoff);
 
+          const { globalPatterns, contactPatterns } = recomputeAllPatterns(filteredSignals);
+
           return {
             signals: filteredSignals,
-            patterns: aggregatePatterns(filteredSignals),
+            globalPatterns,
+            contactPatterns,
           };
         });
       },
 
-      getPatterns: () => {
-        return get().patterns;
+      getGlobalPatterns: () => {
+        return get().globalPatterns;
       },
 
-      getInsightIfReady: () => {
+      getContactPatterns: (contactId: string) => {
+        return get().contactPatterns.get(contactId) || [];
+      },
+
+      getInsightIfReady: (contactId?: string, contactName?: string) => {
         const state = get();
         const now = Date.now();
-        const cooldownPeriod = 24 * 60 * 60 * 1000; // 24 hours between same insight
+        const cooldownPeriod = 24 * 60 * 60 * 1000; // 24 hours between same insight type
 
-        // Find patterns that meet threshold and haven't been shown recently
-        for (const pattern of state.patterns) {
+        // Priority 1: Contact-specific patterns (if contactId provided)
+        if (contactId) {
+          const contactPatternsForId = state.contactPatterns.get(contactId) || [];
+
+          for (const pattern of contactPatternsForId) {
+            if (pattern.occurrences >= MIN_OCCURRENCES_TO_SURFACE) {
+              const cooldownKey = `contact:${contactId}:${pattern.type}`;
+              const lastShown = state.lastInsightShown[cooldownKey] || 0;
+
+              if (now - lastShown > cooldownPeriod) {
+                const impactLevel: "moderate" | "significant" =
+                  pattern.occurrences >= 5 || pattern.avgSeverity === "high"
+                    ? "significant"
+                    : "moderate";
+
+                // Check if there's also a global pattern (for reinforcement)
+                const globalPattern = state.globalPatterns.find(p => p.type === pattern.type);
+                const hasGlobalReinforcement = globalPattern && globalPattern.occurrences >= MIN_OCCURRENCES_TO_SURFACE;
+
+                const displayName = contactName || pattern.contactName || "this person";
+
+                const insight: PatternMirrorInsight = {
+                  patternType: pattern.type,
+                  scope: "contact",
+                  behavioralInsight: `Across recent exchanges with ${displayName}, there's a pattern of ${PATTERN_LABELS[pattern.type]}.`,
+                  strategicInterpretation: STRATEGIC_INTERPRETATIONS[pattern.type],
+                  growthAdjustment: GROWTH_ADJUSTMENTS[pattern.type],
+                  occurrenceCount: pattern.occurrences,
+                  impactLevel,
+                  contactName: displayName,
+                  globalReinforcement: hasGlobalReinforcement
+                    ? `This pattern also appears across your other conversations.`
+                    : undefined,
+                };
+
+                return insight;
+              }
+            }
+          }
+        }
+
+        // Priority 2: Global patterns
+        for (const pattern of state.globalPatterns) {
           if (pattern.occurrences >= MIN_OCCURRENCES_TO_SURFACE) {
-            const lastShown = state.lastInsightShown[pattern.type] || 0;
+            const cooldownKey = `global:${pattern.type}`;
+            const lastShown = state.lastInsightShown[cooldownKey] || 0;
 
             if (now - lastShown > cooldownPeriod) {
-              // Determine impact level
               const impactLevel: "moderate" | "significant" =
                 pattern.occurrences >= 5 || pattern.avgSeverity === "high"
                   ? "significant"
@@ -153,7 +249,8 @@ export const usePatternMirrorStore = create<PatternMirrorState>()(
 
               const insight: PatternMirrorInsight = {
                 patternType: pattern.type,
-                behavioralInsight: `Across recent conversations, there's a pattern of ${PATTERN_LABELS[pattern.type]}.`,
+                scope: "global",
+                behavioralInsight: `Across multiple conversations, there's a pattern of ${PATTERN_LABELS[pattern.type]}.`,
                 strategicInterpretation: STRATEGIC_INTERPRETATIONS[pattern.type],
                 growthAdjustment: GROWTH_ADJUSTMENTS[pattern.type],
                 occurrenceCount: pattern.occurrences,
@@ -168,11 +265,15 @@ export const usePatternMirrorStore = create<PatternMirrorState>()(
         return null;
       },
 
-      markInsightShown: (type) => {
+      markInsightShown: (type, scope, contactId) => {
+        const cooldownKey = scope === "contact" && contactId
+          ? `contact:${contactId}:${type}`
+          : `global:${type}`;
+
         set((state) => ({
           lastInsightShown: {
             ...state.lastInsightShown,
-            [type]: Date.now(),
+            [cooldownKey]: Date.now(),
           },
         }));
       },
@@ -181,9 +282,11 @@ export const usePatternMirrorStore = create<PatternMirrorState>()(
         const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
         set((state) => {
           const filteredSignals = state.signals.filter(s => s.timestamp > cutoff);
+          const { globalPatterns, contactPatterns } = recomputeAllPatterns(filteredSignals);
           return {
             signals: filteredSignals,
-            patterns: aggregatePatterns(filteredSignals),
+            globalPatterns,
+            contactPatterns,
           };
         });
       },
@@ -191,21 +294,39 @@ export const usePatternMirrorStore = create<PatternMirrorState>()(
       resetPatterns: () => {
         set({
           signals: [],
-          patterns: [],
-          lastInsightShown: {} as Partial<Record<BehavioralSignalType, number>>,
+          globalPatterns: [],
+          contactPatterns: new Map(),
+          lastInsightShown: {},
         });
       },
     }),
     {
       name: "pattern-mirror-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      // Custom serialization for Map
+      partialize: (state) => ({
+        signals: state.signals,
+        lastInsightShown: state.lastInsightShown,
+        // Don't persist computed patterns - they'll be recomputed on load
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Recompute patterns after rehydration
+          const { globalPatterns, contactPatterns } = recomputeAllPatterns(state.signals);
+          state.globalPatterns = globalPatterns;
+          state.contactPatterns = contactPatterns;
+        }
+      },
     }
   )
 );
 
 // Selector hooks for optimized re-renders
 export const usePatternCount = (type: BehavioralSignalType) =>
-  usePatternMirrorStore((s) => s.patterns.find(p => p.type === type)?.occurrences || 0);
+  usePatternMirrorStore((s) => s.globalPatterns.find(p => p.type === type)?.occurrences || 0);
 
 export const useHasActivePatterns = () =>
-  usePatternMirrorStore((s) => s.patterns.some(p => p.occurrences >= MIN_OCCURRENCES_TO_SURFACE));
+  usePatternMirrorStore((s) => s.globalPatterns.some(p => p.occurrences >= MIN_OCCURRENCES_TO_SURFACE));
+
+export const useContactPatternCount = (contactId: string, type: BehavioralSignalType) =>
+  usePatternMirrorStore((s) => s.contactPatterns.get(contactId)?.find(p => p.type === type)?.occurrences || 0);

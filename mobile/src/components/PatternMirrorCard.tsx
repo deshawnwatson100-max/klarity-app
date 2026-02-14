@@ -154,6 +154,29 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
           </Text>
         </View>
 
+        {/* Global Reinforcement (if contact-specific pattern also appears globally) */}
+        {insight.globalReinforcement && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingTop: 4,
+            }}
+          >
+            <Ionicons name="globe-outline" size={12} color={colors.textTertiary} />
+            <Text
+              style={{
+                color: colors.textTertiary,
+                fontSize: 11,
+                fontStyle: "italic",
+              }}
+            >
+              {insight.globalReinforcement}
+            </Text>
+          </View>
+        )}
+
         {/* Occurrence indicator */}
         <View
           style={{

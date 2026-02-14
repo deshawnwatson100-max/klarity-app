@@ -2241,3 +2241,45 @@ The theme provides consistent color tokens across both themes:
 - SlideOverDrawer - Drawer background and items
 - All modals and overlays
 
+### Pattern Mirror System (Dual-Layer Behavioral Tracking)
+
+A self-awareness layer that tracks user behavioral tendencies across conversations, helping users recognize patterns that may affect their communication dynamics.
+
+#### Tracked Behavioral Signals
+- **Effort Ratio** - Message length vs theirs (over-investing in conversation)
+- **Double Texting** - Sending multiple messages before receiving a response
+- **Emotional Intensity** - Escalation in emotional tone
+- **Apology Frequency** - Over-apologizing patterns
+- **Follow-up Timing** - How quickly they follow up without response
+- **Response Speed** - Response time imbalances (responding too fast)
+
+#### Dual-Layer Architecture
+Pattern Mirror tracks patterns at two levels:
+
+1. **Contact-Specific Patterns** - Patterns specific to a particular person context
+   - Uses `activeLoopPersonContextId` to tie signals to specific contacts
+   - Displays as: "Across recent exchanges with [Name], there's a pattern of..."
+
+2. **Global Patterns** - Patterns across all conversations
+   - Aggregates signals regardless of contact
+   - Displays as: "Across multiple conversations, there's a pattern of..."
+
+#### Priority Display Logic
+- Contact-specific insights are surfaced first (more relevant)
+- If a contact pattern also appears globally, shows "Global Reinforcement" note
+- 24-hour cooldown per insight type per scope to avoid spam
+- Minimum 3 occurrences before surfacing any pattern
+
+#### Files
+- `src/types/chat.ts` - `PatternMirrorInsight`, `BehavioralSignal`, `BehavioralPattern` types
+- `src/state/patternMirrorStore.ts` - Zustand store with persist middleware
+- `src/components/PatternMirrorCard.tsx` - Display component for insights
+- `src/utils/patternDetection.ts` - Regex-based signal detection
+
+#### Pattern Mirror Card Display
+- Purple accent color (#A78BFA dark / #7C3AED light)
+- Shows: Pattern Detected, Strategic Read, Adjustment
+- Optional "This pattern also appears across your other conversations" for global reinforcement
+- Occurrence count indicator
+- "Got it" dismissal button
+

@@ -498,8 +498,11 @@ export interface StructuredAnalysisMessage extends Message {
 }
 
 // ============================================
-// PATTERN MIRROR TYPES
+// PATTERN MIRROR TYPES (DUAL-LAYER)
 // ============================================
+
+// Tracking scope for patterns
+export type PatternScope = "contact" | "global";
 
 // Behavioral signal types tracked across conversations
 export type BehavioralSignalType =
@@ -516,6 +519,8 @@ export interface BehavioralSignal {
   timestamp: number;
   context?: string;          // Brief context of when it occurred
   severity: "low" | "medium" | "high";
+  contactId?: string;        // Optional: ties signal to specific contact
+  contactName?: string;      // Optional: display name for contact
 }
 
 // Aggregated pattern from multiple signals
@@ -525,16 +530,21 @@ export interface BehavioralPattern {
   lastSeen: number;
   avgSeverity: "low" | "medium" | "high";
   contexts: string[];        // Recent contexts where this appeared
+  contactId?: string;        // If set, this is a contact-specific pattern
+  contactName?: string;      // Display name for contact-specific patterns
 }
 
 // Pattern Mirror insight output
 export interface PatternMirrorInsight {
   patternType: BehavioralSignalType;
-  behavioralInsight: string;       // "Across recent conversations..."
-  strategicInterpretation: string; // How this affects dynamics
-  growthAdjustment: string;        // Calm strategic advice
+  scope: PatternScope;                // "contact" or "global"
+  behavioralInsight: string;          // "Across recent exchanges with [Name]..." or "Across multiple conversations..."
+  strategicInterpretation: string;    // How this affects dynamics
+  growthAdjustment: string;           // Calm strategic advice
   occurrenceCount: number;
   impactLevel: "moderate" | "significant";
+  contactName?: string;               // For contact-specific insights
+  globalReinforcement?: string;       // Optional: if global pattern also exists
 }
 
 // Message type for pattern mirror insights

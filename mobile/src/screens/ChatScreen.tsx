@@ -1866,13 +1866,17 @@ Generate a new reply that follows the user's instruction while still responding 
       const behavioralSignals = detectBehavioralSignals(userMessage.content, conversationHistory);
       const { recordSignal, getInsightIfReady, markInsightShown } = usePatternMirrorStore.getState();
 
-      // Record detected signals
+      // Get contact context for dual-layer pattern tracking
+      const contactId = activeLoopPersonContextId || undefined;
+      const contactName = activePersonContext?.name || undefined;
+
+      // Record detected signals with contact context
       for (const signal of behavioralSignals) {
-        recordSignal(signal.type, signal.context, signal.severity);
+        recordSignal(signal.type, signal.context, signal.severity, contactId, contactName);
       }
 
-      // Check if we should surface a pattern insight
-      const patternInsight = getInsightIfReady();
+      // Check if we should surface a pattern insight (prioritizes contact-specific)
+      const patternInsight = getInsightIfReady(contactId, contactName);
       if (patternInsight) {
         // Add pattern mirror card before the response
         const patternMsg: PatternMirrorMessage = {
@@ -1888,8 +1892,8 @@ Generate a new reply that follows the user's instruction while still responding 
         removeMessageFromActiveLoop(loadingMsgId);
         addMessageWithMode(patternMsg, capturedMode);
 
-        // Mark insight as shown so we don't repeat it
-        markInsightShown(patternInsight.patternType);
+        // Mark insight as shown so we don't repeat it (pass contactId for contact-specific cooldowns)
+        markInsightShown(patternInsight.patternType, patternInsight.scope, contactId);
 
         // Re-add loading for the actual response
         const newLoadingMsg: ChatLoadingMessage = {
