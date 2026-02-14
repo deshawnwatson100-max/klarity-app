@@ -31,6 +31,17 @@ interface ChatRequestOptions {
   responseFormat?: { type: string };
 }
 
+interface BackendChatRequestBody {
+  mode: string;
+  messages: ChatMessage[];
+  meta: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    responseFormat?: { type: string };
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OpenAICompletionParams = Record<string, any>;
 
@@ -58,7 +69,7 @@ class BackendOpenAIClient {
   chat = {
     completions: {
       create: async (params: OpenAICompletionParams): Promise<any> => {
-        const { model, messages, temperature, max_tokens, max_completion_tokens, stream } = params;
+        const { model, messages, temperature, max_tokens, max_completion_tokens, stream, response_format } = params;
         const effectiveMaxTokens = max_completion_tokens || max_tokens;
 
         if (stream) {
@@ -75,6 +86,7 @@ class BackendOpenAIClient {
           model,
           temperature,
           maxTokens: effectiveMaxTokens,
+          responseFormat: response_format,
         });
 
         // Format response to match OpenAI SDK structure
@@ -109,21 +121,28 @@ class BackendOpenAIClient {
 
     console.log("[OpenAI Client] Making chat request to backend:", url);
 
+    const requestBody: BackendChatRequestBody = {
+      mode: "chat",
+      messages,
+      meta: {
+        model: options?.model,
+        temperature: options?.temperature,
+        maxTokens: options?.maxTokens,
+      },
+    };
+
+    // Pass response_format if specified (e.g., for JSON mode)
+    if (options?.responseFormat) {
+      requestBody.meta.responseFormat = options.responseFormat;
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-APP-KEY": APP_CLIENT_KEY,
       },
-      body: JSON.stringify({
-        mode: "chat",
-        messages,
-        meta: {
-          model: options?.model,
-          temperature: options?.temperature,
-          maxTokens: options?.maxTokens,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

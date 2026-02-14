@@ -3476,13 +3476,27 @@ Provide your analysis in this JSON structure:
       somethingToConsider: parsed.somethingToConsider || "What part of this feels most unclear to you?",
       concernPrompt: parsed.concernPrompt || undefined,
     };
-  } catch (error: any) {
-    console.error("[analyzeLightDecodeImage] Error:", error);
-    console.error("[analyzeLightDecodeImage] Error message:", error?.message);
-    console.error("[analyzeLightDecodeImage] Error name:", error?.name);
-    console.error("[analyzeLightDecodeImage] Error status:", error?.status || error?.response?.status);
-    console.error("[analyzeLightDecodeImage] Error code:", error?.code || error?.error?.code);
-    console.error("[analyzeLightDecodeImage] Full error:", JSON.stringify(error, null, 2)?.substring(0, 1000));
+  } catch (error: unknown) {
+    // Better error serialization
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : "Unknown";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    console.error("[analyzeLightDecodeImage] Error occurred");
+    console.error("[analyzeLightDecodeImage] Error message:", errorMessage);
+    console.error("[analyzeLightDecodeImage] Error name:", errorName);
+    if (errorStack) {
+      console.error("[analyzeLightDecodeImage] Stack:", errorStack.substring(0, 500));
+    }
+
+    // Try to extract more info if it's an object with additional properties
+    if (error && typeof error === "object") {
+      const errObj = error as Record<string, unknown>;
+      if (errObj.status) console.error("[analyzeLightDecodeImage] Status:", errObj.status);
+      if (errObj.code) console.error("[analyzeLightDecodeImage] Code:", errObj.code);
+      if (errObj.response) console.error("[analyzeLightDecodeImage] Response:", JSON.stringify(errObj.response)?.substring(0, 500));
+    }
+
     return {
       overview: "I had a little trouble reading this screenshot clearly.",
       healthScore: 50,

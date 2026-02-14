@@ -44,7 +44,10 @@ const chatRequestSchema = z.object({
             z.object({ type: z.literal("text"), text: z.string() }),
             z.object({
               type: z.literal("image_url"),
-              image_url: z.object({ url: z.string() }),
+              image_url: z.object({
+                url: z.string(),
+                detail: z.enum(["low", "high", "auto"]).optional(),
+              }),
             }),
           ])
         ),
@@ -59,6 +62,7 @@ const chatRequestSchema = z.object({
       temperature: z.number().optional(),
       maxTokens: z.number().optional(),
       stream: z.boolean().optional(),
+      responseFormat: z.object({ type: z.string() }).optional(),
     })
     .optional(),
 });
@@ -225,18 +229,26 @@ chatRouter.post("/", async (c) => {
     }
 
     // Non-streaming request
+    // Build request body with optional response_format
+    const requestBody: Record<string, unknown> = {
+      model,
+      messages,
+      temperature,
+      max_tokens: maxTokens,
+    };
+
+    // Pass response_format if specified (e.g., for JSON mode)
+    if (meta?.responseFormat) {
+      requestBody.response_format = meta.responseFormat;
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${openaiApiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
