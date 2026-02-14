@@ -2,10 +2,6 @@ import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../theme";
 import {
@@ -27,7 +23,7 @@ function SignalStrengthIndicator({
   strength: SignalStrength;
   label: string;
 }) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const getSignalConfig = () => {
     switch (strength) {
@@ -55,8 +51,7 @@ function SignalStrengthIndicator({
   const config = getSignalConfig();
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(200).duration(300)}
+    <View
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -77,7 +72,7 @@ function SignalStrengthIndicator({
       >
         {label}
       </Text>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -245,8 +240,7 @@ function DeeperPatternExpansion({
   };
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(300)}
+    <View
       style={{
         backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
         borderRadius: 14,
@@ -331,7 +325,7 @@ function DeeperPatternExpansion({
           {analysis.patternRiskExplanation}
         </Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -371,7 +365,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
         }}
       >
         {/* Section 1: Surface Meaning */}
-        <Animated.View entering={FadeIn.duration(300)}>
+        <View>
           <Text
             style={{
               color: colors.textTertiary,
@@ -393,7 +387,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
           >
             {analysis.surfaceMeaning}
           </Text>
-        </Animated.View>
+        </View>
 
         {/* Divider */}
         <View
@@ -404,7 +398,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
         />
 
         {/* Section 2: Hidden Subtext */}
-        <Animated.View entering={FadeInDown.delay(100).duration(300)}>
+        <View>
           <Text
             style={{
               color: colors.textTertiary,
@@ -451,7 +445,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
               </View>
             ))}
           </View>
-        </Animated.View>
+        </View>
 
         {/* Divider */}
         <View
@@ -490,7 +484,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
         />
 
         {/* Section 4: Power Move Recommendation */}
-        <Animated.View entering={FadeInDown.delay(300).duration(300)}>
+        <View>
           <Text
             style={{
               color: colors.textTertiary,
@@ -525,7 +519,7 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
               />
             ))}
           </View>
-        </Animated.View>
+        </View>
 
         {/* Section 5: Deeper Pattern Button */}
         {analysis.deeperPattern && (
