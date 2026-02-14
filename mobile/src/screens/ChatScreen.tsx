@@ -1826,32 +1826,12 @@ Generate a new reply that follows the user's instruction while still responding 
         // Remove loading bubble
         removeMessageFromActiveLoop(loadingMsgId);
 
-        // Format the response with the new decode format
-        let responseContent = `**Overview:** ${imageResult.overview}\n\n`;
-        responseContent += `**Tone:** ${imageResult.tone}\n\n`;
-        responseContent += `**What stands out:** ${imageResult.whatStandsOut}\n\n`;
-
-        if (imageResult.hiddenUndertones.length > 0) {
-          responseContent += `**Hidden undertones:**\n`;
-          for (const undertone of imageResult.hiddenUndertones) {
-            responseContent += `• **${undertone.undertone}:** ${undertone.explanation}\n`;
-          }
-          responseContent += `\n`;
-        }
-
-        if (imageResult.suggestedResponses.length > 0) {
-          responseContent += `**Suggested responses:**\n`;
-          for (const suggestion of imageResult.suggestedResponses) {
-            responseContent += `• **${suggestion.tone}:** "${suggestion.response}"\n`;
-          }
-          responseContent += `\n`;
-        }
-
-        responseContent += `**Something to consider:** ${imageResult.somethingToConsider}`;
+        // Use the friendly conversational response
+        let responseContent = imageResult.friendlyResponse;
 
         // Add the concern prompt if available (gentle invitation for user to share their concern)
         if (imageResult.concernPrompt) {
-          responseContent += `\n\n---\n\n${imageResult.concernPrompt}`;
+          responseContent += `\n\n${imageResult.concernPrompt}`;
         }
 
         // Add assistant response
