@@ -42,7 +42,8 @@ export type MessageRole =
   | "chat-loading"
   | "response-prompt"
   | "deep-decode-result"
-  | "structured-analysis";
+  | "structured-analysis"
+  | "pattern-mirror";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -496,6 +497,52 @@ export interface StructuredAnalysisMessage extends Message {
   analysis: StructuredAnalysisResult;
 }
 
+// ============================================
+// PATTERN MIRROR TYPES
+// ============================================
+
+// Behavioral signal types tracked across conversations
+export type BehavioralSignalType =
+  | "effort_ratio"           // Message length vs theirs
+  | "double_texting"         // Sending multiple messages before response
+  | "emotional_intensity"    // Escalation in emotional tone
+  | "apology_frequency"      // Over-apologizing pattern
+  | "follow_up_timing"       // How quickly they follow up
+  | "response_speed";        // Response time imbalance
+
+// Individual signal occurrence
+export interface BehavioralSignal {
+  type: BehavioralSignalType;
+  timestamp: number;
+  context?: string;          // Brief context of when it occurred
+  severity: "low" | "medium" | "high";
+}
+
+// Aggregated pattern from multiple signals
+export interface BehavioralPattern {
+  type: BehavioralSignalType;
+  occurrences: number;
+  lastSeen: number;
+  avgSeverity: "low" | "medium" | "high";
+  contexts: string[];        // Recent contexts where this appeared
+}
+
+// Pattern Mirror insight output
+export interface PatternMirrorInsight {
+  patternType: BehavioralSignalType;
+  behavioralInsight: string;       // "Across recent conversations..."
+  strategicInterpretation: string; // How this affects dynamics
+  growthAdjustment: string;        // Calm strategic advice
+  occurrenceCount: number;
+  impactLevel: "moderate" | "significant";
+}
+
+// Message type for pattern mirror insights
+export interface PatternMirrorMessage extends Message {
+  role: "pattern-mirror";
+  insight: PatternMirrorInsight;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -539,4 +586,5 @@ export type ChatMessage =
   | ChatLoadingMessage
   | ResponsePromptMessage
   | DeepDecodeResultMessage
-  | StructuredAnalysisMessage;
+  | StructuredAnalysisMessage
+  | PatternMirrorMessage;

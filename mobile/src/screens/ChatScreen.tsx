@@ -51,7 +51,10 @@ import {
 import { DeepDiveEvaluationBubble } from "../components/DeepDiveEvaluationBubble";
 import { DeepDiveFollowUpCard } from "../components/DeepDiveFollowUpCard";
 import { StructuredAnalysisCard } from "../components/StructuredAnalysisCard";
+import { PatternMirrorCard } from "../components/PatternMirrorCard";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
+import { usePatternMirrorStore } from "../state/patternMirrorStore";
+import { detectBehavioralSignals } from "../utils/patternDetection";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -108,6 +111,7 @@ import {
   MessageMode,
   DeepDecodeResultMessage,
   StructuredAnalysisMessage,
+  PatternMirrorMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -1858,6 +1862,48 @@ Generate a new reply that follows the user's instruction while still responding 
         messages: conversationHistory.map(m => ({ role: m.role, content: m.content.substring(0, 30) }))
       });
 
+      // Pattern Mirror: Detect and record behavioral signals
+      const behavioralSignals = detectBehavioralSignals(userMessage.content, conversationHistory);
+      const { recordSignal, getInsightIfReady, markInsightShown } = usePatternMirrorStore.getState();
+
+      // Record detected signals
+      for (const signal of behavioralSignals) {
+        recordSignal(signal.type, signal.context, signal.severity);
+      }
+
+      // Check if we should surface a pattern insight
+      const patternInsight = getInsightIfReady();
+      if (patternInsight) {
+        // Add pattern mirror card before the response
+        const patternMsg: PatternMirrorMessage = {
+          id: `pattern-mirror-${Date.now()}`,
+          role: "pattern-mirror",
+          content: "",
+          timestamp: Date.now(),
+          mode: capturedMode,
+          insight: patternInsight,
+        };
+
+        // Remove loading briefly to insert pattern card
+        removeMessageFromActiveLoop(loadingMsgId);
+        addMessageWithMode(patternMsg, capturedMode);
+
+        // Mark insight as shown so we don't repeat it
+        markInsightShown(patternInsight.patternType);
+
+        // Re-add loading for the actual response
+        const newLoadingMsg: ChatLoadingMessage = {
+          id: `chat-loading-${Date.now()}`,
+          role: "chat-loading",
+          content: "",
+          timestamp: Date.now(),
+          loadingType: "chat",
+          loadingState: "loading",
+          mode: "understand",
+        };
+        addMessageToActiveLoopRaw(newLoadingMsg);
+      }
+
       // Generate decode response for text-only messages with streaming
       const assistantMsgId = Date.now().toString() + "_decode_response";
       let hasReceivedFirstChunk = false;
@@ -2806,6 +2852,20 @@ Generate a new reply that follows the user's instruction while still responding 
         <StructuredAnalysisCard
           key={message.id}
           analysis={analysisMsg.analysis}
+        />
+      );
+    }
+
+    // Pattern Mirror Card - behavioral pattern insights
+    if (message.role === "pattern-mirror") {
+      const patternMsg = message as PatternMirrorMessage;
+      return (
+        <PatternMirrorCard
+          key={message.id}
+          insight={patternMsg.insight}
+          onDismiss={() => {
+            // Optional: could remove the card from the loop
+          }}
         />
       );
     }

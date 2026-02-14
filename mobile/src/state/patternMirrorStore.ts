@@ -1,0 +1,211 @@
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  BehavioralSignal,
+  BehavioralSignalType,
+  BehavioralPattern,
+  PatternMirrorInsight,
+} from "../types/chat";
+
+// Minimum occurrences before surfacing a pattern
+const MIN_OCCURRENCES_TO_SURFACE = 3;
+
+// Pattern labels for insights
+const PATTERN_LABELS: Record<BehavioralSignalType, string> = {
+  effort_ratio: "effort imbalance",
+  double_texting: "multiple messages before response",
+  emotional_intensity: "emotional escalation",
+  apology_frequency: "frequent apologizing",
+  follow_up_timing: "quick follow-ups",
+  response_speed: "response timing gap",
+};
+
+// Strategic interpretations
+const STRATEGIC_INTERPRETATIONS: Record<BehavioralSignalType, string> = {
+  effort_ratio: "This can shift perceived investment levels. The one writing more often appears more invested.",
+  double_texting: "Multiple messages before a response can create unintended pressure and shift the dynamic.",
+  emotional_intensity: "Escalating emotional tone can put you in a reactive position rather than a strategic one.",
+  apology_frequency: "Repeated apologies can signal uncertainty even when none exists. It shifts the frame.",
+  follow_up_timing: "Quick follow-ups before they respond can reduce your positioning leverage.",
+  response_speed: "Consistently faster responses can create an uneven tempo that affects perceived value.",
+};
+
+// Growth adjustments
+const GROWTH_ADJUSTMENTS: Record<BehavioralSignalType, string> = {
+  effort_ratio: "Consider matching their message length. Let the ratio balance naturally.",
+  double_texting: "Try waiting for their response before adding more. Let them close the gap.",
+  emotional_intensity: "Observe before reacting. A measured response often has more impact.",
+  apology_frequency: "Reserve apologies for actual missteps. Your default position is neutral.",
+  follow_up_timing: "Give more space between messages. Their silence is information too.",
+  response_speed: "Match their tempo. If they're slow, you're slower.",
+};
+
+interface PatternMirrorState {
+  // All recorded signals
+  signals: BehavioralSignal[];
+
+  // Aggregated patterns (computed from signals)
+  patterns: BehavioralPattern[];
+
+  // Last time an insight was shown (to avoid spam)
+  lastInsightShown: Partial<Record<BehavioralSignalType, number>>;
+
+  // Actions
+  recordSignal: (type: BehavioralSignalType, context?: string, severity?: "low" | "medium" | "high") => void;
+  getPatterns: () => BehavioralPattern[];
+  getInsightIfReady: () => PatternMirrorInsight | null;
+  markInsightShown: (type: BehavioralSignalType) => void;
+  clearOldSignals: () => void;
+  resetPatterns: () => void;
+}
+
+// Helper to compute average severity
+function computeAvgSeverity(signals: BehavioralSignal[]): "low" | "medium" | "high" {
+  if (signals.length === 0) return "low";
+
+  const severityMap = { low: 1, medium: 2, high: 3 };
+  const total = signals.reduce((sum, s) => sum + severityMap[s.severity], 0);
+  const avg = total / signals.length;
+
+  if (avg >= 2.5) return "high";
+  if (avg >= 1.5) return "medium";
+  return "low";
+}
+
+// Helper to aggregate signals into patterns
+function aggregatePatterns(signals: BehavioralSignal[]): BehavioralPattern[] {
+  const byType = new Map<BehavioralSignalType, BehavioralSignal[]>();
+
+  // Group signals by type
+  for (const signal of signals) {
+    const existing = byType.get(signal.type) || [];
+    existing.push(signal);
+    byType.set(signal.type, existing);
+  }
+
+  // Convert to patterns
+  const patterns: BehavioralPattern[] = [];
+  for (const [type, typeSignals] of byType) {
+    if (typeSignals.length >= 2) { // At least 2 to start tracking
+      const sortedByTime = [...typeSignals].sort((a, b) => b.timestamp - a.timestamp);
+      patterns.push({
+        type,
+        occurrences: typeSignals.length,
+        lastSeen: sortedByTime[0].timestamp,
+        avgSeverity: computeAvgSeverity(typeSignals),
+        contexts: sortedByTime.slice(0, 3).map(s => s.context || "").filter(Boolean),
+      });
+    }
+  }
+
+  return patterns;
+}
+
+export const usePatternMirrorStore = create<PatternMirrorState>()(
+  persist(
+    (set, get) => ({
+      signals: [],
+      patterns: [],
+      lastInsightShown: {} as Partial<Record<BehavioralSignalType, number>>,
+
+      recordSignal: (type, context, severity = "medium") => {
+        const newSignal: BehavioralSignal = {
+          type,
+          timestamp: Date.now(),
+          context,
+          severity,
+        };
+
+        set((state) => {
+          const updatedSignals = [...state.signals, newSignal];
+          // Keep only last 30 days of signals
+          const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const filteredSignals = updatedSignals.filter(s => s.timestamp > cutoff);
+
+          return {
+            signals: filteredSignals,
+            patterns: aggregatePatterns(filteredSignals),
+          };
+        });
+      },
+
+      getPatterns: () => {
+        return get().patterns;
+      },
+
+      getInsightIfReady: () => {
+        const state = get();
+        const now = Date.now();
+        const cooldownPeriod = 24 * 60 * 60 * 1000; // 24 hours between same insight
+
+        // Find patterns that meet threshold and haven't been shown recently
+        for (const pattern of state.patterns) {
+          if (pattern.occurrences >= MIN_OCCURRENCES_TO_SURFACE) {
+            const lastShown = state.lastInsightShown[pattern.type] || 0;
+
+            if (now - lastShown > cooldownPeriod) {
+              // Determine impact level
+              const impactLevel: "moderate" | "significant" =
+                pattern.occurrences >= 5 || pattern.avgSeverity === "high"
+                  ? "significant"
+                  : "moderate";
+
+              const insight: PatternMirrorInsight = {
+                patternType: pattern.type,
+                behavioralInsight: `Across recent conversations, there's a pattern of ${PATTERN_LABELS[pattern.type]}.`,
+                strategicInterpretation: STRATEGIC_INTERPRETATIONS[pattern.type],
+                growthAdjustment: GROWTH_ADJUSTMENTS[pattern.type],
+                occurrenceCount: pattern.occurrences,
+                impactLevel,
+              };
+
+              return insight;
+            }
+          }
+        }
+
+        return null;
+      },
+
+      markInsightShown: (type) => {
+        set((state) => ({
+          lastInsightShown: {
+            ...state.lastInsightShown,
+            [type]: Date.now(),
+          },
+        }));
+      },
+
+      clearOldSignals: () => {
+        const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        set((state) => {
+          const filteredSignals = state.signals.filter(s => s.timestamp > cutoff);
+          return {
+            signals: filteredSignals,
+            patterns: aggregatePatterns(filteredSignals),
+          };
+        });
+      },
+
+      resetPatterns: () => {
+        set({
+          signals: [],
+          patterns: [],
+          lastInsightShown: {} as Partial<Record<BehavioralSignalType, number>>,
+        });
+      },
+    }),
+    {
+      name: "pattern-mirror-storage",
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);
+
+// Selector hooks for optimized re-renders
+export const usePatternCount = (type: BehavioralSignalType) =>
+  usePatternMirrorStore((s) => s.patterns.find(p => p.type === type)?.occurrences || 0);
+
+export const useHasActivePatterns = () =>
+  usePatternMirrorStore((s) => s.patterns.some(p => p.occurrences >= MIN_OCCURRENCES_TO_SURFACE));
