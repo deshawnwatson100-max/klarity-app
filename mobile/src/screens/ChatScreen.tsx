@@ -50,6 +50,7 @@ import {
 } from "../components/DeepSearchChatBubble";
 import { DeepDiveEvaluationBubble } from "../components/DeepDiveEvaluationBubble";
 import { DeepDiveFollowUpCard } from "../components/DeepDiveFollowUpCard";
+import { StructuredAnalysisCard } from "../components/StructuredAnalysisCard";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useFeedbackStore } from "../state/feedbackStore";
@@ -105,6 +106,7 @@ import {
   ChatLoadingMessage,
   MessageMode,
   DeepDecodeResultMessage,
+  StructuredAnalysisMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -2797,6 +2799,17 @@ Generate a new reply that follows the user's instruction while still responding 
         <DeepDecodeResultBubble
           key={message.id}
           result={decodeMsg.decodeResult}
+        />
+      );
+    }
+
+    // Structured Analysis Card - new format with signal strength and power moves
+    if (message.role === "structured-analysis") {
+      const analysisMsg = message as StructuredAnalysisMessage;
+      return (
+        <StructuredAnalysisCard
+          key={message.id}
+          analysis={analysisMsg.analysis}
         />
       );
     }

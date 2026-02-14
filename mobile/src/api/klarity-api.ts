@@ -3619,3 +3619,484 @@ Please take this into account in your analysis. Provide your analysis in the JSO
   }
 }
 
+// ============================================
+// STRUCTURED ANALYSIS TYPES & FUNCTIONS
+// ============================================
+
+import type {
+  StructuredAnalysisResult,
+  SignalStrength,
+  AttachmentStyle,
+  IntentProbability,
+  PatternRisk,
+} from "../types/chat";
+
+export async function generateStructuredAnalysis(
+  messageText: string,
+  additionalContext?: string
+): Promise<StructuredAnalysisResult> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are an emotionally intelligent communication analyst helping someone decode a message they received. Your analysis should feel like clarity from a trusted friend—direct, insightful, and actionable.
+
+## YOUR ROLE
+Analyze messages to provide:
+1. Surface-level meaning (what's literally being said)
+2. Hidden emotional subtext (what might actually be going on)
+3. Signal strength assessment (how concerning this is)
+4. Strategic response recommendations
+
+## RESPONSE FORMAT
+Provide your analysis in this exact JSON structure:
+
+{
+  "surfaceMeaning": "1-2 sentences explaining the literal meaning of the message. Keep it concise.",
+
+  "hiddenSubtext": [
+    {
+      "meaning": "Short label (e.g., 'Testing boundaries', 'Seeking validation')",
+      "explanation": "Brief explanation using probability language like 'could mean' or 'may suggest'"
+    }
+  ],
+
+  "signalStrength": "green" | "yellow" | "red",
+  "signalLabel": "Low Concern" | "Mixed Signals" | "Potential Red Flag",
+
+  "powerMoveExplanation": "One short psychological explanation of the best approach (1-2 sentences)",
+
+  "powerMoveReplies": [
+    {
+      "style": "calm",
+      "message": "A calm, measured response they could send"
+    },
+    {
+      "style": "direct",
+      "message": "A direct, clear response"
+    },
+    {
+      "style": "detached",
+      "message": "A slightly emotionally detached response"
+    }
+  ],
+
+  "deeperPattern": {
+    "attachmentStyle": "secure" | "anxious" | "avoidant" | "disorganized" | "unclear",
+    "attachmentExplanation": "Brief explanation of why this attachment style seems likely",
+    "intentProbability": "genuine" | "uncertain" | "likely_avoidant" | "testing",
+    "intentExplanation": "Brief explanation of the likely intent",
+    "patternRisk": "low" | "moderate" | "high",
+    "patternRiskExplanation": "What this pattern could mean long-term if repeated"
+  }
+}
+
+## SIGNAL STRENGTH GUIDELINES
+- GREEN (Low Concern): Clear communication, consistent behavior, no red flags
+- YELLOW (Mixed Signals): Some inconsistency, unclear intentions, minor concerns
+- RED (Potential Red Flag): Avoidance patterns, manipulation signs, emotional inconsistency
+
+## HIDDEN SUBTEXT GUIDELINES
+- Provide 3-4 bullet points
+- Focus on emotional drivers: insecurity, avoidance, testing boundaries, genuine interest, etc.
+- Use probability language: "could mean", "may suggest", "possibly indicates"
+- Be confident but not absolute
+
+## POWER MOVE REPLIES
+- Make them short and sendable (1-2 sentences max)
+- Each should reflect a genuinely different communication style
+- Calm: measured, warm, non-reactive
+- Direct: straightforward, no games, clear
+- Detached: slightly distant, not overly invested
+
+## VOICE & TONE
+- No therapy language or clinical terms
+- No robotic tone
+- Feel like emotionally intelligent clarity
+- Direct but not harsh`;
+
+  try {
+    console.log("[generateStructuredAnalysis] Starting analysis");
+
+    const userPrompt = additionalContext
+      ? `Analyze this message and help me understand what's really going on:
+
+"${messageText}"
+
+Additional context: ${additionalContext}
+
+Provide your analysis in the JSON format specified.`
+      : `Analyze this message and help me understand what's really going on:
+
+"${messageText}"
+
+Provide your analysis in the JSON format specified.`;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
+      max_completion_tokens: 1500,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    console.log("[generateStructuredAnalysis] API response received");
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      console.warn("[generateStructuredAnalysis] Empty content from API");
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    // Validate and return structured result
+    const validSignalStrengths: SignalStrength[] = ["green", "yellow", "red"];
+    const validAttachmentStyles: AttachmentStyle[] = ["secure", "anxious", "avoidant", "disorganized", "unclear"];
+    const validIntentProbabilities: IntentProbability[] = ["genuine", "uncertain", "likely_avoidant", "testing"];
+    const validPatternRisks: PatternRisk[] = ["low", "moderate", "high"];
+
+    const signalStrength: SignalStrength = validSignalStrengths.includes(parsed.signalStrength)
+      ? parsed.signalStrength
+      : "yellow";
+
+    const getSignalLabel = (strength: SignalStrength): string => {
+      switch (strength) {
+        case "green":
+          return "Low Concern";
+        case "yellow":
+          return "Mixed Signals";
+        case "red":
+          return "Potential Red Flag";
+      }
+    };
+
+    const result: StructuredAnalysisResult = {
+      surfaceMeaning: parsed.surfaceMeaning || "Unable to determine the surface meaning.",
+
+      hiddenSubtext: Array.isArray(parsed.hiddenSubtext)
+        ? parsed.hiddenSubtext.slice(0, 4).map((item: { meaning?: string; explanation?: string }) => ({
+            meaning: item.meaning || "Unknown pattern",
+            explanation: item.explanation || "",
+          }))
+        : [],
+
+      signalStrength,
+      signalLabel: parsed.signalLabel || getSignalLabel(signalStrength),
+
+      powerMoveExplanation: parsed.powerMoveExplanation || "Consider your response carefully.",
+
+      powerMoveReplies: Array.isArray(parsed.powerMoveReplies)
+        ? parsed.powerMoveReplies.slice(0, 3).map((reply: { style?: string; message?: string }) => ({
+            style: (["calm", "direct", "detached"].includes(reply.style || "") ? reply.style : "calm") as "calm" | "direct" | "detached",
+            message: reply.message || "",
+          }))
+        : [
+            { style: "calm" as const, message: "I appreciate you sharing that with me." },
+            { style: "direct" as const, message: "Can you help me understand what you mean?" },
+            { style: "detached" as const, message: "Okay, noted." },
+          ],
+
+      deeperPattern: parsed.deeperPattern
+        ? {
+            attachmentStyle: validAttachmentStyles.includes(parsed.deeperPattern.attachmentStyle)
+              ? parsed.deeperPattern.attachmentStyle
+              : "unclear",
+            attachmentExplanation: parsed.deeperPattern.attachmentExplanation || "More context needed to determine attachment patterns.",
+            intentProbability: validIntentProbabilities.includes(parsed.deeperPattern.intentProbability)
+              ? parsed.deeperPattern.intentProbability
+              : "uncertain",
+            intentExplanation: parsed.deeperPattern.intentExplanation || "Intent is unclear from this message alone.",
+            patternRisk: validPatternRisks.includes(parsed.deeperPattern.patternRisk)
+              ? parsed.deeperPattern.patternRisk
+              : "moderate",
+            patternRiskExplanation: parsed.deeperPattern.patternRiskExplanation || "Consider observing this pattern over time.",
+          }
+        : undefined,
+    };
+
+    return result;
+  } catch (error: unknown) {
+    console.error("[generateStructuredAnalysis] Analysis failed:", error);
+
+    // Return a graceful fallback
+    return {
+      surfaceMeaning: "Unable to analyze this message. Please try again.",
+      hiddenSubtext: [
+        {
+          meaning: "Analysis unavailable",
+          explanation: "Could not process the message at this time.",
+        },
+      ],
+      signalStrength: "yellow",
+      signalLabel: "Mixed Signals",
+      powerMoveExplanation: "Take a moment before responding.",
+      powerMoveReplies: [
+        { style: "calm", message: "I'd like to understand better." },
+        { style: "direct", message: "Can you clarify what you mean?" },
+        { style: "detached", message: "I'll think about it." },
+      ],
+    };
+  }
+}
+
+export async function generateStructuredAnalysisFromImage(
+  imagesBase64: string[],
+  additionalContext?: string
+): Promise<StructuredAnalysisResult> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are an emotionally intelligent communication analyst helping someone decode a conversation from screenshots. Your analysis should feel like clarity from a trusted friend—direct, insightful, and actionable.
+
+## YOUR ROLE
+Analyze conversation screenshots to provide:
+1. Surface-level meaning (what's literally being said)
+2. Hidden emotional subtext (what might actually be going on)
+3. Signal strength assessment (how concerning this is)
+4. Strategic response recommendations
+
+## RESPONSE FORMAT
+Provide your analysis in this exact JSON structure:
+
+{
+  "surfaceMeaning": "1-2 sentences explaining the literal meaning of the conversation. Keep it concise.",
+
+  "hiddenSubtext": [
+    {
+      "meaning": "Short label (e.g., 'Testing boundaries', 'Seeking validation')",
+      "explanation": "Brief explanation using probability language like 'could mean' or 'may suggest'"
+    }
+  ],
+
+  "signalStrength": "green" | "yellow" | "red",
+  "signalLabel": "Low Concern" | "Mixed Signals" | "Potential Red Flag",
+
+  "powerMoveExplanation": "One short psychological explanation of the best approach (1-2 sentences)",
+
+  "powerMoveReplies": [
+    {
+      "style": "calm",
+      "message": "A calm, measured response they could send"
+    },
+    {
+      "style": "direct",
+      "message": "A direct, clear response"
+    },
+    {
+      "style": "detached",
+      "message": "A slightly emotionally detached response"
+    }
+  ],
+
+  "deeperPattern": {
+    "attachmentStyle": "secure" | "anxious" | "avoidant" | "disorganized" | "unclear",
+    "attachmentExplanation": "Brief explanation of why this attachment style seems likely",
+    "intentProbability": "genuine" | "uncertain" | "likely_avoidant" | "testing",
+    "intentExplanation": "Brief explanation of the likely intent",
+    "patternRisk": "low" | "moderate" | "high",
+    "patternRiskExplanation": "What this pattern could mean long-term if repeated"
+  }
+}
+
+## SIGNAL STRENGTH GUIDELINES
+- GREEN (Low Concern): Clear communication, consistent behavior, no red flags
+- YELLOW (Mixed Signals): Some inconsistency, unclear intentions, minor concerns
+- RED (Potential Red Flag): Avoidance patterns, manipulation signs, emotional inconsistency
+
+## HIDDEN SUBTEXT GUIDELINES
+- Provide 3-4 bullet points
+- Focus on emotional drivers: insecurity, avoidance, testing boundaries, genuine interest, etc.
+- Use probability language: "could mean", "may suggest", "possibly indicates"
+- Be confident but not absolute
+
+## POWER MOVE REPLIES
+- Make them short and sendable (1-2 sentences max)
+- Each should reflect a genuinely different communication style
+- Calm: measured, warm, non-reactive
+- Direct: straightforward, no games, clear
+- Detached: slightly distant, not overly invested
+
+## VOICE & TONE
+- No therapy language or clinical terms
+- No robotic tone
+- Feel like emotionally intelligent clarity
+- Direct but not harsh`;
+
+  try {
+    console.log("[generateStructuredAnalysisFromImage] Starting analysis of", imagesBase64.length, "images");
+
+    // Build the image content array
+    const imageContent = imagesBase64.map((base64) => ({
+      type: "image_url" as const,
+      image_url: {
+        url: `data:image/jpeg;base64,${base64}`,
+        detail: "high" as const,
+      },
+    }));
+
+    const userPrompt = additionalContext
+      ? `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what's really going on.
+
+Additional context: ${additionalContext}
+
+Provide your analysis in the JSON format specified.`
+      : `Analyze ${imagesBase64.length > 1 ? "these conversation screenshots" : "this conversation screenshot"} and help me understand what's really going on.
+
+Provide your analysis in the JSON format specified.`;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            ...imageContent,
+            {
+              type: "text",
+              text: userPrompt,
+            },
+          ],
+        },
+      ],
+      max_completion_tokens: 2000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    console.log("[generateStructuredAnalysisFromImage] API response received");
+    const content = completion.choices[0]?.message?.content || "";
+
+    if (!content) {
+      console.warn("[generateStructuredAnalysisFromImage] Empty content from API");
+      throw new Error("Empty response from API");
+    }
+
+    // Parse JSON response
+    let jsonStr = content.trim();
+    jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+
+    // Validate and return structured result (same validation as text version)
+    const validSignalStrengths: SignalStrength[] = ["green", "yellow", "red"];
+    const validAttachmentStyles: AttachmentStyle[] = ["secure", "anxious", "avoidant", "disorganized", "unclear"];
+    const validIntentProbabilities: IntentProbability[] = ["genuine", "uncertain", "likely_avoidant", "testing"];
+    const validPatternRisks: PatternRisk[] = ["low", "moderate", "high"];
+
+    const signalStrength: SignalStrength = validSignalStrengths.includes(parsed.signalStrength)
+      ? parsed.signalStrength
+      : "yellow";
+
+    const getSignalLabel = (strength: SignalStrength): string => {
+      switch (strength) {
+        case "green":
+          return "Low Concern";
+        case "yellow":
+          return "Mixed Signals";
+        case "red":
+          return "Potential Red Flag";
+      }
+    };
+
+    const result: StructuredAnalysisResult = {
+      surfaceMeaning: parsed.surfaceMeaning || "Unable to determine the surface meaning.",
+
+      hiddenSubtext: Array.isArray(parsed.hiddenSubtext)
+        ? parsed.hiddenSubtext.slice(0, 4).map((item: { meaning?: string; explanation?: string }) => ({
+            meaning: item.meaning || "Unknown pattern",
+            explanation: item.explanation || "",
+          }))
+        : [],
+
+      signalStrength,
+      signalLabel: parsed.signalLabel || getSignalLabel(signalStrength),
+
+      powerMoveExplanation: parsed.powerMoveExplanation || "Consider your response carefully.",
+
+      powerMoveReplies: Array.isArray(parsed.powerMoveReplies)
+        ? parsed.powerMoveReplies.slice(0, 3).map((reply: { style?: string; message?: string }) => ({
+            style: (["calm", "direct", "detached"].includes(reply.style || "") ? reply.style : "calm") as "calm" | "direct" | "detached",
+            message: reply.message || "",
+          }))
+        : [
+            { style: "calm" as const, message: "I appreciate you sharing that with me." },
+            { style: "direct" as const, message: "Can you help me understand what you mean?" },
+            { style: "detached" as const, message: "Okay, noted." },
+          ],
+
+      deeperPattern: parsed.deeperPattern
+        ? {
+            attachmentStyle: validAttachmentStyles.includes(parsed.deeperPattern.attachmentStyle)
+              ? parsed.deeperPattern.attachmentStyle
+              : "unclear",
+            attachmentExplanation: parsed.deeperPattern.attachmentExplanation || "More context needed to determine attachment patterns.",
+            intentProbability: validIntentProbabilities.includes(parsed.deeperPattern.intentProbability)
+              ? parsed.deeperPattern.intentProbability
+              : "uncertain",
+            intentExplanation: parsed.deeperPattern.intentExplanation || "Intent is unclear from this conversation alone.",
+            patternRisk: validPatternRisks.includes(parsed.deeperPattern.patternRisk)
+              ? parsed.deeperPattern.patternRisk
+              : "moderate",
+            patternRiskExplanation: parsed.deeperPattern.patternRiskExplanation || "Consider observing this pattern over time.",
+          }
+        : undefined,
+    };
+
+    return result;
+  } catch (error: unknown) {
+    console.error("[generateStructuredAnalysisFromImage] Analysis failed:", error);
+
+    // Return a graceful fallback
+    return {
+      surfaceMeaning: "Unable to analyze this conversation. Please try again with clearer screenshots.",
+      hiddenSubtext: [
+        {
+          meaning: "Analysis unavailable",
+          explanation: "Could not process the images at this time.",
+        },
+      ],
+      signalStrength: "yellow",
+      signalLabel: "Mixed Signals",
+      powerMoveExplanation: "Take a moment before responding.",
+      powerMoveReplies: [
+        { style: "calm", message: "I'd like to understand better." },
+        { style: "direct", message: "Can you clarify what you mean?" },
+        { style: "detached", message: "I'll think about it." },
+      ],
+    };
+  }
+}
+

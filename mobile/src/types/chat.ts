@@ -41,7 +41,8 @@ export type MessageRole =
   | "deep-dive-follow-up"
   | "chat-loading"
   | "response-prompt"
-  | "deep-decode-result";
+  | "deep-decode-result"
+  | "structured-analysis";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -424,6 +425,77 @@ export interface DeepDecodeResultMessage extends Message {
   };
 }
 
+// ============================================
+// STRUCTURED ANALYSIS TYPES
+// ============================================
+
+// Signal strength levels for clarity indicator
+export type SignalStrength = "green" | "yellow" | "red";
+
+// Reply style options for power move
+export type ReplyStyle = "calm" | "direct" | "detached";
+
+// Attachment style classifications
+export type AttachmentStyle = "secure" | "anxious" | "avoidant" | "disorganized" | "unclear";
+
+// Intent probability levels
+export type IntentProbability = "genuine" | "uncertain" | "likely_avoidant" | "testing";
+
+// Risk level for pattern tracking
+export type PatternRisk = "low" | "moderate" | "high";
+
+// Hidden subtext item
+export interface HiddenSubtextItem {
+  meaning: string;
+  explanation: string;
+}
+
+// Power move reply option
+export interface PowerMoveReply {
+  style: ReplyStyle;
+  message: string;
+}
+
+// Deeper pattern analysis (premium feature)
+export interface DeeperPatternAnalysis {
+  attachmentStyle: AttachmentStyle;
+  attachmentExplanation: string;
+  intentProbability: IntentProbability;
+  intentExplanation: string;
+  patternRisk: PatternRisk;
+  patternRiskExplanation: string;
+}
+
+// Main structured analysis result
+export interface StructuredAnalysisResult {
+  // Section 1: Surface Meaning
+  surfaceMeaning: string;
+
+  // Section 2: Hidden Subtext (3-4 bullet points)
+  hiddenSubtext: HiddenSubtextItem[];
+
+  // Section 3: Signal Strength Indicator
+  signalStrength: SignalStrength;
+  signalLabel: string; // "Low Concern" | "Mixed Signals" | "Potential Red Flag"
+
+  // Section 4: Power Move Recommendation
+  powerMoveExplanation: string;
+  powerMoveReplies: PowerMoveReply[];
+
+  // Section 5: Deeper Pattern Analysis (optional/expandable)
+  deeperPattern?: DeeperPatternAnalysis;
+
+  // Future scalability fields
+  clarityScore?: number; // 1-100 for future implementation
+  contactId?: string; // For tracking patterns per contact
+}
+
+// Message type for structured analysis
+export interface StructuredAnalysisMessage extends Message {
+  role: "structured-analysis";
+  analysis: StructuredAnalysisResult;
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -466,4 +538,5 @@ export type ChatMessage =
   | DeepDiveFollowUpMessage
   | ChatLoadingMessage
   | ResponsePromptMessage
-  | DeepDecodeResultMessage;
+  | DeepDecodeResultMessage
+  | StructuredAnalysisMessage;

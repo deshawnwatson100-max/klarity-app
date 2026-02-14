@@ -8,6 +8,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 
 - **Real-time AI conversations** with emotional intelligence
 - **Emotional analysis** of messages (clarity %, detected state, relationship risk)
+- **Structured Analysis Cards** - New modular format with surface meaning, hidden subtext, signal strength, and power move recommendations
 - **Relationship Direction Selector** - Choose your intention and get tailored guidance
 - **Smart response suggestions** with different tones based on your chosen path
 - **Past loops system** - Save and switch between conversation sessions
@@ -224,6 +225,66 @@ A powerful feature that lets users upload conversation screenshots for comprehen
 - `src/components/DeepDecodeResultBubble.tsx` - Floating text bubble for chat loop
 - `src/api/klarity-api.ts` - `analyzeDeepDecode()` function
 - `src/types/chat.ts` - `DeepDecodeResultMessage` type
+
+### Structured Analysis Cards
+
+A new modular analysis format designed for UX consistency and future scalability. Provides emotionally intelligent clarity with a clean, scannable mobile-first layout.
+
+**Structure:**
+
+1. **Surface Meaning Section**
+   - Title: "What this is saying on the surface"
+   - One short paragraph explaining the literal meaning (2-3 sentences max)
+
+2. **Hidden Subtext Section**
+   - Title: "What this could actually mean emotionally"
+   - 3-4 bullet points reflecting possible emotional drivers
+   - Uses probability language like "could mean" or "may suggest"
+   - Covers: insecurity, avoidance, testing boundaries, genuine interest, etc.
+
+3. **Signal Strength Indicator**
+   - Title: "Signal Strength"
+   - Visual color-coded states:
+     - Green (Low Concern) - Clear communication, no red flags
+     - Yellow (Mixed Signals) - Some inconsistency, minor concerns
+     - Red (Potential Red Flag) - Avoidance patterns, manipulation signs
+   - Determined by emotional inconsistency, avoidance signals, or clarity of communication
+
+4. **Power Move Recommendation**
+   - Title: "Your Strongest Move"
+   - One short psychological explanation
+   - 3 selectable reply styles:
+     - **Calm** - Measured, warm, non-reactive
+     - **Direct** - Straightforward, no games, clear
+     - **Detached** - Slightly distant, not overly invested
+   - Each generates a short, sendable message (no essays)
+   - Tap to expand and copy
+
+5. **Optional Expansion Button**
+   - Button: "Understand the deeper pattern"
+   - Expands to show:
+     - **Attachment Style Possibility** - Secure, Anxious, Avoidant, Disorganized, or Unclear
+     - **Intent Probability** - Genuine, Uncertain, Likely Avoidant, or Testing
+     - **Long-term Pattern Risk** - Low, Moderate, or High risk if repeated
+
+**UX Rules:**
+- No long paragraphs
+- No therapy language
+- No robotic tone
+- Feels like emotionally intelligent clarity
+- Clean spacing and scannable layout
+- Mobile-first design
+
+**Future Scalability:**
+- Modular component-based structure for toggling sections (free vs premium tiers)
+- Clarity Score (1-100) ready for implementation
+- Contact ID field for tracking repeated behavioral patterns per contact
+- Signal strength history tracking per contact
+
+**Files:**
+- `src/components/StructuredAnalysisCard.tsx` - Main card component with all 5 sections
+- `src/api/klarity-api.ts` - `generateStructuredAnalysis()` and `generateStructuredAnalysisFromImage()` functions
+- `src/types/chat.ts` - `StructuredAnalysisResult`, `StructuredAnalysisMessage`, and related types
 
 ### Screen 1: Input/Welcome Screen
 - **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
