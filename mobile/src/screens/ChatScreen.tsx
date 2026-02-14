@@ -72,6 +72,7 @@ import {
   analyzeLightDecodeImage,
   analyzeDeepDecode,
   DeepDecodeResult,
+  generateStructuredAnalysisFromImage,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -1818,32 +1819,27 @@ Generate a new reply that follows the user's instruction while still responding 
         }
       }
 
-      // Check if user sent an image - use light decode image analysis
+      // Check if user sent an image - use structured analysis
       if (userMessage.imageBase64) {
-        const imageResult = await analyzeLightDecodeImage(
-          userMessage.imageBase64,
-          conversationHistory
+        // Generate structured analysis from the image
+        const structuredResult = await generateStructuredAnalysisFromImage(
+          [userMessage.imageBase64],
+          undefined // No additional context for now
         );
 
         // Remove loading bubble
         removeMessageFromActiveLoop(loadingMsgId);
 
-        // Use the friendly conversational response
-        let responseContent = imageResult.friendlyResponse;
-
-        // Add the concern prompt if available (gentle invitation for user to share their concern)
-        if (imageResult.concernPrompt) {
-          responseContent += `\n\n${imageResult.concernPrompt}`;
-        }
-
-        // Add assistant response
-        const assistantMsg: ChatMessage = {
-          id: Date.now().toString() + "_decode_image_response",
-          role: "assistant",
-          content: responseContent,
+        // Add structured analysis card
+        const analysisMsg: StructuredAnalysisMessage = {
+          id: Date.now().toString() + "_structured_analysis",
+          role: "structured-analysis",
+          content: "",
           timestamp: Date.now(),
+          mode: capturedMode,
+          analysis: structuredResult,
         };
-        addMessageWithMode(assistantMsg, capturedMode);
+        addMessageWithMode(analysisMsg, capturedMode);
 
         // Scroll to show response
         setTimeout(() => {
