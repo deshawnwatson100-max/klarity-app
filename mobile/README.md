@@ -2246,12 +2246,22 @@ The theme provides consistent color tokens across both themes:
 A self-awareness layer that tracks user behavioral tendencies across conversations, helping users recognize patterns that may affect their communication dynamics.
 
 #### Tracked Behavioral Signals
+
+**Negative Patterns** (areas for adjustment):
 - **Effort Ratio** - Message length vs theirs (over-investing in conversation)
 - **Double Texting** - Sending multiple messages before receiving a response
 - **Emotional Intensity** - Escalation in emotional tone
 - **Apology Frequency** - Over-apologizing patterns
 - **Follow-up Timing** - How quickly they follow up without response
 - **Response Speed** - Response time imbalances (responding too fast)
+
+**Positive Patterns** (competence recognition):
+- **Consistent Pacing** - Balanced response timing
+- **Emotional Restraint** - Controlled emotional expression
+- **Balanced Effort** - Proportional message investment
+- **Boundary Maintenance** - Clear limits preserved
+- **Reduced Over-explaining** - Concise without over-justifying
+- **Controlled Tone** - Stable tone across exchanges
 
 #### Dual-Layer Architecture
 Pattern Mirror tracks patterns at two levels:
@@ -2277,9 +2287,18 @@ Pattern Mirror tracks patterns at two levels:
 - `src/utils/patternDetection.ts` - Regex-based signal detection
 
 #### Pattern Mirror Card Display
+
+**Negative Pattern Cards:**
 - Purple accent color (#A78BFA dark / #7C3AED light)
 - Shows: Pattern Detected, Strategic Read, Adjustment
-- Optional "This pattern also appears across your other conversations" for global reinforcement
+- Optional global reinforcement note
 - Occurrence count indicator
 - "Got it" dismissal button
+
+**Positive Pattern Cards:**
+- Teal accent color (#5EEAD4 dark / #0D9488 light)
+- Shows: Positive Pattern, Why This Matters, Reinforcement
+- Structure: recognition of competence, not encouragement
+- Tone: strategic and composed, no hype or praise
+- Example reinforcement: "This strengthens your position."
 

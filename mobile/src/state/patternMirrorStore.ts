@@ -14,32 +14,56 @@ const MIN_OCCURRENCES_TO_SURFACE = 3;
 
 // Pattern labels for insights
 const PATTERN_LABELS: Record<BehavioralSignalType, string> = {
+  // Negative patterns
   effort_ratio: "effort imbalance",
   double_texting: "multiple messages before response",
   emotional_intensity: "emotional escalation",
   apology_frequency: "frequent apologizing",
   follow_up_timing: "quick follow-ups",
   response_speed: "response timing gap",
+  // Positive patterns
+  consistent_pacing: "consistent pacing",
+  emotional_restraint: "emotional restraint",
+  balanced_effort: "balanced effort",
+  boundary_maintenance: "boundary maintenance",
+  reduced_overexplaining: "reduced over-explaining",
+  controlled_tone: "controlled tone",
 };
 
-// Strategic interpretations
+// Strategic interpretations (why this matters)
 const STRATEGIC_INTERPRETATIONS: Record<BehavioralSignalType, string> = {
+  // Negative patterns
   effort_ratio: "This can shift perceived investment levels. The one writing more often appears more invested.",
   double_texting: "Multiple messages before a response can create unintended pressure and shift the dynamic.",
   emotional_intensity: "Escalating emotional tone can put you in a reactive position rather than a strategic one.",
   apology_frequency: "Repeated apologies can signal uncertainty even when none exists. It shifts the frame.",
   follow_up_timing: "Quick follow-ups before they respond can reduce your positioning leverage.",
   response_speed: "Consistently faster responses can create an uneven tempo that affects perceived value.",
+  // Positive patterns (why this matters)
+  consistent_pacing: "Steady tempo signals composure. It removes urgency from the dynamic.",
+  emotional_restraint: "Measured expression preserves clarity. The message lands without noise.",
+  balanced_effort: "Proportional investment keeps the exchange neutral. Neither side over-commits.",
+  boundary_maintenance: "Clear limits establish frame. The other person knows where they stand.",
+  reduced_overexplaining: "Brevity signals confidence. Over-justification weakens position.",
+  controlled_tone: "Stable tone across exchanges projects steadiness. It anchors the conversation.",
 };
 
-// Growth adjustments
+// Growth adjustments / reinforcement lines
 const GROWTH_ADJUSTMENTS: Record<BehavioralSignalType, string> = {
+  // Negative patterns
   effort_ratio: "Consider matching their message length. Let the ratio balance naturally.",
   double_texting: "Try waiting for their response before adding more. Let them close the gap.",
   emotional_intensity: "Observe before reacting. A measured response often has more impact.",
   apology_frequency: "Reserve apologies for actual missteps. Your default position is neutral.",
   follow_up_timing: "Give more space between messages. Their silence is information too.",
   response_speed: "Match their tempo. If they're slow, you're slower.",
+  // Positive patterns (reinforcement lines)
+  consistent_pacing: "This strengthens your position.",
+  emotional_restraint: "This preserves your leverage.",
+  balanced_effort: "This keeps the dynamic even.",
+  boundary_maintenance: "This anchors your frame.",
+  reduced_overexplaining: "This signals confidence.",
+  controlled_tone: "This steadies the exchange.",
 };
 
 // Key for contact-specific insight cooldowns

@@ -511,7 +511,24 @@ export type BehavioralSignalType =
   | "emotional_intensity"    // Escalation in emotional tone
   | "apology_frequency"      // Over-apologizing pattern
   | "follow_up_timing"       // How quickly they follow up
-  | "response_speed";        // Response time imbalance
+  | "response_speed"         // Response time imbalance
+  // Positive signals
+  | "consistent_pacing"      // Balanced response timing
+  | "emotional_restraint"    // Controlled emotional expression
+  | "balanced_effort"        // Proportional message investment
+  | "boundary_maintenance"   // Clear limits preserved
+  | "reduced_overexplaining" // Concise without over-justifying
+  | "controlled_tone";       // Stable tone across exchanges
+
+// Positive signal types for classification
+export const POSITIVE_SIGNAL_TYPES: BehavioralSignalType[] = [
+  "consistent_pacing",
+  "emotional_restraint",
+  "balanced_effort",
+  "boundary_maintenance",
+  "reduced_overexplaining",
+  "controlled_tone",
+];
 
 // Individual signal occurrence
 export interface BehavioralSignal {

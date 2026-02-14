@@ -130,6 +130,90 @@ export function detectBehavioralSignals(
     }
   }
 
+  // ============================================
+  // POSITIVE SIGNAL DETECTION
+  // ============================================
+
+  // Only check positive signals if no negative signals detected
+  // This prevents mixed signals and keeps the feedback clear
+  if (signals.length === 0) {
+    // 7. Consistent pacing detection
+    // Check if user is demonstrating balanced response patterns
+    const showsBalancedPacing = !(/\b(immediately|right away|asap|urgent|now)\b/i.test(lowerMessage));
+    if (showsBalancedPacing && userMessage.length < 250 && userMessage.length > 20) {
+      signals.push({
+        type: "consistent_pacing",
+        severity: "low",
+        context: "Measured response timing",
+      });
+    }
+
+    // 8. Emotional restraint detection
+    // Message discusses emotional situation but maintains composure
+    const emotionalContext = /\b(feel|felt|upset|frustrated|annoyed|hurt)\b/i.test(lowerMessage);
+    const noEscalation = !(/!{2,}|\?{2,}|wtf|omg/i.test(lowerMessage));
+    const observational = /\b(noticed|seems|appears|might be|could be|wondering)\b/i.test(lowerMessage);
+
+    if (emotionalContext && noEscalation && observational) {
+      signals.push({
+        type: "emotional_restraint",
+        severity: "low",
+        context: "Controlled emotional expression",
+      });
+    }
+
+    // 9. Balanced effort detection
+    // Reasonable message length without over-explaining
+    if (userMessage.length >= 30 && userMessage.length <= 150) {
+      const noOverJustifying = !(/\b(because|the reason|i just wanted to|i didn't mean)\b/i.test(lowerMessage));
+      if (noOverJustifying) {
+        signals.push({
+          type: "balanced_effort",
+          severity: "low",
+          context: "Proportional message investment",
+        });
+      }
+    }
+
+    // 10. Boundary maintenance detection
+    const boundaryLanguage = /\b(not okay with|won't|can't do that|need space|my limit|prefer not to)\b/i.test(lowerMessage);
+    const calmTone = !(/!{2,}|\?{2,}|wtf|seriously/i.test(lowerMessage));
+
+    if (boundaryLanguage && calmTone) {
+      signals.push({
+        type: "boundary_maintenance",
+        severity: "low",
+        context: "Clear limit stated",
+      });
+    }
+
+    // 11. Reduced over-explaining detection
+    // Short, direct message without excessive justification
+    const noExcessiveJustification = !(/\b(because|i just|i only|i was just|the thing is|it's just that)\b/i.test(lowerMessage));
+    const concise = userMessage.length <= 100 && userMessage.split(/[.!?]/).length <= 3;
+
+    if (noExcessiveJustification && concise && userMessage.length > 15) {
+      signals.push({
+        type: "reduced_overexplaining",
+        severity: "low",
+        context: "Direct and concise",
+      });
+    }
+
+    // 12. Controlled tone detection
+    // Message is neutral/calm despite discussing conflict or tension
+    const conflictContext = /\b(disagreed?|argument|conflict|issue|problem|tension)\b/i.test(lowerMessage);
+    const neutralTone = /\b(understand|fair|makes sense|see their point|valid)\b/i.test(lowerMessage);
+
+    if (conflictContext && neutralTone && noEscalation) {
+      signals.push({
+        type: "controlled_tone",
+        severity: "low",
+        context: "Stable tone in tension",
+      });
+    }
+  }
+
   return signals;
 }
 

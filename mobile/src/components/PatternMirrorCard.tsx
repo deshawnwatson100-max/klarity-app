@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../theme";
-import { PatternMirrorInsight } from "../types/chat";
+import { PatternMirrorInsight, POSITIVE_SIGNAL_TYPES } from "../types/chat";
 
 interface PatternMirrorCardProps {
   insight: PatternMirrorInsight;
@@ -13,7 +13,13 @@ interface PatternMirrorCardProps {
 export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps) {
   const { colors, isDark } = useTheme();
 
-  const accentColor = isDark ? "#A78BFA" : "#7C3AED"; // Purple for pattern insights
+  // Determine if this is a positive pattern
+  const isPositive = POSITIVE_SIGNAL_TYPES.includes(insight.patternType);
+
+  // Purple for negative patterns, teal/green for positive
+  const accentColor = isPositive
+    ? (isDark ? "#5EEAD4" : "#0D9488") // Teal for positive
+    : (isDark ? "#A78BFA" : "#7C3AED"); // Purple for negative
 
   const handleDismiss = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -42,13 +48,19 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
             width: 28,
             height: 28,
             borderRadius: 14,
-            backgroundColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.1)",
+            backgroundColor: isPositive
+              ? (isDark ? "rgba(94, 234, 212, 0.15)" : "rgba(13, 148, 136, 0.1)")
+              : (isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.1)"),
             alignItems: "center",
             justifyContent: "center",
             marginRight: 8,
           }}
         >
-          <Ionicons name="analytics-outline" size={14} color={accentColor} />
+          <Ionicons
+            name={isPositive ? "checkmark-circle-outline" : "analytics-outline"}
+            size={14}
+            color={accentColor}
+          />
         </View>
         <Text
           style={{
@@ -64,7 +76,9 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
       {/* Main Card */}
       <View
         style={{
-          backgroundColor: isDark ? "rgba(167, 139, 250, 0.08)" : "rgba(124, 58, 237, 0.04)",
+          backgroundColor: isPositive
+            ? (isDark ? "rgba(94, 234, 212, 0.08)" : "rgba(13, 148, 136, 0.04)")
+            : (isDark ? "rgba(167, 139, 250, 0.08)" : "rgba(124, 58, 237, 0.04)"),
           borderRadius: 16,
           borderLeftWidth: 3,
           borderLeftColor: accentColor,
@@ -84,7 +98,7 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
               marginBottom: 4,
             }}
           >
-            Pattern Detected
+            {isPositive ? "Positive Pattern" : "Pattern Detected"}
           </Text>
           <Text
             style={{
@@ -97,7 +111,7 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
           </Text>
         </View>
 
-        {/* Strategic Interpretation */}
+        {/* Strategic Interpretation / Why This Matters */}
         <View>
           <Text
             style={{
@@ -109,7 +123,7 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
               marginBottom: 4,
             }}
           >
-            Strategic Read
+            {isPositive ? "Why This Matters" : "Strategic Read"}
           </Text>
           <Text
             style={{
@@ -122,7 +136,7 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
           </Text>
         </View>
 
-        {/* Growth Adjustment */}
+        {/* Growth Adjustment / Reinforcement */}
         <View
           style={{
             backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
@@ -140,7 +154,7 @@ export function PatternMirrorCard({ insight, onDismiss }: PatternMirrorCardProps
               marginBottom: 4,
             }}
           >
-            Adjustment
+            {isPositive ? "Reinforcement" : "Adjustment"}
           </Text>
           <Text
             style={{
