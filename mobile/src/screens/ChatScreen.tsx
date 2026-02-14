@@ -1849,6 +1849,11 @@ Generate a new reply that follows the user's instruction while still responding 
 
         responseContent += `**Something to consider:** ${imageResult.somethingToConsider}`;
 
+        // Add the concern prompt if available (gentle invitation for user to share their concern)
+        if (imageResult.concernPrompt) {
+          responseContent += `\n\n---\n\n${imageResult.concernPrompt}`;
+        }
+
         // Add assistant response
         const assistantMsg: ChatMessage = {
           id: Date.now().toString() + "_decode_image_response",

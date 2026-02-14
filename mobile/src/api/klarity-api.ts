@@ -3251,6 +3251,7 @@ export interface LightDecodeImageResult {
     response: string;
   }[];
   somethingToConsider: string;
+  concernPrompt?: string; // Gentle question to ask about user's specific concern if not already stated
 }
 
 export async function analyzeLightDecodeImage(
@@ -3343,7 +3344,9 @@ Provide your analysis in this JSON structure:
     }
   ],
 
-  "somethingToConsider": "A thoughtful question or reflection point that helps the user think deeper about this interaction"
+  "somethingToConsider": "A thoughtful question or reflection point that helps the user think deeper about this interaction",
+
+  "concernPrompt": "A gentle, context-specific question asking what specifically worries or confuses them about this conversation — make it feel natural and caring, not clinical (e.g., 'Is there something specific about their response that's sitting with you?' or 'What part of this feels most unclear right now?')"
 }
 
 ## VOICE & TONE
@@ -3355,7 +3358,18 @@ Provide your analysis in this JSON structure:
 - Make them sound natural and human (use casual language, emojis where appropriate)
 - Each should reflect a different communication style
 - Keep them concise (1-2 sentences max)
-- Make them actually usable — something they could copy and send`;
+- Make them actually usable — something they could copy and send
+
+## CONCERN PROMPT GUIDELINES
+- Make it specific to what you observed in the conversation (not generic)
+- Frame it as curiosity, not interrogation
+- Keep it warm and open-ended
+- Examples of good concern prompts:
+  - "Is there something about the way they responded that's bothering you?"
+  - "What made you want to look at this conversation more closely?"
+  - "Is there a specific part you're unsure how to read?"
+  - "Are you wondering if you should respond, or how?"
+- Avoid clinical or therapy-sounding language`;
 
   try {
     console.log("[analyzeLightDecodeImage] Starting light decode analysis");
@@ -3460,6 +3474,7 @@ Provide your analysis in this JSON structure:
       hiddenUndertones: Array.isArray(parsed.hiddenUndertones) ? parsed.hiddenUndertones.slice(0, 3) : [],
       suggestedResponses: Array.isArray(parsed.suggestedResponses) ? parsed.suggestedResponses.slice(0, 3) : [],
       somethingToConsider: parsed.somethingToConsider || "What part of this feels most unclear to you?",
+      concernPrompt: parsed.concernPrompt || undefined,
     };
   } catch (error: any) {
     console.error("[analyzeLightDecodeImage] Error:", error);
@@ -3477,6 +3492,7 @@ Provide your analysis in this JSON structure:
       hiddenUndertones: [],
       suggestedResponses: [],
       somethingToConsider: "What part of this conversation feels most confusing or unclear to you?",
+      concernPrompt: "Is there something specific you wanted to understand about this conversation?",
     };
   }
 }

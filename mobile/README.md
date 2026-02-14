@@ -1135,6 +1135,16 @@ Decode Mode success is measured by:
 
 Not by resolution.
 
+#### Gentle Concern Prompts (Image Analysis)
+When a user uploads a screenshot without stating their specific concern, the image analysis now includes a **gentle concern prompt** at the end of the response. This prompt:
+- Is context-specific based on what was detected in the conversation
+- Invites the user to share what specifically worries or confuses them
+- Uses warm, caring language (not clinical or interrogative)
+- Appears after the "Something to consider" section with a subtle divider
+- Examples: "Is there something specific about their response that's sitting with you?" or "What made you want to look at this conversation more closely?"
+
+This feature helps continue the conversation naturally without being pushy, acknowledging that users often share screenshots without explaining their concern.
+
 ## Future Enhancements
 
 - Export conversations
