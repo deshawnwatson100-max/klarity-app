@@ -13,6 +13,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -849,9 +850,7 @@ export function SuggestedReplyCard({
             onModifyLength={onModifyLength ? handleModifyLength : undefined}
             onSelectReply={(replyText) => {
               onSelectReply(replyText);
-              if (isFocusMode) {
-                handleExitFocusMode();
-              }
+              // Don't exit focus mode when copying - let user stay in edit mode
             }}
             onGenerateDifferent={onGenerateDifferent}
             onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
@@ -893,9 +892,12 @@ export function SuggestedReplyCard({
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
           style={{ flex: 1 }}
         >
-          <Pressable
-            onPress={handleBackdropPress}
-            style={StyleSheet.absoluteFill}
+          <TouchableWithoutFeedback
+            onPress={() => {
+              // Dismiss keyboard and exit focus mode in one tap
+              Keyboard.dismiss();
+              handleBackdropPress();
+            }}
           >
             <Animated.View
               style={[
@@ -920,7 +922,7 @@ export function SuggestedReplyCard({
                 ]}
               />
             </Animated.View>
-          </Pressable>
+          </TouchableWithoutFeedback>
 
           {/* Card content in focus mode - positioned at bottom above keyboard */}
           <View
