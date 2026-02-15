@@ -344,7 +344,10 @@ function ReplyItem({
     await Clipboard.setStringAsync(textToUse);
     onSelectReply(textToUse);
     setCopied(true);
-    Keyboard.dismiss();
+    // Don't dismiss keyboard if in focus mode - keep cursor visible
+    if (!isFocusMode) {
+      Keyboard.dismiss();
+    }
     setTimeout(() => setCopied(false), 2000);
   };
 
