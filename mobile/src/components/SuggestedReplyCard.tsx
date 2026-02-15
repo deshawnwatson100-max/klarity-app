@@ -12,6 +12,7 @@ import {
   Platform,
   StyleSheet,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -210,6 +211,7 @@ function ReplyItem({
 
   // Handle tap on reply text to start editing - enters focus mode
   const handleTapToEdit = () => {
+    console.log('[SuggestedReplyCard] handleTapToEdit called, entering focus mode');
     Haptics.selectionAsync();
     setIsEditing(true);
     setHasAnimatedText(true); // Stop typewriter animation
@@ -655,6 +657,7 @@ export function SuggestedReplyCard({
 
   // Enter focus mode - card elevates, background blurs
   const handleEnterFocusMode = useCallback((replyId: string) => {
+    console.log('[SuggestedReplyCard] handleEnterFocusMode called, replyId:', replyId);
     setIsFocusMode(true);
     setFocusedReplyId(replyId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -792,8 +795,14 @@ export function SuggestedReplyCard({
 
   return (
     <>
-      {/* Blur overlay backdrop - only visible in focus mode */}
-      {isFocusMode && (
+      {/* Blur overlay backdrop - Modal ensures it covers entire screen */}
+      <Modal
+        visible={isFocusMode}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={handleBackdropPress}
+      >
         <Pressable
           onPress={handleBackdropPress}
           style={StyleSheet.absoluteFill}
@@ -801,7 +810,7 @@ export function SuggestedReplyCard({
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
-              { opacity: blurOpacity, zIndex: 998 },
+              { opacity: blurOpacity },
             ]}
           >
             <BlurView
@@ -822,29 +831,38 @@ export function SuggestedReplyCard({
             />
           </Animated.View>
         </Pressable>
-      )}
 
-      <Animated.View
-        style={{
-          alignSelf: "flex-start",
-          width: "100%",
-          marginBottom: 20,
-          opacity,
-          transform: [{ translateY }],
-          zIndex: isFocusMode ? 999 : 1,
-        }}
-      >
-        {isFocusMode ? (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-          >
+        {/* Card content in focus mode - positioned in modal */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            paddingHorizontal: 16,
+          }}
+          pointerEvents="box-none"
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
             {cardContent}
-          </KeyboardAvoidingView>
-        ) : (
-          cardContent
-        )}
-      </Animated.View>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Normal card view when not in focus mode */}
+      {!isFocusMode && (
+        <Animated.View
+          style={{
+            alignSelf: "flex-start",
+            width: "100%",
+            marginBottom: 20,
+            opacity,
+            transform: [{ translateY }],
+          }}
+        >
+          {cardContent}
+        </Animated.View>
+      )}
     </>
   );
 }
