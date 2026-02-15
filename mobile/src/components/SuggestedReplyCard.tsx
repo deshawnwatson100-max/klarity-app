@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   TouchableWithoutFeedback,
+  ScrollView,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -344,9 +345,14 @@ function ReplyItem({
     await Clipboard.setStringAsync(textToUse);
     onSelectReply(textToUse);
     setCopied(true);
-    // Don't dismiss keyboard if in focus mode - keep cursor visible
+    // Don't dismiss keyboard if in focus mode - keep cursor visible and refocus
     if (!isFocusMode) {
       Keyboard.dismiss();
+    } else {
+      // Refocus the input to keep cursor visible
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     }
     setTimeout(() => setCopied(false), 2000);
   };
@@ -928,19 +934,21 @@ export function SuggestedReplyCard({
           </TouchableWithoutFeedback>
 
           {/* Card content in focus mode - positioned at bottom above keyboard */}
-          <View
-            style={{
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
               flex: 1,
               justifyContent: "flex-end",
               paddingHorizontal: 16,
               paddingBottom: 16,
             }}
+            keyboardShouldPersistTaps="always"
             pointerEvents="box-none"
           >
-            <Pressable onPress={(e) => e.stopPropagation()}>
+            <View onStartShouldSetResponder={() => true}>
               {cardContent}
-            </Pressable>
-          </View>
+            </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
 
