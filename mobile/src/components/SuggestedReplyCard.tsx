@@ -315,6 +315,8 @@ function ReplyItem({
               paddingVertical: 4,
               paddingHorizontal: 10,
               borderRadius: 10,
+              borderWidth: 1,
+              borderColor: buttonBorder,
             })}
           >
             <Text style={{ fontSize: 12, color: textTertiary }}>edit reply</Text>
