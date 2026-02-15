@@ -221,7 +221,9 @@ function ReplyItem({
 
   // Handle done editing - exit edit mode and focus mode
   const handleDoneEditing = () => {
+    console.log('[SuggestedReplyCard] handleDoneEditing called, setting isEditing to false');
     Haptics.selectionAsync();
+    Keyboard.dismiss();
     setIsEditing(false);
     onExitFocusMode(); // Exit focus mode
   };
