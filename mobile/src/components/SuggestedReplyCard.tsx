@@ -146,6 +146,10 @@ function ReplyItem({
   isFocusMode,
   onEnterFocusMode,
   onExitFocusMode,
+  hasAnimatedText,
+  setHasAnimatedText,
+  hasAnimatedGuidance,
+  setHasAnimatedGuidance,
 }: {
   reply: SuggestedReply;
   loadingAction: { replyId: string; action: "shorten" | "lengthen" } | null;
@@ -160,11 +164,13 @@ function ReplyItem({
   isFocusMode: boolean;
   onEnterFocusMode: () => void;
   onExitFocusMode: () => void;
+  hasAnimatedText: boolean;
+  setHasAnimatedText: (value: boolean) => void;
+  hasAnimatedGuidance: boolean;
+  setHasAnimatedGuidance: (value: boolean) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
-  const [hasAnimatedText, setHasAnimatedText] = useState(false);
-  const [hasAnimatedGuidance, setHasAnimatedGuidance] = useState(false);
 
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -225,7 +231,9 @@ function ReplyItem({
     console.log('[SuggestedReplyCard] handleTapToEdit called, entering focus mode');
     Haptics.selectionAsync();
     setIsEditing(true);
-    setHasAnimatedText(true); // Stop typewriter animation
+    // Mark animations as complete to prevent re-animation when modal renders
+    setHasAnimatedText(true);
+    setHasAnimatedGuidance(true);
     onEnterFocusMode(); // Enter focus mode
     // Focus will be handled by useEffect when isEditing changes
   };
@@ -635,9 +643,13 @@ export function SuggestedReplyCard({
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
 
+  // Animation state lifted to parent to persist across modal/non-modal rendering
+  const [animationStates, setAnimationStates] = useState<Record<string, { hasAnimatedText: boolean; hasAnimatedGuidance: boolean }>>({});
+
   // Focus mode state
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusedReplyId, setFocusedReplyId] = useState<string | null>(null);
+  const [isExiting, setIsExiting] = useState(false); // Track exit animation
   const blurOpacity = useRef(new Animated.Value(1)).current; // Start at 1 so blur shows immediately when modal opens
   const cardElevation = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -693,6 +705,7 @@ export function SuggestedReplyCard({
   // Exit focus mode - card returns, blur fades
   const handleExitFocusMode = useCallback(() => {
     Keyboard.dismiss();
+    setIsExiting(true); // Start exit - show normal card immediately
 
     // Animate out (250ms ease-out)
     Animated.parallel([
@@ -717,6 +730,7 @@ export function SuggestedReplyCard({
     ]).start(() => {
       setIsFocusMode(false);
       setFocusedReplyId(null);
+      setIsExiting(false);
     });
   }, [blurOpacity, cardElevation, cardScale]);
 
@@ -758,6 +772,25 @@ export function SuggestedReplyCard({
     outputRange: [8, 24],
   });
 
+  // Helper functions for animation state
+  const getAnimationState = (replyId: string) => {
+    return animationStates[replyId] || { hasAnimatedText: false, hasAnimatedGuidance: false };
+  };
+
+  const setHasAnimatedText = (replyId: string, value: boolean) => {
+    setAnimationStates(prev => ({
+      ...prev,
+      [replyId]: { ...getAnimationState(replyId), hasAnimatedText: value }
+    }));
+  };
+
+  const setHasAnimatedGuidance = (replyId: string, value: boolean) => {
+    setAnimationStates(prev => ({
+      ...prev,
+      [replyId]: { ...getAnimationState(replyId), hasAnimatedGuidance: value }
+    }));
+  };
+
   const cardContent = (
     <Animated.View
       style={{
@@ -773,28 +806,35 @@ export function SuggestedReplyCard({
         transform: [{ scale: cardScale }],
       }}
     >
-      {replies.map((reply) => (
-        <ReplyItem
-          key={reply.id}
-          reply={reply}
-          loadingAction={loadingAction}
-          onModifyLength={onModifyLength ? handleModifyLength : undefined}
-          onSelectReply={(replyText) => {
-            onSelectReply(replyText);
-            if (isFocusMode) {
-              handleExitFocusMode();
-            }
-          }}
-          onGenerateDifferent={onGenerateDifferent}
-          onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
-          isAddingEmoji={addingEmojiReplyId === reply.id}
-          isDark={isDark}
-          intention={intention}
-          isFocusMode={isFocusMode && focusedReplyId === reply.id}
-          onEnterFocusMode={() => handleEnterFocusMode(reply.id)}
-          onExitFocusMode={handleExitFocusMode}
-        />
-      ))}
+      {replies.map((reply) => {
+        const animState = getAnimationState(reply.id);
+        return (
+          <ReplyItem
+            key={reply.id}
+            reply={reply}
+            loadingAction={loadingAction}
+            onModifyLength={onModifyLength ? handleModifyLength : undefined}
+            onSelectReply={(replyText) => {
+              onSelectReply(replyText);
+              if (isFocusMode) {
+                handleExitFocusMode();
+              }
+            }}
+            onGenerateDifferent={onGenerateDifferent}
+            onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
+            isAddingEmoji={addingEmojiReplyId === reply.id}
+            isDark={isDark}
+            intention={intention}
+            isFocusMode={isFocusMode && focusedReplyId === reply.id}
+            onEnterFocusMode={() => handleEnterFocusMode(reply.id)}
+            onExitFocusMode={handleExitFocusMode}
+            hasAnimatedText={animState.hasAnimatedText}
+            setHasAnimatedText={(value) => setHasAnimatedText(reply.id, value)}
+            hasAnimatedGuidance={animState.hasAnimatedGuidance}
+            setHasAnimatedGuidance={(value) => setHasAnimatedGuidance(reply.id, value)}
+          />
+        );
+      })}
     </Animated.View>
   );
 
@@ -802,7 +842,7 @@ export function SuggestedReplyCard({
     <>
       {/* Blur overlay backdrop - Modal ensures it covers entire screen */}
       <Modal
-        visible={isFocusMode}
+        visible={isFocusMode && !isExiting}
         transparent
         animationType="none"
         statusBarTranslucent
@@ -859,8 +899,8 @@ export function SuggestedReplyCard({
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Normal card view when not in focus mode */}
-      {!isFocusMode && (
+      {/* Normal card view when not in focus mode or exiting focus mode */}
+      {(!isFocusMode || isExiting) && (
         <Animated.View
           style={{
             alignSelf: "flex-start",
