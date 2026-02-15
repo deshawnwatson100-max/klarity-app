@@ -305,16 +305,12 @@ function ReplyItem({
   return (
     <View style={{ marginBottom: 14 }}>
       {/* Reply text with edit button */}
-      <View style={{ position: "relative" }}>
-        {/* Edit button - top right */}
+      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+        {/* Edit button - left side */}
         {!isEditing && (
           <Pressable
             onPress={handleTapToEdit}
             style={({ pressed }) => ({
-              position: "absolute",
-              top: 0,
-              right: 0,
-              zIndex: 10,
               flexDirection: "row",
               alignItems: "center",
               gap: 4,
@@ -323,6 +319,7 @@ function ReplyItem({
               borderRadius: 12,
               backgroundColor: buttonBg,
               opacity: pressed ? 0.7 : 1,
+              marginRight: 8,
             })}
           >
             <Ionicons name="pencil-outline" size={12} color={iconColor} />
@@ -332,25 +329,27 @@ function ReplyItem({
 
         <View
           style={{
-            paddingLeft: 12,
-            paddingRight: isEditing ? 0 : 50, // Make room for edit button
+            flex: 1,
+            paddingLeft: isEditing ? 12 : 0,
             position: "relative",
           }}
         >
-          {/* Soft accent gradient left edge */}
-          <LinearGradient
-            colors={[accentColorLight, "transparent"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 3,
-              borderRadius: 2,
-            }}
-          />
+          {/* Soft accent gradient left edge - shows when editing */}
+          {isEditing && (
+            <LinearGradient
+              colors={[accentColorLight, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                borderRadius: 2,
+              }}
+            />
+          )}
 
           {isEditing ? (
             <TextInput
