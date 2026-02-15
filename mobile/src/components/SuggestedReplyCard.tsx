@@ -318,11 +318,11 @@ function ReplyItem({
           style={({ pressed }) => ({
             opacity: pressed ? 0.7 : 1,
             backgroundColor: "transparent",
-            paddingVertical: 4,
-            paddingHorizontal: 10,
-            borderRadius: 10,
+            paddingVertical: 5,
+            paddingHorizontal: 12,
+            borderRadius: 14,
             borderWidth: 1,
-            borderColor: buttonBorder,
+            borderColor: isEditing ? accentColor : (isDark ? "#4B5563" : "#D1D5DB"),
           })}
         >
           <Text style={{ fontSize: 12, color: isEditing ? textColor : textTertiary }}>
