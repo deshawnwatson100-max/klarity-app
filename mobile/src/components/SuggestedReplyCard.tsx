@@ -1,5 +1,14 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Pressable, ActivityIndicator, Animated, Easing } from "react-native";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  TextInput,
+  Keyboard,
+} from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { TypewriterText } from "./TypewriterText";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { useTheme } from "../theme";
+import { analyzeEditedReply } from "../api/klarity-api";
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
@@ -113,11 +123,9 @@ function IconButton({
   );
 }
 
-// Individual reply item component with its own animation state
+// Individual reply item component with inline editing support
 function ReplyItem({
   reply,
-  isMinimized,
-  onToggleMinimize,
   loadingAction,
   onModifyLength,
   onSelectReply,
@@ -125,10 +133,10 @@ function ReplyItem({
   onAddEmoji,
   isAddingEmoji,
   isDark,
+  intention,
+  onReplyTextChange,
 }: {
   reply: SuggestedReply;
-  isMinimized: boolean;
-  onToggleMinimize: () => void;
   loadingAction: { replyId: string; action: "shorten" | "lengthen" } | null;
   onModifyLength?: (replyId: string, action: "shorten" | "lengthen") => Promise<void>;
   onSelectReply: (reply: string) => void;
@@ -136,17 +144,29 @@ function ReplyItem({
   onAddEmoji?: (replyId: string) => void;
   isAddingEmoji?: boolean;
   isDark: boolean;
+  intention: IntentionType;
+  onReplyTextChange?: (replyId: string, newText: string) => void;
 }) {
-  const contentHeight = useRef(new Animated.Value(isMinimized ? 0 : 1)).current;
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
   const [hasAnimatedText, setHasAnimatedText] = useState(false);
   const [hasAnimatedGuidance, setHasAnimatedGuidance] = useState(false);
 
+  // Editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(reply.text);
+  const [currentGuidanceNote, setCurrentGuidanceNote] = useState(reply.guidanceNote);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const originalTextRef = useRef(reply.text);
+
+  // Guidance note fade animation
+  const guidanceOpacity = useRef(new Animated.Value(1)).current;
+
   // Theme-aware colors
   const accentColor = isDark ? "#7DD3C0" : "#34C759";
   const accentColorLight = isDark ? "rgba(125, 211, 192, 0.2)" : "rgba(52, 199, 89, 0.2)";
-  const accentColorLighter = isDark ? "rgba(125, 211, 192, 0.15)" : "rgba(52, 199, 89, 0.15)";
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
   const textSecondary = isDark ? "#9CA3AF" : "#636366";
   const textTertiary = isDark ? "#6B7280" : "#8E8E93";
@@ -157,53 +177,122 @@ function ReplyItem({
   const buttonTextColor = isDark ? "#E5E7EB" : "#1C1C1E";
   const dividerColor = isDark ? "#374151" : "rgba(0, 0, 0, 0.1)";
   const iconColor = isDark ? "#E5E7EB" : "#636366";
+  const inputBorderColor = isDark ? "rgba(125, 211, 192, 0.3)" : "rgba(52, 199, 89, 0.3)";
 
+  // Sync editedText with reply.text when reply changes (from length/emoji modifications)
   useEffect(() => {
-    Animated.timing(contentHeight, {
-      toValue: isMinimized ? 0 : 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [isMinimized]);
+    if (reply.text !== originalTextRef.current) {
+      setEditedText(reply.text);
+      originalTextRef.current = reply.text;
+    }
+  }, [reply.text]);
 
-  const contentMaxHeight = contentHeight.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 500],
-    extrapolate: "clamp",
-  });
+  // Sync guidance note when reply changes
+  useEffect(() => {
+    setCurrentGuidanceNote(reply.guidanceNote);
+  }, [reply.guidanceNote]);
 
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
 
+  // Handle tap on reply text to start editing
+  const handleTapToEdit = () => {
+    Haptics.selectionAsync();
+    setIsEditing(true);
+    setHasAnimatedText(true); // Stop typewriter animation
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
+
+  // Handle text change with debounced analysis
+  const handleTextChange = useCallback(
+    (newText: string) => {
+      setEditedText(newText);
+      onReplyTextChange?.(reply.id, newText);
+
+      // Clear existing debounce
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      // Debounce the analysis by 400ms
+      debounceRef.current = setTimeout(async () => {
+        // Only analyze if text actually changed meaningfully
+        if (newText.trim() === originalTextRef.current.trim()) {
+          return;
+        }
+
+        setIsAnalyzing(true);
+
+        try {
+          const result = await analyzeEditedReply(newText, originalTextRef.current, {
+            intention,
+            originalGuidanceNote: reply.guidanceNote,
+          });
+
+          if (result.hasSignificantChange) {
+            // Subtle fade transition for guidance note update
+            Animated.sequence([
+              Animated.timing(guidanceOpacity, {
+                toValue: 0.3,
+                duration: 150,
+                useNativeDriver: true,
+              }),
+              Animated.timing(guidanceOpacity, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true,
+              }),
+            ]).start();
+
+            setCurrentGuidanceNote(result.guidanceNote);
+          }
+        } catch (error) {
+          console.error("Error analyzing edited reply:", error);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      }, 400);
+    },
+    [intention, reply.guidanceNote, reply.id, onReplyTextChange, guidanceOpacity]
+  );
+
+  // Clean up debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   const handleCopy = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Copy to clipboard so user can paste directly
-    await Clipboard.setStringAsync(reply.text);
-    onSelectReply(reply.text);
+    const textToUse = isEditing ? editedText : reply.text;
+    await Clipboard.setStringAsync(textToUse);
+    onSelectReply(textToUse);
     setCopied(true);
-    // Reset after 2 seconds
+    Keyboard.dismiss();
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleLike = () => {
     Haptics.selectionAsync();
-    // Only set to like if not already liked (no toggle on tap)
     if (liked !== "like") {
       setLiked("like");
-      addFeedback(reply.text, "like");
+      addFeedback(editedText || reply.text, "like");
     }
   };
 
   const handleDislike = () => {
     Haptics.selectionAsync();
-    // Only set to dislike if not already disliked (no toggle on tap)
     if (liked !== "dislike") {
       setLiked("dislike");
-      addFeedback(reply.text, "dislike");
+      addFeedback(editedText || reply.text, "dislike");
     }
   };
 
-  // Long press to reset feedback and show both buttons again
   const handleResetFeedback = () => {
     setLiked(null);
   };
@@ -213,290 +302,256 @@ function ReplyItem({
     onAddEmoji?.(reply.id);
   };
 
-  // Truncate text for minimized preview
-  const truncatedText = reply.text.length > 60
-    ? reply.text.substring(0, 60) + "..."
-    : reply.text;
-
   return (
     <View style={{ marginBottom: 14 }}>
-      {/* Minimized state - tappable to expand */}
-      {isMinimized ? (
-        <Pressable onPress={() => {
-          Haptics.selectionAsync();
-          onToggleMinimize();
-        }}>
-          <View
+      {/* Reply text - tappable to edit inline */}
+      <Pressable onPress={handleTapToEdit} disabled={isEditing}>
+        <View
+          style={{
+            paddingLeft: 12,
+            position: "relative",
+          }}
+        >
+          {/* Soft accent gradient left edge */}
+          <LinearGradient
+            colors={[accentColorLight, "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
             style={{
-              paddingLeft: 12,
-              position: "relative",
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 3,
+              borderRadius: 2,
+            }}
+          />
+
+          {isEditing ? (
+            <TextInput
+              ref={inputRef}
+              value={editedText}
+              onChangeText={handleTextChange}
+              multiline
+              style={{
+                fontSize: 15,
+                lineHeight: 24,
+                color: textColor,
+                padding: 0,
+                margin: 0,
+                textAlignVertical: "top",
+                borderWidth: 0,
+                backgroundColor: "transparent",
+              }}
+              placeholderTextColor={textSecondary}
+              autoCorrect={true}
+              autoCapitalize="sentences"
+            />
+          ) : !hasAnimatedText ? (
+            <TypewriterText
+              text={reply.text}
+              style={{
+                fontSize: 15,
+                lineHeight: 24,
+                color: textColor,
+              }}
+              speed={85}
+              onComplete={() => setHasAnimatedText(true)}
+            />
+          ) : (
+            <Text
+              style={{
+                fontSize: 15,
+                lineHeight: 24,
+                color: textColor,
+              }}
+            >
+              {reply.text}
+            </Text>
+          )}
+        </View>
+      </Pressable>
+
+      {/* Guidance Note (Lightbulb) - dynamic updates */}
+      <Animated.View
+        className="flex-row items-start mt-2 pl-3"
+        style={{ opacity: guidanceOpacity }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2, marginRight: 6 }}>
+          <Ionicons
+            name="bulb-outline"
+            size={12}
+            color={textTertiary}
+          />
+          {isAnalyzing && (
+            <ActivityIndicator
+              size="small"
+              color={textTertiary}
+              style={{ marginLeft: 4, transform: [{ scale: 0.5 }] }}
+            />
+          )}
+        </View>
+        {hasAnimatedText && !hasAnimatedGuidance ? (
+          <View style={{ flex: 1 }}>
+            <TypewriterText
+              key={`guidance-${reply.id}-${currentGuidanceNote}`}
+              text={currentGuidanceNote}
+              style={{
+                fontSize: 13,
+                lineHeight: 18,
+                color: textTertiary,
+              }}
+              speed={70}
+              onComplete={() => setHasAnimatedGuidance(true)}
+            />
+          </View>
+        ) : (
+          <Text
+            style={{
+              fontSize: 13,
+              lineHeight: 18,
+              color: textTertiary,
+              flex: 1,
             }}
           >
-            {/* Subtle accent left edge glow */}
-            <LinearGradient
-              colors={[accentColorLighter, "transparent"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                borderRadius: 2,
-              }}
+            {currentGuidanceNote}
+          </Text>
+        )}
+      </Animated.View>
+
+      {/* Action buttons row */}
+      <View className="flex-row items-center justify-between mt-3">
+        {/* Primary action buttons */}
+        <View className="flex-row items-center gap-2">
+          {/* Use this reply / Paste reply button */}
+          <Pressable
+            onPress={handleCopy}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 20,
+              backgroundColor: copied ? buttonBgActive : buttonBg,
+              borderWidth: 1,
+              borderColor: copied ? buttonBorderActive : "transparent",
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons
+              name={copied ? "checkmark" : "copy-outline"}
+              size={14}
+              color={copied ? accentColor : buttonTextColor}
             />
             <Text
               style={{
-                fontSize: 14,
-                color: textSecondary,
-                fontStyle: "italic",
+                fontSize: 13,
+                fontWeight: "500",
+                color: copied ? accentColor : buttonTextColor,
               }}
             >
-              {truncatedText}
+              {copied ? "Copied" : isEditing ? "Paste reply" : "Use this reply"}
             </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: textTertiary,
-                marginTop: 4,
-              }}
-            >
-              Tap to expand
-            </Text>
-          </View>
-        </Pressable>
-      ) : (
-        <>
-          {/* Reply text as clean floating paragraph with accent glow */}
-          <Pressable onPress={() => {
-            Haptics.selectionAsync();
-            onToggleMinimize();
-          }}>
-            <View
-              style={{
-                paddingLeft: 12,
-                position: "relative",
-              }}
-            >
-              {/* Soft accent gradient left edge accent */}
-              <LinearGradient
-                colors={[accentColorLight, "transparent"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 3,
-                  borderRadius: 2,
-                }}
-              />
-              {!hasAnimatedText ? (
-                <TypewriterText
-                  text={reply.text}
-                  style={{
-                    fontSize: 15,
-                    lineHeight: 24,
-                    color: textColor,
-                  }}
-                  speed={85}
-                  onComplete={() => setHasAnimatedText(true)}
-                />
-              ) : (
-                <Text
-                  style={{
-                    fontSize: 15,
-                    lineHeight: 24,
-                    color: textColor,
-                  }}
-                >
-                  {reply.text}
-                </Text>
-              )}
-            </View>
           </Pressable>
 
-          <Animated.View
-            style={{
-              maxHeight: contentMaxHeight,
-              opacity: contentHeight,
-              overflow: "hidden",
-            }}
-          >
-            {/* Guidance Note - subtle */}
-            <View className="flex-row items-start mt-2 pl-3">
-              <Ionicons
-                name="bulb-outline"
-                size={12}
-                color={textTertiary}
-                style={{ marginTop: 2, marginRight: 6 }}
-              />
-              {hasAnimatedText && !hasAnimatedGuidance ? (
-                <View style={{ flex: 1 }}>
-                  <TypewriterText
-                    key={`guidance-${reply.id}`}
-                    text={reply.guidanceNote}
-                    style={{
-                      fontSize: 13,
-                      lineHeight: 18,
-                      color: textTertiary,
-                    }}
-                    speed={70}
-                    onComplete={() => setHasAnimatedGuidance(true)}
-                  />
-                </View>
-              ) : hasAnimatedGuidance ? (
-                <Text
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 18,
-                    color: textTertiary,
-                    flex: 1,
-                  }}
-                >
-                  {reply.guidanceNote}
-                </Text>
-              ) : null}
-            </View>
+          {/* Different reply button */}
+          {onGenerateDifferent && (
+            <Pressable
+              onPress={onGenerateDifferent}
+              style={({ pressed }) => ({
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderRadius: 20,
+                backgroundColor: "transparent",
+                borderWidth: 1,
+                borderColor: buttonBorder,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Ionicons name="refresh-outline" size={14} color={buttonTextColor} />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "500",
+                  color: buttonTextColor,
+                }}
+              >
+                Different reply
+              </Text>
+            </Pressable>
+          )}
+        </View>
 
-            {/* Action buttons row */}
-            <View className="flex-row items-center justify-between mt-3">
-              {/* Primary action buttons */}
-              <View className="flex-row items-center gap-2">
-                {/* Use this reply button with checkmark transition */}
-                <Pressable
-                  onPress={handleCopy}
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderRadius: 20,
-                    backgroundColor: copied ? buttonBgActive : buttonBg,
-                    borderWidth: 1,
-                    borderColor: copied ? buttonBorderActive : "transparent",
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Ionicons
-                    name={copied ? "checkmark" : "copy-outline"}
-                    size={14}
-                    color={copied ? accentColor : buttonTextColor}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "500",
-                      color: copied ? accentColor : buttonTextColor,
-                    }}
-                  >
-                    {copied ? "Copied" : "Use this reply"}
-                  </Text>
-                </Pressable>
+        {/* Icon buttons row */}
+        <View className="flex-row items-center">
+          {/* Emoji button */}
+          <IconButton
+            icon="happy-outline"
+            onPress={handleAddEmoji}
+            isLoading={isAddingEmoji}
+            color={iconColor}
+            activeColor={accentColor}
+            size={16}
+          />
 
-                {/* Use a different reply button */}
-                {onGenerateDifferent && (
-                  <Pressable
-                    onPress={onGenerateDifferent}
-                    style={({ pressed }) => ({
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 20,
-                      backgroundColor: "transparent",
-                      borderWidth: 1,
-                      borderColor: buttonBorder,
-                      opacity: pressed ? 0.7 : 1,
-                    })}
-                  >
-                    <Ionicons name="refresh-outline" size={14} color={buttonTextColor} />
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "500",
-                        color: buttonTextColor,
-                      }}
-                    >
-                      Different reply
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
+          {/* Shorter button */}
+          {onModifyLength && (
+            <IconButton
+              icon="remove-outline"
+              onPress={() => onModifyLength(reply.id, "shorten")}
+              isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "shorten"}
+              color={iconColor}
+              activeColor={accentColor}
+              size={16}
+            />
+          )}
 
-              {/* Icon buttons row */}
-              <View className="flex-row items-center">
-                {/* Emoji button - adds emojis using AI */}
-                <IconButton
-                  icon="happy-outline"
-                  onPress={handleAddEmoji}
-                  isLoading={isAddingEmoji}
-                  color={iconColor}
-                  activeColor={accentColor}
-                  size={16}
-                />
+          {/* Longer button */}
+          {onModifyLength && (
+            <IconButton
+              icon="add-outline"
+              onPress={() => onModifyLength(reply.id, "lengthen")}
+              isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen"}
+              color={iconColor}
+              activeColor={accentColor}
+              size={16}
+            />
+          )}
 
-                {/* Shorter button */}
-                {onModifyLength && (
-                  <IconButton
-                    icon="remove-outline"
-                    onPress={() => onModifyLength(reply.id, "shorten")}
-                    isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "shorten"}
-                    color={iconColor}
-                    activeColor={accentColor}
-                    size={16}
-                  />
-                )}
+          {/* Divider */}
+          {liked === null && (
+            <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
+          )}
 
-                {/* Longer button */}
-                {onModifyLength && (
-                  <IconButton
-                    icon="add-outline"
-                    onPress={() => onModifyLength(reply.id, "lengthen")}
-                    isLoading={loadingAction?.replyId === reply.id && loadingAction?.action === "lengthen"}
-                    color={iconColor}
-                    activeColor={accentColor}
-                    size={16}
-                  />
-                )}
+          {/* Like button */}
+          <IconButton
+            icon={liked === "like" ? "thumbs-up" : "thumbs-up-outline"}
+            onPress={handleLike}
+            onLongPress={liked === "like" ? handleResetFeedback : undefined}
+            showSuccess={liked === "like"}
+            color={iconColor}
+            activeColor={accentColor}
+            size={16}
+            hidden={liked === "dislike"}
+          />
 
-                {/* Divider - hide when feedback is given */}
-                {liked === null && (
-                  <View style={{ width: 1, height: 16, backgroundColor: dividerColor, marginHorizontal: 4 }} />
-                )}
-
-                {/* Like button - hidden when dislike is selected */}
-                <IconButton
-                  icon={liked === "like" ? "thumbs-up" : "thumbs-up-outline"}
-                  onPress={handleLike}
-                  onLongPress={liked === "like" ? handleResetFeedback : undefined}
-                  showSuccess={liked === "like"}
-                  color={iconColor}
-                  activeColor={accentColor}
-                  size={16}
-                  hidden={liked === "dislike"}
-                />
-
-                {/* Dislike button - hidden when like is selected */}
-                <IconButton
-                  icon={liked === "dislike" ? "thumbs-down" : "thumbs-down-outline"}
-                  onPress={handleDislike}
-                  onLongPress={liked === "dislike" ? handleResetFeedback : undefined}
-                  showSuccess={liked === "dislike"}
-                  color={iconColor}
-                  activeColor={accentColor}
-                  size={16}
-                  hidden={liked === "like"}
-                />
-              </View>
-            </View>
-          </Animated.View>
-        </>
-      )}
+          {/* Dislike button */}
+          <IconButton
+            icon={liked === "dislike" ? "thumbs-down" : "thumbs-down-outline"}
+            onPress={handleDislike}
+            onLongPress={liked === "dislike" ? handleResetFeedback : undefined}
+            showSuccess={liked === "dislike"}
+            color={iconColor}
+            activeColor={accentColor}
+            size={16}
+            hidden={liked === "like"}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -511,18 +566,16 @@ export function SuggestedReplyCard({
 }: SuggestedReplyCardProps) {
   const { isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
+  const translateY = useRef(new Animated.Value(4)).current;
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
-  const [minimizedReplies, setMinimizedReplies] = useState<Set<string>>(new Set());
-  const prevRepliesLengthRef = useRef(replies.length);
 
   // Theme-aware colors
   const cardBg = isDark ? "#000000" : "#FFFFFF";
   const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
 
   useEffect(() => {
-    // Gentle fade and drift - no bouncing, no elastic motion
+    // Gentle fade and drift
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
@@ -538,31 +591,6 @@ export function SuggestedReplyCard({
       }),
     ]).start();
   }, []);
-
-  // Auto-minimize older replies when new ones are added
-  useEffect(() => {
-    if (replies.length > prevRepliesLengthRef.current) {
-      // New reply was added - minimize all but the latest
-      const newMinimized = new Set<string>();
-      replies.slice(0, -1).forEach((reply) => {
-        newMinimized.add(reply.id);
-      });
-      setMinimizedReplies(newMinimized);
-    }
-    prevRepliesLengthRef.current = replies.length;
-  }, [replies.length]);
-
-  const toggleReplyMinimize = (replyId: string) => {
-    setMinimizedReplies((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(replyId)) {
-        newSet.delete(replyId);
-      } else {
-        newSet.add(replyId);
-      }
-      return newSet;
-    });
-  };
 
   const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
     if (!onModifyLength) return;
@@ -589,7 +617,7 @@ export function SuggestedReplyCard({
       style={{
         alignSelf: "flex-start",
         width: "100%",
-        marginBottom: 20, // Generous vertical spacing
+        marginBottom: 20,
         opacity,
         transform: [{ translateY }],
       }}
@@ -612,8 +640,6 @@ export function SuggestedReplyCard({
           <ReplyItem
             key={reply.id}
             reply={reply}
-            isMinimized={minimizedReplies.has(reply.id)}
-            onToggleMinimize={() => toggleReplyMinimize(reply.id)}
             loadingAction={loadingAction}
             onModifyLength={onModifyLength ? handleModifyLength : undefined}
             onSelectReply={onSelectReply}
@@ -621,6 +647,7 @@ export function SuggestedReplyCard({
             onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
             isAddingEmoji={addingEmojiReplyId === reply.id}
             isDark={isDark}
+            intention={intention}
           />
         ))}
       </View>

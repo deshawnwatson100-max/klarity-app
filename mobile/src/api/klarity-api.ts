@@ -4149,3 +4149,144 @@ Provide your analysis in the JSON format specified.`;
   }
 }
 
+/**
+ * Analyze an edited reply and generate a dynamic lightbulb comment
+ *
+ * Purpose: Preview how the edited message may be perceived by the recipient
+ * This is NOT advice, NOT correction, NOT repeating the user's tone request
+ *
+ * The lightbulb describes IMPACT, not INTENT
+ */
+export async function analyzeEditedReply(
+  editedReply: string,
+  originalReply?: string,
+  context?: {
+    intention?: "improve" | "distance" | "maintain" | "clarity";
+    originalGuidanceNote?: string;
+  }
+): Promise<{ guidanceNote: string; hasSignificantChange: boolean }> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are Klarity's Landing Preview system. Your job is to describe how a message will LAND on the recipient — not what the sender intended.
+
+## YOUR TASK
+Analyze the user's edited reply and generate a single short sentence describing how it will be PERCEIVED by the recipient.
+
+## CRITICAL RULES
+
+1. ONE SHORT SENTENCE ONLY
+   - Maximum 12 words
+   - Observational wording only
+
+2. USE SOFT PERCEPTION LANGUAGE
+   - "reads as...", "comes across as...", "feels..."
+   - NEVER use certainty language like "will make them feel" or "they will think"
+
+3. DESCRIBE IMPACT, NOT INTENT
+   - Focus on how the message lands emotionally
+   - Do NOT describe what the message does mechanically
+
+4. NEVER OUTPUT:
+   - Advice ("consider...", "you may want...")
+   - Strategy ("preserves leverage", "maintains the upper hand")
+   - Therapy language ("validates their feelings")
+   - Absolute predictions ("they will feel X")
+   - The user's chosen tone restated (if they asked for "professional", don't say "professional tone")
+   - Commands or suggestions
+
+5. REACT TO THESE QUALITIES:
+   - Emotional intensity (warm vs cold)
+   - Warmth vs neutrality
+   - Directness vs softness
+   - Length (brief vs elaborate)
+   - Formality shift
+   - Supportiveness vs firmness
+
+## EXAMPLES OF GOOD OUTPUT:
+- "Reads as warm and engaged"
+- "Comes across as slightly distant"
+- "Feels more direct than before"
+- "Lands as calm and measured"
+- "Reads as softer now"
+- "Comes across as more open"
+- "Feels a bit cooler in tone"
+- "Reads as emotionally neutral"
+- "Comes across as genuinely caring"
+- "Feels lighter and more casual"
+
+## EXAMPLES OF BAD OUTPUT (NEVER WRITE THESE):
+- "This will make them feel heard" (certainty + advice)
+- "Consider adding more warmth" (advice)
+- "Professional tone maintained" (restating user's request)
+- "This validates their perspective" (therapy language)
+- "Good boundary setting" (strategy/advice)
+- "They will appreciate this" (prediction)
+
+## DETERMINING SIGNIFICANT CHANGE
+Set hasSignificantChange to true only if:
+- Emotional tone shifted noticeably (warm→cold, soft→direct)
+- Length changed substantially (added/removed 30%+ content)
+- Formality changed
+- New emotional elements added (softening, firmness)
+
+Set hasSignificantChange to false if:
+- Minor word changes
+- Punctuation changes
+- Small rephrasings that don't change the feel
+
+Respond with valid JSON only:
+{
+  "guidanceNote": "string (one short sentence, max 12 words)",
+  "hasSignificantChange": boolean
+}`;
+
+  const userMessage = originalReply
+    ? `Original reply: "${originalReply}"
+
+Edited reply: "${editedReply}"
+
+${context?.originalGuidanceNote ? `Previous landing preview: "${context.originalGuidanceNote}"` : ""}
+${context?.intention ? `User's intention: ${context.intention}` : ""}`
+    : `Reply to analyze: "${editedReply}"
+
+${context?.intention ? `User's intention: ${context.intention}` : ""}`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature: 0.3,
+      max_tokens: 100,
+    });
+
+    const content = response.choices[0]?.message?.content?.trim() || "";
+
+    // Parse JSON
+    let parsed: { guidanceNote?: string; hasSignificantChange?: boolean } = {};
+    try {
+      // Try to extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // If JSON parsing fails, use content as guidanceNote
+      parsed = { guidanceNote: content, hasSignificantChange: true };
+    }
+
+    return {
+      guidanceNote: parsed.guidanceNote || "Reads as thoughtful",
+      hasSignificantChange: parsed.hasSignificantChange ?? true,
+    };
+  } catch (error) {
+    console.error("[analyzeEditedReply] Error:", error);
+    return {
+      guidanceNote: "Reads as thoughtful",
+      hasSignificantChange: false,
+    };
+  }
+}
+
