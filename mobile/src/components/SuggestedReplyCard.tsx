@@ -146,6 +146,7 @@ function ReplyItem({
   isFocusMode,
   onEnterFocusMode,
   onExitFocusMode,
+  focusTrigger,
   hasAnimatedText,
   setHasAnimatedText,
   hasAnimatedGuidance,
@@ -164,6 +165,7 @@ function ReplyItem({
   isFocusMode: boolean;
   onEnterFocusMode: () => void;
   onExitFocusMode: () => void;
+  focusTrigger: number;
   hasAnimatedText: boolean;
   setHasAnimatedText: (value: boolean) => void;
   hasAnimatedGuidance: boolean;
@@ -212,16 +214,31 @@ function ReplyItem({
     setCurrentGuidanceNote(reply.guidanceNote);
   }, [reply.guidanceNote]);
 
-  // Auto-focus TextInput when entering edit mode (with delay for modal to render)
+  // Auto-focus TextInput when entering edit mode or when modal's onShow fires
   useEffect(() => {
     if (isEditing && isFocusMode) {
-      // Delay focus to allow modal to render the TextInput
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 150);
-      return () => clearTimeout(timer);
+      console.log('[ReplyItem] Focus effect triggered, focusTrigger:', focusTrigger);
+      // Use multiple attempts to ensure focus happens after modal renders
+      // The modal needs time to mount and the TextInput needs to be ready
+      const focusInput = () => {
+        if (inputRef.current) {
+          console.log('[ReplyItem] Focusing TextInput');
+          inputRef.current.focus();
+        }
+      };
+
+      // Try focusing at multiple intervals to catch when modal is ready
+      const timer1 = setTimeout(focusInput, 50);
+      const timer2 = setTimeout(focusInput, 150);
+      const timer3 = setTimeout(focusInput, 300);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
     }
-  }, [isEditing, isFocusMode]);
+  }, [isEditing, isFocusMode, focusTrigger]);
 
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
@@ -234,8 +251,7 @@ function ReplyItem({
     // Mark animations as complete to prevent re-animation when modal renders
     setHasAnimatedText(true);
     setHasAnimatedGuidance(true);
-    onEnterFocusMode(); // Enter focus mode
-    // Focus will be handled by useEffect when isEditing changes
+    onEnterFocusMode(); // Enter focus mode - Modal's onShow will trigger focus
   };
 
   // Handle done editing - exit edit mode and focus mode
@@ -420,6 +436,7 @@ function ReplyItem({
               placeholderTextColor={textSecondary}
               autoCorrect={true}
               autoCapitalize="sentences"
+              autoFocus={isFocusMode}
             />
           ) : !hasAnimatedText ? (
             <TypewriterText
@@ -650,6 +667,7 @@ export function SuggestedReplyCard({
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusedReplyId, setFocusedReplyId] = useState<string | null>(null);
   const [isExiting, setIsExiting] = useState(false); // Track exit animation
+  const [focusTrigger, setFocusTrigger] = useState(0); // Increment to trigger focus
   const blurOpacity = useRef(new Animated.Value(1)).current; // Start at 1 so blur shows immediately when modal opens
   const cardElevation = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -828,6 +846,7 @@ export function SuggestedReplyCard({
             isFocusMode={isFocusMode && focusedReplyId === reply.id}
             onEnterFocusMode={() => handleEnterFocusMode(reply.id)}
             onExitFocusMode={handleExitFocusMode}
+            focusTrigger={focusTrigger}
             hasAnimatedText={animState.hasAnimatedText}
             setHasAnimatedText={(value) => setHasAnimatedText(reply.id, value)}
             hasAnimatedGuidance={animState.hasAnimatedGuidance}
@@ -847,6 +866,11 @@ export function SuggestedReplyCard({
         animationType="none"
         statusBarTranslucent
         onRequestClose={handleBackdropPress}
+        onShow={() => {
+          console.log('[SuggestedReplyCard] Modal onShow fired, triggering focus');
+          // Trigger focus when modal is fully visible by incrementing the trigger
+          setFocusTrigger(prev => prev + 1);
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
