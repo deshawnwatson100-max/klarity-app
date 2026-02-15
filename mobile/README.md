@@ -989,6 +989,7 @@ The app uses a secure backend proxy for all OpenAI operations:
 ✅ **NEW: Inline Direction Selector** - 4 pill buttons for choosing relationship path
 ✅ **NEW: Tailored Guidance Bubbles** - Personalized mindset messages per intention
 ✅ **NEW: Suggested Reply Cards** - Contextual responses with inline editing and dynamic lightbulb previews
+✅ **NEW: Focus Mode Editing** - Card elevates above keyboard with blurred backdrop when editing replies
 ✅ **NEW: Emotional Face Scan Card** - Premium card for facial emotion analysis
 ✅ **NEW: Intention-Based Color Theming** - Blue/Orange/Yellow/Purple glow effects
 ✅ **NEW: Natural Conversational Timing** - Realistic pauses between responses

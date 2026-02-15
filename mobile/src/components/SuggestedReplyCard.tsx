@@ -8,15 +8,22 @@ import {
   Easing,
   TextInput,
   Keyboard,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  KeyboardAvoidingView,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { TypewriterText } from "./TypewriterText";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { useTheme } from "../theme";
 import { analyzeEditedReply } from "../api/klarity-api";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type IntentionType = "improve" | "distance" | "maintain" | "clarity";
 
@@ -123,7 +130,7 @@ function IconButton({
   );
 }
 
-// Individual reply item component with inline editing support
+// Individual reply item component with inline editing support and focus mode
 function ReplyItem({
   reply,
   loadingAction,
@@ -135,6 +142,9 @@ function ReplyItem({
   isDark,
   intention,
   onReplyTextChange,
+  isFocusMode,
+  onEnterFocusMode,
+  onExitFocusMode,
 }: {
   reply: SuggestedReply;
   loadingAction: { replyId: string; action: "shorten" | "lengthen" } | null;
@@ -146,6 +156,9 @@ function ReplyItem({
   isDark: boolean;
   intention: IntentionType;
   onReplyTextChange?: (replyId: string, newText: string) => void;
+  isFocusMode: boolean;
+  onEnterFocusMode: () => void;
+  onExitFocusMode: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"like" | "dislike" | null>(null);
@@ -195,21 +208,22 @@ function ReplyItem({
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
 
-  // Handle tap on reply text to start editing
+  // Handle tap on reply text to start editing - enters focus mode
   const handleTapToEdit = () => {
     Haptics.selectionAsync();
     setIsEditing(true);
     setHasAnimatedText(true); // Stop typewriter animation
+    onEnterFocusMode(); // Enter focus mode
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
   };
 
-  // Handle done editing - exit edit mode
+  // Handle done editing - exit edit mode and focus mode
   const handleDoneEditing = () => {
     Haptics.selectionAsync();
     setIsEditing(false);
-    Keyboard.dismiss();
+    onExitFocusMode(); // Exit focus mode
   };
 
   // Handle text change with debounced analysis
@@ -608,6 +622,13 @@ export function SuggestedReplyCard({
   const [loadingAction, setLoadingAction] = useState<{ replyId: string; action: "shorten" | "lengthen" } | null>(null);
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
 
+  // Focus mode state
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [focusedReplyId, setFocusedReplyId] = useState<string | null>(null);
+  const blurOpacity = useRef(new Animated.Value(0)).current;
+  const cardElevation = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
+
   // Theme-aware colors
   const cardBg = isDark ? "#000000" : "#FFFFFF";
   const cardBorderColor = isDark ? "transparent" : "rgba(0, 0, 0, 0.08)";
@@ -630,6 +651,72 @@ export function SuggestedReplyCard({
     ]).start();
   }, []);
 
+  // Enter focus mode - card elevates, background blurs
+  const handleEnterFocusMode = useCallback((replyId: string) => {
+    setIsFocusMode(true);
+    setFocusedReplyId(replyId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Animate in (250ms ease-out)
+    Animated.parallel([
+      Animated.timing(blurOpacity, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardElevation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScale, {
+        toValue: 1.02,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [blurOpacity, cardElevation, cardScale]);
+
+  // Exit focus mode - card returns, blur fades
+  const handleExitFocusMode = useCallback(() => {
+    Keyboard.dismiss();
+
+    // Animate out (250ms ease-out)
+    Animated.parallel([
+      Animated.timing(blurOpacity, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardElevation, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScale, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsFocusMode(false);
+      setFocusedReplyId(null);
+    });
+  }, [blurOpacity, cardElevation, cardScale]);
+
+  // Handle tap outside to dismiss
+  const handleBackdropPress = useCallback(() => {
+    if (isFocusMode) {
+      handleExitFocusMode();
+    }
+  }, [isFocusMode, handleExitFocusMode]);
+
   const handleModifyLength = async (replyId: string, action: "shorten" | "lengthen") => {
     if (!onModifyLength) return;
     setLoadingAction({ replyId, action });
@@ -650,45 +737,112 @@ export function SuggestedReplyCard({
     }
   };
 
-  return (
+  // Interpolate card shadow for elevation effect
+  const elevatedShadowOpacity = cardElevation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [isDark ? 0 : 0.06, isDark ? 0.3 : 0.2],
+  });
+
+  const elevatedShadowRadius = cardElevation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [8, 24],
+  });
+
+  const cardContent = (
     <Animated.View
       style={{
-        alignSelf: "flex-start",
-        width: "100%",
-        marginBottom: 20,
-        opacity,
-        transform: [{ translateY }],
+        backgroundColor: cardBg,
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: isDark ? 0 : 1,
+        borderColor: cardBorderColor,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: elevatedShadowOpacity,
+        shadowRadius: elevatedShadowRadius,
+        transform: [{ scale: cardScale }],
       }}
     >
-      {/* Card background */}
-      <View
+      {replies.map((reply) => (
+        <ReplyItem
+          key={reply.id}
+          reply={reply}
+          loadingAction={loadingAction}
+          onModifyLength={onModifyLength ? handleModifyLength : undefined}
+          onSelectReply={(replyText) => {
+            onSelectReply(replyText);
+            if (isFocusMode) {
+              handleExitFocusMode();
+            }
+          }}
+          onGenerateDifferent={onGenerateDifferent}
+          onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
+          isAddingEmoji={addingEmojiReplyId === reply.id}
+          isDark={isDark}
+          intention={intention}
+          isFocusMode={isFocusMode && focusedReplyId === reply.id}
+          onEnterFocusMode={() => handleEnterFocusMode(reply.id)}
+          onExitFocusMode={handleExitFocusMode}
+        />
+      ))}
+    </Animated.View>
+  );
+
+  return (
+    <>
+      {/* Blur overlay backdrop - only visible in focus mode */}
+      {isFocusMode && (
+        <Pressable
+          onPress={handleBackdropPress}
+          style={StyleSheet.absoluteFill}
+        >
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { opacity: blurOpacity, zIndex: 998 },
+            ]}
+          >
+            <BlurView
+              intensity={Platform.OS === "ios" ? 40 : 100}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
+            {/* Dim overlay */}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(0, 0, 0, 0.4)"
+                    : "rgba(0, 0, 0, 0.2)",
+                },
+              ]}
+            />
+          </Animated.View>
+        </Pressable>
+      )}
+
+      <Animated.View
         style={{
-          backgroundColor: cardBg,
-          borderRadius: 16,
-          padding: 16,
-          borderWidth: isDark ? 0 : 1,
-          borderColor: cardBorderColor,
-          shadowColor: isDark ? "transparent" : "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0 : 0.06,
-          shadowRadius: 8,
+          alignSelf: "flex-start",
+          width: "100%",
+          marginBottom: 20,
+          opacity,
+          transform: [{ translateY }],
+          zIndex: isFocusMode ? 999 : 1,
         }}
       >
-        {replies.map((reply) => (
-          <ReplyItem
-            key={reply.id}
-            reply={reply}
-            loadingAction={loadingAction}
-            onModifyLength={onModifyLength ? handleModifyLength : undefined}
-            onSelectReply={onSelectReply}
-            onGenerateDifferent={onGenerateDifferent}
-            onAddEmoji={onAddEmoji ? handleAddEmoji : undefined}
-            isAddingEmoji={addingEmojiReplyId === reply.id}
-            isDark={isDark}
-            intention={intention}
-          />
-        ))}
-      </View>
-    </Animated.View>
+        {isFocusMode ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          >
+            {cardContent}
+          </KeyboardAvoidingView>
+        ) : (
+          cardContent
+        )}
+      </Animated.View>
+    </>
   );
 }
