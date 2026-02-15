@@ -388,7 +388,7 @@ function ReplyItem({
             />
           ) : !hasAnimatedText ? (
             <TypewriterText
-              text={reply.text}
+              text={editedText || reply.text}
               style={{
                 fontSize: 15,
                 lineHeight: 24,
@@ -405,7 +405,7 @@ function ReplyItem({
                 color: textColor,
               }}
             >
-              {reply.text}
+              {editedText || reply.text}
             </Text>
           )}
       </View>
