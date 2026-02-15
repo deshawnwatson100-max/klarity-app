@@ -98,20 +98,20 @@ function ReplyStyleButton({
       case "calm":
         return {
           label: "Calm",
-          color: isDark ? "#7DD3C0" : "#059669",
-          bgColor: isDark ? "rgba(125, 211, 192, 0.1)" : "rgba(5, 150, 105, 0.08)",
+          color: isDark ? "#60A5FA" : "#3B82F6",
+          bgColor: isDark ? "rgba(96, 165, 250, 0.1)" : "rgba(59, 130, 246, 0.08)",
         };
       case "direct":
         return {
           label: "Direct",
-          color: isDark ? "#60A5FA" : "#2563EB",
-          bgColor: isDark ? "rgba(96, 165, 250, 0.1)" : "rgba(37, 99, 235, 0.08)",
+          color: isDark ? "#818CF8" : "#6366F1",
+          bgColor: isDark ? "rgba(129, 140, 248, 0.1)" : "rgba(99, 102, 241, 0.08)",
         };
       case "detached":
         return {
           label: "Detached",
-          color: isDark ? "#A78BFA" : "#7C3AED",
-          bgColor: isDark ? "rgba(167, 139, 250, 0.1)" : "rgba(124, 58, 237, 0.08)",
+          color: isDark ? "#94A3B8" : "#64748B",
+          bgColor: isDark ? "rgba(148, 163, 184, 0.1)" : "rgba(100, 116, 139, 0.08)",
         };
     }
   };
@@ -335,7 +335,8 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
   const [selectedReplyStyle, setSelectedReplyStyle] = useState<ReplyStyle | null>(null);
   const [showDeeperPattern, setShowDeeperPattern] = useState(false);
 
-  const accentColor = isDark ? "#7DD3C0" : "#059669";
+  // Blue accent color matching Communication Summary
+  const accentColor = isDark ? "#60A5FA" : "#3B82F6";
 
   const handleReplySelect = (style: ReplyStyle) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -355,29 +356,42 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
         maxWidth: "92%",
       }}
     >
-      {/* Main Card */}
+      {/* Main Card - matching Communication Summary style */}
       <View
         style={{
-          backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
-          borderRadius: 20,
+          backgroundColor: isDark ? "#000000" : "#FFFFFF",
+          borderRadius: 16,
           padding: 16,
           gap: 16,
+          borderWidth: isDark ? 0 : 1,
+          borderColor: isDark ? "transparent" : "rgba(0, 0, 0, 0.08)",
+          shadowColor: isDark ? "transparent" : "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.06,
+          shadowRadius: 8,
         }}
       >
         {/* Section 1: Surface Meaning */}
         <View>
-          <Text
-            style={{
-              color: colors.textTertiary,
-              fontSize: 11,
-              fontWeight: "600",
-              letterSpacing: 0.5,
-              marginBottom: 8,
-              textTransform: "uppercase",
-            }}
-          >
-            What this is saying on the surface
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <Ionicons
+              name="chatbubble-outline"
+              size={13}
+              color={accentColor}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: accentColor,
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Surface Meaning
+            </Text>
+          </View>
           <Text
             style={{
               color: colors.textPrimary,
@@ -399,18 +413,25 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
 
         {/* Section 2: Hidden Subtext */}
         <View>
-          <Text
-            style={{
-              color: colors.textTertiary,
-              fontSize: 11,
-              fontWeight: "600",
-              letterSpacing: 0.5,
-              marginBottom: 10,
-              textTransform: "uppercase",
-            }}
-          >
-            What this could actually mean emotionally
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+            <Ionicons
+              name="eye-outline"
+              size={13}
+              color={accentColor}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: accentColor,
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Emotional Subtext
+            </Text>
+          </View>
           <View style={{ gap: 8 }}>
             {analysis.hiddenSubtext.map((item, index) => (
               <View
@@ -457,18 +478,25 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
 
         {/* Section 3: Signal Strength */}
         <View>
-          <Text
-            style={{
-              color: colors.textTertiary,
-              fontSize: 11,
-              fontWeight: "600",
-              letterSpacing: 0.5,
-              marginBottom: 10,
-              textTransform: "uppercase",
-            }}
-          >
-            Signal Strength
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+            <Ionicons
+              name="pulse-outline"
+              size={13}
+              color={accentColor}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: accentColor,
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Signal Strength
+            </Text>
+          </View>
           <SignalStrengthIndicator
             strength={analysis.signalStrength}
             label={analysis.signalLabel}
@@ -485,18 +513,25 @@ export function StructuredAnalysisCard({ analysis, onReplySelect }: StructuredAn
 
         {/* Section 4: Power Move Recommendation */}
         <View>
-          <Text
-            style={{
-              color: colors.textTertiary,
-              fontSize: 11,
-              fontWeight: "600",
-              letterSpacing: 0.5,
-              marginBottom: 8,
-              textTransform: "uppercase",
-            }}
-          >
-            Your Strongest Move
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <Ionicons
+              name="flash-outline"
+              size={13}
+              color={accentColor}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: accentColor,
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Your Strongest Move
+            </Text>
+          </View>
           <Text
             style={{
               color: colors.textSecondary,
