@@ -310,7 +310,11 @@ function ReplyItem({
           <Pressable
             onPress={handleTapToEdit}
             style={({ pressed }) => ({
-              opacity: pressed ? 0.5 : 1,
+              opacity: pressed ? 0.7 : 1,
+              backgroundColor: buttonBg,
+              paddingVertical: 4,
+              paddingHorizontal: 10,
+              borderRadius: 10,
             })}
           >
             <Text style={{ fontSize: 12, color: textTertiary }}>edit reply</Text>
