@@ -304,52 +304,41 @@ function ReplyItem({
 
   return (
     <View style={{ marginBottom: 14 }}>
-      {/* Reply text with edit button */}
-      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-        {/* Edit button - left side */}
-        {!isEditing && (
+      {/* Edit reply button - top right, above the reply */}
+      {!isEditing && (
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 6 }}>
           <Pressable
             onPress={handleTapToEdit}
             style={({ pressed }) => ({
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingVertical: 4,
-              paddingHorizontal: 8,
-              borderRadius: 12,
-              backgroundColor: buttonBg,
-              opacity: pressed ? 0.7 : 1,
-              marginRight: 8,
+              opacity: pressed ? 0.5 : 1,
             })}
           >
-            <Ionicons name="pencil-outline" size={12} color={iconColor} />
-            <Text style={{ fontSize: 11, color: textSecondary }}>Edit</Text>
+            <Text style={{ fontSize: 12, color: textTertiary }}>edit reply</Text>
           </Pressable>
-        )}
+        </View>
+      )}
 
-        <View
+      {/* Reply text */}
+      <View
+        style={{
+          paddingLeft: 12,
+          position: "relative",
+        }}
+      >
+        {/* Soft accent gradient left edge */}
+        <LinearGradient
+          colors={[accentColorLight, "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={{
-            flex: 1,
-            paddingLeft: isEditing ? 12 : 0,
-            position: "relative",
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            borderRadius: 2,
           }}
-        >
-          {/* Soft accent gradient left edge - shows when editing */}
-          {isEditing && (
-            <LinearGradient
-              colors={[accentColorLight, "transparent"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                borderRadius: 2,
-              }}
-            />
-          )}
+        />
 
           {isEditing ? (
             <TextInput
@@ -393,7 +382,6 @@ function ReplyItem({
               {reply.text}
             </Text>
           )}
-        </View>
       </View>
 
       {/* Guidance Note (Lightbulb) - dynamic updates */}
