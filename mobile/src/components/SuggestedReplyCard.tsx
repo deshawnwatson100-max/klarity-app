@@ -629,7 +629,7 @@ export function SuggestedReplyCard({
   // Focus mode state
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusedReplyId, setFocusedReplyId] = useState<string | null>(null);
-  const blurOpacity = useRef(new Animated.Value(0)).current;
+  const blurOpacity = useRef(new Animated.Value(1)).current; // Start at 1 so blur shows immediately when modal opens
   const cardElevation = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
 
@@ -658,18 +658,14 @@ export function SuggestedReplyCard({
   // Enter focus mode - card elevates, background blurs
   const handleEnterFocusMode = useCallback((replyId: string) => {
     console.log('[SuggestedReplyCard] handleEnterFocusMode called, replyId:', replyId);
+    // Reset blur opacity to 1 before showing modal
+    blurOpacity.setValue(1);
     setIsFocusMode(true);
     setFocusedReplyId(replyId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Animate in (250ms ease-out)
+    // Animate card elevation (250ms ease-out)
     Animated.parallel([
-      Animated.timing(blurOpacity, {
-        toValue: 1,
-        duration: 250,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
       Animated.timing(cardElevation, {
         toValue: 1,
         duration: 250,
@@ -832,14 +828,15 @@ export function SuggestedReplyCard({
           </Animated.View>
         </Pressable>
 
-        {/* Card content in focus mode - positioned in modal */}
+        {/* Card content in focus mode - positioned at bottom above keyboard */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
           style={{
             flex: 1,
-            justifyContent: "center",
+            justifyContent: "flex-end",
             paddingHorizontal: 16,
+            paddingBottom: 16,
           }}
           pointerEvents="box-none"
         >
