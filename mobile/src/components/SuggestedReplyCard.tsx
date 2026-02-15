@@ -144,6 +144,7 @@ function ReplyItem({
   intention,
   onReplyTextChange,
   isFocusMode,
+  isEditingFromParent,
   onEnterFocusMode,
   onExitFocusMode,
   focusTrigger,
@@ -163,6 +164,7 @@ function ReplyItem({
   intention: IntentionType;
   onReplyTextChange?: (replyId: string, newText: string) => void;
   isFocusMode: boolean;
+  isEditingFromParent: boolean;
   onEnterFocusMode: () => void;
   onExitFocusMode: () => void;
   focusTrigger: number;
@@ -214,9 +216,19 @@ function ReplyItem({
     setCurrentGuidanceNote(reply.guidanceNote);
   }, [reply.guidanceNote]);
 
+  // Sync local isEditing with parent state
+  useEffect(() => {
+    if (isEditingFromParent && !isEditing) {
+      setIsEditing(true);
+    } else if (!isEditingFromParent && isEditing) {
+      setIsEditing(false);
+    }
+  }, [isEditingFromParent, isEditing]);
+
   // Auto-focus TextInput when entering edit mode or when modal's onShow fires
   useEffect(() => {
-    if (isEditing && isFocusMode) {
+    // Use isEditingFromParent for focus check since it's set synchronously with isFocusMode
+    if (isEditingFromParent && isFocusMode) {
       console.log('[ReplyItem] Focus effect triggered, focusTrigger:', focusTrigger);
       // Use multiple attempts to ensure focus happens after modal renders
       // The modal needs time to mount and the TextInput needs to be ready
@@ -238,7 +250,7 @@ function ReplyItem({
         clearTimeout(timer3);
       };
     }
-  }, [isEditing, isFocusMode, focusTrigger]);
+  }, [isEditingFromParent, isFocusMode, focusTrigger]);
 
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
@@ -666,6 +678,7 @@ export function SuggestedReplyCard({
   // Focus mode state
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusedReplyId, setFocusedReplyId] = useState<string | null>(null);
+  const [isEditingReplyId, setIsEditingReplyId] = useState<string | null>(null); // Lifted editing state
   const [isExiting, setIsExiting] = useState(false); // Track exit animation
   const [focusTrigger, setFocusTrigger] = useState(0); // Increment to trigger focus
   const blurOpacity = useRef(new Animated.Value(1)).current; // Start at 1 so blur shows immediately when modal opens
@@ -701,6 +714,7 @@ export function SuggestedReplyCard({
     blurOpacity.setValue(1);
     setIsFocusMode(true);
     setFocusedReplyId(replyId);
+    setIsEditingReplyId(replyId); // Set editing state at parent level for sync
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     // Animate card elevation (250ms ease-out)
@@ -748,6 +762,7 @@ export function SuggestedReplyCard({
     ]).start(() => {
       setIsFocusMode(false);
       setFocusedReplyId(null);
+      setIsEditingReplyId(null); // Clear editing state
       setIsExiting(false);
     });
   }, [blurOpacity, cardElevation, cardScale]);
@@ -844,6 +859,7 @@ export function SuggestedReplyCard({
             isDark={isDark}
             intention={intention}
             isFocusMode={isFocusMode && focusedReplyId === reply.id}
+            isEditingFromParent={isEditingReplyId === reply.id}
             onEnterFocusMode={() => handleEnterFocusMode(reply.id)}
             onExitFocusMode={handleExitFocusMode}
             focusTrigger={focusTrigger}
