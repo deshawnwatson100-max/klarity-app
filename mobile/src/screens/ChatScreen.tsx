@@ -52,6 +52,7 @@ import { DeepDiveEvaluationBubble } from "../components/DeepDiveEvaluationBubble
 import { DeepDiveFollowUpCard } from "../components/DeepDiveFollowUpCard";
 import { StructuredAnalysisCard } from "../components/StructuredAnalysisCard";
 import { PatternMirrorCard } from "../components/PatternMirrorCard";
+import { DecodeClarificationCard } from "../components/DecodeClarificationCard";
 import { useLoopsStore, useActiveLoopPersonContextId } from "../state/loopsStore";
 import { usePatternMirrorStore } from "../state/patternMirrorStore";
 import { detectBehavioralSignals } from "../utils/patternDetection";
@@ -76,6 +77,10 @@ import {
   analyzeDeepDecode,
   DeepDecodeResult,
   generateStructuredAnalysisFromImage,
+  generateDecodeClarificationOpening,
+  generateDecodeClarificationResponse,
+  extractClarificationContext,
+  DecodeClarificationContext,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -112,6 +117,7 @@ import {
   DeepDecodeResultMessage,
   StructuredAnalysisMessage,
   PatternMirrorMessage,
+  DecodeClarificationPromptMessage,
 } from "../types/chat";
 
 type Props = StackScreenProps<RootStackParamList, "ChatScreen">;
@@ -139,6 +145,10 @@ export function ChatScreen({ navigation, route }: Props) {
   const [isDeepDecodeAnalyzing, setIsDeepDecodeAnalyzing] = useState(false);
   const [deepDecodeResult, setDeepDecodeResult] = useState<DeepDecodeResult | null>(null);
   const [showDeepDecodeResults, setShowDeepDecodeResults] = useState(false);
+
+  // Decode clarification conversation state
+  const [activeClarificationId, setActiveClarificationId] = useState<string | null>(null);
+  const [clarificationContext, setClarificationContext] = useState<DecodeClarificationContext | null>(null);
 
   // Input bar collapse/expand state
   const [isInputBarCollapsed, setIsInputBarCollapsed] = useState(false);
@@ -1557,6 +1567,12 @@ Generate a new reply that follows the user's instruction while still responding 
       setSelectedImageUri(undefined);
       setSelectedImageBase64(undefined);
 
+      // Check if we're in an active clarification conversation
+      if (activeClarificationId && clarificationContext) {
+        await processClarificationResponse(userMessage);
+        return;
+      }
+
       await processDecodeMessage(userMessage);
       return;
     }
@@ -1879,6 +1895,43 @@ Generate a new reply that follows the user's instruction while still responding 
         };
         addMessageWithMode(analysisMsg, capturedMode);
 
+        // Extract tone and topics for clarification conversation
+        const { tone, topics } = extractClarificationContext(structuredResult);
+
+        // Generate clarification opening question
+        const clarificationOpening = await generateDecodeClarificationOpening(
+          tone,
+          topics,
+          structuredResult.surfaceMeaning
+        );
+
+        // Create clarification session ID
+        const clarificationId = `clarification-${Date.now()}`;
+
+        // Add clarification prompt card
+        const clarificationMsg: DecodeClarificationPromptMessage = {
+          id: `decode-clarification-${Date.now()}`,
+          role: "decode-clarification-prompt",
+          content: "",
+          timestamp: Date.now(),
+          mode: capturedMode,
+          promptQuestion: clarificationOpening.question,
+          toneContext: clarificationOpening.toneReference,
+          topicContext: clarificationOpening.topicReference,
+          turnsRemaining: 3,
+          clarificationId,
+        };
+        addMessageWithMode(clarificationMsg, capturedMode);
+
+        // Initialize clarification context for this session
+        setActiveClarificationId(clarificationId);
+        setClarificationContext({
+          originalAnalysisTone: tone,
+          originalAnalysisTopics: topics,
+          conversationHistory: [],
+          turnsCompleted: 0,
+        });
+
         // Scroll to show response
         setTimeout(() => {
           decodeScrollViewRef.current?.scrollToEnd({ animated: true });
@@ -2076,6 +2129,110 @@ Generate a new reply that follows the user's instruction while still responding 
         mode: "understand",
       };
       addMessageToActiveLoopRaw(errorMsg);
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  // Process user response in a clarification conversation
+  const processClarificationResponse = async (userMessage: ChatMessage) => {
+    if (!clarificationContext || !activeClarificationId) {
+      // Fallback to normal decode processing if context is missing
+      await processDecodeMessage(userMessage);
+      return;
+    }
+
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    const capturedMode: MessageMode = "understand";
+
+    try {
+      // Show loading indicator
+      const loadingMsgId = `chat-loading-${Date.now()}`;
+      const loadingMsg: ChatLoadingMessage = {
+        id: loadingMsgId,
+        role: "chat-loading",
+        content: "",
+        timestamp: Date.now(),
+        loadingType: "chat",
+        loadingState: "loading",
+        mode: capturedMode,
+      };
+      addMessageToActiveLoopRaw(loadingMsg);
+
+      // Update conversation history with user's message
+      const updatedHistory = [
+        ...clarificationContext.conversationHistory,
+        { role: "user" as const, content: userMessage.content },
+      ];
+
+      const updatedContext: DecodeClarificationContext = {
+        ...clarificationContext,
+        conversationHistory: updatedHistory,
+        turnsCompleted: clarificationContext.turnsCompleted + 1,
+      };
+
+      // Generate Klarity's response
+      const clarificationResult = await generateDecodeClarificationResponse(
+        userMessage.content,
+        updatedContext
+      );
+
+      // Remove loading bubble
+      removeMessageFromActiveLoop(loadingMsgId);
+
+      // Add Klarity's response as assistant message
+      const assistantMsg: ChatMessage = {
+        id: Date.now().toString() + "_clarification_response",
+        role: "assistant",
+        content: clarificationResult.response,
+        timestamp: Date.now(),
+        mode: capturedMode,
+      };
+      addMessageWithMode(assistantMsg, capturedMode);
+
+      // Update context with Klarity's response
+      updatedHistory.push({ role: "assistant" as const, content: clarificationResult.response });
+
+      // Check if conversation should continue
+      if (clarificationResult.shouldContinue && updatedContext.turnsCompleted < 3) {
+        // Add follow-up clarification prompt
+        const followUpMsg: DecodeClarificationPromptMessage = {
+          id: `decode-clarification-${Date.now()}`,
+          role: "decode-clarification-prompt",
+          content: "",
+          timestamp: Date.now(),
+          mode: capturedMode,
+          promptQuestion: clarificationResult.followUpQuestion || "Anything else you're noticing?",
+          toneContext: clarificationContext.originalAnalysisTone,
+          turnsRemaining: 3 - updatedContext.turnsCompleted,
+          clarificationId: activeClarificationId,
+        };
+        addMessageWithMode(followUpMsg, capturedMode);
+
+        // Update clarification context
+        setClarificationContext({
+          ...updatedContext,
+          conversationHistory: updatedHistory,
+        });
+      } else {
+        // Conversation complete - clear clarification state
+        setActiveClarificationId(null);
+        setClarificationContext(null);
+        console.log("[processClarificationResponse] Clarification conversation complete");
+      }
+
+      // Scroll to show response
+      setTimeout(() => {
+        decodeScrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error: any) {
+      console.error("[processClarificationResponse] Error:", error?.message || error);
+      // Clear clarification state on error
+      setActiveClarificationId(null);
+      setClarificationContext(null);
     } finally {
       setIsLoading(false);
       setIsProcessing(false);
@@ -2903,6 +3060,24 @@ Generate a new reply that follows the user's instruction while still responding 
           insight={patternMsg.insight}
           onDismiss={() => {
             // Optional: could remove the card from the loop
+          }}
+        />
+      );
+    }
+
+    // Decode Clarification Prompt - reality-check conversation starter
+    if (message.role === "decode-clarification-prompt") {
+      const clarificationMsg = message as DecodeClarificationPromptMessage;
+      return (
+        <DecodeClarificationCard
+          key={message.id}
+          promptQuestion={clarificationMsg.promptQuestion}
+          toneContext={clarificationMsg.toneContext}
+          onTap={() => {
+            // Focus input bar and set clarification context active
+            if (clarificationMsg.clarificationId) {
+              setActiveClarificationId(clarificationMsg.clarificationId);
+            }
           }}
         />
       );

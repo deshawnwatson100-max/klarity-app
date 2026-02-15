@@ -43,7 +43,8 @@ export type MessageRole =
   | "response-prompt"
   | "deep-decode-result"
   | "structured-analysis"
-  | "pattern-mirror";
+  | "pattern-mirror"
+  | "decode-clarification-prompt";
 
 export type MessageMode = "rewrite" | "understand";
 
@@ -581,6 +582,20 @@ export interface PatternMirrorMessage extends Message {
   insight: PatternMirrorInsight;
 }
 
+// ============================================
+// DECODE CLARIFICATION TYPES
+// ============================================
+
+// Decode clarification conversation prompt
+export interface DecodeClarificationPromptMessage extends Message {
+  role: "decode-clarification-prompt";
+  promptQuestion: string;           // The clarifying question Klarity asks
+  toneContext: string;              // Main tone detected from the conversation (e.g., "confusing", "frustrating")
+  topicContext?: string;            // What part of the text is being referenced
+  turnsRemaining: number;           // How many turns left in the clarification (max 3)
+  clarificationId: string;          // Links messages in the same clarification session
+}
+
 export type ChatMessage =
   | Message
   | AnalysisMessage
@@ -625,4 +640,5 @@ export type ChatMessage =
   | ResponsePromptMessage
   | DeepDecodeResultMessage
   | StructuredAnalysisMessage
-  | PatternMirrorMessage;
+  | PatternMirrorMessage
+  | DecodeClarificationPromptMessage;

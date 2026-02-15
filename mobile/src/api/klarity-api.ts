@@ -4290,3 +4290,258 @@ ${context?.intention ? `User's intention: ${context.intention}` : ""}`;
   }
 }
 
+// ============================================
+// DECODE CLARIFICATION CONVERSATION
+// ============================================
+
+export interface DecodeClarificationContext {
+  originalAnalysisTone: string;        // Main tone from decode analysis (e.g., "confusing", "frustrating")
+  originalAnalysisTopics: string[];    // Key topics/concerns identified
+  conversationHistory: { role: "user" | "assistant"; content: string }[];
+  turnsCompleted: number;
+}
+
+export interface DecodeClarificationOpeningResult {
+  question: string;
+  toneReference: string;
+  topicReference?: string;
+}
+
+/**
+ * Generate the opening clarification question after Decode analysis
+ * This is the first message Klarity sends to start the reality-check conversation
+ */
+export async function generateDecodeClarificationOpening(
+  analysisTone: string,
+  analysisTopics: string[],
+  surfaceMeaning?: string
+): Promise<DecodeClarificationOpeningResult> {
+  const client = getOpenAIClient();
+
+  const systemPrompt = `You are Klarity starting a brief reality-check conversation after analyzing a message.
+Your goal: Help the user reflect on what stood out to them most.
+
+## RULES
+- Generate ONE short opening question (under 15 words)
+- Reference the main tone or a specific concerning part
+- Sound like a friend checking in, not a therapist
+- Natural conversational tone
+
+## QUESTION TEMPLATES (pick what fits best)
+- "What was most [tone] to you about this conversation?"
+- "What part of [topic] stood out to you?"
+- "What about [concerning part] feels off?"
+- "Is something about [aspect] worrying you?"
+
+## OUTPUT FORMAT (JSON only)
+{
+  "question": "The opening question to ask",
+  "toneReference": "The main tone word used (e.g., confusing, frustrating)",
+  "topicReference": "Optional: specific topic referenced"
+}
+
+## TONE RULES
+- Casual, not clinical
+- Direct, not soft
+- Curious, not probing
+- Short sentences only`;
+
+  const topicsList = analysisTopics.length > 0
+    ? analysisTopics.slice(0, 3).join(", ")
+    : "the conversation";
+
+  const userPrompt = `Generate an opening clarification question based on:
+
+Detected tone: ${analysisTone}
+Key topics/concerns: ${topicsList}
+${surfaceMeaning ? `Surface meaning: ${surfaceMeaning}` : ""}
+
+Generate the opening question in JSON format.`;
+
+  try {
+    console.log("[generateDecodeClarificationOpening] Starting with tone:", analysisTone);
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 150,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0]?.message?.content?.trim() || "";
+    const parsed = JSON.parse(content);
+
+    return {
+      question: parsed.question || `What was most ${analysisTone.toLowerCase()} to you about this?`,
+      toneReference: parsed.toneReference || analysisTone,
+      topicReference: parsed.topicReference,
+    };
+  } catch (error) {
+    console.error("[generateDecodeClarificationOpening] Error:", error);
+    return {
+      question: `What stood out to you most about this?`,
+      toneReference: analysisTone || "unclear",
+    };
+  }
+}
+
+export interface DecodeClarificationResponse {
+  response: string;
+  shouldContinue: boolean;   // Whether to ask another question
+  followUpQuestion?: string; // Next question if continuing
+  perspective?: string;      // Calibrated perspective if concluding
+}
+
+/**
+ * Generate Klarity's response during the clarification conversation
+ * Follows the 3-turn max rule and conversation style guidelines
+ */
+export async function generateDecodeClarificationResponse(
+  userMessage: string,
+  context: DecodeClarificationContext
+): Promise<DecodeClarificationResponse> {
+  const client = getOpenAIClient();
+
+  const turnsRemaining = 3 - context.turnsCompleted;
+  const isLastTurn = turnsRemaining <= 1;
+
+  const systemPrompt = `You are Klarity having a brief reality-check conversation. You're a sharp friend with good instincts about people.
+
+## CONVERSATION STATE
+Turns completed: ${context.turnsCompleted}/3
+Turns remaining: ${turnsRemaining}
+${isLastTurn ? "THIS IS THE FINAL TURN - must provide calibrated perspective and conclude." : ""}
+
+## YOUR VIBE
+Short. Direct. Strategic. You care but you're not soft about it. You see patterns others miss.
+
+## CONVERSATION FLOW
+1. If user response lacks context: Ask ONE short follow-up (under 12 words)
+   Examples: "Is this typical for them?" "Did anything happen before this?" "Is the tone different than usual?"
+
+2. If enough context OR final turn: Provide calibrated perspective
+   - Compare message signals + user concern
+   - Possible outcomes:
+     A) Concern grounded in observable behavior
+     B) Unclear evidence
+     C) Signals consistent and stable
+
+   - Must reference message behavior (stick to facts)
+   - Acknowledge user's concern without validating or dismissing
+   - End naturally, not instructively
+   - Help user be level-headed
+
+## RESPONSE RULES
+- Each message ≤ 2 sentences
+- Never ask multiple questions in one message
+- Natural conversational tone (not robotic)
+- No therapy language
+- No diagnosing anyone
+- No declaring guilty/innocent
+- No long advice paragraphs
+
+## OUTPUT FORMAT (JSON only)
+{
+  "response": "Your response text (1-2 sentences)",
+  "shouldContinue": true/false,
+  "followUpQuestion": "Optional: if shouldContinue is true",
+  "perspective": "Optional: calibrated perspective if concluding"
+}
+
+## BANNED PHRASES
+- "I understand how you feel"
+- "That must be hard"
+- "Take care of yourself"
+- "boundaries"
+- "communicate openly"
+- "healthy relationship"`;
+
+  const historyContext = context.conversationHistory
+    .map(m => `${m.role === "user" ? "User" : "Klarity"}: ${m.content}`)
+    .join("\n");
+
+  const userPrompt = `Original analysis tone: ${context.originalAnalysisTone}
+Key topics: ${context.originalAnalysisTopics.join(", ")}
+
+Conversation so far:
+${historyContext}
+
+User just said: "${userMessage}"
+
+Generate your response. ${isLastTurn ? "This is the final turn - provide calibrated perspective." : "Decide if you need more context or can provide perspective."}`;
+
+  try {
+    console.log("[generateDecodeClarificationResponse] Turn:", context.turnsCompleted + 1);
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0]?.message?.content?.trim() || "";
+    const parsed = JSON.parse(content);
+
+    // Force conclusion on last turn
+    if (isLastTurn) {
+      return {
+        response: parsed.response || parsed.perspective || "Based on what you've shared, the signals here seem worth paying attention to.",
+        shouldContinue: false,
+        perspective: parsed.perspective || parsed.response,
+      };
+    }
+
+    return {
+      response: parsed.response || "I hear you.",
+      shouldContinue: parsed.shouldContinue ?? false,
+      followUpQuestion: parsed.followUpQuestion,
+      perspective: parsed.perspective,
+    };
+  } catch (error) {
+    console.error("[generateDecodeClarificationResponse] Error:", error);
+    return {
+      response: "Thanks for sharing that. The signals here seem worth reflecting on.",
+      shouldContinue: false,
+    };
+  }
+}
+
+/**
+ * Extract tone and topics from a structured analysis result for clarification
+ */
+export function extractClarificationContext(
+  analysis: {
+    signalStrength?: string;
+    signalLabel?: string;
+    surfaceMeaning?: string;
+    hiddenSubtext?: Array<{ meaning: string; explanation?: string }>;
+  }
+): { tone: string; topics: string[] } {
+  // Determine tone from signal strength
+  let tone = "unclear";
+  if (analysis.signalStrength === "red" || analysis.signalLabel?.includes("Red Flag")) {
+    tone = "concerning";
+  } else if (analysis.signalStrength === "yellow" || analysis.signalLabel?.includes("Mixed")) {
+    tone = "confusing";
+  } else if (analysis.signalStrength === "green") {
+    tone = "clear";
+  }
+
+  // Extract topics from hidden subtext
+  const topics: string[] = [];
+  if (analysis.hiddenSubtext) {
+    topics.push(...analysis.hiddenSubtext.slice(0, 3).map(item => item.meaning));
+  }
+
+  return { tone, topics };
+}
+

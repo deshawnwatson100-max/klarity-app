@@ -1207,6 +1207,49 @@ When a user uploads a screenshot without stating their specific concern, the ima
 
 This feature helps continue the conversation naturally without being pushy, acknowledging that users often share screenshots without explaining their concern.
 
+### NEW: Decode Clarification Conversation
+After Decode analysis completes (when user uploads a screenshot), Klarity initiates a brief reality-check conversation to help the user reflect on what stood out to them most.
+
+#### Flow
+1. **Opening Message** - Klarity asks a contextual question based on the main tone detected:
+   - "What was most [tone] to you about this conversation?"
+   - "What part of [topic] stood out to you?"
+   - "What about [aspect] feels off?"
+   - "Is something about [concern] worrying you?"
+
+2. **Clarifying Follow-up** (only if needed) - If user response lacks context, asks ONE short follow-up:
+   - "Is this typical for them?"
+   - "Did anything happen before this?"
+   - "Is the tone different than usual?"
+
+3. **Calibrated Perspective** - Compares message signals + user concern:
+   - A) Concern grounded in observable behavior
+   - B) Unclear evidence
+   - C) Signals consistent and stable
+   - References message behavior while sticking to facts
+   - Acknowledges user concern without validating or dismissing
+
+4. **Closing Line** - Ends naturally, not instructively
+
+#### Conversation Rules
+- Maximum 3 back-and-forth turns unless user continues
+- Each Klarity message ≤ 2 sentences
+- Natural conversational tone (not robotic prompts)
+- Never asks multiple questions in one message
+- Stops once clarity improves
+
+#### Prohibited
+- Therapy language
+- Diagnosing the user
+- Declaring someone guilty/innocent
+- Long advice paragraphs
+
+#### Files
+- `src/types/chat.ts` - `DecodeClarificationPromptMessage` type
+- `src/components/DecodeClarificationCard.tsx` - Tappable prompt card UI
+- `src/api/klarity-api.ts` - `generateDecodeClarificationOpening()`, `generateDecodeClarificationResponse()`, `extractClarificationContext()`
+- `src/screens/ChatScreen.tsx` - `processClarificationResponse()` handler
+
 ## Future Enhancements
 
 - Export conversations
