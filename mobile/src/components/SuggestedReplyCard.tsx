@@ -206,6 +206,17 @@ function ReplyItem({
     setCurrentGuidanceNote(reply.guidanceNote);
   }, [reply.guidanceNote]);
 
+  // Auto-focus TextInput when entering edit mode (with delay for modal to render)
+  useEffect(() => {
+    if (isEditing && isFocusMode) {
+      // Delay focus to allow modal to render the TextInput
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing, isFocusMode]);
+
   // Get feedback store action
   const addFeedback = useFeedbackStore((s) => s.addFeedback);
 
@@ -216,9 +227,7 @@ function ReplyItem({
     setIsEditing(true);
     setHasAnimatedText(true); // Stop typewriter animation
     onEnterFocusMode(); // Enter focus mode
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
+    // Focus will be handled by useEffect when isEditing changes
   };
 
   // Handle done editing - exit edit mode and focus mode
@@ -799,50 +808,54 @@ export function SuggestedReplyCard({
         statusBarTranslucent
         onRequestClose={handleBackdropPress}
       >
-        <Pressable
-          onPress={handleBackdropPress}
-          style={StyleSheet.absoluteFill}
-        >
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              { opacity: blurOpacity },
-            ]}
-          >
-            <BlurView
-              intensity={Platform.OS === "ios" ? 40 : 100}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Dim overlay */}
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(0, 0, 0, 0.4)"
-                    : "rgba(0, 0, 0, 0.2)",
-                },
-              ]}
-            />
-          </Animated.View>
-        </Pressable>
-
-        {/* Card content in focus mode - positioned at bottom above keyboard */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            paddingHorizontal: 16,
-            paddingBottom: 16,
-          }}
-          pointerEvents="box-none"
+          style={{ flex: 1 }}
         >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            {cardContent}
+          <Pressable
+            onPress={handleBackdropPress}
+            style={StyleSheet.absoluteFill}
+          >
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                { opacity: blurOpacity },
+              ]}
+            >
+              <BlurView
+                intensity={Platform.OS === "ios" ? 40 : 100}
+                tint={isDark ? "dark" : "light"}
+                style={StyleSheet.absoluteFill}
+              />
+              {/* Dim overlay */}
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(0, 0, 0, 0.4)"
+                      : "rgba(0, 0, 0, 0.2)",
+                  },
+                ]}
+              />
+            </Animated.View>
           </Pressable>
+
+          {/* Card content in focus mode - positioned at bottom above keyboard */}
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "flex-end",
+              paddingHorizontal: 16,
+              paddingBottom: 16,
+            }}
+            pointerEvents="box-none"
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              {cardContent}
+            </Pressable>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 
