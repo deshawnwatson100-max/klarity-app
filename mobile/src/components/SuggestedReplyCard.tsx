@@ -311,7 +311,7 @@ function ReplyItem({
             onPress={handleTapToEdit}
             style={({ pressed }) => ({
               opacity: pressed ? 0.7 : 1,
-              backgroundColor: buttonBg,
+              backgroundColor: "transparent",
               paddingVertical: 4,
               paddingHorizontal: 10,
               borderRadius: 10,
