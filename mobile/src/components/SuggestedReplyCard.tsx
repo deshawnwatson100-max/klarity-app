@@ -316,8 +316,6 @@ function ReplyItem({
         <Pressable
           onPress={isEditing ? handleDoneEditing : handleTapToEdit}
           style={({ pressed }) => ({
-            flexDirection: "row",
-            alignItems: "center",
             opacity: pressed ? 0.7 : 1,
             backgroundColor: isDark ? "rgba(96, 165, 250, 0.1)" : "rgba(59, 130, 246, 0.06)",
             paddingVertical: 5,
@@ -327,20 +325,22 @@ function ReplyItem({
             borderColor: isDark ? "rgba(96, 165, 250, 0.3)" : "rgba(59, 130, 246, 0.25)",
           })}
         >
-          <Ionicons
-            name={isEditing ? "checkmark-outline" : "pencil-outline"}
-            size={12}
-            color={isDark ? "#60A5FA" : "#3B82F6"}
-            style={{ marginRight: 4 }}
-          />
-          <Text style={{
-            fontSize: 12,
-            fontWeight: "600",
-            color: isDark ? "#60A5FA" : "#3B82F6",
-            letterSpacing: 0.2,
-          }}>
-            {isEditing ? "done editing" : "edit reply"}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name={isEditing ? "checkmark-outline" : "pencil-outline"}
+              size={12}
+              color={isDark ? "#60A5FA" : "#3B82F6"}
+              style={{ marginRight: 5 }}
+            />
+            <Text style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: isDark ? "#60A5FA" : "#3B82F6",
+              letterSpacing: 0.2,
+            }}>
+              {isEditing ? "done editing" : "edit reply"}
+            </Text>
+          </View>
         </Pressable>
       </View>
 
