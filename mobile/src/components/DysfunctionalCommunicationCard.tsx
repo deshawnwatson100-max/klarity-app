@@ -7,11 +7,18 @@ import { useTheme } from "../theme/ThemeContext";
 interface DysfunctionalCommunicationCardProps {
   summary: string;
   patterns?: string[];
+  responseGuidance?: string;
+  communicationMistake?: {
+    mistake: string;
+    whyAvoid: string;
+  };
 }
 
 export function DysfunctionalCommunicationCard({
   summary,
   patterns,
+  responseGuidance,
+  communicationMistake,
 }: DysfunctionalCommunicationCardProps) {
   const { colors, isDark } = useTheme();
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
@@ -67,7 +74,7 @@ export function DysfunctionalCommunicationCard({
   // Interpolate content height for expand/collapse animation
   const contentMaxHeight = contentHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 500],
+    outputRange: [0, 700],
     extrapolate: "clamp",
   });
 
@@ -188,6 +195,94 @@ export function DysfunctionalCommunicationCard({
                     </Text>
                   </View>
                 ))}
+              </View>
+            )}
+
+            {/* Response Guidance */}
+            {responseGuidance && (
+              <View style={{ marginTop: 16 }}>
+                <View className="flex-row items-center mb-1">
+                  <Ionicons
+                    name="bulb-outline"
+                    size={13}
+                    color={isDark ? "#60A5FA" : "#3B82F6"}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: isDark ? "#60A5FA" : "#3B82F6",
+                      letterSpacing: 0.3,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    How to Respond
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 22,
+                    color: isDark ? "#D1D5DB" : colors.textSecondary,
+                  }}
+                >
+                  {responseGuidance}
+                </Text>
+              </View>
+            )}
+
+            {/* Communication Mistake Warning */}
+            {communicationMistake && (
+              <View
+                style={{
+                  marginTop: 16,
+                  backgroundColor: isDark ? "#1C1917" : "#FEF3C7",
+                  borderRadius: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? "#44403C" : "#FCD34D",
+                }}
+              >
+                <View className="flex-row items-center mb-1">
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={13}
+                    color={isDark ? "#FBBF24" : "#D97706"}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: isDark ? "#FBBF24" : "#D97706",
+                      letterSpacing: 0.3,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Watch Out For
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 20,
+                    color: isDark ? "#FDE68A" : "#92400E",
+                    fontWeight: "500",
+                    marginBottom: 4,
+                  }}
+                >
+                  {communicationMistake.mistake}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 20,
+                    color: isDark ? "#D6D3D1" : "#78716C",
+                  }}
+                >
+                  {communicationMistake.whyAvoid}
+                </Text>
               </View>
             )}
           </Animated.View>

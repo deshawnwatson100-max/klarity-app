@@ -859,7 +859,7 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageWithMode(typingMsg, capturedMode);
 
-      let dysfunctionalSummary: { summary: string; patterns?: string[] };
+      let dysfunctionalSummary: { summary: string; patterns?: string[]; responseGuidance?: string; communicationMistake?: { mistake: string; whyAvoid: string } };
       let analysis: EmotionalAnalysis | null = null;
       let imageAnalysisResult: any = null;
 
@@ -903,6 +903,8 @@ export function ChatScreen({ navigation, route }: Props) {
         dysfunctionalSummary = {
           summary: imageAnalysisResult.summary || "Analyzing the conversation shared.",
           patterns: imageAnalysisResult.labels?.map((l: any) => l.tag) || [],
+          responseGuidance: imageAnalysisResult.responseGuidance,
+          communicationMistake: imageAnalysisResult.communicationMistake,
         };
 
         // Create analysis from image - use actual tone from analysis
@@ -940,6 +942,8 @@ export function ChatScreen({ navigation, route }: Props) {
         timestamp: Date.now(),
         summary: dysfunctionalSummary.summary,
         patterns: dysfunctionalSummary.patterns,
+        responseGuidance: dysfunctionalSummary.responseGuidance,
+        communicationMistake: dysfunctionalSummary.communicationMistake,
       };
       addMessageWithMode(dysfunctionalMsg, capturedMode);
 
@@ -2908,6 +2912,8 @@ Generate a new reply that follows the user's instruction while still responding 
           key={message.id}
           summary={msg.summary}
           patterns={msg.patterns}
+          responseGuidance={msg.responseGuidance}
+          communicationMistake={msg.communicationMistake}
         />
       );
     }

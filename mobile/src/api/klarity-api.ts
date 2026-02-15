@@ -799,6 +799,11 @@ Respond with valid JSON only containing:
 - guidanceNote: How the OTHER PERSON will FEEL when they receive this reply from the user (for invalid: empty string). Examples: "This will make them feel heard", "This might ease the tension", "This shows you care about their perspective"
 - acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic].")
 - responseContext: A brief context phrase to complete "How do you want to respond to..." (e.g., "their question about meeting up" or "this apology" or "what they shared")
+- responseGuidance: 1-2 sentences gently explaining HOW to approach responding well. Focus on the emotional/relational approach, not scripted words. Examples: "Match their energy and acknowledge the effort they put into sharing this with you." or "Keep it light and warm—no need to over-explain or apologize." (empty string if invalid)
+- communicationMistake: ONLY include this if there's a common mistake someone might make in this situation. Object with "mistake" (what they might be tempted to do) and "whyAvoid" (gentle explanation of why it doesn't help). Set to null if no relevant mistake applies. Examples:
+  - { "mistake": "Over-apologizing or explaining yourself", "whyAvoid": "It can come across as insecure and shifts the focus away from connecting with them." }
+  - { "mistake": "Immediately trying to fix or solve their problem", "whyAvoid": "Sometimes people just want to feel heard before jumping to solutions." }
+  - { "mistake": "Matching their short replies with even shorter ones", "whyAvoid": "This can create distance when a bit of warmth would keep things connected." }
 
 ## GUIDANCE NOTE RULES (CRITICAL)
 - The guidanceNote describes the OTHER PERSON'S emotional reaction to your suggested reply
@@ -909,6 +914,8 @@ When the image is invalid (not a conversation screenshot):
       lastMessage: parsed.lastMessage || "",
       acknowledgment: parsed.acknowledgment || "",
       responseContext: parsed.responseContext || "",
+      responseGuidance: parsed.isInvalidInput ? "" : (parsed.responseGuidance || ""),
+      communicationMistake: parsed.isInvalidInput ? undefined : (parsed.communicationMistake || undefined),
     };
   } catch (error: any) {
     console.error("[analyzeImageToxicity] Analysis failed:", error?.message || error);

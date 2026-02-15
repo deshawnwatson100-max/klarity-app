@@ -102,6 +102,12 @@ export interface ImageAnalysis {
   lastMessage?: string; // The last message from the conversation
   acknowledgment?: string; // Kind acknowledgment of what is in the image
   responseContext?: string; // Context for "How do you want to respond to [this]?"
+  responseGuidance?: string; // Gentle explanation of how to respond effectively
+  communicationMistake?: {
+    // Common mistake to avoid (only present when relevant)
+    mistake: string; // What the user might be tempted to do
+    whyAvoid: string; // Why this approach doesn't work well
+  };
 }
 
 export interface ImageAnalysisMessage extends Message {
@@ -258,6 +264,11 @@ export interface DysfunctionalCommunicationMessage extends Message {
   role: "dysfunctional-communication";
   summary: string;
   patterns?: string[];
+  responseGuidance?: string; // How to approach responding
+  communicationMistake?: {
+    mistake: string;
+    whyAvoid: string;
+  };
 }
 
 export interface RedFlagsMessage extends Message {
