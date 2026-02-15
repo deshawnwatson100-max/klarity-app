@@ -312,7 +312,7 @@ function ReplyItem({
   return (
     <View style={{ marginBottom: 14 }}>
       {/* Edit reply button - top right, above the reply */}
-      <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 4, paddingLeft: 12 }}>
         <Pressable
           onPress={isEditing ? handleDoneEditing : handleTapToEdit}
           style={({ pressed }) => ({
