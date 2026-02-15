@@ -322,7 +322,7 @@ function ReplyItem({
             paddingHorizontal: 12,
             borderRadius: 14,
             borderWidth: 1,
-            borderColor: isEditing ? accentColor : (isDark ? "#6B7280" : "#9CA3AF"),
+            borderColor: isEditing ? accentColor : (isDark ? "#9CA3AF" : "#6B7280"),
           })}
         >
           <Text style={{ fontSize: 12, color: isEditing ? textColor : textTertiary }}>
