@@ -943,11 +943,9 @@ export function SuggestedReplyCard({
               paddingBottom: 16,
             }}
             keyboardShouldPersistTaps="always"
-            pointerEvents="box-none"
+            scrollEnabled={false}
           >
-            <View onStartShouldSetResponder={() => true}>
-              {cardContent}
-            </View>
+            {cardContent}
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
