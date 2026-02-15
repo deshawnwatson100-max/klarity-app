@@ -304,11 +304,36 @@ function ReplyItem({
 
   return (
     <View style={{ marginBottom: 14 }}>
-      {/* Reply text - tappable to edit inline */}
-      <Pressable onPress={handleTapToEdit} disabled={isEditing}>
+      {/* Reply text with edit button */}
+      <View style={{ position: "relative" }}>
+        {/* Edit button - top right */}
+        {!isEditing && (
+          <Pressable
+            onPress={handleTapToEdit}
+            style={({ pressed }) => ({
+              position: "absolute",
+              top: 0,
+              right: 0,
+              zIndex: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 12,
+              backgroundColor: buttonBg,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="pencil-outline" size={12} color={iconColor} />
+            <Text style={{ fontSize: 11, color: textSecondary }}>Edit</Text>
+          </Pressable>
+        )}
+
         <View
           style={{
             paddingLeft: 12,
+            paddingRight: isEditing ? 0 : 50, // Make room for edit button
             position: "relative",
           }}
         >
@@ -370,7 +395,7 @@ function ReplyItem({
             </Text>
           )}
         </View>
-      </Pressable>
+      </View>
 
       {/* Guidance Note (Lightbulb) - dynamic updates */}
       <Animated.View
