@@ -1073,8 +1073,25 @@ export function ChatScreen({ navigation, route }: Props) {
       };
       addMessageWithMode(typingMsg, capturedMode);
 
-      // Get the original context
-      const originalContext = conversationContext;
+      // Get context from conversationContext or extract from existing messages
+      let originalContext = conversationContext;
+
+      // If no stored context, try to extract from existing messages
+      if (!originalContext) {
+        const dysfunctionalMsg = messages.find(m => m.role === "dysfunctional-communication") as DysfunctionalCommunicationMessage | undefined;
+        const suggestedReplyMsg = messages.find(m => m.role === "suggested-reply-card") as SuggestedReplyCardMessage | undefined;
+
+        if (dysfunctionalMsg || suggestedReplyMsg) {
+          originalContext = {
+            originalMessage: dysfunctionalMsg?.content || "",
+            previousSummary: dysfunctionalMsg?.summary || "",
+            previousPatterns: dysfunctionalMsg?.patterns,
+            previousReply: suggestedReplyMsg?.replies?.[0]?.text,
+            lastMessageFromOther: dysfunctionalMsg?.summary,
+          };
+        }
+      }
+
       if (!originalContext) {
         throw new Error("No conversation context found");
       }
@@ -1499,8 +1516,21 @@ Generate a new reply that follows the user's instruction while still responding 
 
       // Check if this is a follow-up instruction (no image, has existing conversation context)
       // If so, treat it as a request to regenerate/modify the reply
+      // Also check if there are existing messages in the loop (suggests ongoing conversation)
       const hasExistingContext = conversationContext !== null && conversationContext.originalMessage;
-      const isFollowUpInstruction = !userMessage.imageBase64 && hasExistingContext;
+      const hasExistingMessages = messages.length > 0 && messages.some(m =>
+        m.role === "suggested-reply-card" || m.role === "dysfunctional-communication"
+      );
+      const isFollowUpInstruction = !userMessage.imageBase64 && (hasExistingContext || hasExistingMessages);
+
+      console.log("[ChatScreen] Reply mode follow-up check:", {
+        hasExistingContext,
+        hasExistingMessages,
+        isFollowUpInstruction,
+        conversationContext: conversationContext ? "exists" : "null",
+        messagesCount: messages.length,
+        messageRoles: messages.map(m => m.role),
+      });
 
       if (isFollowUpInstruction) {
         await processReplyFollowUp(userMessage);
