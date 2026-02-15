@@ -205,6 +205,13 @@ function ReplyItem({
     }, 100);
   };
 
+  // Handle done editing - exit edit mode
+  const handleDoneEditing = () => {
+    Haptics.selectionAsync();
+    setIsEditing(false);
+    Keyboard.dismiss();
+  };
+
   // Handle text change with debounced analysis
   const handleTextChange = useCallback(
     (newText: string) => {
@@ -305,24 +312,24 @@ function ReplyItem({
   return (
     <View style={{ marginBottom: 14 }}>
       {/* Edit reply button - top right, above the reply */}
-      {!isEditing && (
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 6 }}>
-          <Pressable
-            onPress={handleTapToEdit}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.7 : 1,
-              backgroundColor: "transparent",
-              paddingVertical: 4,
-              paddingHorizontal: 10,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: buttonBorder,
-            })}
-          >
-            <Text style={{ fontSize: 12, color: textTertiary }}>edit reply</Text>
-          </Pressable>
-        </View>
-      )}
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 6 }}>
+        <Pressable
+          onPress={isEditing ? handleDoneEditing : handleTapToEdit}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.7 : 1,
+            backgroundColor: "transparent",
+            paddingVertical: 4,
+            paddingHorizontal: 10,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: buttonBorder,
+          })}
+        >
+          <Text style={{ fontSize: 12, color: isEditing ? textColor : textTertiary }}>
+            {isEditing ? "done editing" : "edit reply"}
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Reply text */}
       <View
