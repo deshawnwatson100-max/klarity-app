@@ -165,7 +165,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     if ((value.trim() || selectedImageUri) && !disabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSend();
-      Keyboard.dismiss();
+      // Don't dismiss keyboard here - let the parent screen decide when to dismiss
     }
   };
 

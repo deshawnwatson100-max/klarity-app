@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView, Keyboard } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -88,6 +88,8 @@ export function InputScreen({ navigation }: Props) {
 
   // Navigation helper functions
   const navigateToChatScreen = () => {
+    // Dismiss keyboard when navigating away after first input
+    Keyboard.dismiss();
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
   };
 
