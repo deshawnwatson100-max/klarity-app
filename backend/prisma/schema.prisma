@@ -1,0 +1,143 @@
+// Prisma schema for Klarity API
+// SQLite database with Better Auth + Klarity conversation models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// BETTER AUTH TABLES
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  sessions      Session[]
+  accounts      Account[]
+  conversations Conversation[]
+  memories      Memory[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ============================================
+// KLARITY CONVERSATION MODELS
+// ============================================
+
+model Conversation {
+  id             String    @id @default(cuid())
+  userId         String
+  title          String?
+  rollingSummary String?   // Accumulated conversation summary for context
+  createdAt      DateTime  @default(now())
+  lastMessageAt  DateTime  @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant" | "system"
+  text           String
+  idempotencyKey String?  // For idempotent message creation
+  modelUsed      String?  // e.g., "gpt-4o"
+  tokensIn       Int?
+  tokensOut      Int?
+  latencyMs      Int?
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  decode       Decode?
+
+  @@unique([conversationId, idempotencyKey])
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model Decode {
+  id        String   @id @default(cuid())
+  messageId String   @unique
+  json      String   // JSON string of decode analysis
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// MEMORY MODEL (MVP - no vectors)
+// ============================================
+
+model Memory {
+  id         String   @id @default(cuid())
+  userId     String
+  text       String   // The memory content
+  type       String   // "preference" | "fact" | "behavior" | "context"
+  strength   Float    @default(1.0) // Memory strength/importance (0-1)
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([strength])
+  @@index([lastUsedAt])
+}

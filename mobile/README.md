@@ -920,21 +920,90 @@ All AI calls are routed through the backend API for security - the OpenAI API ke
 ### Backend API Architecture
 The app uses a secure backend proxy for all OpenAI operations:
 
-**Endpoints:**
+**Legacy Endpoints (X-APP-KEY auth):**
 - `POST /api/chat` - Main chat endpoint with rate limiting
 - `POST /api/chat/completions` - Direct OpenAI Chat Completions passthrough (supports web_search_options)
 - `POST /api/chat/responses` - OpenAI Responses API passthrough
 - `POST /api/transcribe` - Audio transcription
 - `GET /health` - Health check (returns `{ ok: true }`)
 
+**V1 Conversation API (Better Auth session):**
+- `POST /v1/conversations` - Create a new conversation
+- `GET /v1/conversations/:id` - Get conversation with last 50 messages
+- `POST /v1/conversations/:id/messages` - Send message with streaming response (SSE)
+
+**Auth Endpoints (Better Auth):**
+- `POST /api/auth/sign-up` - Create account with email/password
+- `POST /api/auth/sign-in/email` - Sign in with email/password
+- `GET /api/auth/session` - Get current session
+- `POST /api/auth/sign-out` - Sign out
+
 **Security:**
-- `X-APP-KEY` header required for all requests
+- `X-APP-KEY` header required for legacy /api/* requests
+- Better Auth session cookies for /v1/* endpoints
 - Rate limiting: 60 requests/minute for chat, 30/minute for transcription
 - OpenAI API key stored server-side only (never exposed to client)
 
 **Environment Variables (Backend):**
 - `OPENAI_API_KEY` - OpenAI API key (server-only, required)
 - `APP_CLIENT_KEY` - Shared secret for mobile app authentication (server-only, required)
+- `BETTER_AUTH_SECRET` - Secret for Better Auth session encryption (required)
+- `DATABASE_URL` - SQLite database path (default: file:./dev.db)
+
+### How to Test V1 API
+
+**1. Create a user account:**
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-up \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "testpass123", "name": "Test User"}'
+```
+
+**2. Sign in and get session cookie:**
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-in/email \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"email": "test@example.com", "password": "testpass123"}'
+```
+
+**3. Create a conversation:**
+```bash
+curl -X POST http://localhost:3000/v1/conversations \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"title": "My first conversation"}'
+```
+
+**4. Send a message with SSE streaming:**
+```bash
+curl -N -X POST http://localhost:3000/v1/conversations/{CONVERSATION_ID}/messages \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "idempotency_key": "550e8400-e29b-41d4-a716-446655440000",
+    "input": {
+      "text": "He said he would call me back but never did. What does this mean?",
+      "mode": "decode",
+      "tone_preference": "calm_direct"
+    }
+  }'
+```
+
+**5. Get conversation with messages:**
+```bash
+curl http://localhost:3000/v1/conversations/{CONVERSATION_ID} \
+  -b cookies.txt
+```
+
+**SSE Response Format:**
+```
+event: token
+data: {"chunk": "partial content..."}
+
+event: done
+data: {"message": {...}, "decode": {...}, "meta": {...}, "requestId": "..."}
+```
 
 ## User Flow
 

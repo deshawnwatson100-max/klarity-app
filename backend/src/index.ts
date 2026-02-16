@@ -5,6 +5,8 @@ import "./env";
 import { sampleRouter } from "./routes/sample";
 import { chatRouter } from "./routes/chat";
 import { transcribeRouter } from "./routes/transcribe";
+import { conversationsRouter } from "./routes/v1/conversations";
+import { auth } from "./lib/auth";
 import { logger } from "hono/logger";
 
 const app = new Hono();
@@ -31,10 +33,16 @@ app.use("*", logger());
 // Health check endpoint
 app.get("/health", (c) => c.json({ ok: true }));
 
+// Better Auth handler
+app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
 // Routes
 app.route("/api/sample", sampleRouter);
 app.route("/api/chat", chatRouter);
 app.route("/api/transcribe", transcribeRouter);
+
+// V1 API routes
+app.route("/v1/conversations", conversationsRouter);
 
 const port = Number(process.env.PORT) || 3000;
 

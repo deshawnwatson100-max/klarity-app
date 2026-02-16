@@ -15,6 +15,13 @@ const envSchema = z.object({
 
   // App Client Key for mobile app authentication (server-only)
   APP_CLIENT_KEY: z.string().min(1, "APP_CLIENT_KEY is required"),
+
+  // Better Auth Configuration
+  BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
+  BETTER_AUTH_URL: z.string().optional().default("http://localhost:3000"),
+
+  // Database
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 });
 
 /**
