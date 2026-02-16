@@ -101,6 +101,7 @@ export type StreamCallback = (chunk: string, fullText: string) => void;
 
 /**
  * Send a chat request to GPT-5.2
+ * Includes retry logic for transient errors (502, 503, timeouts)
  */
 async function callGPT5Mini(
   messages: GPT5Message[],
@@ -109,6 +110,8 @@ async function callGPT5Mini(
   temperature: number = 0.75
 ): Promise<string> {
   const client = getOpenAIClient();
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY_MS = 1000;
 
   const params: any = {
     model: MODEL_FULL,
@@ -122,32 +125,53 @@ async function callGPT5Mini(
     params.response_format = { type: "json_object" };
   }
 
-  // Add timeout to prevent hanging
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error("API request timed out after 30s")), 30000);
-  });
+  let lastError: any = null;
 
-  try {
-    const completionPromise = client.chat.completions.create(params);
-    const completion = await Promise.race([completionPromise, timeoutPromise]);
-
-    const content = completion.choices[0]?.message?.content || "";
-
-    if (!content) {
-      console.error("Empty response from API");
-      throw new Error("Empty response from API");
-    }
-
-    return content;
-  } catch (error: any) {
-    console.error("API Error details:", {
-      message: error.message,
-      status: error.status,
-      type: error.type,
-      code: error.code,
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("API request timed out after 30s")), 30000);
     });
-    throw new Error(`API failed: ${error.message || "Unknown error"}`);
+
+    try {
+      const completionPromise = client.chat.completions.create(params);
+      const completion = await Promise.race([completionPromise, timeoutPromise]);
+
+      const content = completion.choices[0]?.message?.content || "";
+
+      if (!content) {
+        console.error("Empty response from API");
+        throw new Error("Empty response from API");
+      }
+
+      return content;
+    } catch (error: any) {
+      lastError = error;
+      const isRetryable =
+        error.message?.includes("502") ||
+        error.message?.includes("503") ||
+        error.message?.includes("timed out") ||
+        error.message?.includes("ECONNRESET") ||
+        error.message?.includes("network");
+
+      if (isRetryable && attempt < MAX_RETRIES - 1) {
+        const delay = INITIAL_DELAY_MS * Math.pow(2, attempt);
+        console.log(`[API] Retrying after ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      console.error("API Error details:", {
+        message: error.message,
+        status: error.status,
+        type: error.type,
+        code: error.code,
+        attempt: attempt + 1,
+      });
+    }
   }
+
+  throw new Error(`API failed: ${lastError?.message || "Unknown error"}`);
 }
 
 /**

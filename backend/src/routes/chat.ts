@@ -228,7 +228,7 @@ chatRouter.post("/", async (c) => {
       });
     }
 
-    // Non-streaming request
+    // Non-streaming request with retry logic
     // Build request body with optional response_format
     const requestBody: Record<string, unknown> = {
       model,
@@ -242,43 +242,77 @@ chatRouter.post("/", async (c) => {
       requestBody.response_format = meta.responseFormat;
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // Retry logic for transient errors
+    const MAX_RETRIES = 3;
+    const INITIAL_DELAY_MS = 1000;
+    let lastError: string = "";
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Chat API] OpenAI error - requestId: ${requestId}`, errorText);
-      return c.json(
-        { error: "AI Service Error", message: "Failed to get response from AI service", requestId },
-        502
-      );
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openaiApiKey}`,
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          lastError = errorText;
+          const statusCode = response.status;
+
+          // Retry on 502, 503, 429 (rate limit), or 500 errors
+          if ((statusCode === 502 || statusCode === 503 || statusCode === 429 || statusCode === 500) && attempt < MAX_RETRIES - 1) {
+            const delay = INITIAL_DELAY_MS * Math.pow(2, attempt);
+            console.log(`[Chat API] Retrying after ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES}) - status: ${statusCode}, requestId: ${requestId}`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+
+          console.error(`[Chat API] OpenAI error - requestId: ${requestId}`, errorText);
+          return c.json(
+            { error: "AI Service Error", message: "Failed to get response from AI service", requestId },
+            502
+          );
+        }
+
+        const data = (await response.json()) as {
+          choices?: Array<{ message?: { content?: string } }>;
+          usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+        };
+        const text = data.choices?.[0]?.message?.content || "";
+
+        console.log(`[Chat API] Success - requestId: ${requestId}, response length: ${text.length}`);
+
+        return c.json({
+          text,
+          usage: data.usage
+            ? {
+                promptTokens: data.usage.prompt_tokens || 0,
+                completionTokens: data.usage.completion_tokens || 0,
+                totalTokens: data.usage.total_tokens || 0,
+              }
+            : undefined,
+          requestId,
+        });
+      } catch (fetchError) {
+        lastError = String(fetchError);
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_DELAY_MS * Math.pow(2, attempt);
+          console.log(`[Chat API] Network error, retrying after ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES}), requestId: ${requestId}`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+      }
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-    };
-    const text = data.choices?.[0]?.message?.content || "";
-
-    console.log(`[Chat API] Success - requestId: ${requestId}, response length: ${text.length}`);
-
-    return c.json({
-      text,
-      usage: data.usage
-        ? {
-            promptTokens: data.usage.prompt_tokens || 0,
-            completionTokens: data.usage.completion_tokens || 0,
-            totalTokens: data.usage.total_tokens || 0,
-          }
-        : undefined,
-      requestId,
-    });
+    console.error(`[Chat API] All retries failed - requestId: ${requestId}`, lastError);
+    return c.json(
+      { error: "AI Service Error", message: "Failed to get response from AI service after retries", requestId },
+      502
+    );
   } catch (error) {
     console.error(`[Chat API] Unexpected error - requestId: ${requestId}`, error);
     return c.json(
