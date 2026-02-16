@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Dimensions, Pressable, Share, Animated, Easing } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
@@ -15,7 +16,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Helper function to render post-decode assistant messages with blockquote style
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
-  const accentColor = isDark ? "#60A5FA" : "#3B82F6"; // Blue accent like reply cards
+  const accentColorLight = isDark ? "rgba(96, 165, 250, 0.2)" : "rgba(59, 130, 246, 0.2)"; // Transparent blue
 
   // Split into sentences for line-by-line display
   const sentenceRegex = /[^.!?]*[.!?]+/g;
@@ -25,12 +26,25 @@ const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   return (
     <View
       style={{
-        borderLeftWidth: 3,
-        borderLeftColor: accentColor,
         paddingLeft: 14,
         paddingVertical: 4,
+        position: "relative",
       }}
     >
+      {/* Soft accent gradient left edge - transparent like reply cards */}
+      <LinearGradient
+        colors={[accentColorLight, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 3,
+          borderRadius: 2,
+        }}
+      />
       {cleanedSentences.map((sentence, index) => (
         <Text
           key={index}
