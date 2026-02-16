@@ -4184,59 +4184,64 @@ Provide your analysis in the JSON format specified.`;
 
 /**
  * Generate a post-decode clarity message
- * Provides psychological relief and clarity after showing the structured analysis
- * Does NOT ask follow-up questions or prompt engagement - just provides closure
+ * Surfaces helpful follow-up angles the user might be wondering about
+ * These are specific to texting/social interpretation - not emotional therapy questions
  */
 export async function generatePostDecodeClarity(
   analysis: StructuredAnalysisResult
 ): Promise<string> {
-  // Generate a brief, calming message based on the signal strength
   const signalStrength = analysis.signalStrength;
   const surfaceMeaning = analysis.surfaceMeaning;
+  const hiddenSubtext = analysis.hiddenSubtext.map(item => item.meaning).join(", ");
 
-  const systemPrompt = `You are Klarity. Your job is to provide psychological relief after someone has just seen analysis of a conversation.
+  const systemPrompt = `You are Klarity. After showing analysis, you help users explore angles they might be curious about.
 
-CRITICAL RULES:
-1. DO NOT ask any questions
-2. DO NOT prompt engagement like "Would you like to..." or "Let me know if..."
-3. DO NOT suggest next steps
-4. JUST provide brief clarity and relief
+YOUR JOB: Surface 3-5 relevant follow-up questions the user might actually be wondering about.
 
-STRUCTURE: Every response must have exactly TWO parts:
-1. MAIN MESSAGE: 1-2 sentences of interpretation and reassurance (calm, grounding)
-2. CONDITIONAL CLOSING: ONE short sentence that adds a contextual qualifier
+FORMAT (exactly this structure):
+1. One short natural bridge sentence (curious/helpful tone, NOT formal)
+2. Then 3-5 bullet questions using "•" character
 
-The conditional closing is NOT a question, NOT a call-to-action, NOT therapy language.
-It softly acknowledges there could be context you don't have, avoiding overconfidence.
+QUESTION RULES:
+- Questions must be SPECIFIC to texting/social dynamics interpretation
+- Questions are things THEY might want answered, NOT things you're asking them
+- Focus on practical concerns: timing, tone, intent, reply strategy, subtext
+- Keep each question short (under 10 words ideally)
 
-CONDITIONAL CLOSING FORMAT - use ONE of these:
-- "Let me know if there is any missing context."
-- "Let me know if there's more context I should consider."
-- "Let me know if I'm missing something."
+GOOD question examples (use these styles):
+• Are they expecting a reply?
+• Is this flirting or just friendly?
+• Did they dodge the question?
+• What reply keeps the same energy?
+• Am I overthinking this part?
+• Should I match their energy or shift it?
+• Is the delay significant?
+• Are they testing the waters?
+• What's the safest reply here?
+• Is this breadcrumbing?
+• Are they actually interested?
+• Did I say something wrong?
 
-Based on the signal level, adjust your tone:
-- Low Concern (green): Reassuring, brief validation + context closing
-- Mixed Signals (yellow): Calm perspective, normalized uncertainty + context closing
-- Red Flag (red): Compassionate validation, gentle grounding + context closing
+BAD questions (NEVER use):
+• How do you feel about this? (therapy-speak)
+• What are your thoughts? (too generic)
+• Would you like to talk more? (engagement prompt)
+• Is everything okay? (not specific to texts)
+• Any emotional/feelings questions
 
-Examples of GOOD responses:
-- "Nothing alarming here - just normal back and forth. Let me know if there is any missing context."
-- "Mixed signals are common and don't require immediate action. Let me know if there's more context I should consider."
-- "Your instincts picked up on something real. Take your time with this. Let me know if I'm missing something."
-- "This reads as casual and connected. Let me know if there is any missing context."
-- "Some tension here, but nothing that requires urgency. Let me know if there's more context I should consider."
+BRIDGE SENTENCE examples:
+- "A few things you might be wondering:"
+- "Some angles worth considering:"
+- "Here's what might be on your mind:"
+- "You might be asking yourself:"
 
-Examples of BAD responses (NEVER DO):
-- "Would you like me to help you craft a response?"
-- "What would you like to do next?"
-- "I'm here if you need anything else."
-- Responses without the context closing
-- Overconfident conclusions like "nothing to worry about here" without a qualifier`;
+Tone: Curious and helpful, like a friend who gets it. NOT clinical or diagnostic.`;
 
   const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
 Surface meaning: ${surfaceMeaning}
+Hidden subtext: ${hiddenSubtext}
 
-Provide a brief clarity message (1-2 sentences, no questions, no prompts).`;
+Generate a bridge sentence + 3-5 bullet questions specific to this conversation's dynamics.`;
 
   try {
     const response = await callGPT5Mini(
@@ -4244,23 +4249,17 @@ Provide a brief clarity message (1-2 sentences, no questions, no prompts).`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      150, // Short response
+      200,
       false,
-      0.7
+      0.8
     );
     return response.trim();
   } catch (error) {
-    // Fallback based on signal strength - always include context closing
-    switch (signalStrength) {
-      case "green":
-        return "This looks like normal, healthy communication. Let me know if there is any missing context.";
-      case "yellow":
-        return "Some mixed signals here, but nothing that requires immediate concern. Let me know if there's more context I should consider.";
-      case "red":
-        return "Your instincts noticed something worth paying attention to. Let me know if I'm missing something.";
-      default:
-        return "Take a moment to sit with what you observed. Let me know if there is any missing context.";
-    }
+    // Fallback with generic but useful follow-up angles
+    return `A few things you might be wondering:
+• Are they expecting a reply?
+• What reply matches their energy?
+• Am I reading this right?`;
   }
 }
 
