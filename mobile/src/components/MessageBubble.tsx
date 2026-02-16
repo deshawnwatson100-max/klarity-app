@@ -15,7 +15,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Helper function to render post-decode assistant messages with blockquote style
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
-  const accentColor = isDark ? "#7DD3C0" : "#059669";
+  const accentColor = isDark ? "#60A5FA" : "#3B82F6"; // Blue accent like reply cards
 
   // Split into sentences for line-by-line display
   const sentenceRegex = /[^.!?]*[.!?]+/g;
