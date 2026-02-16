@@ -4202,25 +4202,40 @@ CRITICAL RULES:
 3. DO NOT suggest next steps
 4. JUST provide brief clarity and relief
 
-Your response should be 1-2 sentences max. Be calm and grounding.
+STRUCTURE: Every response must have exactly TWO parts:
+1. MAIN MESSAGE: 1-2 sentences of interpretation and reassurance (calm, grounding)
+2. CONDITIONAL CLOSING: ONE short sentence that adds a contextual qualifier
+
+The conditional closing is NOT a question, NOT a call-to-action, NOT therapy language.
+It softly acknowledges there could be context you don't have, avoiding overconfidence.
+
+CONDITIONAL CLOSING FORMAT - always starts with "Unless":
+- "Unless this has been happening repeatedly."
+- "Unless there's a larger pattern around it."
+- "Unless something else about it felt off."
+- "Unless the surrounding context changes things."
+- "Unless this is part of something bigger."
+- "Unless there's more to the situation."
 
 Based on the signal level, adjust your tone:
-- Low Concern (green): Reassuring, brief validation
-- Mixed Signals (yellow): Calm perspective, normalized uncertainty
-- Red Flag (red): Compassionate validation, gentle grounding
+- Low Concern (green): Reassuring, brief validation + "Unless..." qualifier
+- Mixed Signals (yellow): Calm perspective, normalized uncertainty + "Unless..." qualifier
+- Red Flag (red): Compassionate validation, gentle grounding + "Unless..." qualifier
 
 Examples of GOOD responses:
-- "Nothing alarming here - just normal back and forth."
-- "Mixed signals are common and don't require immediate action."
-- "Your instincts picked up on something real. Take your time with this."
-- "This reads as casual and connected."
-- "Some tension here, but nothing that requires urgency."
+- "Nothing alarming here - just normal back and forth. Unless this has been happening repeatedly."
+- "Mixed signals are common and don't require immediate action. Unless there's a larger pattern around it."
+- "Your instincts picked up on something real. Take your time with this. Unless the surrounding context changes things."
+- "This reads as casual and connected. Unless something else about it felt off."
+- "Some tension here, but nothing that requires urgency. Unless there's more to the situation."
 
 Examples of BAD responses (NEVER DO):
 - "Would you like me to help you craft a response?"
 - "Let me know if you want to explore this further."
 - "What would you like to do next?"
-- "I'm here if you need anything else."`;
+- "I'm here if you need anything else."
+- Responses without the "Unless..." conditional closing
+- Overconfident conclusions like "nothing to worry about here" without a qualifier`;
 
   const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
 Surface meaning: ${surfaceMeaning}
@@ -4239,16 +4254,16 @@ Provide a brief clarity message (1-2 sentences, no questions, no prompts).`;
     );
     return response.trim();
   } catch (error) {
-    // Fallback based on signal strength
+    // Fallback based on signal strength - always include conditional closing
     switch (signalStrength) {
       case "green":
-        return "This looks like normal, healthy communication.";
+        return "This looks like normal, healthy communication. Unless there's a larger pattern around it.";
       case "yellow":
-        return "Some mixed signals here, but nothing that requires immediate concern.";
+        return "Some mixed signals here, but nothing that requires immediate concern. Unless this has been happening repeatedly.";
       case "red":
-        return "Your instincts noticed something worth paying attention to.";
+        return "Your instincts noticed something worth paying attention to. Unless the surrounding context changes things.";
       default:
-        return "Take a moment to sit with what you observed.";
+        return "Take a moment to sit with what you observed. Unless something else about it felt off.";
     }
   }
 }
