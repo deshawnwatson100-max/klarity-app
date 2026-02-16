@@ -4209,32 +4209,28 @@ STRUCTURE: Every response must have exactly TWO parts:
 The conditional closing is NOT a question, NOT a call-to-action, NOT therapy language.
 It softly acknowledges there could be context you don't have, avoiding overconfidence.
 
-CONDITIONAL CLOSING FORMAT - always starts with "Unless":
-- "Unless this has been happening repeatedly."
-- "Unless there's a larger pattern around it."
-- "Unless something else about it felt off."
-- "Unless the surrounding context changes things."
-- "Unless this is part of something bigger."
-- "Unless there's more to the situation."
+CONDITIONAL CLOSING FORMAT - use ONE of these:
+- "Let me know if there is any missing context."
+- "Let me know if there's more context I should consider."
+- "Let me know if I'm missing something."
 
 Based on the signal level, adjust your tone:
-- Low Concern (green): Reassuring, brief validation + "Unless..." qualifier
-- Mixed Signals (yellow): Calm perspective, normalized uncertainty + "Unless..." qualifier
-- Red Flag (red): Compassionate validation, gentle grounding + "Unless..." qualifier
+- Low Concern (green): Reassuring, brief validation + context closing
+- Mixed Signals (yellow): Calm perspective, normalized uncertainty + context closing
+- Red Flag (red): Compassionate validation, gentle grounding + context closing
 
 Examples of GOOD responses:
-- "Nothing alarming here - just normal back and forth. Unless this has been happening repeatedly."
-- "Mixed signals are common and don't require immediate action. Unless there's a larger pattern around it."
-- "Your instincts picked up on something real. Take your time with this. Unless the surrounding context changes things."
-- "This reads as casual and connected. Unless something else about it felt off."
-- "Some tension here, but nothing that requires urgency. Unless there's more to the situation."
+- "Nothing alarming here - just normal back and forth. Let me know if there is any missing context."
+- "Mixed signals are common and don't require immediate action. Let me know if there's more context I should consider."
+- "Your instincts picked up on something real. Take your time with this. Let me know if I'm missing something."
+- "This reads as casual and connected. Let me know if there is any missing context."
+- "Some tension here, but nothing that requires urgency. Let me know if there's more context I should consider."
 
 Examples of BAD responses (NEVER DO):
 - "Would you like me to help you craft a response?"
-- "Let me know if you want to explore this further."
 - "What would you like to do next?"
 - "I'm here if you need anything else."
-- Responses without the "Unless..." conditional closing
+- Responses without the context closing
 - Overconfident conclusions like "nothing to worry about here" without a qualifier`;
 
   const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
@@ -4254,16 +4250,16 @@ Provide a brief clarity message (1-2 sentences, no questions, no prompts).`;
     );
     return response.trim();
   } catch (error) {
-    // Fallback based on signal strength - always include conditional closing
+    // Fallback based on signal strength - always include context closing
     switch (signalStrength) {
       case "green":
-        return "This looks like normal, healthy communication. Unless there's a larger pattern around it.";
+        return "This looks like normal, healthy communication. Let me know if there is any missing context.";
       case "yellow":
-        return "Some mixed signals here, but nothing that requires immediate concern. Unless this has been happening repeatedly.";
+        return "Some mixed signals here, but nothing that requires immediate concern. Let me know if there's more context I should consider.";
       case "red":
-        return "Your instincts noticed something worth paying attention to. Unless the surrounding context changes things.";
+        return "Your instincts noticed something worth paying attention to. Let me know if I'm missing something.";
       default:
-        return "Take a moment to sit with what you observed. Unless something else about it felt off.";
+        return "Take a moment to sit with what you observed. Let me know if there is any missing context.";
     }
   }
 }

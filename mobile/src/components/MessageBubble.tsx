@@ -12,95 +12,22 @@ import { TypewriterText } from "./TypewriterText";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Helper function to render post-decode assistant messages with typographic hierarchy
-// Structure: Insight (first sentence) -> Explanation (middle) -> Context boundary (Unless...)
+// Helper function to render post-decode assistant messages with consistent styling
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
 
-  // Split into sentences - handle common sentence endings
-  const sentenceRegex = /[^.!?]*[.!?]+/g;
-  const sentences = text.match(sentenceRegex) || [text];
-
-  // Clean up sentences
-  const cleanedSentences = sentences.map(s => s.trim()).filter(s => s.length > 0);
-
-  if (cleanedSentences.length === 0) {
-    return (
-      <Text style={{ fontSize: 15, lineHeight: 24, color: textColor }}>
-        {text}
-      </Text>
-    );
-  }
-
-  // Find the context boundary (sentence starting with "Unless")
-  let contextBoundaryIndex = cleanedSentences.findIndex(s =>
-    s.toLowerCase().startsWith("unless")
-  );
-
-  // If no "Unless" found, treat the last sentence as context boundary if we have 2+ sentences
-  if (contextBoundaryIndex === -1 && cleanedSentences.length >= 2) {
-    contextBoundaryIndex = cleanedSentences.length - 1;
-  }
-
-  // Determine the three parts
-  const insight = cleanedSentences[0]; // First sentence
-  const explanationSentences = contextBoundaryIndex > 1
-    ? cleanedSentences.slice(1, contextBoundaryIndex)
-    : [];
-  const contextBoundary = contextBoundaryIndex > 0
-    ? cleanedSentences[contextBoundaryIndex]
-    : null;
-
   return (
-    <View>
-      {/* Insight - Larger, semibold, full opacity */}
-      <Text
-        style={{
-          fontSize: 17,
-          lineHeight: 24,
-          fontWeight: "600",
-          color: textColor,
-          opacity: 1,
-          letterSpacing: 0.1,
-        }}
-      >
-        {insight}
-      </Text>
-
-      {/* Explanation - Normal font, slightly reduced opacity */}
-      {explanationSentences.length > 0 && (
-        <Text
-          style={{
-            fontSize: 15,
-            lineHeight: 22,
-            fontWeight: "400",
-            color: textColor,
-            opacity: 0.85,
-            marginTop: 8,
-            letterSpacing: 0.2,
-          }}
-        >
-          {explanationSentences.join(" ")}
-        </Text>
-      )}
-
-      {/* Context boundary - Smaller, lower opacity, separate line */}
-      {contextBoundary && (
-        <Text
-          style={{
-            fontSize: 14,
-            lineHeight: 20,
-            fontWeight: "400",
-            color: textColor,
-            opacity: 0.6,
-            marginTop: 6,
-            letterSpacing: 0.2,
-          }}
-        >
-          {contextBoundary}
-        </Text>
-      )}
-    </View>
+    <Text
+      style={{
+        fontSize: 15,
+        lineHeight: 24,
+        fontWeight: "400",
+        color: textColor,
+        letterSpacing: 0.2,
+      }}
+    >
+      {text}
+    </Text>
   );
 };
 
