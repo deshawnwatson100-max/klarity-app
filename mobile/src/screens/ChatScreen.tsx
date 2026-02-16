@@ -3016,6 +3016,9 @@ Generate a new reply that follows the user's instruction while still responding 
 
     // Only render user and assistant messages in Decode mode - no cards
     if (message.role === "user" || message.role === "assistant") {
+      // Check if this is a post-decode clarity message (uses typographic hierarchy)
+      const isPostDecodeClarity = message.id.includes("_post_decode_clarity");
+
       return (
         <MessageBubble
           key={message.id}
@@ -3028,6 +3031,7 @@ Generate a new reply that follows the user's instruction while still responding 
           onEdit={message.role === "user" ? handleEditMessage : undefined}
           messageId={message.id}
           isStreaming={message.role === "assistant" && message.id === streamingMessageId}
+          isPostDecode={isPostDecodeClarity}
         />
       );
     }

@@ -286,6 +286,30 @@ A new modular analysis format designed for UX consistency and future scalability
 - `src/api/klarity-api.ts` - `generateStructuredAnalysis()` and `generateStructuredAnalysisFromImage()` functions
 - `src/types/chat.ts` - `StructuredAnalysisResult`, `StructuredAnalysisMessage`, and related types
 
+### Post-Decode Clarity Message
+
+After displaying the Structured Analysis Card, a follow-up assistant message provides psychological relief with a soft conditional closing. This message uses typographic hierarchy for improved readability.
+
+**Message Structure:**
+1. **Insight** (first sentence) - Larger font (17pt), semibold, full opacity
+2. **Explanation** (middle sentences) - Normal font (15pt), regular weight, 85% opacity
+3. **Context Boundary** (final "Unless..." sentence) - Smaller font (14pt), 60% opacity, separate line
+
+**Conditional Closing Style:**
+- Always starts with "Unless..."
+- Not a question or call-to-action
+- Acts as a contextual qualifier
+- Provides confidence with openness (avoids overconfident conclusions)
+
+**Examples:**
+- "Nothing alarming here - just normal back and forth. Unless this has been happening repeatedly."
+- "Mixed signals are common and don't require immediate action. Unless there's a larger pattern around it."
+- "Your instincts picked up on something real. Take your time with this. Unless the surrounding context changes things."
+
+**Files:**
+- `src/api/klarity-api.ts` - `generatePostDecodeClarity()` function
+- `src/components/MessageBubble.tsx` - `renderPostDecodeMessage()` and `isPostDecode` prop
+
 ### Screen 1: Input/Welcome Screen
 - **Minimal Dark Luxury Aesthetic** - Single-tone, elegant, calm, and premium
 - **Animated Klarity AI Logo** - Premium header logo with breathing glow
