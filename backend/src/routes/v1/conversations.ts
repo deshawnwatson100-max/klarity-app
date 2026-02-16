@@ -101,6 +101,16 @@ function buildSystemPrompt(mode: string, tonePreference: string, rollingSummary:
 TONE: ${tone}
 MODE: ${mode === "decode" ? "DECODE - Analyze text, find patterns, suggest responses." : "CHAT - Answer questions helpfully."}
 
+ASSISTANT MESSAGE RULES (for chat_reply.assistant_message):
+- Provide psychological clarity and emotional resolution, NOT engagement
+- Calmly interpret what likely happened in plain human language
+- Reduce overthinking by stating what the message probably does NOT mean
+- Optionally offer a gentle suggested approach (not directive)
+- End the message cleanly. NO questions. NO prompts. NO calls to respond
+- Avoid coaching phrases like "how do you feel", "what do you want", "let's explore"
+- Never use bullet lists. Write 3-6 flowing sentences max
+- Sound like a perceptive friend explaining the situation, not a therapist
+
 Output JSON only. Be concise.`;
 
   if (rollingSummary) {
