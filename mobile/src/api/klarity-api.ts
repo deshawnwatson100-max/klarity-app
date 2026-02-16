@@ -161,12 +161,10 @@ async function callGPT5Mini(
         continue;
       }
 
-      console.error("API Error details:", {
-        message: error.message,
-        status: error.status,
-        type: error.type,
-        code: error.code,
+      // Log for debugging but with less alarming text for user-facing logs
+      console.log("[Klarity] Temporary service hiccup - this is normal and will retry automatically", {
         attempt: attempt + 1,
+        maxAttempts: MAX_RETRIES,
       });
     }
   }
@@ -954,23 +952,20 @@ When the image is invalid (not a conversation screenshot):
       communicationMistake: parsed.isInvalidInput ? undefined : (parsed.communicationMistake || undefined),
     };
   } catch (error: any) {
-    console.error("[analyzeImageToxicity] Analysis failed:", error?.message || error);
-    console.error("[analyzeImageToxicity] Error name:", error?.name);
-    console.error("[analyzeImageToxicity] Error status:", error?.status || error?.response?.status);
-    console.error("[analyzeImageToxicity] Error code:", error?.code || error?.error?.code);
-    console.error("[analyzeImageToxicity] Full error:", JSON.stringify(error, null, 2)?.substring(0, 1000));
+    // Log quietly - transient errors are expected and shouldn't alarm users
+    console.log("[Klarity] Image processing temporarily unavailable - please try again", error?.message);
 
     // Return fallback that allows continuing with a helpful message
     return {
       summary:
-        "I had a little trouble reading this screenshot. It might be the image quality or format.",
+        "Having a brief moment of difficulty with this image. Please try uploading it again.",
       labels: [],
       emotionalImpact: "",
       suggestedResponse: "",
       guidanceNote: "",
       isInvalidInput: false, // Don't mark as invalid - let the user continue
       lastMessage: "",
-      acknowledgment: "I can see you shared a conversation screenshot.",
+      acknowledgment: "I can see you shared a screenshot. Let me try analyzing it again.",
       responseContext: "this conversation",
     };
   }
@@ -3922,24 +3917,25 @@ Provide your analysis in the JSON format specified.`;
 
     return result;
   } catch (error: unknown) {
-    console.error("[generateStructuredAnalysis] Analysis failed:", error);
+    // Log quietly - transient errors are expected
+    console.log("[Klarity] Text analysis temporarily unavailable, please try again in a moment");
 
-    // Return a graceful fallback
+    // Return a graceful fallback that encourages retry
     return {
-      surfaceMeaning: "Unable to analyze this message. Please try again.",
+      surfaceMeaning: "Having a brief moment of difficulty. Please try sending your message again.",
       hiddenSubtext: [
         {
-          meaning: "Analysis unavailable",
-          explanation: "Could not process the message at this time.",
+          meaning: "Try again in a moment",
+          explanation: "Our analysis service had a brief hiccup. These resolve quickly.",
         },
       ],
       signalStrength: "yellow",
-      signalLabel: "Mixed Signals",
-      powerMoveExplanation: "Take a moment before responding.",
+      signalLabel: "Retry Needed",
+      powerMoveExplanation: "Just send your message again to retry.",
       powerMoveReplies: [
-        { style: "calm", message: "I'd like to understand better." },
-        { style: "direct", message: "Can you clarify what you mean?" },
-        { style: "detached", message: "I'll think about it." },
+        { style: "calm", message: "Try sending again" },
+        { style: "direct", message: "Retry the message" },
+        { style: "detached", message: "Try once more" },
       ],
     };
   }
@@ -4162,24 +4158,25 @@ Provide your analysis in the JSON format specified.`;
 
     return result;
   } catch (error: unknown) {
-    console.error("[generateStructuredAnalysisFromImage] Analysis failed:", error);
+    // Log quietly - transient errors are expected
+    console.log("[Klarity] Image analysis temporarily unavailable, please try again in a moment");
 
-    // Return a graceful fallback
+    // Return a graceful fallback that encourages retry
     return {
-      surfaceMeaning: "Unable to analyze this conversation. Please try again with clearer screenshots.",
+      surfaceMeaning: "Having a moment of temporary difficulty processing this image. This usually resolves quickly - please try again.",
       hiddenSubtext: [
         {
-          meaning: "Analysis unavailable",
-          explanation: "Could not process the images at this time.",
+          meaning: "Try again in a moment",
+          explanation: "Our analysis service had a brief hiccup. These resolve quickly.",
         },
       ],
       signalStrength: "yellow",
-      signalLabel: "Mixed Signals",
-      powerMoveExplanation: "Take a moment before responding.",
+      signalLabel: "Retry Needed",
+      powerMoveExplanation: "Just tap the image again to retry analysis.",
       powerMoveReplies: [
-        { style: "calm", message: "I'd like to understand better." },
-        { style: "direct", message: "Can you clarify what you mean?" },
-        { style: "detached", message: "I'll think about it." },
+        { style: "calm", message: "Try uploading again" },
+        { style: "direct", message: "Retry the analysis" },
+        { style: "detached", message: "Try once more" },
       ],
     };
   }
