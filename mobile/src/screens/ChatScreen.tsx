@@ -78,6 +78,7 @@ import {
   generateStructuredAnalysisFromImage,
   generateDecodeClarificationResponse,
   DecodeClarificationContext,
+  generatePostDecodeClarity,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -1890,6 +1891,17 @@ Generate a new reply that follows the user's instruction while still responding 
           analysis: structuredResult,
         };
         addMessageWithMode(analysisMsg, capturedMode);
+
+        // Generate and add post-decode clarity message (psychological relief, no engagement prompts)
+        const clarityMessage = await generatePostDecodeClarity(structuredResult);
+        const clarityAssistantMsg: ChatMessage = {
+          id: Date.now().toString() + "_post_decode_clarity",
+          role: "assistant",
+          content: clarityMessage,
+          timestamp: Date.now(),
+          mode: capturedMode,
+        };
+        addMessageWithMode(clarityAssistantMsg, capturedMode);
 
         // Scroll to show response
         setTimeout(() => {

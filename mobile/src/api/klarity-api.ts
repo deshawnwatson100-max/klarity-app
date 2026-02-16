@@ -4186,6 +4186,77 @@ Provide your analysis in the JSON format specified.`;
 }
 
 /**
+ * Generate a post-decode clarity message
+ * Provides psychological relief and clarity after showing the structured analysis
+ * Does NOT ask follow-up questions or prompt engagement - just provides closure
+ */
+export async function generatePostDecodeClarity(
+  analysis: StructuredAnalysisResult
+): Promise<string> {
+  // Generate a brief, calming message based on the signal strength
+  const signalStrength = analysis.signalStrength;
+  const surfaceMeaning = analysis.surfaceMeaning;
+
+  const systemPrompt = `You are Klarity. Your job is to provide psychological relief after someone has just seen analysis of a conversation.
+
+CRITICAL RULES:
+1. DO NOT ask any questions
+2. DO NOT prompt engagement like "Would you like to..." or "Let me know if..."
+3. DO NOT suggest next steps
+4. JUST provide brief clarity and relief
+
+Your response should be 1-2 sentences max. Be calm and grounding.
+
+Based on the signal level, adjust your tone:
+- Low Concern (green): Reassuring, brief validation
+- Mixed Signals (yellow): Calm perspective, normalized uncertainty
+- Red Flag (red): Compassionate validation, gentle grounding
+
+Examples of GOOD responses:
+- "Nothing alarming here - just normal back and forth."
+- "Mixed signals are common and don't require immediate action."
+- "Your instincts picked up on something real. Take your time with this."
+- "This reads as casual and connected."
+- "Some tension here, but nothing that requires urgency."
+
+Examples of BAD responses (NEVER DO):
+- "Would you like me to help you craft a response?"
+- "Let me know if you want to explore this further."
+- "What would you like to do next?"
+- "I'm here if you need anything else."`;
+
+  const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
+Surface meaning: ${surfaceMeaning}
+
+Provide a brief clarity message (1-2 sentences, no questions, no prompts).`;
+
+  try {
+    const response = await callGPT5Mini(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      150, // Short response
+      false,
+      0.7
+    );
+    return response.trim();
+  } catch (error) {
+    // Fallback based on signal strength
+    switch (signalStrength) {
+      case "green":
+        return "This looks like normal, healthy communication.";
+      case "yellow":
+        return "Some mixed signals here, but nothing that requires immediate concern.";
+      case "red":
+        return "Your instincts noticed something worth paying attention to.";
+      default:
+        return "Take a moment to sit with what you observed.";
+    }
+  }
+}
+
+/**
  * Analyze an edited reply and generate a dynamic lightbulb comment
  *
  * Purpose: Preview how the edited message may be perceived by the recipient
