@@ -161,8 +161,20 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
     },
   }));
 
+  // Debounce state to prevent double-sends
+  const lastSendTimeRef = useRef<number>(0);
+  const DEBOUNCE_MS = 500;
+
   const handleSend = () => {
+    const now = Date.now();
+    // Prevent rapid double-taps within 500ms
+    if (now - lastSendTimeRef.current < DEBOUNCE_MS) {
+      console.log("[InputBar] Send debounced - too fast");
+      return;
+    }
+
     if ((value.trim() || selectedImageUri) && !disabled) {
+      lastSendTimeRef.current = now;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onSend();
       // Don't dismiss keyboard here - let the parent screen decide when to dismiss

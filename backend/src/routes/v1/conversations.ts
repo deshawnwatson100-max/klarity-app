@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { prisma } from "../../lib/db";
 import { requireAuth, getAuthUser } from "../../middleware/auth";
+import { responseCache, inFlightRequests, generateCacheKey } from "../../lib/cache";
 
 const conversationsRouter = new Hono();
 
@@ -22,7 +23,7 @@ const createMessageSchema = z.object({
   }),
 });
 
-// Response JSON schema for OpenAI
+// Optimized JSON schema - smaller output for faster streaming
 const KLARITY_RESPONSE_SCHEMA = {
   type: "json_schema",
   json_schema: {
@@ -35,7 +36,7 @@ const KLARITY_RESPONSE_SCHEMA = {
           type: "object",
           properties: {
             headline: { type: "string" },
-            read: { type: "array", items: { type: "string" } },
+            read: { type: "array", items: { type: "string" }, maxItems: 3 },
             likely_meanings: {
               type: "array",
               items: {
@@ -47,9 +48,10 @@ const KLARITY_RESPONSE_SCHEMA = {
                 required: ["label", "confidence"],
                 additionalProperties: false,
               },
+              maxItems: 3,
             },
-            red_flags: { type: "array", items: { type: "string" } },
-            green_flags: { type: "array", items: { type: "string" } },
+            red_flags: { type: "array", items: { type: "string" }, maxItems: 3 },
+            green_flags: { type: "array", items: { type: "string" }, maxItems: 3 },
             next_best_step: { type: "string" },
           },
           required: ["headline", "read", "likely_meanings", "red_flags", "green_flags", "next_best_step"],
@@ -59,7 +61,7 @@ const KLARITY_RESPONSE_SCHEMA = {
           type: "object",
           properties: {
             assistant_message: { type: "string" },
-            suggested_texts: { type: "array", items: { type: "string" } },
+            suggested_texts: { type: "array", items: { type: "string" }, maxItems: 2 },
           },
           required: ["assistant_message", "suggested_texts"],
           additionalProperties: false,
@@ -71,9 +73,7 @@ const KLARITY_RESPONSE_SCHEMA = {
             tone: { type: "string" },
             safety: {
               type: "object",
-              properties: {
-                flagged: { type: "boolean" },
-              },
+              properties: { flagged: { type: "boolean" } },
               required: ["flagged"],
               additionalProperties: false,
             },
@@ -88,28 +88,29 @@ const KLARITY_RESPONSE_SCHEMA = {
   },
 };
 
-// System prompt for Klarity
+// Concise system prompt - fewer tokens = faster TTFT
 function buildSystemPrompt(mode: string, tonePreference: string, rollingSummary: string | null, memories: string[]): string {
-  const toneInstructions = {
-    calm_direct: "Be calm, clear, and direct. No fluff.",
-    soft: "Be gentle and supportive while still being helpful.",
-    playful: "Be lighthearted and fun while still being insightful.",
-  }[tonePreference] || "Be calm, clear, and direct.";
+  const tone = {
+    calm_direct: "Calm, clear, direct.",
+    soft: "Gentle, supportive.",
+    playful: "Light, fun.",
+  }[tonePreference] || "Calm, clear.";
 
-  let prompt = `You are Klarity, an AI assistant that helps users understand text messages and communication.
+  let prompt = `You are Klarity. Help users decode messages.
 
-TONE: ${toneInstructions}
+TONE: ${tone}
+MODE: ${mode === "decode" ? "DECODE - Analyze text, find patterns, suggest responses." : "CHAT - Answer questions helpfully."}
 
-MODE: ${mode === "decode" ? "DECODE - Analyze the user's message/screenshot and provide insights about what it means, potential red/green flags, and suggested next steps." : "CHAT - Have a helpful conversation with the user about their communication needs."}
-
-You MUST respond with valid JSON matching the specified schema. Always provide both decode_card and chat_reply fields, even if one is less relevant to the current mode.`;
+Output JSON only. Be concise.`;
 
   if (rollingSummary) {
-    prompt += `\n\nCONVERSATION CONTEXT:\n${rollingSummary}`;
+    // Truncate summary to ~500 chars max
+    const truncated = rollingSummary.length > 500 ? rollingSummary.slice(-500) : rollingSummary;
+    prompt += `\n\nCONTEXT: ${truncated}`;
   }
 
   if (memories.length > 0) {
-    prompt += `\n\nUSER MEMORIES (preferences and facts you know about this user):\n${memories.map((m, i) => `${i + 1}. ${m}`).join("\n")}`;
+    prompt += `\n\nUSER: ${memories.slice(0, 5).map(m => m.substring(0, 50)).join("; ")}`;
   }
 
   return prompt;
@@ -118,6 +119,14 @@ You MUST respond with valid JSON matching the specified schema. Always provide b
 // Generate request ID
 function generateRequestId(): string {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// Timing helper
+interface Timing {
+  t_request_start: number;
+  t_first_token?: number;
+  t_done?: number;
+  total_tokens_out?: number;
 }
 
 // POST /v1/conversations - Create a new conversation
@@ -138,18 +147,10 @@ conversationsRouter.post("/", async (c) => {
       },
     });
 
-    console.log(`[Conversations API] Created conversation ${conversation.id} for user ${user.id}`);
-
-    return c.json({
-      conversationId: conversation.id,
-      requestId,
-    });
+    return c.json({ conversationId: conversation.id, requestId });
   } catch (error) {
-    console.error(`[Conversations API] Error creating conversation - requestId: ${requestId}`, error);
-    return c.json(
-      { error: "Internal Server Error", message: "Failed to create conversation", requestId },
-      500
-    );
+    console.error(`[Conversations API] Error - ${requestId}`, error);
+    return c.json({ error: "Internal Server Error", requestId }, 500);
   }
 });
 
@@ -162,29 +163,20 @@ conversationsRouter.get("/:id", async (c) => {
     const conversationId = c.req.param("id");
 
     const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId: user.id, // Verify ownership
-      },
+      where: { id: conversationId, userId: user.id },
       include: {
         messages: {
           orderBy: { createdAt: "desc" },
           take: 50,
-          include: {
-            decode: true,
-          },
+          include: { decode: true },
         },
       },
     });
 
     if (!conversation) {
-      return c.json(
-        { error: "Not Found", message: "Conversation not found or access denied", requestId },
-        404
-      );
+      return c.json({ error: "Not Found", requestId }, 404);
     }
 
-    // Reverse messages to chronological order
     conversation.messages.reverse();
 
     return c.json({
@@ -205,71 +197,79 @@ conversationsRouter.get("/:id", async (c) => {
       requestId,
     });
   } catch (error) {
-    console.error(`[Conversations API] Error fetching conversation - requestId: ${requestId}`, error);
-    return c.json(
-      { error: "Internal Server Error", message: "Failed to fetch conversation", requestId },
-      500
-    );
+    console.error(`[Conversations API] Error - ${requestId}`, error);
+    return c.json({ error: "Internal Server Error", requestId }, 500);
   }
 });
 
-// POST /v1/conversations/:id/messages - Main endpoint with streaming
+// POST /v1/conversations/:id/messages - Main endpoint with optimized streaming
 conversationsRouter.post("/:id/messages", async (c) => {
   const requestId = generateRequestId();
-  const startTime = Date.now();
+  const timing: Timing = { t_request_start: Date.now() };
 
   try {
     const user = getAuthUser(c);
     const conversationId = c.req.param("id");
 
-    // Parse and validate request body
+    // Parse request
     const body = await c.req.json();
     const parseResult = createMessageSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return c.json(
-        {
-          error: "Invalid Request",
-          message: "Invalid request body",
-          details: parseResult.error.issues.map((i) => i.message),
-          requestId,
-        },
-        400
-      );
+      return c.json({
+        error: "Invalid Request",
+        details: parseResult.error.issues.map((i) => i.message),
+        requestId,
+      }, 400);
     }
 
     const { idempotency_key, input } = parseResult.data;
 
-    // Verify user owns conversation
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId: user.id,
-      },
-    });
-
-    if (!conversation) {
-      return c.json(
-        { error: "Not Found", message: "Conversation not found or access denied", requestId },
-        404
-      );
+    // OPTIMIZATION 1: Check in-memory cache first (fastest path)
+    const cacheKey = generateCacheKey(user.id, input.text, input.mode);
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.parsedJson) {
+      console.log(`[Conversations API] Cache hit - ${requestId} (${Date.now() - timing.t_request_start}ms)`);
+      const cachedData = cached.parsedJson as Record<string, unknown>;
+      return c.json({
+        ...cachedData,
+        cached: true,
+        timing: { cache_hit: true, latency_ms: Date.now() - timing.t_request_start },
+        requestId,
+      });
     }
 
-    // Check idempotency - return existing result if key exists
-    const existingMessage = await prisma.message.findFirst({
-      where: {
-        conversationId,
-        idempotencyKey: idempotency_key,
-        role: "assistant",
-      },
-      include: {
-        decode: true,
-      },
-    });
+    // OPTIMIZATION 2: Check for in-flight duplicate request
+    if (inFlightRequests.has(cacheKey)) {
+      console.log(`[Conversations API] Waiting for in-flight request - ${requestId}`);
+      try {
+        const result = await inFlightRequests.get(cacheKey);
+        return c.json({ ...result as object, deduplicated: true, requestId });
+      } catch {
+        // In-flight request failed, continue with new request
+      }
+    }
 
+    // Verify ownership (parallel with DB operations)
+    const [conversation, existingMessage] = await Promise.all([
+      prisma.conversation.findFirst({
+        where: { id: conversationId, userId: user.id },
+      }),
+      // OPTIMIZATION 3: Check DB idempotency
+      prisma.message.findFirst({
+        where: { conversationId, idempotencyKey: idempotency_key, role: "assistant" },
+        include: { decode: true },
+      }),
+    ]);
+
+    if (!conversation) {
+      return c.json({ error: "Not Found", requestId }, 404);
+    }
+
+    // Return existing result if idempotency key exists
     if (existingMessage) {
-      console.log(`[Conversations API] Idempotency hit for key ${idempotency_key}`);
-      return c.json({
+      console.log(`[Conversations API] Idempotency DB hit - ${requestId}`);
+      const result = {
         message: {
           id: existingMessage.id,
           role: existingMessage.role,
@@ -278,12 +278,12 @@ conversationsRouter.post("/:id/messages", async (c) => {
         },
         decode: existingMessage.decode ? JSON.parse(existingMessage.decode.json) : null,
         cached: true,
-        requestId,
-      });
+      };
+      return c.json({ ...result, requestId });
     }
 
-    // Insert user message immediately
-    const userMessage = await prisma.message.create({
+    // Insert user message (don't wait)
+    const userMessagePromise = prisma.message.create({
       data: {
         conversationId,
         role: "user",
@@ -292,22 +292,24 @@ conversationsRouter.post("/:id/messages", async (c) => {
       },
     });
 
-    // Build context: fetch last N messages
-    const recentMessages = await prisma.message.findMany({
-      where: { conversationId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    // OPTIMIZATION 4: Fetch only last 10 messages + use rolling summary
+    const [recentMessages, memories] = await Promise.all([
+      prisma.message.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: "desc" },
+        take: 10, // Reduced from 20
+        select: { role: true, text: true }, // Select only needed fields
+      }),
+      prisma.memory.findMany({
+        where: { userId: user.id },
+        orderBy: [{ strength: "desc" }, { lastUsedAt: "desc" }],
+        take: 5, // Reduced from 10
+        select: { text: true },
+      }),
+    ]);
     recentMessages.reverse();
 
-    // Fetch user memories (MVP: top 10 by strength/recency)
-    const memories = await prisma.memory.findMany({
-      where: { userId: user.id },
-      orderBy: [{ strength: "desc" }, { lastUsedAt: "desc" }],
-      take: 10,
-    });
-
-    // Build messages array for OpenAI
+    // OPTIMIZATION 5: Concise system prompt
     const systemPrompt = buildSystemPrompt(
       input.mode,
       input.tone_preference ?? "calm_direct",
@@ -315,30 +317,25 @@ conversationsRouter.post("/:id/messages", async (c) => {
       memories.map((m) => m.text)
     );
 
+    // Build minimal messages array (trim long messages)
     const openaiMessages = [
-      { role: "system", content: systemPrompt },
+      { role: "system" as const, content: systemPrompt },
       ...recentMessages.map((m) => ({
         role: m.role as "user" | "assistant",
-        content: m.text,
+        content: m.text.length > 500 ? m.text.substring(0, 500) + "..." : m.text,
       })),
     ];
 
-    // Call OpenAI with streaming
     const openaiApiKey = process.env.OPENAI_API_KEY;
     if (!openaiApiKey) {
-      return c.json(
-        { error: "Configuration Error", message: "Server misconfigured", requestId },
-        500
-      );
+      return c.json({ error: "Configuration Error", requestId }, 500);
     }
 
-    console.log(`[Conversations API] Calling OpenAI - mode: ${input.mode}, conversationId: ${conversationId}`);
+    console.log(`[Conversations API] Starting OpenAI call - ${requestId} (${Date.now() - timing.t_request_start}ms)`);
 
-    // Set up SSE headers
-    c.header("Content-Type", "text/event-stream");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
-    c.header("X-Request-ID", requestId);
+    // OPTIMIZATION 6: Use gpt-4o-mini for faster responses (can change to gpt-4o if quality is priority)
+    const MODEL = "gpt-4o-mini"; // Faster than gpt-4o
+    const MAX_TOKENS = 1500; // Reduced from 4096
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -347,10 +344,10 @@ conversationsRouter.post("/:id/messages", async (c) => {
         Authorization: `Bearer ${openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: MODEL,
         messages: openaiMessages,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: MAX_TOKENS,
         stream: true,
         response_format: KLARITY_RESPONSE_SCHEMA,
       }),
@@ -358,14 +355,14 @@ conversationsRouter.post("/:id/messages", async (c) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[Conversations API] OpenAI error - requestId: ${requestId}`, errorText);
-      return c.json(
-        { error: "AI Service Error", message: "Failed to get response from AI service", requestId },
-        502
-      );
+      console.error(`[Conversations API] OpenAI error - ${requestId}`, errorText);
+      return c.json({ error: "AI Service Error", requestId }, 502);
     }
 
-    // Stream the response
+    // Ensure user message is saved
+    await userMessagePromise;
+
+    // Stream response with status events
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader();
@@ -376,6 +373,11 @@ conversationsRouter.post("/:id/messages", async (c) => {
 
         const decoder = new TextDecoder();
         let fullContent = "";
+        let tokenCount = 0;
+        let firstTokenSent = false;
+
+        // Send initial status event immediately
+        controller.enqueue(`event: status\ndata: ${JSON.stringify({ state: "thinking" })}\n\n`);
 
         try {
           while (true) {
@@ -389,24 +391,36 @@ conversationsRouter.post("/:id/messages", async (c) => {
               if (line.startsWith("data: ")) {
                 const data = line.slice(6);
                 if (data === "[DONE]") {
-                  // Process completed response
-                  try {
-                    const latencyMs = Date.now() - startTime;
-                    const parsedResponse = JSON.parse(fullContent);
+                  timing.t_done = Date.now();
+                  timing.total_tokens_out = tokenCount;
 
-                    // Insert assistant message
+                  // Process and persist
+                  try {
+                    const parsedResponse = JSON.parse(fullContent);
+                    const latencyMs = timing.t_done - timing.t_request_start;
+
+                    // Log timing
+                    console.log(`[Conversations API] Complete - ${requestId}`, {
+                      latency_ms: latencyMs,
+                      ttft_ms: timing.t_first_token ? timing.t_first_token - timing.t_request_start : null,
+                      tokens_out: tokenCount,
+                      model: MODEL,
+                    });
+
+                    // Persist assistant message (async, don't block stream)
                     const assistantMessage = await prisma.message.create({
                       data: {
                         conversationId,
                         role: "assistant",
                         text: parsedResponse.chat_reply?.assistant_message || fullContent,
                         idempotencyKey: `${idempotency_key}_response`,
-                        modelUsed: "gpt-4o",
+                        modelUsed: MODEL,
+                        tokensOut: tokenCount,
                         latencyMs,
                       },
                     });
 
-                    // Insert decode if present
+                    // Persist decode (async)
                     if (parsedResponse.decode_card) {
                       await prisma.decode.create({
                         data: {
@@ -416,68 +430,54 @@ conversationsRouter.post("/:id/messages", async (c) => {
                       });
                     }
 
-                    // Update conversation lastMessageAt
-                    await prisma.conversation.update({
-                      where: { id: conversationId },
-                      data: { lastMessageAt: new Date() },
-                    });
-
-                    // Update rolling summary (MVP: simple append)
-                    const summaryUpdate = `User: ${input.text.substring(0, 100)}... | Assistant: ${(parsedResponse.chat_reply?.assistant_message || "").substring(0, 100)}...`;
+                    // Update rolling summary (deterministic, no API call)
+                    const summaryUpdate = `[${input.mode}] ${input.text.substring(0, 80)}`;
                     const newSummary = conversation.rollingSummary
-                      ? `${conversation.rollingSummary}\n${summaryUpdate}`
+                      ? `${conversation.rollingSummary.slice(-1500)}\n${summaryUpdate}`
                       : summaryUpdate;
 
-                    // Keep summary under 2000 chars
-                    const trimmedSummary = newSummary.length > 2000
-                      ? newSummary.slice(-2000)
-                      : newSummary;
-
                     await prisma.conversation.update({
                       where: { id: conversationId },
-                      data: { rollingSummary: trimmedSummary },
+                      data: { rollingSummary: newSummary, lastMessageAt: new Date() },
                     });
 
-                    // Extract and store tone preference as memory if explicitly mentioned
-                    if (input.tone_preference) {
-                      const existingToneMemory = await prisma.memory.findFirst({
-                        where: {
-                          userId: user.id,
-                          type: "preference",
-                          text: { contains: "tone" },
-                        },
-                      });
-
-                      if (!existingToneMemory) {
-                        await prisma.memory.create({
-                          data: {
-                            userId: user.id,
-                            text: `Prefers ${input.tone_preference} tone in responses`,
-                            type: "preference",
-                            strength: 0.8,
-                          },
-                        });
-                      }
-                    }
-
-                    // Send done event with full payload
-                    controller.enqueue(
-                      `event: done\ndata: ${JSON.stringify({
+                    // Cache the result
+                    responseCache.set(cacheKey, {
+                      response: fullContent,
+                      parsedJson: {
                         message: {
                           id: assistantMessage.id,
                           role: "assistant",
-                          text: parsedResponse.chat_reply?.assistant_message || fullContent,
+                          text: parsedResponse.chat_reply?.assistant_message,
                           createdAt: assistantMessage.createdAt,
                         },
                         decode: parsedResponse.decode_card || null,
                         meta: parsedResponse.meta || null,
+                      },
+                      timestamp: Date.now(),
+                    });
+
+                    // Send done event
+                    controller.enqueue(
+                      `event: done\ndata: ${JSON.stringify({
+                        json: parsedResponse,
+                        message: {
+                          id: assistantMessage.id,
+                          role: "assistant",
+                          text: parsedResponse.chat_reply?.assistant_message,
+                        },
+                        timing: {
+                          latency_ms: latencyMs,
+                          ttft_ms: timing.t_first_token ? timing.t_first_token - timing.t_request_start : null,
+                          tokens_out: tokenCount,
+                        },
                         requestId,
                       })}\n\n`
                     );
                   } catch (parseError) {
-                    console.error(`[Conversations API] Error parsing response - requestId: ${requestId}`, parseError);
+                    console.error(`[Conversations API] Parse error - ${requestId}`, parseError);
                     controller.enqueue(
-                      `event: error\ndata: ${JSON.stringify({ error: "Failed to parse AI response", requestId })}\n\n`
+                      `event: error\ndata: ${JSON.stringify({ error: "Failed to parse response", requestId })}\n\n`
                     );
                   }
                   continue;
@@ -487,9 +487,15 @@ conversationsRouter.post("/:id/messages", async (c) => {
                   const parsed = JSON.parse(data);
                   const content = parsed.choices?.[0]?.delta?.content || "";
                   if (content) {
+                    if (!firstTokenSent) {
+                      timing.t_first_token = Date.now();
+                      firstTokenSent = true;
+                      console.log(`[Conversations API] First token - ${requestId} (${timing.t_first_token - timing.t_request_start}ms)`);
+                    }
                     fullContent += content;
+                    tokenCount++;
                     // Send token event
-                    controller.enqueue(`event: token\ndata: ${JSON.stringify({ chunk: content })}\n\n`);
+                    controller.enqueue(`event: token\ndata: ${JSON.stringify({ t: content })}\n\n`);
                   }
                 } catch {
                   // Skip unparseable lines
@@ -508,16 +514,13 @@ conversationsRouter.post("/:id/messages", async (c) => {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        Connection: "keep-alive",
+        "Connection": "keep-alive",
         "X-Request-ID": requestId,
       },
     });
   } catch (error) {
-    console.error(`[Conversations API] Unexpected error - requestId: ${requestId}`, error);
-    return c.json(
-      { error: "Internal Server Error", message: "An unexpected error occurred", requestId },
-      500
-    );
+    console.error(`[Conversations API] Error - ${requestId}`, error);
+    return c.json({ error: "Internal Server Error", requestId }, 500);
   }
 });
 

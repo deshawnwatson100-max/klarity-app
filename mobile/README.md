@@ -998,12 +998,63 @@ curl http://localhost:3000/v1/conversations/{CONVERSATION_ID} \
 
 **SSE Response Format:**
 ```
+event: status
+data: {"state": "thinking"}
+
 event: token
-data: {"chunk": "partial content..."}
+data: {"t": "partial content..."}
 
 event: done
-data: {"message": {...}, "decode": {...}, "meta": {...}, "requestId": "..."}
+data: {"json": {...}, "message": {...}, "timing": {"latency_ms": 1234, "ttft_ms": 456, "tokens_out": 50}, "requestId": "..."}
 ```
+
+### Performance Optimizations (v1 API)
+
+The v1 conversations API includes several performance optimizations:
+
+1. **In-memory cache (60s TTL)** - Prevents duplicate requests for same user+text+mode
+2. **Idempotency** - Same idempotency_key returns cached result immediately
+3. **Context trimming** - Only last 10 messages sent to OpenAI (+ rolling summary)
+4. **Concise prompts** - System prompt optimized for fewer input tokens
+5. **Fast model** - Uses gpt-4o-mini by default for faster TTFT
+6. **Streaming** - SSE events sent as tokens arrive (status → token → done)
+7. **Parallel DB queries** - Conversation ownership + idempotency checked in parallel
+8. **Timing logs** - Each request logs latency_ms, ttft_ms, tokens_out
+
+### How to Verify Performance
+
+**1. Check backend logs for timing:**
+```
+[Conversations API] First token - req_xxx (450ms)
+[Conversations API] Complete - req_xxx { latency_ms: 2100, ttft_ms: 450, tokens_out: 85 }
+```
+
+**2. Test cache hit (send same message twice):**
+```bash
+# First request - should take 1-3s
+curl -N -X POST http://localhost:3000/v1/conversations/{ID}/messages ...
+
+# Second request with same text - should return instantly with "cached": true
+curl -X POST http://localhost:3000/v1/conversations/{ID}/messages ...
+```
+
+**3. Test idempotency (same idempotency_key):**
+- Send request with idempotency_key
+- Send again with same key → returns cached result immediately
+
+**4. Verify streaming with curl:**
+```bash
+curl -N -X POST http://localhost:3000/v1/conversations/{ID}/messages \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"idempotency_key": "...", "input": {"text": "test", "mode": "chat"}}'
+# Should see: event: status, then event: token events, then event: done
+```
+
+**Performance Targets:**
+- Time to first token (TTFT): 300-800ms
+- Total latency: 1-3s for typical decode
+- Cache hit: <50ms
 
 ## User Flow
 
