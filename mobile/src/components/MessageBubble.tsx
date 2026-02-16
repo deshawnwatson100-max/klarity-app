@@ -19,11 +19,11 @@ const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   return (
     <Text
       style={{
-        fontSize: 15,
-        lineHeight: 24,
-        fontWeight: "400",
+        fontSize: 17,
+        lineHeight: 26,
+        fontWeight: "600",
         color: textColor,
-        letterSpacing: 0.2,
+        letterSpacing: 0.1,
       }}
     >
       {text}
@@ -607,9 +607,10 @@ export function MessageBubble({
               text={content}
               style={{
                 fontSize: isPostDecode ? 17 : 15,
-                lineHeight: isPostDecode ? 24 : 24,
+                lineHeight: isPostDecode ? 26 : 24,
                 color: textColor,
                 fontWeight: isPostDecode ? "600" : "400",
+                letterSpacing: isPostDecode ? 0.1 : 0.2,
               }}
               speed={85}
               onComplete={() => setHasAnimatedText(true)}
