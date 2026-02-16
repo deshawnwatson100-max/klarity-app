@@ -12,22 +12,41 @@ import { TypewriterText } from "./TypewriterText";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Helper function to render post-decode assistant messages with consistent styling
+// Helper function to render post-decode assistant messages with blockquote style
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
+  const accentColor = isDark ? "#7DD3C0" : "#059669";
+
+  // Split into sentences for line-by-line display
+  const sentenceRegex = /[^.!?]*[.!?]+/g;
+  const sentences = text.match(sentenceRegex) || [text];
+  const cleanedSentences = sentences.map(s => s.trim()).filter(s => s.length > 0);
 
   return (
-    <Text
+    <View
       style={{
-        fontSize: 17,
-        lineHeight: 26,
-        fontWeight: "600",
-        color: textColor,
-        letterSpacing: 0.1,
+        borderLeftWidth: 3,
+        borderLeftColor: accentColor,
+        paddingLeft: 14,
+        paddingVertical: 4,
       }}
     >
-      {text}
-    </Text>
+      {cleanedSentences.map((sentence, index) => (
+        <Text
+          key={index}
+          style={{
+            fontSize: 17,
+            lineHeight: 26,
+            fontWeight: "600",
+            color: textColor,
+            letterSpacing: 0.1,
+            marginBottom: index < cleanedSentences.length - 1 ? 2 : 0,
+          }}
+        >
+          {sentence}
+        </Text>
+      ))}
+    </View>
   );
 };
 
