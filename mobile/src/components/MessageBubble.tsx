@@ -13,10 +13,9 @@ import { TypewriterText } from "./TypewriterText";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// Helper function to render post-decode assistant messages with blockquote style
+// Helper function to render post-decode assistant messages
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
-  const accentColorLight = isDark ? "rgba(96, 165, 250, 0.2)" : "rgba(59, 130, 246, 0.2)"; // Transparent blue
 
   // Split into sentences for line-by-line display
   const sentenceRegex = /[^.!?]*[.!?]+/g;
@@ -26,25 +25,9 @@ const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   return (
     <View
       style={{
-        paddingLeft: 14,
         paddingVertical: 4,
-        position: "relative",
       }}
     >
-      {/* Soft accent gradient left edge - transparent like reply cards */}
-      <LinearGradient
-        colors={[accentColorLight, "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          borderRadius: 2,
-        }}
-      />
       {cleanedSentences.map((sentence, index) => (
         <Text
           key={index}
