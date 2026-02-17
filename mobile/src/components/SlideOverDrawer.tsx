@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   PanResponder,
+  InteractionManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -111,6 +112,8 @@ function ContextMenuChatListItem({
   isActive = false,
   colors
 }: ContextMenuChatListItemProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Get emotional theme from first user message or title
   const getPreview = () => {
     const userMessages = loop.messages.filter((m) => m.role === "user");
@@ -172,28 +175,43 @@ function ContextMenuChatListItem({
 
   const handlePin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Delay to allow context menu to fully dismiss before state change
-    setTimeout(() => {
-      onPin();
-    }, 350);
+    // Use InteractionManager to ensure context menu animation completes before state change
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        onPin();
+      }, 100);
+    });
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Delay to allow context menu to fully dismiss before state change
-    setTimeout(() => {
-      onArchive();
-    }, 350);
+    // Mark as deleting to prevent re-render issues (archive also removes from list)
+    setIsDeleting(true);
+    // Use InteractionManager to ensure context menu animation completes before state change
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        onArchive();
+      }, 100);
+    });
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Longer delay to ensure context menu fully dismisses before removing item from list
+    // Mark as deleting to prevent re-render issues
+    setIsDeleting(true);
+    // Use InteractionManager to ensure context menu animation completes before state change
     // This prevents crashes when the list re-renders during context menu animation
-    setTimeout(() => {
-      onDelete();
-    }, 350);
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        onDelete();
+      }, 100);
+    });
   }, [onDelete]);
+
+  // Don't render if being deleted
+  if (isDeleting) {
+    return null;
+  }
 
   return (
     <View
