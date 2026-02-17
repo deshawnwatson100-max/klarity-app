@@ -57,6 +57,7 @@ export interface Message {
   imageBase64?: string; // Base64 encoded image for API calls
   isVoiceMessage?: boolean; // Marks if this message came from voice recording
   mode?: MessageMode; // The mode this message belongs to (Reply or Decode)
+  hasAnimated?: boolean; // Whether the typewriter animation has played for this message
 }
 
 export interface EmotionalAnalysis {

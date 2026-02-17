@@ -332,6 +332,8 @@ interface MessageBubbleProps {
   messageId?: string; // Message ID for edit tracking
   isStreaming?: boolean; // Whether content is actively streaming in
   isPostDecode?: boolean; // Whether this is a post-decode clarity message (uses typographic hierarchy)
+  hasAnimated?: boolean; // Whether the typewriter animation has already played
+  onAnimationComplete?: () => void; // Callback when animation completes (to persist the state)
 }
 
 export function MessageBubble({
@@ -346,14 +348,17 @@ export function MessageBubble({
   messageId,
   isStreaming = false,
   isPostDecode = false,
+  hasAnimated: hasAnimatedProp = false,
+  onAnimationComplete,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const { colors, isDark } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(4)).current; // Subtle 4px drift
 
-  // Track if typewriter animation has completed for this content
-  const [hasAnimatedText, setHasAnimatedText] = useState(false);
+  // Use the persisted hasAnimated prop, with local state as fallback for streaming
+  const [localHasAnimated, setLocalHasAnimated] = useState(hasAnimatedProp);
+  const hasAnimatedText = hasAnimatedProp || localHasAnimated;
   const lastAnimatedContent = useRef("");
 
   // Action states
@@ -385,7 +390,7 @@ export function MessageBubble({
   // Reset animation state when streaming starts with new content
   useEffect(() => {
     if (isStreaming && content !== lastAnimatedContent.current) {
-      setHasAnimatedText(false);
+      setLocalHasAnimated(false);
     }
   }, [isStreaming, content]);
 
@@ -620,7 +625,10 @@ export function MessageBubble({
               letterSpacing: isPostDecode ? 0.1 : 0.2,
             }}
             speed={hasAnimatedText ? 0 : 85}
-            onComplete={() => setHasAnimatedText(true)}
+            onComplete={() => {
+              setLocalHasAnimated(true);
+              onAnimationComplete?.();
+            }}
           />
         </View>
       )}

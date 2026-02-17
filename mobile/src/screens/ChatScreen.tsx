@@ -3071,6 +3071,12 @@ Generate a new reply that follows the user's instruction while still responding 
           messageId={message.id}
           isStreaming={message.role === "assistant" && message.id === streamingMessageId}
           isPostDecode={isPostDecodeClarity}
+          hasAnimated={message.hasAnimated}
+          onAnimationComplete={() => {
+            if (!message.hasAnimated) {
+              updateMessageInActiveLoop(message.id, { ...message, hasAnimated: true });
+            }
+          }}
         />
       );
     }
@@ -3167,9 +3173,15 @@ Generate a new reply that follows the user's instruction while still responding 
         onEdit={message.role === "user" ? handleEditMessage : undefined}
         messageId={message.id}
         isStreaming={message.role === "assistant" && message.id === streamingMessageId}
+        hasAnimated={message.hasAnimated}
+        onAnimationComplete={() => {
+          if (!message.hasAnimated) {
+            updateMessageInActiveLoop(message.id, { ...message, hasAnimated: true });
+          }
+        }}
       />
     );
-  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply, streamingMessageId]);
+  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply, streamingMessageId, updateMessageInActiveLoop]);
 
   const handleNavigateBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

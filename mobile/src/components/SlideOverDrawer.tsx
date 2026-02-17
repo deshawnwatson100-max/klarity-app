@@ -172,17 +172,26 @@ function ContextMenuChatListItem({
 
   const handlePin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onPin();
+    // Delay to allow context menu to fully dismiss before state change
+    setTimeout(() => {
+      onPin();
+    }, 100);
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onArchive();
+    // Delay to allow context menu to fully dismiss before state change
+    setTimeout(() => {
+      onArchive();
+    }, 100);
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onDelete();
+    // Delay to allow context menu to fully dismiss before state change
+    setTimeout(() => {
+      onDelete();
+    }, 100);
   }, [onDelete]);
 
   return (
