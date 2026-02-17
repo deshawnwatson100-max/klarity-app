@@ -309,10 +309,11 @@ After displaying the Structured Analysis Card, a follow-up assistant message pro
 **Post-Decode Context Suggestions:**
 After analysis, a helpful message appears suggesting what context would improve the interpretation:
 - Format: "Here is more context you can add to get a better idea of [specific uncertainty]:" + 3 bullet suggestions
-- Example: "Here is more context you can add to get a better idea of why she seems distant in these texts:"
-  • how she usually responds when interested
+- Uses the contact's name from the screenshot for personalization (e.g., "Dané❤️💖" instead of "they")
+- Example: "Here is more context you can add to get a better idea of why Dané❤️💖 seems worried in these texts:"
+  • how Dané❤️💖 usually responds when stressed
   • what happened right before this convo
-  • whether this tone is new or normal for her
+  • whether this tone is new or normal for Dané❤️💖
 - Suggestions are specific to the conversation, not generic
 
 **Files:**

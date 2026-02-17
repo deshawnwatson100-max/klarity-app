@@ -498,6 +498,9 @@ export interface StructuredAnalysisResult {
   // Section 5: Deeper Pattern Analysis (optional/expandable)
   deeperPattern?: DeeperPatternAnalysis;
 
+  // Contact name extracted from conversation (for personalization)
+  contactName?: string;
+
   // Future scalability fields
   clarityScore?: number; // 1-100 for future implementation
   contactId?: string; // For tracking patterns per contact

@@ -3953,6 +3953,8 @@ export async function generateStructuredAnalysisFromImage(
 JSON only. No markdown. No preamble.
 
 {
+  "contactName": "Name of the other person in the conversation (as shown in the screenshot header/title). Include emojis if present. If unclear, use null.",
+
   "surfaceMeaning": "One sentence. What's literally being said. No fluff.",
 
   "hiddenSubtext": [
@@ -4138,6 +4140,9 @@ Provide your analysis in the JSON format specified.`;
             { style: "detached" as const, message: "Okay, noted." },
           ],
 
+      // Extract contact name from the conversation screenshot
+      contactName: parsed.contactName || undefined,
+
       deeperPattern: parsed.deeperPattern
         ? {
             attachmentStyle: validAttachmentStyles.includes(parsed.deeperPattern.attachmentStyle)
@@ -4194,11 +4199,14 @@ export async function generatePostDecodeClarity(
   const signalLabel = analysis.signalLabel;
   const surfaceMeaning = analysis.surfaceMeaning;
   const hiddenSubtext = analysis.hiddenSubtext.map(item => item.meaning).join(", ");
+  const contactName = analysis.contactName || null;
 
   const systemPrompt = `You are Klarity. After showing analysis, you help users understand what extra context would make the interpretation more accurate.
 
 YOUR JOB:
 Generate a single helpful section that identifies the KEY UNCERTAINTY in this conversation and suggests 3 specific pieces of context that would help clarify it.
+
+${contactName ? `IMPORTANT: The person in the conversation is named "${contactName}". Use their name in your suggestions instead of "they/them/their". For example, instead of "how they usually text", say "how ${contactName} usually texts".` : ""}
 
 FORMAT (exactly this structure):
 1. One intro sentence: "Here is more context you can add to get a better idea of [specific uncertainty]:"
@@ -4208,13 +4216,20 @@ THE INTRO SENTENCE:
 - Must identify the SPECIFIC thing that's unclear or hard to interpret
 - Base it on the signal strength, subtext, and surface meaning
 - Should feel helpful and specific to THIS conversation
+${contactName ? `- Use "${contactName}" in the intro when referring to them (e.g., "why ${contactName} seems distant")` : ""}
 
 GOOD intro examples (adapt to the actual conversation):
-- "Here is more context you can add to get a better idea of why she seems distant in these texts:"
+${contactName
+  ? `- "Here is more context you can add to get a better idea of why ${contactName} seems distant in these texts:"
+- "Here is more context you can add to get a better idea of whether ${contactName} is genuinely interested or just being polite:"
+- "Here is more context you can add to get a better idea of what's causing the shift in ${contactName}'s tone:"
+- "Here is more context you can add to get a better idea of whether ${contactName} is testing you or genuinely busy:"
+- "Here is more context you can add to get a better idea of why ${contactName} is being vague about plans:"`
+  : `- "Here is more context you can add to get a better idea of why she seems distant in these texts:"
 - "Here is more context you can add to get a better idea of whether this is genuine interest or just politeness:"
 - "Here is more context you can add to get a better idea of what's causing the shift in their tone:"
 - "Here is more context you can add to get a better idea of whether they're testing you or genuinely busy:"
-- "Here is more context you can add to get a better idea of why he's being vague about plans:"
+- "Here is more context you can add to get a better idea of why he's being vague about plans:"`}
 
 BAD intro examples (NEVER use):
 - Generic phrases that don't specify the uncertainty
@@ -4226,15 +4241,24 @@ THE 3 SUGGESTIONS:
 - Write them as short phrases (not questions, not full sentences)
 - Make them directly relevant to the uncertainty you identified
 - Keep them casual and natural
+${contactName ? `- Use "${contactName}" instead of "they/their" (e.g., "how ${contactName} usually responds" not "how they usually respond")` : ""}
 
-GOOD suggestion examples:
-• how they usually respond when interested
+GOOD suggestion examples${contactName ? ` (using the name ${contactName})` : ""}:
+${contactName
+  ? `• how ${contactName} usually responds when interested
+• what happened right before this convo
+• ${contactName}'s typical texting style with you
+• if there's been tension recently with ${contactName}
+• whether this tone is new or normal for ${contactName}
+• how long you've been talking to ${contactName}
+• if something specific triggered this shift`
+  : `• how they usually respond when interested
 • what happened right before this convo
 • their typical texting style with you
 • if there's been tension recently
 • whether this tone is new or normal for them
 • how long you've been talking
-• if something specific triggered this shift
+• if something specific triggered this shift`}
 
 BAD suggestions (NEVER use):
 • Questions ("How do you feel?")
@@ -4247,8 +4271,9 @@ Tone: Helpful and direct. This should feel like a friend pointing out exactly wh
   const userPrompt = `Signal: ${signalLabel} (${signalStrength})
 Surface meaning: ${surfaceMeaning}
 Hidden subtext: ${hiddenSubtext}
+${contactName ? `Contact name: ${contactName}` : "Contact name: Unknown"}
 
-Generate the intro sentence that identifies the specific uncertainty, followed by exactly 3 bullet suggestions.`;
+Generate the intro sentence that identifies the specific uncertainty, followed by exactly 3 bullet suggestions.${contactName ? ` Use "${contactName}" in your response instead of generic pronouns.` : ""}`;
 
   try {
     const response = await callGPT5Mini(
@@ -4262,17 +4287,20 @@ Generate the intro sentence that identifies the specific uncertainty, followed b
     );
     return response.trim();
   } catch (error) {
-    // Fallback based on signal strength
+    // Fallback based on signal strength, using contact name if available
+    const name = contactName || "they";
+    const possessive = contactName ? `${contactName}'s` : "their";
+
     const fallbackUncertainty = signalStrength === "red"
-      ? "why their tone feels off"
+      ? `why ${possessive} tone feels off`
       : signalStrength === "yellow"
       ? "whether this is a concern or just miscommunication"
-      : "what they actually mean";
+      : `what ${name} actually ${contactName ? "means" : "mean"}`;
 
     return `Here is more context you can add to get a better idea of ${fallbackUncertainty}:
-• how they usually text you
+• how ${name} usually text${contactName ? "s" : ""} you
 • what was said right before this
-• whether this tone is normal for them`;
+• whether this tone is normal for ${name}`;
   }
 }
 
