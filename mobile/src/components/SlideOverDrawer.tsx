@@ -124,28 +124,15 @@ function ContextMenuChatListItem({
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Archive shows confirmation Alert - guarantees context menu dismissed first
+    // Just notify parent - Alert shown via useEffect in parent after context menu closes
     onArchive();
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Show confirmation Alert - this guarantees context menu is fully dismissed
-    // before any state mutation occurs (Alert opens after menu closes)
-    Alert.alert(
-      "Delete Conversation",
-      "Are you sure you want to delete this conversation? This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            onDelete();
-          },
-        },
-      ]
-    );
+    // Just set pendingDeleteLoopId in parent - Alert shown via useEffect OUTSIDE of onSelect
+    // This guarantees context menu is fully dismissed before any UI appears
+    onDelete();
   }, [onDelete]);
 
   // Get emotional theme from first user message or title
@@ -746,6 +733,9 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
+  // Pending delete state - set by onSelect, Alert shown via useEffect (outside onSelect)
+  const [pendingDeleteLoopId, setPendingDeleteLoopId] = useState<string | null>(null);
+
   // Store
   const loops = useLoopsStore((s) => s.loops);
   const archivedLoops = useLoopsStore((s) => s.archivedLoops);
@@ -767,28 +757,63 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
     };
   }, []);
 
-  // Delete handler - called from Alert confirmation (context menu already dismissed)
-  const handleSafeDelete = useCallback((loopId: string) => {
-    if (!isMountedRef.current) return;
-    deleteLoop(loopId);
-  }, [deleteLoop]);
+  // Show delete confirmation Alert when pendingDeleteLoopId is set
+  // This runs OUTSIDE of zeego onSelect, after context menu is dismissed
+  useEffect(() => {
+    if (pendingDeleteLoopId) {
+      // Small delay to ensure context menu is fully closed
+      const timer = setTimeout(() => {
+        Alert.alert(
+          "Delete Conversation",
+          "Are you sure you want to delete this conversation? This cannot be undone.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => setPendingDeleteLoopId(null),
+            },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: () => {
+                if (isMountedRef.current) {
+                  deleteLoop(pendingDeleteLoopId);
+                }
+                setPendingDeleteLoopId(null);
+              },
+            },
+          ],
+          { cancelable: true, onDismiss: () => setPendingDeleteLoopId(null) }
+        );
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDeleteLoopId, deleteLoop]);
 
-  // Archive handler - show confirmation Alert to ensure context menu is dismissed first
+  // Mark loop for deletion - just sets state, does NOT delete yet
+  const handleRequestDelete = useCallback((loopId: string) => {
+    setPendingDeleteLoopId(loopId);
+  }, []);
+
+  // Archive handler - also use delayed Alert pattern for safety
   const handleSafeArchive = useCallback((loopId: string) => {
     if (!isMountedRef.current) return;
-    Alert.alert(
-      "Archive Conversation",
-      "Move this conversation to archives?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Archive",
-          onPress: () => {
-            archiveLoop(loopId);
+    // Small delay to ensure context menu is fully closed
+    setTimeout(() => {
+      Alert.alert(
+        "Archive Conversation",
+        "Move this conversation to archives?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Archive",
+            onPress: () => {
+              archiveLoop(loopId);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, 100);
   }, [archiveLoop]);
 
   // Sort loops: pinned first, then by updatedAt
@@ -1026,7 +1051,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
-                  onDelete={() => handleSafeDelete(loop.id)}
+                  onDelete={() => handleRequestDelete(loop.id)}
                   onArchive={() => handleSafeArchive(loop.id)}
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === pinnedLoops.length - 1}
@@ -1048,7 +1073,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
-                  onDelete={() => handleSafeDelete(loop.id)}
+                  onDelete={() => handleRequestDelete(loop.id)}
                   onArchive={() => handleSafeArchive(loop.id)}
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === unpinnedLoops.length - 1}
