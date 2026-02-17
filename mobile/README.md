@@ -317,23 +317,27 @@ After analysis, a helpful message appears suggesting what context would improve 
 - Suggestions are specific to the conversation, not generic
 
 **Expanded Decode Loop (Context-Aware Response):**
-When the user provides additional context after the initial analysis, the response follows a 4-part structure:
+When the user provides additional context after the initial analysis, the response follows a 4-part structure focused on UNDERSTANDING (not action):
 
 1. **Updated Read** (1-2 sentences)
    - "With that context, this leans more toward X than Y."
    - Explains how the new info shifts the interpretation
 
-2. **Core Uncertainty** (1 sentence)
-   - "So the real question is whether Dané❤️💖 is X or Y."
-   - Identifies the key thing that's still unclear
+2. **Core Insight** (1 sentence)
+   - "So the real question is whether this is X or Y."
+   - Identifies the underlying dynamic, framed as understanding
 
-3. **Decision Fork** (intro + 2 bullet options)
-   - "Your next move signals which you accept:"
-   • Option A - what it communicates
-   • Option B - what it communicates
+3. **Common Misreads** (2-3 bullet points)
+   - Lists mixed-signal traps people commonly fall into
+   - Format: "People often read this as [misread], but it's usually [actual dynamic]."
+   - Example: "People often read this as distance, but it's usually just pacing style."
 
-4. **Example Reply** (optional, 1 line)
-   - "Something like: '[example text]'"
+4. **Grounded Perspective** (1-2 sentences)
+   - Calm, observational reframe that settles the confusion
+   - No advice, no "you should", no action items
+   - Example: "So this reads less like losing interest and more like inconsistent communication habits."
+
+The goal is to reduce confusion by explaining the social dynamic. The "aha" moment should be understanding, not instruction.
 
 **Files:**
 - `src/api/klarity-api.ts` - `generatePostDecodeClarity()` and `generateContextAwareDecodeResponse()` functions

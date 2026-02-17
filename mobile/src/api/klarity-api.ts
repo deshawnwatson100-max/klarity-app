@@ -3115,11 +3115,14 @@ No notation blocks. Just text like a friend.`;
 
 /**
  * Generate an expanded decode response when user provides additional context
- * This follows the 4-part structure:
+ * This follows the 4-part structure focused on UNDERSTANDING, not action:
  * 1. Updated read briefly ("With that context, this leans more toward X than Y.")
  * 2. Identify core uncertainty ("So the real question is whether they're X or Y.")
- * 3. Present decision fork ("Your next move signals which you accept:") + 2 options
- * 4. One example reply (optional)
+ * 3. List common misreads or mixed-signal traps people fall into
+ * 4. End with a grounded perspective (no texting advice)
+ *
+ * The goal is to reduce confusion by explaining the social dynamic.
+ * The "aha" moment should be understanding, not instruction.
  */
 export async function generateContextAwareDecodeResponse(
   userMessage: string,
@@ -3130,6 +3133,7 @@ export async function generateContextAwareDecodeResponse(
 ): Promise<{ response: string }> {
   const name = contactName || "they";
   const possessive = contactName ? `${contactName}'s` : "their";
+  const verb = contactName ? "is" : "are";
 
   // Build context about the previous analysis
   const analysisContext = previousAnalysis
@@ -3141,54 +3145,73 @@ export async function generateContextAwareDecodeResponse(
 
   const systemPrompt = `You're a sharp friend helping someone decode a text conversation. They just gave you more context about the situation.
 
+## YOUR GOAL
+
+Reduce confusion by explaining the SOCIAL DYNAMIC behind what's happening.
+The "aha" moment should be UNDERSTANDING, not instruction.
+No texting advice. No action steps. Just clarity.
+
 ## YOUR JOB
 
 Generate a response with this EXACT 4-part structure:
 
 **PART 1: Updated Read** (1-2 sentences)
 Start with "With that context..." and explain how the new info shifts your interpretation.
-- Be specific about what changed: "this leans more toward X than Y" or "this makes it clearer that..."
+- Be specific about what changed: "this leans more toward X than Y" or "this reads less like X and more like Y"
 - Reference the context they just shared
 
-**PART 2: Core Uncertainty** (1 sentence)
-Start with "So the real question is..." and identify the key thing that's still unclear.
-- Frame it as a specific binary or choice: "whether ${name} ${contactName ? "is" : "are"} X or Y"
-- This should be actionable, not abstract
+**PART 2: Core Insight** (1 sentence)
+Identify what's REALLY going on here - the underlying dynamic.
+- Start with "So the real question is..." or similar framing
+- Frame it as understanding, not decision: "whether this is X or Y" not "what to do next"
 
-**PART 3: Decision Fork** (short intro + 2 bullet options)
-Start with "Your next move signals which you accept:" or similar
-Then give exactly 2 options as bullets (use • character):
-• Option A - what it communicates
-• Option B - what it communicates
+**PART 3: Common Misreads** (2-3 bullet points)
+List the mixed-signal traps or misinterpretations people commonly fall into with this type of situation.
+Use "•" character for bullets.
+Format: "People often read this as [misread], but it's usually [actual dynamic]."
 
-**PART 4: Example Reply** (optional, 1 line)
-If relevant, give ONE short example reply that would work well.
-Format: "Something like: '[example text]'"
+Examples of good misread explanations:
+• "People often read this as distance, but it's usually just pacing style."
+• "This gets mistaken for losing interest when it's really inconsistent communication habits."
+• "Looks like avoidance but could just be compartmentalizing stress."
+
+**PART 4: Grounded Perspective** (1-2 sentences)
+End with a calm, grounded reframe that puts it in perspective.
+- No advice, no "you should", no action items
+- Just a clear-eyed take that settles the confusion
+- Tone: observational, wise, non-reactive
+
+Examples of good grounded perspectives:
+• "So this reads less like losing interest and more like inconsistent communication habits."
+• "The pattern here isn't about you - it's about how ${name} ${verb} wired to handle closeness."
+• "This is less about the specific message and more about ${possessive} default mode under pressure."
 
 ## CONTACT NAME
-${contactName ? `The person's name is "${contactName}". Use their name naturally throughout (e.g., "${contactName}'s response", "what ${contactName} actually meant").` : "Use natural pronouns (they/them/their)."}
+${contactName ? `The person's name is "${contactName}". Use their name naturally throughout (e.g., "${contactName}'s response", "how ${contactName} operates").` : "Use natural pronouns (they/them/their)."}
 
 ## STYLE RULES
 - Keep it conversational and short
-- No therapist language (boundaries, validate, attachment, etc.)
-- Sound like a smart friend texting
-- Be strategic, not soft
-- Total response: 4-6 short paragraphs max
+- No therapist language (boundaries, validate, attachment styles, etc.)
+- Sound like a smart friend who sees patterns others miss
+- Be observational, not prescriptive
+- NO texting advice, NO "you should", NO action steps
+- Total response: 4-5 short paragraphs max
 
 ## PREVIOUS ANALYSIS
 ${analysisContext}
 
 ## EXAMPLE OUTPUT
 
-With that context, this leans more toward testing than genuine confusion. The fact that ${name} did X before suggests ${possessive} message isn't really about Y.
+With that context, this leans more toward avoidance under stress than actual disinterest. The fact that ${name} ${verb} responsive when things are light but pulls back when it gets real suggests a pattern.
 
-So the real question is whether ${name} ${contactName ? "is" : "are"} looking for reassurance or creating distance.
+So the real question is whether ${possessive} communication style is about you specifically, or just how ${name} handle${contactName ? "s" : ""} anything that feels heavy.
 
-Your next move signals which you accept:
-• Match ${possessive} energy - shows you're not chasing, keeps you positioned evenly
-• Address it directly - clears the air but gives ${name} the frame
+Common misreads here:
+• People often see this as losing interest, but it's usually comfort-level fluctuation
+• This gets read as "mixed signals" when it's really just inconsistent emotional availability
+• Looks personal but it's usually about ${possessive} own capacity in the moment
 
-Something like: "I noticed that too. What's going on?"`;
+${contactName ? contactName : "They"} ${verb}n't necessarily pulling away from you - ${name} ${verb} just retreating into a default mode. The pattern tells you more about ${possessive} wiring than about where you stand.`;
 
   const messages: GPT5Message[] = [{ role: "system", content: systemPrompt }];
 
@@ -3209,13 +3232,15 @@ Something like: "I noticed that too. What's going on?"`;
     return { response };
   } catch (error: any) {
     console.error("[generateContextAwareDecodeResponse] Error:", error?.message || error);
-    const fallbackResponse = `With that context, I'm getting a clearer picture. Let me think through what this changes...
+    const fallbackResponse = `With that context, I'm getting a clearer picture of the dynamic here.
 
-So the real question is whether this is a pattern or just a one-off moment.
+So the real question is whether this is about you specifically, or just how ${name} operate${contactName ? "s" : ""} in general.
 
-Your next move signals which you accept:
-• Wait and observe - see if more info confirms or changes things
-• Address it casually - opens the door without pressure`;
+Common misreads here:
+• This often looks like distance when it's really just pacing differences
+• People assume intent when it's usually just habit
+
+The pattern here tells you more about ${possessive} defaults than about the situation itself.`;
     onStream(fallbackResponse, fallbackResponse);
     return { response: fallbackResponse };
   }
