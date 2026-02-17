@@ -12,18 +12,21 @@ interface TypewriterTextProps {
 
 /**
  * Parse inline formatting (bold, italic, code) and return styled elements
+ * Also applies subtle emphasis to interpretive phrases
  */
 const parseInlineFormatting = (
   str: string,
   baseStyle: TextStyle,
   isDark: boolean,
   lineIndex: number,
-  partIndex: number = 0
+  partIndex: number = 0,
+  emphasisPhrases: string[] = []
 ): React.ReactNode[] => {
   const boldColor = isDark ? "#FFFFFF" : "#1C1C1E";
   const italicColor = isDark ? "#D1D5DB" : "#636366";
   const codeTextColor = isDark ? "#A5F3FC" : "#0284C7";
   const codeBgColor = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)";
+  const emphasisColor = isDark ? "#F3F4F6" : "#374151"; // Slightly brighter for emphasis
 
   const parts: React.ReactNode[] = [];
   // Match bold (**text** or __text__), italic (*text* or _text_), and inline code (`text`)
@@ -31,14 +34,68 @@ const parseInlineFormatting = (
   let lastIndex = 0;
   let match;
 
+  // Helper to apply emphasis to plain text segments
+  const applyEmphasis = (text: string, keyPrefix: string): React.ReactNode[] => {
+    if (emphasisPhrases.length === 0) {
+      return [<Text key={keyPrefix} style={baseStyle}>{text}</Text>];
+    }
+
+    const result: React.ReactNode[] = [];
+    let remaining = text;
+    let segmentIndex = 0;
+
+    while (remaining.length > 0) {
+      // Find the earliest matching emphasis phrase
+      let earliestMatch: { phrase: string; index: number } | null = null;
+
+      for (const phrase of emphasisPhrases) {
+        const lowerRemaining = remaining.toLowerCase();
+        const lowerPhrase = phrase.toLowerCase();
+        const idx = lowerRemaining.indexOf(lowerPhrase);
+        if (idx !== -1 && (earliestMatch === null || idx < earliestMatch.index)) {
+          earliestMatch = { phrase: remaining.slice(idx, idx + phrase.length), index: idx };
+        }
+      }
+
+      if (earliestMatch) {
+        // Add text before the match
+        if (earliestMatch.index > 0) {
+          result.push(
+            <Text key={`${keyPrefix}-pre-${segmentIndex}`} style={baseStyle}>
+              {remaining.slice(0, earliestMatch.index)}
+            </Text>
+          );
+        }
+        // Add the emphasized phrase
+        result.push(
+          <Text
+            key={`${keyPrefix}-emph-${segmentIndex}`}
+            style={[baseStyle, { fontWeight: "600", color: emphasisColor }]}
+          >
+            {earliestMatch.phrase}
+          </Text>
+        );
+        remaining = remaining.slice(earliestMatch.index + earliestMatch.phrase.length);
+        segmentIndex++;
+      } else {
+        // No more matches, add remaining text
+        result.push(
+          <Text key={`${keyPrefix}-rest-${segmentIndex}`} style={baseStyle}>
+            {remaining}
+          </Text>
+        );
+        break;
+      }
+    }
+
+    return result;
+  };
+
   while ((match = formatRegex.exec(str)) !== null) {
-    // Add text before the formatted part
+    // Add text before the formatted part (with emphasis applied)
     if (match.index > lastIndex) {
-      parts.push(
-        <Text key={`text-${lineIndex}-${partIndex}-${lastIndex}`} style={baseStyle}>
-          {str.slice(lastIndex, match.index)}
-        </Text>
-      );
+      const textBefore = str.slice(lastIndex, match.index);
+      parts.push(...applyEmphasis(textBefore, `text-${lineIndex}-${partIndex}-${lastIndex}`));
     }
 
     if (match[1] || match[2]) {
@@ -86,16 +143,18 @@ const parseInlineFormatting = (
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text
+  // Add remaining text (with emphasis applied)
   if (lastIndex < str.length) {
-    parts.push(
-      <Text key={`text-${lineIndex}-${partIndex}-${lastIndex}-end`} style={baseStyle}>
-        {str.slice(lastIndex)}
-      </Text>
-    );
+    const textAfter = str.slice(lastIndex);
+    parts.push(...applyEmphasis(textAfter, `text-${lineIndex}-${partIndex}-${lastIndex}-end`));
   }
 
-  return parts.length > 0 ? parts : [<Text key={`text-${lineIndex}-${partIndex}`} style={baseStyle}>{str}</Text>];
+  // If no markdown was found, apply emphasis to the whole string
+  if (parts.length === 0) {
+    return applyEmphasis(str, `text-${lineIndex}-${partIndex}`);
+  }
+
+  return parts;
 };
 
 /**
@@ -123,7 +182,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
   // Intro phrase color (teal/aqua for "With that context," etc.)
   const introPhraseColor = isDark ? "#5EEAD4" : "#0D9488";
 
-  // Intro phrases that should be highlighted
+  // Intro phrases that should be highlighted (teal + bold + larger)
   const introPhrases = [
     "With that context,",
     "With that context",
@@ -131,6 +190,29 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
     "So the real question is",
     "Common misreads here:",
     "Common misreads:",
+  ];
+
+  // Emphasis phrases that should be slightly bolder (interpretive patterns)
+  const emphasisPhrases = [
+    "this reads less like",
+    "this reads more like",
+    "this leans more toward",
+    "this leans less toward",
+    "more like",
+    "less like",
+    "inconsistent texting",
+    "inconsistent communication",
+    "pacing style",
+    "communication habits",
+    "comfort-level fluctuation",
+    "emotional availability",
+    "default mode",
+    "the pattern here",
+    "the pattern tells",
+    "isn't about you",
+    "isn't necessarily",
+    "about how",
+    "wired to handle",
   ];
 
   lines.forEach((line, lineIndex) => {
@@ -227,7 +309,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
             }}
           />
           <View style={{ flex: 1 }}>
-            <Text style={baseStyle}>{parseInlineFormatting(bulletMatch[1], baseStyle, isDark, lineIndex)}</Text>
+            <Text style={baseStyle}>{parseInlineFormatting(bulletMatch[1], baseStyle, isDark, lineIndex, 0, emphasisPhrases)}</Text>
           </View>
         </View>
       );
@@ -261,7 +343,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
             {numberedMatch[1]}.
           </Text>
           <View style={{ flex: 1 }}>
-            <Text style={baseStyle}>{parseInlineFormatting(numberedMatch[2], baseStyle, isDark, lineIndex)}</Text>
+            <Text style={baseStyle}>{parseInlineFormatting(numberedMatch[2], baseStyle, isDark, lineIndex, 0, emphasisPhrases)}</Text>
           </View>
         </View>
       );
@@ -283,7 +365,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
           }}
         >
           <Text style={[baseStyle, { fontStyle: "italic", color: quoteTextColor }]}>
-            {parseInlineFormatting(quoteMatch[1], baseStyle, isDark, lineIndex)}
+            {parseInlineFormatting(quoteMatch[1], baseStyle, isDark, lineIndex, 0, emphasisPhrases)}
           </Text>
         </View>
       );
@@ -319,7 +401,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
             ]}
           >
             <Text style={{ color: introPhraseColor, fontWeight: "700", fontSize: 17 }}>{introMatch}</Text>
-            {parseInlineFormatting(restOfLine, baseStyle, isDark, lineIndex)}
+            {parseInlineFormatting(restOfLine, baseStyle, isDark, lineIndex, 0, emphasisPhrases)}
           </Text>
         );
       } else {
@@ -333,7 +415,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
               },
             ]}
           >
-            {parseInlineFormatting(line, baseStyle, isDark, lineIndex)}
+            {parseInlineFormatting(line, baseStyle, isDark, lineIndex, 0, emphasisPhrases)}
           </Text>
         );
       }
