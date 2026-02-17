@@ -173,20 +173,28 @@ function ContextMenuChatListItem({
 
   const handlePin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Execute immediately - pin doesn't remove the item from the list
-    onPin();
+    // Defer to allow context menu to fully close before state update
+    InteractionManager.runAfterInteractions(() => {
+      onPin();
+    });
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Execute immediately - the parent handles optimistic removal
-    onArchive();
+    // Defer to allow context menu to fully close before state update
+    // This prevents crash from rendering stale item during menu close animation
+    InteractionManager.runAfterInteractions(() => {
+      onArchive();
+    });
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Execute immediately - the parent handles optimistic removal
-    onDelete();
+    // CRITICAL: Defer state update until context menu fully closes
+    // Without this, the component is unmounted mid-render causing crash
+    InteractionManager.runAfterInteractions(() => {
+      onDelete();
+    });
   }, [onDelete]);
 
   return (
