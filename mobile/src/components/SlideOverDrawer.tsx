@@ -174,27 +174,35 @@ function ContextMenuChatListItem({
   const handlePin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Defer to allow context menu to fully close before state update
-    InteractionManager.runAfterInteractions(() => {
-      onPin();
-    });
+    // Using setTimeout as zeego context menu needs time to fully dismiss
+    setTimeout(() => {
+      InteractionManager.runAfterInteractions(() => {
+        onPin();
+      });
+    }, 100);
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Defer to allow context menu to fully close before state update
-    // This prevents crash from rendering stale item during menu close animation
-    InteractionManager.runAfterInteractions(() => {
-      onArchive();
-    });
+    // Using setTimeout as zeego context menu needs time to fully dismiss
+    setTimeout(() => {
+      InteractionManager.runAfterInteractions(() => {
+        onArchive();
+      });
+    }, 100);
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // CRITICAL: Defer state update until context menu fully closes
+    // Using setTimeout (100ms) + InteractionManager to ensure menu is fully dismissed
     // Without this, the component is unmounted mid-render causing crash
-    InteractionManager.runAfterInteractions(() => {
-      onDelete();
-    });
+    setTimeout(() => {
+      InteractionManager.runAfterInteractions(() => {
+        onDelete();
+      });
+    }, 100);
   }, [onDelete]);
 
   return (
