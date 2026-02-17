@@ -112,8 +112,6 @@ function ContextMenuChatListItem({
   isActive = false,
   colors
 }: ContextMenuChatListItemProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-
   // Get emotional theme from first user message or title
   const getPreview = () => {
     const userMessages = loop.messages.filter((m) => m.role === "user");
@@ -185,33 +183,25 @@ function ContextMenuChatListItem({
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Mark as deleting to prevent re-render issues (archive also removes from list)
-    setIsDeleting(true);
-    // Use InteractionManager to ensure context menu animation completes before state change
-    InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
+    // Use a longer delay to ensure the native iOS context menu fully dismisses
+    // before we modify the list state
+    setTimeout(() => {
+      requestAnimationFrame(() => {
         onArchive();
-      }, 100);
-    });
+      });
+    }, 500);
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Mark as deleting to prevent re-render issues
-    setIsDeleting(true);
-    // Use InteractionManager to ensure context menu animation completes before state change
-    // This prevents crashes when the list re-renders during context menu animation
-    InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
+    // Use a longer delay to ensure the native iOS context menu fully dismisses
+    // before we modify the list state - iOS context menu dismiss animation takes ~400ms
+    setTimeout(() => {
+      requestAnimationFrame(() => {
         onDelete();
-      }, 100);
-    });
+      });
+    }, 500);
   }, [onDelete]);
-
-  // Don't render if being deleted
-  if (isDeleting) {
-    return null;
-  }
 
   return (
     <View
