@@ -3228,7 +3228,7 @@ ${contactName ? contactName : "They"} ${verb}n't necessarily pulling away from y
   messages.push({ role: "user", content: userMessage });
 
   try {
-    const response = await callGPT5MiniStreaming(messages, onStream, 1500, 0.7);
+    const response = await callGPT5MiniStreaming(messages, onStream, 2500, 0.7);
     return { response };
   } catch (error: any) {
     console.error("[generateContextAwareDecodeResponse] Error:", error?.message || error);
