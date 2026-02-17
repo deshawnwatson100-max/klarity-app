@@ -306,6 +306,15 @@ After displaying the Structured Analysis Card, a follow-up assistant message pro
 - "Mixed signals are common and don't require immediate action. Unless there's a larger pattern around it."
 - "Your instincts picked up on something real. Take your time with this. Unless the surrounding context changes things."
 
+**Post-Decode Context Suggestions:**
+After analysis, a helpful message appears suggesting what context would improve the interpretation:
+- Format: "Here is more context you can add to get a better idea of [specific uncertainty]:" + 3 bullet suggestions
+- Example: "Here is more context you can add to get a better idea of why she seems distant in these texts:"
+  • how she usually responds when interested
+  • what happened right before this convo
+  • whether this tone is new or normal for her
+- Suggestions are specific to the conversation, not generic
+
 **Files:**
 - `src/api/klarity-api.ts` - `generatePostDecodeClarity()` function
 - `src/components/MessageBubble.tsx` - `renderPostDecodeMessage()` and `isPostDecode` prop

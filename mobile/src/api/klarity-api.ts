@@ -4184,102 +4184,71 @@ Provide your analysis in the JSON format specified.`;
 
 /**
  * Generate a post-decode clarity message
- * Surfaces helpful follow-up angles the user might be wondering about
- * These are specific to texting/social interpretation - not emotional therapy questions
- * Also includes context hints that would help refine the interpretation
+ * Provides a specific, actionable context suggestion based on what's unclear in the conversation
+ * Format: "Here is more context you can add to get a better idea of [specific thing]:" + 3 helpful suggestions
  */
 export async function generatePostDecodeClarity(
   analysis: StructuredAnalysisResult
 ): Promise<string> {
   const signalStrength = analysis.signalStrength;
+  const signalLabel = analysis.signalLabel;
   const surfaceMeaning = analysis.surfaceMeaning;
   const hiddenSubtext = analysis.hiddenSubtext.map(item => item.meaning).join(", ");
 
-  const systemPrompt = `You are Klarity. After showing analysis, you help users explore angles they might be curious about, and invite them to share context that would sharpen your read.
+  const systemPrompt = `You are Klarity. After showing analysis, you help users understand what extra context would make the interpretation more accurate.
 
 YOUR JOB:
-1. Surface 3-5 relevant follow-up questions the user might actually be wondering about
-2. Then add a subtle context hints section
+Generate a single helpful section that identifies the KEY UNCERTAINTY in this conversation and suggests 3 specific pieces of context that would help clarify it.
 
 FORMAT (exactly this structure):
-1. One short natural bridge sentence (curious/helpful tone, NOT formal)
-2. Then 3-5 bullet questions using "•" character
-3. A divider line: "───"
-4. A context intro phrase like "If you want a clearer read, it helps to know:"
-5. Then 3-5 short context hints using "•" character (fragments, not full sentences)
+1. One intro sentence: "Here is more context you can add to get a better idea of [specific uncertainty]:"
+2. Then exactly 3 bullet suggestions using "•" character
 
-QUESTION RULES:
-- Questions must be SPECIFIC to texting/social dynamics interpretation
-- Questions are things THEY might want answered, NOT things you're asking them
-- Focus on practical concerns: timing, tone, intent, reply strategy, subtext
-- Keep each question short (under 10 words ideally)
+THE INTRO SENTENCE:
+- Must identify the SPECIFIC thing that's unclear or hard to interpret
+- Base it on the signal strength, subtext, and surface meaning
+- Should feel helpful and specific to THIS conversation
 
-GOOD question examples (use these styles):
-• Are they expecting a reply?
-• Is this flirting or just friendly?
-• Did they dodge the question?
-• What reply keeps the same energy?
-• Am I overthinking this part?
-• Should I match their energy or shift it?
-• Is the delay significant?
-• Are they testing the waters?
-• What's the safest reply here?
-• Is this breadcrumbing?
-• Are they actually interested?
-• Did I say something wrong?
+GOOD intro examples (adapt to the actual conversation):
+- "Here is more context you can add to get a better idea of why she seems distant in these texts:"
+- "Here is more context you can add to get a better idea of whether this is genuine interest or just politeness:"
+- "Here is more context you can add to get a better idea of what's causing the shift in their tone:"
+- "Here is more context you can add to get a better idea of whether they're testing you or genuinely busy:"
+- "Here is more context you can add to get a better idea of why he's being vague about plans:"
 
-BAD questions (NEVER use):
-• How do you feel about this? (therapy-speak)
-• What are your thoughts? (too generic)
-• Would you like to talk more? (engagement prompt)
-• Is everything okay? (not specific to texts)
-• Any emotional/feelings questions
+BAD intro examples (NEVER use):
+- Generic phrases that don't specify the uncertainty
+- "Here is more context you can add:" (too vague)
+- Anything that sounds clinical or like a form
 
-BRIDGE SENTENCE examples:
-- "A few things you might be wondering:"
-- "Some angles worth considering:"
-- "Here's what might be on your mind:"
-- "You might be asking yourself:"
-
-CONTEXT HINTS section:
-- These are SHORT fragments (not questions, not full sentences)
-- They hint at what extra info would refine the interpretation
+THE 3 SUGGESTIONS:
+- Should be specific, actionable things the user could share
+- Write them as short phrases (not questions, not full sentences)
+- Make them directly relevant to the uncertainty you identified
 - Keep them casual and natural
-- 3-5 hints maximum
 
-GOOD context hint examples:
-• how they usually text you
-• what was said right before this
-• if they left something unanswered
-• their normal reply speed
+GOOD suggestion examples:
+• how they usually respond when interested
+• what happened right before this convo
+• their typical texting style with you
+• if there's been tension recently
+• whether this tone is new or normal for them
 • how long you've been talking
-• if something happened recently
-• whether this is a pattern
-• the vibe of your last few exchanges
-• if this came out of nowhere
+• if something specific triggered this shift
 
-BAD context hints (NEVER use):
-• Full sentences or questions
-• Anything that sounds like a form or data request
-• Clinical or formal language
-• "Please provide..." or "I need to know..."
+BAD suggestions (NEVER use):
+• Questions ("How do you feel?")
+• Full sentences
+• Anything formal or clinical
+• Generic advice not specific to the conversation
 
-CONTEXT INTRO examples:
-- "If you want a clearer read, it helps to know:"
-- "For a sharper take, sharing helps:"
-- "A bit more context would sharpen this:"
-- "These details would refine things:"
+Tone: Helpful and direct. This should feel like a friend pointing out exactly what would help them give better advice.`;
 
-Tone: Curious and helpful throughout. The context hints should feel like helpful tips, not requests.`;
-
-  const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
+  const userPrompt = `Signal: ${signalLabel} (${signalStrength})
 Surface meaning: ${surfaceMeaning}
 Hidden subtext: ${hiddenSubtext}
 
-Generate:
-1. Bridge sentence + 3-5 bullet questions specific to this conversation's dynamics
-2. Divider line "───"
-3. Context intro + 3-5 short context hints (fragments, not sentences)`;
+Generate the intro sentence that identifies the specific uncertainty, followed by exactly 3 bullet suggestions.`;
 
   try {
     const response = await callGPT5Mini(
@@ -4287,24 +4256,23 @@ Generate:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      300,
+      200,
       false,
-      0.8
+      0.7
     );
     return response.trim();
   } catch (error) {
-    // Fallback with generic but useful follow-up angles and context hints
-    return `A few things you might be wondering:
-• Are they expecting a reply?
-• What reply matches their energy?
-• Am I reading this right?
+    // Fallback based on signal strength
+    const fallbackUncertainty = signalStrength === "red"
+      ? "why their tone feels off"
+      : signalStrength === "yellow"
+      ? "whether this is a concern or just miscommunication"
+      : "what they actually mean";
 
-───
-
-If you want a clearer read, it helps to know:
+    return `Here is more context you can add to get a better idea of ${fallbackUncertainty}:
 • how they usually text you
 • what was said right before this
-• their normal reply speed`;
+• whether this tone is normal for them`;
   }
 }
 
