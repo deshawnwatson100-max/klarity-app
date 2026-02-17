@@ -306,7 +306,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
       }
 
       if (introMatch) {
-        // Render intro phrase with special color, rest with normal style
+        // Render intro phrase with special color and larger font, rest with normal style
         const restOfLine = line.slice(line.indexOf(introMatch) + introMatch.length);
         elements.push(
           <Text
@@ -318,7 +318,7 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
               },
             ]}
           >
-            <Text style={{ color: introPhraseColor, fontWeight: "600" }}>{introMatch}</Text>
+            <Text style={{ color: introPhraseColor, fontWeight: "700", fontSize: 17 }}>{introMatch}</Text>
             {parseInlineFormatting(restOfLine, baseStyle, isDark, lineIndex)}
           </Text>
         );
