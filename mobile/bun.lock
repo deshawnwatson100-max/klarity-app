@@ -71,7 +71,6 @@
         "expo-status-bar": "~2.2.3",
         "expo-symbols": "~0.4.4",
         "expo-system-ui": "~5.0.7",
-        "expo-video": "~2.2.2",
         "expo-web-browser": "~14.2.0",
         "lottie-react-native": "7.2.2",
         "nativewind": "^4.1.23",
@@ -1248,8 +1247,6 @@
     "expo-system-ui": ["expo-system-ui@5.0.11", "", { "dependencies": { "@react-native/normalize-colors": "0.79.6", "debug": "^4.3.2" }, "peerDependencies": { "expo": "*", "react-native": "*", "react-native-web": "*" }, "optionalPeers": ["react-native-web"] }, "sha512-PG5VdaG5cwBe1Rj02mJdnsihKl9Iw/w/a6+qh2mH3f2K/IvQ+Hf7aG2kavSADtkGNCNj7CEIg7Rn4DQz/SE5rQ=="],
 
     "expo-updates-interface": ["expo-updates-interface@1.1.0", "", { "peerDependencies": { "expo": "*" } }, "sha512-DeB+fRe0hUDPZhpJ4X4bFMAItatFBUPjw/TVSbJsaf3Exeami+2qbbJhWkcTMoYHOB73nOIcaYcWXYJnCJXO0w=="],
-
-    "expo-video": ["expo-video@2.2.2", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-SJrW1CeiWO7WCaAVMbjqGlvOMJfU/x+d0g9izjsnEXdV/KE3NhuCI3Y/3zCcFiAoR+jrHEtlI8sPlkLx3dq8xw=="],
 
     "expo-web-browser": ["expo-web-browser@14.2.0", "", { "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-6S51d8pVlDRDsgGAp8BPpwnxtyKiMWEFdezNz+5jVIyT+ctReW42uxnjRgtsdn5sXaqzhaX+Tzk/CWaKCyC0hw=="],
 
