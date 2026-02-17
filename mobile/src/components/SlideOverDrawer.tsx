@@ -175,7 +175,7 @@ function ContextMenuChatListItem({
     // Delay to allow context menu to fully dismiss before state change
     setTimeout(() => {
       onPin();
-    }, 100);
+    }, 350);
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
@@ -183,15 +183,16 @@ function ContextMenuChatListItem({
     // Delay to allow context menu to fully dismiss before state change
     setTimeout(() => {
       onArchive();
-    }, 100);
+    }, 350);
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Delay to allow context menu to fully dismiss before state change
+    // Longer delay to ensure context menu fully dismisses before removing item from list
+    // This prevents crashes when the list re-renders during context menu animation
     setTimeout(() => {
       onDelete();
-    }, 100);
+    }, 350);
   }, [onDelete]);
 
   return (
