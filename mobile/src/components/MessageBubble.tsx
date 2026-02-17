@@ -609,41 +609,19 @@ export function MessageBubble({
       {/* Text aligned to the left with typewriter animation for streaming */}
       {hasText && !isUser && (
         <View style={{ maxWidth: "90%", paddingRight: 20 }}>
-          {!hasAnimatedText ? (
-            <TypewriterText
-              key={`typewriter-${content.length}`}
-              text={content}
-              style={{
-                fontSize: isPostDecode ? 17 : 15,
-                lineHeight: isPostDecode ? 26 : 24,
-                color: textColor,
-                fontWeight: isPostDecode ? "600" : "400",
-                letterSpacing: isPostDecode ? 0.1 : 0.2,
-              }}
-              speed={85}
-              onComplete={() => setHasAnimatedText(true)}
-            />
-          ) : isPostDecode ? (
-            <Text
-              style={{
-                fontSize: 17,
-                lineHeight: 26,
-                color: textColor,
-                fontWeight: "600",
-                letterSpacing: 0.1,
-              }}
-            >
-              {content}
-            </Text>
-          ) : (
-            renderFormattedText(content, {
-              fontSize: 15,
-              lineHeight: 24,
+          <TypewriterText
+            key={`typewriter-${content.length}`}
+            text={content}
+            style={{
+              fontSize: isPostDecode ? 17 : 15,
+              lineHeight: isPostDecode ? 26 : 24,
               color: textColor,
-              letterSpacing: 0.2,
-              fontWeight: "400",
-            }, isDark)
-          )}
+              fontWeight: isPostDecode ? "600" : "400",
+              letterSpacing: isPostDecode ? 0.1 : 0.2,
+            }}
+            speed={hasAnimatedText ? 0 : 85}
+            onComplete={() => setHasAnimatedText(true)}
+          />
         </View>
       )}
 

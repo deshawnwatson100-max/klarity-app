@@ -316,6 +316,7 @@ export function TypewriterText({
   const [hasStarted, setHasStarted] = useState(startDelay === 0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCompletedRef = useRef(false);
   const { isDark } = useTheme();
 
   // Split text into words to animate word by word
@@ -339,6 +340,12 @@ export function TypewriterText({
   useEffect(() => {
     if (!text || !hasStarted) return;
 
+    // If speed is 0 or already completed, show full text immediately without animation
+    if (speed === 0 || hasCompletedRef.current) {
+      setVisibleCharCount(totalChars);
+      return;
+    }
+
     setVisibleCharCount(0);
 
     // Calculate word boundaries for word-by-word animation
@@ -361,6 +368,7 @@ export function TypewriterText({
       } else {
         // Show full text
         setVisibleCharCount(totalChars);
+        hasCompletedRef.current = true;
         if (intervalRef.current) clearInterval(intervalRef.current);
         onComplete?.();
       }
