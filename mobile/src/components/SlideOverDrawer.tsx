@@ -10,7 +10,7 @@ import {
   Animated,
   Easing,
   PanResponder,
-  InteractionManager,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -99,7 +99,6 @@ interface ContextMenuChatListItemProps {
   onPin: () => void;
   isLast?: boolean;
   isActive?: boolean;
-  isPendingDelete?: boolean;
   colors: ThemeColors;
 }
 
@@ -111,7 +110,6 @@ function ContextMenuChatListItem({
   onPin,
   isLast = false,
   isActive = false,
-  isPendingDelete = false,
   colors
 }: ContextMenuChatListItemProps) {
   // Hooks must be called unconditionally (before any early return)
@@ -126,48 +124,29 @@ function ContextMenuChatListItem({
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Step 1 of 2-step archive: just notify parent, don't mutate yet
+    // Archive shows confirmation Alert - guarantees context menu dismissed first
     onArchive();
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Step 1 of 2-step delete: just notify parent, don't mutate yet
-    onDelete();
-  }, [onDelete]);
-
-  // If pending delete, render a fading-out placeholder to prevent unmount during animation
-  if (isPendingDelete) {
-    return (
-      <View
-        style={{
-          backgroundColor: isActive ? colors.drawerItemActive : "transparent",
-          borderRadius: isActive ? 12 : 0,
-          marginHorizontal: isActive ? 8 : 0,
-          marginVertical: isActive ? 4 : 0,
-          opacity: 0.5,
-        }}
-      >
-        <View className="px-5 py-3">
-          <View className="flex-row items-center justify-between mb-1">
-            <Text
-              className="text-sm font-medium flex-1 mr-2"
-              style={{ color: colors.drawerItemText }}
-              numberOfLines={1}
-            >
-              {loop.title}
-            </Text>
-          </View>
-          <Text
-            className="text-xs"
-            style={{ color: colors.textSecondary }}
-          >
-            Deleting...
-          </Text>
-        </View>
-      </View>
+    // Show confirmation Alert - this guarantees context menu is fully dismissed
+    // before any state mutation occurs (Alert opens after menu closes)
+    Alert.alert(
+      "Delete Conversation",
+      "Are you sure you want to delete this conversation? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            onDelete();
+          },
+        },
+      ]
     );
-  }
+  }, [onDelete]);
 
   // Get emotional theme from first user message or title
   const getPreview = () => {
@@ -767,10 +746,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
-  // 2-step delete/archive state - prevents crash during context menu close animation
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [pendingArchiveId, setPendingArchiveId] = useState<string | null>(null);
-
   // Store
   const loops = useLoopsStore((s) => s.loops);
   const archivedLoops = useLoopsStore((s) => s.archivedLoops);
@@ -792,51 +767,29 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
     };
   }, []);
 
-  // Step 2: Execute pending delete after context menu fully closes (300ms delay)
-  useEffect(() => {
-    if (pendingDeleteId) {
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          try {
-            deleteLoop(pendingDeleteId);
-          } catch (error) {
-            console.error('[SlideOverDrawer] Delete failed:', error);
-          }
-          setPendingDeleteId(null);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [pendingDeleteId, deleteLoop]);
-
-  // Step 2: Execute pending archive after context menu fully closes (300ms delay)
-  useEffect(() => {
-    if (pendingArchiveId) {
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          try {
-            archiveLoop(pendingArchiveId);
-          } catch (error) {
-            console.error('[SlideOverDrawer] Archive failed:', error);
-          }
-          setPendingArchiveId(null);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [pendingArchiveId, archiveLoop]);
-
-  // Step 1: Mark for delete - does NOT mutate list yet, just sets pending state
+  // Delete handler - called from Alert confirmation (context menu already dismissed)
   const handleSafeDelete = useCallback((loopId: string) => {
     if (!isMountedRef.current) return;
-    setPendingDeleteId(loopId);
-  }, []);
+    deleteLoop(loopId);
+  }, [deleteLoop]);
 
-  // Step 1: Mark for archive - does NOT mutate list yet, just sets pending state
+  // Archive handler - show confirmation Alert to ensure context menu is dismissed first
   const handleSafeArchive = useCallback((loopId: string) => {
     if (!isMountedRef.current) return;
-    setPendingArchiveId(loopId);
-  }, []);
+    Alert.alert(
+      "Archive Conversation",
+      "Move this conversation to archives?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Archive",
+          onPress: () => {
+            archiveLoop(loopId);
+          },
+        },
+      ]
+    );
+  }, [archiveLoop]);
 
   // Sort loops: pinned first, then by updatedAt
   const sortedLoops = useMemo(() => {
@@ -1078,7 +1031,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === pinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
-                  isPendingDelete={pendingDeleteId === loop.id || pendingArchiveId === loop.id}
                   colors={colors}
                 />
               ))}
@@ -1101,7 +1053,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === unpinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
-                  isPendingDelete={pendingDeleteId === loop.id || pendingArchiveId === loop.id}
                   colors={colors}
                 />
               ))}
