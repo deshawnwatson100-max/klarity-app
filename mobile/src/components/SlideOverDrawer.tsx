@@ -99,6 +99,7 @@ interface ContextMenuChatListItemProps {
   onPin: () => void;
   isLast?: boolean;
   isActive?: boolean;
+  isPendingDelete?: boolean;
   colors: ThemeColors;
 }
 
@@ -110,8 +111,64 @@ function ContextMenuChatListItem({
   onPin,
   isLast = false,
   isActive = false,
+  isPendingDelete = false,
   colors
 }: ContextMenuChatListItemProps) {
+  // Hooks must be called unconditionally (before any early return)
+  const handlePin = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Pin doesn't remove the item, so it's safe to execute immediately
+    // But still defer slightly for smooth UX
+    setTimeout(() => {
+      onPin();
+    }, 50);
+  }, [onPin]);
+
+  const handleArchive = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Step 1 of 2-step archive: just notify parent, don't mutate yet
+    onArchive();
+  }, [onArchive]);
+
+  const handleDelete = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Step 1 of 2-step delete: just notify parent, don't mutate yet
+    onDelete();
+  }, [onDelete]);
+
+  // If pending delete, render a fading-out placeholder to prevent unmount during animation
+  if (isPendingDelete) {
+    return (
+      <View
+        style={{
+          backgroundColor: isActive ? colors.drawerItemActive : "transparent",
+          borderRadius: isActive ? 12 : 0,
+          marginHorizontal: isActive ? 8 : 0,
+          marginVertical: isActive ? 4 : 0,
+          opacity: 0.5,
+        }}
+      >
+        <View className="px-5 py-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <Text
+              className="text-sm font-medium flex-1 mr-2"
+              style={{ color: colors.drawerItemText }}
+              numberOfLines={1}
+            >
+              {loop.title}
+            </Text>
+          </View>
+          <Text
+            className="text-xs"
+            style={{ color: colors.textSecondary }}
+          >
+            Deleting...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   // Get emotional theme from first user message or title
   const getPreview = () => {
     const userMessages = loop.messages.filter((m) => m.role === "user");
@@ -170,40 +227,6 @@ function ContextMenuChatListItem({
 
   const preview = getPreview();
   const showImageIcon = preview === null && hasImageAttachment();
-
-  const handlePin = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Defer to allow context menu to fully close before state update
-    // Using setTimeout as zeego context menu needs time to fully dismiss
-    setTimeout(() => {
-      InteractionManager.runAfterInteractions(() => {
-        onPin();
-      });
-    }, 100);
-  }, [onPin]);
-
-  const handleArchive = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Defer to allow context menu to fully close before state update
-    // Using setTimeout as zeego context menu needs time to fully dismiss
-    setTimeout(() => {
-      InteractionManager.runAfterInteractions(() => {
-        onArchive();
-      });
-    }, 100);
-  }, [onArchive]);
-
-  const handleDelete = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // CRITICAL: Defer state update until context menu fully closes
-    // Using setTimeout (100ms) + InteractionManager to ensure menu is fully dismissed
-    // Without this, the component is unmounted mid-render causing crash
-    setTimeout(() => {
-      InteractionManager.runAfterInteractions(() => {
-        onDelete();
-      });
-    }, 100);
-  }, [onDelete]);
 
   return (
     <View
@@ -744,6 +767,10 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const [isRendered, setIsRendered] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
 
+  // 2-step delete/archive state - prevents crash during context menu close animation
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingArchiveId, setPendingArchiveId] = useState<string | null>(null);
+
   // Store
   const loops = useLoopsStore((s) => s.loops);
   const archivedLoops = useLoopsStore((s) => s.archivedLoops);
@@ -765,31 +792,51 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
     };
   }, []);
 
-  // Safe delete handler - optimistic update pattern
-  const handleSafeDelete = useCallback((loopId: string) => {
-    // Guard against unmounted component
-    if (!isMountedRef.current) return;
-
-    try {
-      // deleteLoop in the store already does immutable updates
-      // and handles switching to another loop if needed
-      deleteLoop(loopId);
-    } catch (error) {
-      // Log error but don't try to restore - data integrity is handled by the store
-      console.error('[SlideOverDrawer] Delete failed:', error);
+  // Step 2: Execute pending delete after context menu fully closes (300ms delay)
+  useEffect(() => {
+    if (pendingDeleteId) {
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          try {
+            deleteLoop(pendingDeleteId);
+          } catch (error) {
+            console.error('[SlideOverDrawer] Delete failed:', error);
+          }
+          setPendingDeleteId(null);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [deleteLoop]);
+  }, [pendingDeleteId, deleteLoop]);
 
-  // Safe archive handler
+  // Step 2: Execute pending archive after context menu fully closes (300ms delay)
+  useEffect(() => {
+    if (pendingArchiveId) {
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          try {
+            archiveLoop(pendingArchiveId);
+          } catch (error) {
+            console.error('[SlideOverDrawer] Archive failed:', error);
+          }
+          setPendingArchiveId(null);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingArchiveId, archiveLoop]);
+
+  // Step 1: Mark for delete - does NOT mutate list yet, just sets pending state
+  const handleSafeDelete = useCallback((loopId: string) => {
+    if (!isMountedRef.current) return;
+    setPendingDeleteId(loopId);
+  }, []);
+
+  // Step 1: Mark for archive - does NOT mutate list yet, just sets pending state
   const handleSafeArchive = useCallback((loopId: string) => {
     if (!isMountedRef.current) return;
-
-    try {
-      archiveLoop(loopId);
-    } catch (error) {
-      console.error('[SlideOverDrawer] Archive failed:', error);
-    }
-  }, [archiveLoop]);
+    setPendingArchiveId(loopId);
+  }, []);
 
   // Sort loops: pinned first, then by updatedAt
   const sortedLoops = useMemo(() => {
@@ -1031,6 +1078,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === pinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
+                  isPendingDelete={pendingDeleteId === loop.id || pendingArchiveId === loop.id}
                   colors={colors}
                 />
               ))}
@@ -1053,6 +1101,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === unpinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
+                  isPendingDelete={pendingDeleteId === loop.id || pendingArchiveId === loop.id}
                   colors={colors}
                 />
               ))}
