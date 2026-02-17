@@ -624,7 +624,17 @@ export function MessageBubble({
               onComplete={() => setHasAnimatedText(true)}
             />
           ) : isPostDecode ? (
-            renderPostDecodeMessage(content, isDark)
+            <Text
+              style={{
+                fontSize: 17,
+                lineHeight: 26,
+                color: textColor,
+                fontWeight: "600",
+                letterSpacing: 0.1,
+              }}
+            >
+              {content}
+            </Text>
           ) : (
             renderFormattedText(content, {
               fontSize: 15,
