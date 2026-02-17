@@ -173,34 +173,20 @@ function ContextMenuChatListItem({
 
   const handlePin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Use InteractionManager to ensure context menu animation completes before state change
-    InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
-        onPin();
-      }, 100);
-    });
+    // Execute immediately - pin doesn't remove the item from the list
+    onPin();
   }, [onPin]);
 
   const handleArchive = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Use a longer delay to ensure the native iOS context menu fully dismisses
-    // before we modify the list state
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        onArchive();
-      });
-    }, 500);
+    // Execute immediately - the parent handles optimistic removal
+    onArchive();
   }, [onArchive]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Use a longer delay to ensure the native iOS context menu fully dismisses
-    // before we modify the list state - iOS context menu dismiss animation takes ~400ms
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        onDelete();
-      });
-    }, 500);
+    // Execute immediately - the parent handles optimistic removal
+    onDelete();
   }, [onDelete]);
 
   return (
@@ -754,6 +740,41 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const deleteArchivedLoop = useLoopsStore((s) => s.deleteArchivedLoop);
   const togglePinLoop = useLoopsStore((s) => s.togglePinLoop);
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Safe delete handler - optimistic update pattern
+  const handleSafeDelete = useCallback((loopId: string) => {
+    // Guard against unmounted component
+    if (!isMountedRef.current) return;
+
+    try {
+      // deleteLoop in the store already does immutable updates
+      // and handles switching to another loop if needed
+      deleteLoop(loopId);
+    } catch (error) {
+      // Log error but don't try to restore - data integrity is handled by the store
+      console.error('[SlideOverDrawer] Delete failed:', error);
+    }
+  }, [deleteLoop]);
+
+  // Safe archive handler
+  const handleSafeArchive = useCallback((loopId: string) => {
+    if (!isMountedRef.current) return;
+
+    try {
+      archiveLoop(loopId);
+    } catch (error) {
+      console.error('[SlideOverDrawer] Archive failed:', error);
+    }
+  }, [archiveLoop]);
+
   // Sort loops: pinned first, then by updatedAt
   const sortedLoops = useMemo(() => {
     return [...loops].sort((a, b) => {
@@ -989,8 +1010,8 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
-                  onDelete={() => deleteLoop(loop.id)}
-                  onArchive={() => archiveLoop(loop.id)}
+                  onDelete={() => handleSafeDelete(loop.id)}
+                  onArchive={() => handleSafeArchive(loop.id)}
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === pinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}
@@ -1011,8 +1032,8 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
-                  onDelete={() => deleteLoop(loop.id)}
-                  onArchive={() => archiveLoop(loop.id)}
+                  onDelete={() => handleSafeDelete(loop.id)}
+                  onArchive={() => handleSafeArchive(loop.id)}
                   onPin={() => togglePinLoop(loop.id)}
                   isLast={index === unpinnedLoops.length - 1}
                   isActive={loop.id === activeLoopId}

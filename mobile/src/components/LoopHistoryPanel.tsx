@@ -43,6 +43,15 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
   const deleteLoop = useLoopsStore((s) => s.deleteLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Animation values
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const panelTranslateX = useRef(new Animated.Value(SCREEN_WIDTH * 0.85)).current;
@@ -91,7 +100,14 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
 
   const handleDeleteLoop = (loopId: string, event: any) => {
     event.stopPropagation();
-    deleteLoop(loopId);
+    // Guard against unmounted component
+    if (!isMountedRef.current) return;
+
+    try {
+      deleteLoop(loopId);
+    } catch (error) {
+      console.error('[LoopHistoryPanel] Delete failed:', error);
+    }
   };
 
   const handleNewLoop = () => {
