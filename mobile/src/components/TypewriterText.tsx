@@ -100,6 +100,7 @@ const parseInlineFormatting = (
 
 /**
  * Render formatted text with proper markdown styling
+ * Includes special styling for intro phrases like "With that context," to maintain visual consistency
  */
 const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean) => {
   const lines = text.split("\n");
@@ -118,6 +119,19 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
   const quoteTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const quoteBorderColor = isDark ? "#6B7280" : "#D1D5DB";
   const codeBlockBg = isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.04)";
+
+  // Intro phrase color (teal/aqua for "With that context," etc.)
+  const introPhraseColor = isDark ? "#5EEAD4" : "#0D9488";
+
+  // Intro phrases that should be highlighted
+  const introPhrases = [
+    "With that context,",
+    "With that context",
+    "Here is more context you can add",
+    "So the real question is",
+    "Common misreads here:",
+    "Common misreads:",
+  ];
 
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
@@ -282,19 +296,47 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
       const isNewParagraph = lineIndex > 0 && prevLine.length === 0;
       const isAfterSpecial = prevLine.match(/^[-•*#>\d]/) !== null;
 
-      elements.push(
-        <Text
-          key={`line-${lineIndex}`}
-          style={[
-            baseStyle,
-            {
-              marginTop: isNewParagraph ? 16 : isAfterSpecial ? 12 : lineIndex > 0 ? 4 : 0,
-            },
-          ]}
-        >
-          {parseInlineFormatting(line, baseStyle, isDark, lineIndex)}
-        </Text>
-      );
+      // Check if this line starts with an intro phrase (apply to any matching line)
+      let introMatch: string | null = null;
+      for (const phrase of introPhrases) {
+        if (trimmedLine.startsWith(phrase)) {
+          introMatch = phrase;
+          break;
+        }
+      }
+
+      if (introMatch) {
+        // Render intro phrase with special color, rest with normal style
+        const restOfLine = line.slice(line.indexOf(introMatch) + introMatch.length);
+        elements.push(
+          <Text
+            key={`line-${lineIndex}`}
+            style={[
+              baseStyle,
+              {
+                marginTop: isNewParagraph ? 16 : isAfterSpecial ? 12 : lineIndex > 0 ? 4 : 0,
+              },
+            ]}
+          >
+            <Text style={{ color: introPhraseColor, fontWeight: "600" }}>{introMatch}</Text>
+            {parseInlineFormatting(restOfLine, baseStyle, isDark, lineIndex)}
+          </Text>
+        );
+      } else {
+        elements.push(
+          <Text
+            key={`line-${lineIndex}`}
+            style={[
+              baseStyle,
+              {
+                marginTop: isNewParagraph ? 16 : isAfterSpecial ? 12 : lineIndex > 0 ? 4 : 0,
+              },
+            ]}
+          >
+            {parseInlineFormatting(line, baseStyle, isDark, lineIndex)}
+          </Text>
+        );
+      }
     }
   });
 
