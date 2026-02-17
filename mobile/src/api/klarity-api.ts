@@ -4186,6 +4186,7 @@ Provide your analysis in the JSON format specified.`;
  * Generate a post-decode clarity message
  * Surfaces helpful follow-up angles the user might be wondering about
  * These are specific to texting/social interpretation - not emotional therapy questions
+ * Also includes context hints that would help refine the interpretation
  */
 export async function generatePostDecodeClarity(
   analysis: StructuredAnalysisResult
@@ -4194,13 +4195,18 @@ export async function generatePostDecodeClarity(
   const surfaceMeaning = analysis.surfaceMeaning;
   const hiddenSubtext = analysis.hiddenSubtext.map(item => item.meaning).join(", ");
 
-  const systemPrompt = `You are Klarity. After showing analysis, you help users explore angles they might be curious about.
+  const systemPrompt = `You are Klarity. After showing analysis, you help users explore angles they might be curious about, and invite them to share context that would sharpen your read.
 
-YOUR JOB: Surface 3-5 relevant follow-up questions the user might actually be wondering about.
+YOUR JOB:
+1. Surface 3-5 relevant follow-up questions the user might actually be wondering about
+2. Then add a subtle context hints section
 
 FORMAT (exactly this structure):
 1. One short natural bridge sentence (curious/helpful tone, NOT formal)
 2. Then 3-5 bullet questions using "•" character
+3. A divider line: "───"
+4. A context intro phrase like "If you want a clearer read, it helps to know:"
+5. Then 3-5 short context hints using "•" character (fragments, not full sentences)
 
 QUESTION RULES:
 - Questions must be SPECIFIC to texting/social dynamics interpretation
@@ -4235,13 +4241,45 @@ BRIDGE SENTENCE examples:
 - "Here's what might be on your mind:"
 - "You might be asking yourself:"
 
-Tone: Curious and helpful, like a friend who gets it. NOT clinical or diagnostic.`;
+CONTEXT HINTS section:
+- These are SHORT fragments (not questions, not full sentences)
+- They hint at what extra info would refine the interpretation
+- Keep them casual and natural
+- 3-5 hints maximum
+
+GOOD context hint examples:
+• how they usually text you
+• what was said right before this
+• if they left something unanswered
+• their normal reply speed
+• how long you've been talking
+• if something happened recently
+• whether this is a pattern
+• the vibe of your last few exchanges
+• if this came out of nowhere
+
+BAD context hints (NEVER use):
+• Full sentences or questions
+• Anything that sounds like a form or data request
+• Clinical or formal language
+• "Please provide..." or "I need to know..."
+
+CONTEXT INTRO examples:
+- "If you want a clearer read, it helps to know:"
+- "For a sharper take, sharing helps:"
+- "A bit more context would sharpen this:"
+- "These details would refine things:"
+
+Tone: Curious and helpful throughout. The context hints should feel like helpful tips, not requests.`;
 
   const userPrompt = `Signal: ${analysis.signalLabel} (${signalStrength})
 Surface meaning: ${surfaceMeaning}
 Hidden subtext: ${hiddenSubtext}
 
-Generate a bridge sentence + 3-5 bullet questions specific to this conversation's dynamics.`;
+Generate:
+1. Bridge sentence + 3-5 bullet questions specific to this conversation's dynamics
+2. Divider line "───"
+3. Context intro + 3-5 short context hints (fragments, not sentences)`;
 
   try {
     const response = await callGPT5Mini(
@@ -4249,17 +4287,24 @@ Generate a bridge sentence + 3-5 bullet questions specific to this conversation'
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      200,
+      300,
       false,
       0.8
     );
     return response.trim();
   } catch (error) {
-    // Fallback with generic but useful follow-up angles
+    // Fallback with generic but useful follow-up angles and context hints
     return `A few things you might be wondering:
 • Are they expecting a reply?
 • What reply matches their energy?
-• Am I reading this right?`;
+• Am I reading this right?
+
+───
+
+If you want a clearer read, it helps to know:
+• how they usually text you
+• what was said right before this
+• their normal reply speed`;
   }
 }
 
