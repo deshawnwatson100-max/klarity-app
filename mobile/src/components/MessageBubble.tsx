@@ -17,32 +17,24 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const renderPostDecodeMessage = (text: string, isDark: boolean) => {
   const textColor = isDark ? "#EDEDED" : "#1C1C1E";
 
-  // Split into sentences for line-by-line display
-  const sentenceRegex = /[^.!?]*[.!?]+/g;
-  const sentences = text.match(sentenceRegex) || [text];
-  const cleanedSentences = sentences.map(s => s.trim()).filter(s => s.length > 0);
-
+  // Just render the text as-is, preserving formatting
   return (
     <View
       style={{
         paddingVertical: 4,
       }}
     >
-      {cleanedSentences.map((sentence, index) => (
-        <Text
-          key={index}
-          style={{
-            fontSize: 17,
-            lineHeight: 26,
-            fontWeight: "600",
-            color: textColor,
-            letterSpacing: 0.1,
-            marginBottom: index < cleanedSentences.length - 1 ? 2 : 0,
-          }}
-        >
-          {sentence}
-        </Text>
-      ))}
+      <Text
+        style={{
+          fontSize: 17,
+          lineHeight: 26,
+          fontWeight: "600",
+          color: textColor,
+          letterSpacing: 0.1,
+        }}
+      >
+        {text}
+      </Text>
     </View>
   );
 };
