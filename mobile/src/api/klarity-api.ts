@@ -3114,6 +3114,114 @@ No notation blocks. Just text like a friend.`;
 }
 
 /**
+ * Generate an expanded decode response when user provides additional context
+ * This follows the 4-part structure:
+ * 1. Updated read briefly ("With that context, this leans more toward X than Y.")
+ * 2. Identify core uncertainty ("So the real question is whether they're X or Y.")
+ * 3. Present decision fork ("Your next move signals which you accept:") + 2 options
+ * 4. One example reply (optional)
+ */
+export async function generateContextAwareDecodeResponse(
+  userMessage: string,
+  conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
+  previousAnalysis: StructuredAnalysisResult | null,
+  contactName: string | null,
+  onStream: StreamCallback
+): Promise<{ response: string }> {
+  const name = contactName || "they";
+  const possessive = contactName ? `${contactName}'s` : "their";
+
+  // Build context about the previous analysis
+  const analysisContext = previousAnalysis
+    ? `Previous analysis showed:
+- Signal: ${previousAnalysis.signalLabel} (${previousAnalysis.signalStrength})
+- Surface meaning: ${previousAnalysis.surfaceMeaning}
+- Hidden subtext: ${previousAnalysis.hiddenSubtext.map(h => h.meaning).join(", ")}`
+    : "";
+
+  const systemPrompt = `You're a sharp friend helping someone decode a text conversation. They just gave you more context about the situation.
+
+## YOUR JOB
+
+Generate a response with this EXACT 4-part structure:
+
+**PART 1: Updated Read** (1-2 sentences)
+Start with "With that context..." and explain how the new info shifts your interpretation.
+- Be specific about what changed: "this leans more toward X than Y" or "this makes it clearer that..."
+- Reference the context they just shared
+
+**PART 2: Core Uncertainty** (1 sentence)
+Start with "So the real question is..." and identify the key thing that's still unclear.
+- Frame it as a specific binary or choice: "whether ${name} ${contactName ? "is" : "are"} X or Y"
+- This should be actionable, not abstract
+
+**PART 3: Decision Fork** (short intro + 2 bullet options)
+Start with "Your next move signals which you accept:" or similar
+Then give exactly 2 options as bullets (use • character):
+• Option A - what it communicates
+• Option B - what it communicates
+
+**PART 4: Example Reply** (optional, 1 line)
+If relevant, give ONE short example reply that would work well.
+Format: "Something like: '[example text]'"
+
+## CONTACT NAME
+${contactName ? `The person's name is "${contactName}". Use their name naturally throughout (e.g., "${contactName}'s response", "what ${contactName} actually meant").` : "Use natural pronouns (they/them/their)."}
+
+## STYLE RULES
+- Keep it conversational and short
+- No therapist language (boundaries, validate, attachment, etc.)
+- Sound like a smart friend texting
+- Be strategic, not soft
+- Total response: 4-6 short paragraphs max
+
+## PREVIOUS ANALYSIS
+${analysisContext}
+
+## EXAMPLE OUTPUT
+
+With that context, this leans more toward testing than genuine confusion. The fact that ${name} did X before suggests ${possessive} message isn't really about Y.
+
+So the real question is whether ${name} ${contactName ? "is" : "are"} looking for reassurance or creating distance.
+
+Your next move signals which you accept:
+• Match ${possessive} energy - shows you're not chasing, keeps you positioned evenly
+• Address it directly - clears the air but gives ${name} the frame
+
+Something like: "I noticed that too. What's going on?"`;
+
+  const messages: GPT5Message[] = [{ role: "system", content: systemPrompt }];
+
+  // Add relevant conversation history (last few exchanges)
+  const recentHistory = conversationHistory.slice(-6);
+  messages.push(
+    ...recentHistory.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }))
+  );
+
+  // Add current user message (the context they provided)
+  messages.push({ role: "user", content: userMessage });
+
+  try {
+    const response = await callGPT5MiniStreaming(messages, onStream, 1500, 0.7);
+    return { response };
+  } catch (error: any) {
+    console.error("[generateContextAwareDecodeResponse] Error:", error?.message || error);
+    const fallbackResponse = `With that context, I'm getting a clearer picture. Let me think through what this changes...
+
+So the real question is whether this is a pattern or just a one-off moment.
+
+Your next move signals which you accept:
+• Wait and observe - see if more info confirms or changes things
+• Address it casually - opens the door without pressure`;
+    onStream(fallbackResponse, fallbackResponse);
+    return { response: fallbackResponse };
+  }
+}
+
+/**
  * Generate a smart conversation title that reflects who the user is communicating with
  * and a brief summary of what's being discussed
  * Can analyze images to extract context if provided

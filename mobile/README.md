@@ -316,8 +316,27 @@ After analysis, a helpful message appears suggesting what context would improve 
   • whether this tone is new or normal for Dané❤️💖
 - Suggestions are specific to the conversation, not generic
 
+**Expanded Decode Loop (Context-Aware Response):**
+When the user provides additional context after the initial analysis, the response follows a 4-part structure:
+
+1. **Updated Read** (1-2 sentences)
+   - "With that context, this leans more toward X than Y."
+   - Explains how the new info shifts the interpretation
+
+2. **Core Uncertainty** (1 sentence)
+   - "So the real question is whether Dané❤️💖 is X or Y."
+   - Identifies the key thing that's still unclear
+
+3. **Decision Fork** (intro + 2 bullet options)
+   - "Your next move signals which you accept:"
+   • Option A - what it communicates
+   • Option B - what it communicates
+
+4. **Example Reply** (optional, 1 line)
+   - "Something like: '[example text]'"
+
 **Files:**
-- `src/api/klarity-api.ts` - `generatePostDecodeClarity()` function
+- `src/api/klarity-api.ts` - `generatePostDecodeClarity()` and `generateContextAwareDecodeResponse()` functions
 - `src/components/MessageBubble.tsx` - `renderPostDecodeMessage()` and `isPostDecode` prop
 
 ### Screen 1: Input/Welcome Screen

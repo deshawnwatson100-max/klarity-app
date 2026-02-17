@@ -79,6 +79,7 @@ import {
   generateDecodeClarificationResponse,
   DecodeClarificationContext,
   generatePostDecodeClarity,
+  generateContextAwareDecodeResponse,
 } from "../api/klarity-api";
 import { transcribeAudio } from "../api/transcribe-audio";
 import {
@@ -114,6 +115,7 @@ import {
   MessageMode,
   DeepDecodeResultMessage,
   StructuredAnalysisMessage,
+  StructuredAnalysisResult,
   PatternMirrorMessage,
 } from "../types/chat";
 
@@ -1966,6 +1968,19 @@ Generate a new reply that follows the user's instruction while still responding 
         addMessageToActiveLoopRaw(newLoadingMsg);
       }
 
+      // Check if there's a previous structured analysis (meaning user is providing context)
+      const previousStructuredAnalysis = decodeMessages.find(
+        (m) => m.role === "structured-analysis"
+      ) as StructuredAnalysisMessage | undefined;
+
+      // Check if there was a post-decode clarity message (context suggestions)
+      const hasPostDecodeClarity = decodeMessages.some(
+        (m) => m.role === "assistant" && m.id.includes("_post_decode_clarity")
+      );
+
+      // If user is providing context after analysis, use the expanded decode response
+      const isProvidingContext = previousStructuredAnalysis && hasPostDecodeClarity && conversationHistory.length >= 2;
+
       // Generate decode response for text-only messages with streaming
       const assistantMsgId = Date.now().toString() + "_decode_response";
       let hasReceivedFirstChunk = false;
@@ -1982,25 +1997,49 @@ Generate a new reply that follows the user's instruction while still responding 
       // Mark this message as streaming for fade animation
       setStreamingMessageId(assistantMsgId);
 
-      // Stream the response - keep loading indicator until first content arrives
-      await generateDecodeResponseStreaming(
-        userMessage.content,
-        conversationHistory,
-        (_chunk, fullText) => {
-          // On first chunk, remove loading and add assistant message
-          if (!hasReceivedFirstChunk) {
-            hasReceivedFirstChunk = true;
-            removeMessageFromActiveLoop(loadingMsgId);
-            addMessageWithMode({ ...assistantMsg, content: fullText }, capturedMode);
-          } else {
-            // Update the message content as chunks arrive
-            updateMessageInActiveLoop(assistantMsgId, {
-              ...assistantMsg,
-              content: fullText,
-            });
+      // Choose the appropriate response generator
+      if (isProvidingContext) {
+        // Use context-aware expanded decode response
+        const contactName = previousStructuredAnalysis.analysis.contactName || activePersonContext?.name || null;
+        await generateContextAwareDecodeResponse(
+          userMessage.content,
+          conversationHistory,
+          previousStructuredAnalysis.analysis,
+          contactName,
+          (_chunk, fullText) => {
+            if (!hasReceivedFirstChunk) {
+              hasReceivedFirstChunk = true;
+              removeMessageFromActiveLoop(loadingMsgId);
+              addMessageWithMode({ ...assistantMsg, content: fullText }, capturedMode);
+            } else {
+              updateMessageInActiveLoop(assistantMsgId, {
+                ...assistantMsg,
+                content: fullText,
+              });
+            }
           }
-        }
-      );
+        );
+      } else {
+        // Stream the regular response - keep loading indicator until first content arrives
+        await generateDecodeResponseStreaming(
+          userMessage.content,
+          conversationHistory,
+          (_chunk, fullText) => {
+            // On first chunk, remove loading and add assistant message
+            if (!hasReceivedFirstChunk) {
+              hasReceivedFirstChunk = true;
+              removeMessageFromActiveLoop(loadingMsgId);
+              addMessageWithMode({ ...assistantMsg, content: fullText }, capturedMode);
+            } else {
+              // Update the message content as chunks arrive
+              updateMessageInActiveLoop(assistantMsgId, {
+                ...assistantMsg,
+                content: fullText,
+              });
+            }
+          }
+        );
+      }
 
       // Streaming complete - clear streaming state
       setStreamingMessageId(null);
