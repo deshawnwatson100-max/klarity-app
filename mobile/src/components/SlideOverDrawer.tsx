@@ -11,13 +11,14 @@ import {
   Easing,
   PanResponder,
   Alert,
+  ActionSheetIOS,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import * as Haptics from "expo-haptics";
-import * as ContextMenu from "zeego/context-menu";
 import { useLoopsStore } from "../state/loopsStore";
 import { KlarityLoop } from "../types/loop";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -91,7 +92,7 @@ function MenuItem({ icon, label, onPress, isLast = false, subtitle }: MenuItemPr
   );
 }
 
-interface ContextMenuChatListItemProps {
+interface LongPressChatListItemProps {
   loop: KlarityLoop;
   onPress: () => void;
   onDelete: () => void;
@@ -102,7 +103,7 @@ interface ContextMenuChatListItemProps {
   colors: ThemeColors;
 }
 
-function ContextMenuChatListItem({
+function LongPressChatListItem({
   loop,
   onPress,
   onDelete,
@@ -111,29 +112,51 @@ function ContextMenuChatListItem({
   isLast = false,
   isActive = false,
   colors
-}: ContextMenuChatListItemProps) {
-  // Hooks must be called unconditionally (before any early return)
-  const handlePin = useCallback(() => {
+}: LongPressChatListItemProps) {
+  // Show action sheet on long press - no zeego context menu to avoid native crashes
+  const showActionSheet = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Pin doesn't remove the item, so it's safe to execute immediately
-    // But still defer slightly for smooth UX
-    setTimeout(() => {
-      onPin();
-    }, 50);
-  }, [onPin]);
 
-  const handleArchive = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Just notify parent - Alert shown via useEffect in parent after context menu closes
-    onArchive();
-  }, [onArchive]);
-
-  const handleDelete = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Just set pendingDeleteLoopId in parent - Alert shown via useEffect OUTSIDE of onSelect
-    // This guarantees context menu is fully dismissed before any UI appears
-    onDelete();
-  }, [onDelete]);
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [
+            "Cancel",
+            loop.isPinned ? "Unpin" : "Pin to Top",
+            "Archive",
+            "Delete",
+          ],
+          destructiveButtonIndex: 3,
+          cancelButtonIndex: 0,
+          title: loop.title,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            // Pin/Unpin
+            onPin();
+          } else if (buttonIndex === 2) {
+            // Archive
+            onArchive();
+          } else if (buttonIndex === 3) {
+            // Delete
+            onDelete();
+          }
+        }
+      );
+    } else {
+      // Android fallback using Alert
+      Alert.alert(
+        loop.title,
+        "Choose an action",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: loop.isPinned ? "Unpin" : "Pin to Top", onPress: onPin },
+          { text: "Archive", onPress: onArchive },
+          { text: "Delete", style: "destructive", onPress: onDelete },
+        ]
+      );
+    }
+  }, [loop.isPinned, loop.title, onPin, onArchive, onDelete]);
 
   // Get emotional theme from first user message or title
   const getPreview = () => {
@@ -203,111 +226,78 @@ function ContextMenuChatListItem({
         marginVertical: isActive ? 4 : 0,
       }}
     >
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>
-          <Pressable
-            onPress={onPress}
-            className="active:opacity-60"
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? colors.surfaceElevated : "transparent",
-              borderRadius: isActive ? 12 : 0,
-            })}
-          >
-          <View className="px-5 py-3">
-            <View className="flex-row items-center justify-between mb-1">
-              <View className="flex-row items-center flex-1 mr-2">
-                {loop.isPinned && (
-                  <View className="mr-1.5">
-                    <Ionicons name="pin" size={12} color={colors.warning} />
-                  </View>
-                )}
-                <Text
-                  className="text-sm font-medium flex-1"
-                  style={{ color: colors.drawerItemText }}
-                  numberOfLines={1}
-                >
-                  {loop.title}
-                </Text>
-              </View>
-              <Text className="text-xs" style={{ color: colors.textTertiary }}>
-                {formatDate(loop.updatedAt)}
+      <Pressable
+        onPress={onPress}
+        onLongPress={showActionSheet}
+        delayLongPress={400}
+        className="active:opacity-60"
+        style={({ pressed }) => ({
+          backgroundColor: pressed ? colors.surfaceElevated : "transparent",
+          borderRadius: isActive ? 12 : 0,
+        })}
+      >
+        <View className="px-5 py-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="flex-row items-center flex-1 mr-2">
+              {loop.isPinned && (
+                <View className="mr-1.5">
+                  <Ionicons name="pin" size={12} color={colors.warning} />
+                </View>
+              )}
+              <Text
+                className="text-sm font-medium flex-1"
+                style={{ color: colors.drawerItemText }}
+                numberOfLines={1}
+              >
+                {loop.title}
               </Text>
             </View>
-            {showImageIcon ? (
-              <View className="flex-row items-center">
-                <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
-                <Text
-                  className="text-xs ml-1"
-                  style={{ color: colors.textSecondary }}
-                >
-                  Image conversation
-                </Text>
-              </View>
-            ) : (
-              <Text
-                className="text-xs"
-                style={{ color: colors.textSecondary }}
-                numberOfLines={2}
-              >
-                {preview}
-              </Text>
-            )}
-            {loop.emotionalClarity !== undefined && (
-              <View className="flex-row items-center mt-2">
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor:
-                      loop.emotionalClarity >= 70
-                        ? colors.success
-                        : loop.emotionalClarity >= 40
-                        ? colors.warning
-                        : colors.error,
-                    marginRight: 6,
-                  }}
-                />
-                <Text className="text-xs" style={{ color: colors.textTertiary }}>
-                  {loop.emotionalClarity}% clarity
-                </Text>
-              </View>
-            )}
+            <Text className="text-xs" style={{ color: colors.textTertiary }}>
+              {formatDate(loop.updatedAt)}
+            </Text>
           </View>
-        </Pressable>
-      </ContextMenu.Trigger>
-      <ContextMenu.Content>
-        <ContextMenu.Item key="pin" onSelect={handlePin}>
-          <ContextMenu.ItemIcon
-            ios={{
-              name: loop.isPinned ? "pin.slash" : "pin",
-              pointSize: 18,
-            }}
-          />
-          <ContextMenu.ItemTitle>
-            {loop.isPinned ? "Unpin" : "Pin to Top"}
-          </ContextMenu.ItemTitle>
-        </ContextMenu.Item>
-        <ContextMenu.Item key="archive" onSelect={handleArchive}>
-          <ContextMenu.ItemIcon
-            ios={{
-              name: "archivebox",
-              pointSize: 18,
-            }}
-          />
-          <ContextMenu.ItemTitle>Archive</ContextMenu.ItemTitle>
-        </ContextMenu.Item>
-        <ContextMenu.Item key="delete" onSelect={handleDelete} destructive>
-          <ContextMenu.ItemIcon
-            ios={{
-              name: "trash",
-              pointSize: 18,
-            }}
-          />
-          <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
-        </ContextMenu.Item>
-      </ContextMenu.Content>
-    </ContextMenu.Root>
+          {showImageIcon ? (
+            <View className="flex-row items-center">
+              <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
+              <Text
+                className="text-xs ml-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Image conversation
+              </Text>
+            </View>
+          ) : (
+            <Text
+              className="text-xs"
+              style={{ color: colors.textSecondary }}
+              numberOfLines={2}
+            >
+              {preview}
+            </Text>
+          )}
+          {loop.emotionalClarity !== undefined && (
+            <View className="flex-row items-center mt-2">
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor:
+                    loop.emotionalClarity >= 70
+                      ? colors.success
+                      : loop.emotionalClarity >= 40
+                      ? colors.warning
+                      : colors.error,
+                  marginRight: 6,
+                }}
+              />
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>
+                {loop.emotionalClarity}% clarity
+              </Text>
+            </View>
+          )}
+        </View>
+      </Pressable>
     </View>
   );
 }
@@ -1047,7 +1037,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 </Text>
               </View>
               {pinnedLoops.map((loop, index) => (
-                <ContextMenuChatListItem
+                <LongPressChatListItem
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
@@ -1069,7 +1059,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 </Text>
               </View>
               {unpinnedLoops.map((loop, index) => (
-                <ContextMenuChatListItem
+                <LongPressChatListItem
                   key={loop.id}
                   loop={loop}
                   onPress={() => handleSelectChat(loop.id)}
