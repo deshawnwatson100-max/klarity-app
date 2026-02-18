@@ -24,7 +24,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.klaritychat.5rxldv",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "NSCameraUsageDescription": "Klarity uses the camera to capture photos inside the app before you publish them.",
         "NSMicrophoneUsageDescription": "Klarity uses the microphone to record audio tracks that the app attaches to your creations.",
