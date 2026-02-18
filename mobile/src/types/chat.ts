@@ -9,6 +9,7 @@ export type MessageRole =
   | "quick-summary"
   | "deep-analysis"
   | "direction-selector"
+  | "vibe-selector"
   | "tone-selector"
   | "tailored-guidance"
   | "suggested-reply-card"
@@ -94,6 +95,12 @@ export interface DysfunctionLabel {
   description: string;
 }
 
+export interface VibeOption {
+  emoji: string;
+  label: string;
+  description?: string;
+}
+
 export interface ImageAnalysis {
   summary: string;
   labels: DysfunctionLabel[];
@@ -103,7 +110,7 @@ export interface ImageAnalysis {
   isInvalidInput?: boolean; // True when input is not a valid conversation to analyze
   lastMessage?: string; // The last message from the conversation
   acknowledgment?: string; // Kind acknowledgment of what is in the image
-  responseContext?: string; // Context for "How do you want to respond to [this]?"
+  vibes?: VibeOption[]; // Vibe options for "How do you want to show up in this conversation?"
   responseGuidance?: string; // Gentle explanation of how to respond effectively
   communicationMistake?: {
     // Common mistake to avoid (only present when relevant)
@@ -143,6 +150,13 @@ export interface DeepAnalysisMessage extends Message {
 export interface DirectionSelectorMessage extends Message {
   role: "direction-selector";
   selectedIntention?: "improve" | "distance" | "maintain" | "clarity";
+}
+
+export interface VibeSelectorMessage extends Message {
+  role: "vibe-selector";
+  acknowledgment: string; // The acknowledgment text shown above
+  vibes: VibeOption[]; // The vibe options to choose from
+  selectedVibe?: VibeOption; // The selected vibe (once chosen)
 }
 
 export interface ToneSelectorMessage extends Message {
@@ -610,6 +624,7 @@ export type ChatMessage =
   | QuickSummaryMessage
   | DeepAnalysisMessage
   | DirectionSelectorMessage
+  | VibeSelectorMessage
   | ToneSelectorMessage
   | TailoredGuidanceMessage
   | SuggestedReplyCardMessage

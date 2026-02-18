@@ -31,6 +31,7 @@ import { SoftFlares } from "../components/SoftFlares";
 import { SlideOverDrawer, DRAWER_WIDTH } from "../components/SlideOverDrawer";
 import { RewriteReplyCard } from "../components/RewriteReplyCard";
 import { ImageContinuationCard } from "../components/ImageContinuationCard";
+import { VibeSelectorCard } from "../components/VibeSelectorCard";
 import { PersonContextCard } from "../components/PersonContextCard";
 import { DeepSearchSuggestionCard } from "../components/DeepSearchSuggestionCard";
 import { ChatLoadingBubble } from "../components/ChatLoadingBubble";
@@ -99,6 +100,8 @@ import {
   EmotionalAnalysis,
   RewriteReplyCardMessage,
   ImageContinuationMessage,
+  VibeSelectorMessage,
+  VibeOption,
   DeepSearchLoadingMessage,
   DeepSearchResultMessage,
   DeepSearchVerificationMessage,
@@ -1006,31 +1009,53 @@ export function ChatScreen({ navigation, route }: Props) {
 
       removeMessageFromActiveLoop(typingMsg2.id);
 
-      // STEP 3: Show Suggested Reply
-      // For image input, show acknowledgment + question as floating text
-      if (imageAnalysisResult) {
+      // STEP 3: Show Vibe Selector or Suggested Reply
+      // For image input with vibes, show the vibe selector
+      if (imageAnalysisResult && imageAnalysisResult.vibes && imageAnalysisResult.vibes.length > 0) {
         const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
-        const responseContext = imageAnalysisResult.responseContext || "this message";
-        const promptMessage = `${acknowledgment}\n\nHow do you want to respond to ${responseContext}?`;
+
+        const vibeSelectorMsg: VibeSelectorMessage = {
+          id: Date.now().toString() + "_vibe_selector",
+          role: "vibe-selector",
+          content: "",
+          timestamp: Date.now(),
+          acknowledgment,
+          vibes: imageAnalysisResult.vibes,
+        };
+        addMessageWithMode(vibeSelectorMsg, capturedMode);
+      } else if (imageAnalysisResult) {
+        // Fallback: show acknowledgment as text and suggested reply directly
+        const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
 
         const assistantMsg: ChatMessage = {
           id: Date.now().toString() + "_prompt_assistant",
           role: "assistant",
-          content: promptMessage,
+          content: acknowledgment,
           timestamp: Date.now(),
         };
         addMessageWithMode(assistantMsg, capturedMode);
-      }
 
-      const replyMsg: SuggestedReplyCardMessage = {
-        id: Date.now().toString() + "_reply",
-        role: "suggested-reply-card",
-        content: "",
-        timestamp: Date.now(),
-        replies: [suggestedReply],
-        intention: "maintain", // Default neutral intention
-      };
-      addMessageWithMode(replyMsg, capturedMode);
+        const replyMsg: SuggestedReplyCardMessage = {
+          id: Date.now().toString() + "_reply",
+          role: "suggested-reply-card",
+          content: "",
+          timestamp: Date.now(),
+          replies: [suggestedReply],
+          intention: "maintain",
+        };
+        addMessageWithMode(replyMsg, capturedMode);
+      } else {
+        // Text-only input - show suggested reply directly
+        const replyMsg: SuggestedReplyCardMessage = {
+          id: Date.now().toString() + "_reply",
+          role: "suggested-reply-card",
+          content: "",
+          timestamp: Date.now(),
+          replies: [suggestedReply],
+          intention: "maintain",
+        };
+        addMessageWithMode(replyMsg, capturedMode);
+      }
 
       // Save conversation context for potential mid-loop image continuation
       setConversationContext({
@@ -1161,6 +1186,76 @@ Generate a new reply that follows the user's instruction while still responding 
   const handleSelectReply = (replyText: string) => {
     // Reply is already copied to clipboard by the SuggestedReplyCard component
     // No need to set it in the input bar
+  };
+
+  /**
+   * Handle vibe selection - generate a reply in the selected vibe's tone
+   */
+  const handleSelectVibe = async (messageId: string, vibe: VibeOption) => {
+    const capturedMode = inputModeRef.current as MessageMode;
+
+    // Update the vibe selector message to show selected state
+    const vibeMsg = messages.find(m => m.id === messageId) as VibeSelectorMessage | undefined;
+    if (vibeMsg) {
+      updateMessageInActiveLoop(messageId, { ...vibeMsg, selectedVibe: vibe });
+    }
+
+    setIsProcessing(true);
+    setIsLoading(true);
+
+    try {
+      // Show typing indicator
+      const typingMsg: TypingMessage = {
+        id: Date.now().toString() + "_typing",
+        role: "typing",
+        content: "",
+        timestamp: Date.now(),
+      };
+      addMessageWithMode(typingMsg, capturedMode);
+
+      // Generate reply with the selected vibe
+      const lastMessage = conversationContext?.lastMessageFromOther || "";
+      const vibeInstruction = `Generate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`;
+
+      const suggestedReply = await generateQuickSuggestedReply(
+        lastMessage,
+        undefined,
+        vibeInstruction
+      );
+
+      removeMessageFromActiveLoop(typingMsg.id);
+
+      // Show the suggested reply card
+      const replyMsg: SuggestedReplyCardMessage = {
+        id: Date.now().toString() + "_reply",
+        role: "suggested-reply-card",
+        content: "",
+        timestamp: Date.now(),
+        replies: [{
+          ...suggestedReply,
+          guidanceNote: `This ${vibe.label.toLowerCase()} reply feels natural for this moment.`,
+        }],
+        intention: "maintain",
+      };
+      addMessageWithMode(replyMsg, capturedMode);
+
+    } catch (error) {
+      console.error("Error generating vibe reply:", error);
+      // Remove typing indicator if still present
+      const allMsgs = getActiveLoop()?.messages || [];
+      const typing = allMsgs.find(m => m.role === "typing");
+      if (typing) removeMessageFromActiveLoop(typing.id);
+
+      addMessageWithMode({
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "I had trouble generating a reply. Please try again.",
+        timestamp: Date.now(),
+      }, capturedMode);
+    } finally {
+      setIsLoading(false);
+      setIsProcessing(false);
+    }
   };
 
   const handleModifyReplyLength = async (
@@ -3163,6 +3258,19 @@ Generate a new reply that follows the user's instruction while still responding 
       );
     }
 
+    if (message.role === "vibe-selector") {
+      const msg = message as VibeSelectorMessage;
+      return (
+        <VibeSelectorCard
+          key={message.id}
+          acknowledgment={msg.acknowledgment}
+          vibes={msg.vibes}
+          selectedVibe={msg.selectedVibe}
+          onSelectVibe={(vibe) => handleSelectVibe(message.id, vibe)}
+        />
+      );
+    }
+
     return (
       <MessageBubble
         key={message.id}
@@ -3181,7 +3289,7 @@ Generate a new reply that follows the user's instruction while still responding 
         }}
       />
     );
-  }, [handleEditMessage, handleSelectReply, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply, streamingMessageId, updateMessageInActiveLoop]);
+  }, [handleEditMessage, handleSelectReply, handleSelectVibe, handleModifyReplyLength, handleGenerateDifferentReply, handleAddEmojiToReply, handleContextSubmit, handleContextCancel, handleUseRewrittenReply, streamingMessageId, updateMessageInActiveLoop]);
 
   const handleNavigateBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

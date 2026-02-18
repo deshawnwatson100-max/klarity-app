@@ -492,9 +492,11 @@ It helps users:
 **Valid Image Input Handling:**
 - When a valid conversation screenshot is analyzed:
   - Shows an AI acknowledgment of what is in the image (e.g., "I can see this conversation about...")
-  - Asks "How do you want to respond to [context]?" as floating text
-  - Then displays the suggested reply card without a header
-  - The suggested reply directly responds to the last message in the conversation
+  - Displays a **Vibe Selector Card** with "How do you want to show up in this conversation?"
+  - Provides 3-4 contextual vibe options as tappable chips (e.g., "Warm & playful", "Light tease", "Calm & composed")
+  - Each vibe has an emoji and label that fits the detected conversation tone
+  - When user selects a vibe, generates a reply matching that energy
+  - The suggested reply feels natural and human, not robotic
 
 **Navigation Guidance Note Examples:**
 - "In situations like this, keeping communication brief and factual works best."
