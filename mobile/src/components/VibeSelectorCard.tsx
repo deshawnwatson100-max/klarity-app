@@ -1,12 +1,5 @@
-import React, { useEffect } from "react";
-import { View, Text, Pressable } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  FadeIn,
-} from "react-native-reanimated";
+import React, { useEffect, useRef } from "react";
+import { View, Text, Pressable, Animated } from "react-native";
 import { VibeOption } from "../types/chat";
 import * as Haptics from "expo-haptics";
 
@@ -23,18 +16,24 @@ export function VibeSelectorCard({
   selectedVibe,
   onSelectVibe,
 }: VibeSelectorCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(10);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        damping: 15,
+        stiffness: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   const handleSelect = (vibe: VibeOption) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -43,15 +42,14 @@ export function VibeSelectorCard({
 
   return (
     <Animated.View
-      style={[
-        {
-          alignSelf: "flex-start",
-          maxWidth: "100%",
-          marginBottom: 16,
-          paddingHorizontal: 4,
-        },
-        animatedStyle,
-      ]}
+      style={{
+        alignSelf: "flex-start",
+        maxWidth: "100%",
+        marginBottom: 16,
+        paddingHorizontal: 4,
+        opacity,
+        transform: [{ translateY }],
+      }}
     >
       {/* Card container */}
       <View
@@ -95,47 +93,43 @@ export function VibeSelectorCard({
           className="flex-row flex-wrap gap-3"
           style={{ marginHorizontal: -2 }}
         >
-          {vibes.map((vibe, index) => {
+          {vibes.map((vibe) => {
             const isSelected = selectedVibe?.label === vibe.label;
 
             return (
-              <Animated.View
+              <Pressable
                 key={vibe.label}
-                entering={FadeIn.delay(index * 80).duration(300)}
+                onPress={() => handleSelect(vibe)}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                className="active:opacity-80"
+                style={{
+                  backgroundColor: isSelected
+                    ? "rgba(255, 255, 255, 0.12)"
+                    : "rgba(255, 255, 255, 0.05)",
+                  borderWidth: 1,
+                  borderColor: isSelected
+                    ? "rgba(255, 255, 255, 0.3)"
+                    : "rgba(255, 255, 255, 0.1)",
+                  borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                }}
               >
-                <Pressable
-                  onPress={() => handleSelect(vibe)}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                  className="active:opacity-80"
+                <Text style={{ fontSize: 16 }}>{vibe.emoji}</Text>
+                <Text
                   style={{
-                    backgroundColor: isSelected
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(255, 255, 255, 0.05)",
-                    borderWidth: 1,
-                    borderColor: isSelected
-                      ? "rgba(255, 255, 255, 0.3)"
-                      : "rgba(255, 255, 255, 0.1)",
-                    borderRadius: 20,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
+                    fontFamily: "SF Pro Display",
+                    fontSize: 14,
+                    fontWeight: isSelected ? "600" : "400",
+                    color: isSelected ? "#FFFFFF" : "#D1D5DB",
                   }}
                 >
-                  <Text style={{ fontSize: 16 }}>{vibe.emoji}</Text>
-                  <Text
-                    style={{
-                      fontFamily: "SF Pro Display",
-                      fontSize: 14,
-                      fontWeight: isSelected ? "600" : "400",
-                      color: isSelected ? "#FFFFFF" : "#D1D5DB",
-                    }}
-                  >
-                    {vibe.label}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+                  {vibe.label}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
