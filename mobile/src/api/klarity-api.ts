@@ -3,6 +3,25 @@ import { getOpenAIClient } from "./openai";
 import { processDecodeResponseWithEmoji } from "../utils/decodeEmoji";
 
 /**
+ * Clean suggested reply text by removing uncommon texting patterns
+ * that the AI sometimes generates but sound unnatural
+ */
+function cleanReplyText(text: string): string {
+  let cleaned = text;
+
+  // Remove em-dashes, en-dashes, and hyphens used as punctuation between words
+  // These are common in formal writing but uncommon in casual texting
+  // Examples: "though — it seems" → "though it seems"
+  //           "I think - maybe" → "I think maybe"
+  cleaned = cleaned.replace(/\s*[—–-]\s*/g, " ");
+
+  // Clean up any resulting double spaces
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+
+  return cleaned;
+}
+
+/**
  * Klarity Notation types for internal tracking
  * Used across all chat loops (decode, reply, clarification)
  */
@@ -532,7 +551,7 @@ Respond with valid JSON first, then the notation block:
 
     return {
       id: Date.now().toString(),
-      text: parsed.text || "Thanks for sharing that.",
+      text: cleanReplyText(parsed.text || "Thanks for sharing that."),
       guidanceNote: parsed.guidanceNote || "This keeps the door open and lets them feel heard.",
       notation: notation || undefined,
     };
@@ -684,7 +703,7 @@ Provide a JSON object with a "suggestions" array containing 3 items, each with:
     // Ensure all suggestions have required fields
     const validated = suggestions.slice(0, 3).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
-      text: item.text || "Got it, let me think about that.",
+      text: cleanReplyText(item.text || "Got it, let me think about that."),
       tone: ["soften", "direct", "playful"].includes(item.tone)
         ? item.tone
         : index === 0
@@ -942,7 +961,7 @@ When the image is invalid (not a conversation screenshot):
       summary: parsed.summary,
       labels: parsed.labels,
       emotionalImpact: parsed.emotionalImpact || "",
-      suggestedResponse: parsed.isInvalidInput ? "" : (parsed.suggestedResponse || ""),
+      suggestedResponse: parsed.isInvalidInput ? "" : cleanReplyText(parsed.suggestedResponse || ""),
       guidanceNote: parsed.isInvalidInput ? "" : (parsed.guidanceNote || "This will help keep the conversation flowing."),
       isInvalidInput: Boolean(parsed.isInvalidInput),
       lastMessage: parsed.lastMessage || "",
@@ -1398,7 +1417,7 @@ Respond with valid JSON only:
 
     return replies.slice(0, 1).map((item: any, index: number) => ({
       id: item.id || (index + 1).toString(),
-      text: item.text || "Thanks, let me think on that.",
+      text: cleanReplyText(item.text || "Thanks, let me think on that."),
       guidanceNote: item.guidanceNote || guidanceContext[modulationTone],
     }));
   } catch (error) {

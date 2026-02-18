@@ -683,7 +683,40 @@ export function SuggestedReplyCard({
   const [addingEmojiReplyId, setAddingEmojiReplyId] = useState<string | null>(null);
 
   // Animation state lifted to parent to persist across modal/non-modal rendering
-  const [animationStates, setAnimationStates] = useState<Record<string, { hasAnimatedText: boolean; hasAnimatedGuidance: boolean }>>({});
+  // Initialize with all replies marked as already animated if they've been seen before
+  // This prevents re-animation when switching between loops
+  const [animationStates, setAnimationStates] = useState<Record<string, { hasAnimatedText: boolean; hasAnimatedGuidance: boolean }>>(() => {
+    // If replies exist, mark them as already animated (they were loaded from stored loop)
+    const initialState: Record<string, { hasAnimatedText: boolean; hasAnimatedGuidance: boolean }> = {};
+    replies.forEach(reply => {
+      initialState[reply.id] = { hasAnimatedText: true, hasAnimatedGuidance: true };
+    });
+    return initialState;
+  });
+
+  // Track previous reply IDs to detect new replies (from regeneration)
+  const prevReplyIdsRef = useRef<Set<string>>(new Set(replies.map(r => r.id)));
+
+  // When replies change, check if any are truly new (not seen before)
+  // New replies should animate, but existing replies should not re-animate
+  useEffect(() => {
+    const currentIds = new Set(replies.map(r => r.id));
+    const prevIds = prevReplyIdsRef.current;
+
+    // Find new IDs that weren't in the previous set
+    replies.forEach(reply => {
+      if (!prevIds.has(reply.id) && !animationStates[reply.id]) {
+        // This is a new reply - allow it to animate
+        setAnimationStates(prev => ({
+          ...prev,
+          [reply.id]: { hasAnimatedText: false, hasAnimatedGuidance: false }
+        }));
+      }
+    });
+
+    // Update the ref for next comparison
+    prevReplyIdsRef.current = currentIds;
+  }, [replies]);
 
   // Focus mode state
   const [isFocusMode, setIsFocusMode] = useState(false);
