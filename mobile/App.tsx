@@ -4,6 +4,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { ThemeProvider, useTheme } from "./src/theme";
+import { configureNotificationHandler } from "./src/lib/notifications";
+
+// Configure how notifications appear when the app is in the foreground
+configureNotificationHandler();
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE

@@ -18,6 +18,7 @@ import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
 import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
 import { hasEntitlement, isRevenueCatEnabled } from "../lib/revenuecatClient";
+import { scheduleTrialEndReminder } from "../lib/notifications";
 import { useTheme } from "../theme";
 
 export type RootStackParamList = {
@@ -77,6 +78,10 @@ export function RootNavigator() {
         const subState = useSubscriptionStore.getState();
         if (subState.trialStartedAt === null && !subState.hasPaidSubscription) {
           subState.startTrial();
+          const newTrialStart = useSubscriptionStore.getState().trialStartedAt;
+          if (newTrialStart) {
+            scheduleTrialEndReminder(newTrialStart);
+          }
         }
       }
     };
@@ -184,6 +189,9 @@ export function RootNavigator() {
   if (showOnboarding) {
     return <OnboardingScreen onComplete={() => {
       startTrial(); // Start 3-day trial when onboarding completes
+      // Schedule trial-end reminder for 2 days from now (1 day before expiry)
+      const trialStartedAt = useSubscriptionStore.getState().trialStartedAt ?? Date.now();
+      scheduleTrialEndReminder(trialStartedAt);
       setShowOnboarding(false);
     }} />;
   }

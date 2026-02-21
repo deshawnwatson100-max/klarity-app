@@ -25,6 +25,14 @@ import {
   isRevenueCatEnabled,
   type PurchasesPackage,
 } from "../lib/revenuecatClient";
+import {
+  useSubscriptionStore,
+} from "../state/subscriptionStore";
+import {
+  requestNotificationPermissions,
+  scheduleTrialEndReminder,
+  cancelTrialReminder,
+} from "../lib/notifications";
 
 type Props = StackScreenProps<RootStackParamList, "PaywallScreen">;
 
@@ -824,9 +832,24 @@ export function PaywallScreen({ navigation }: Props) {
         {/* Notification Toggle */}
         <Animated.View style={{ opacity: fadeAnim, marginTop: 16 }}>
           <Pressable
-            onPress={() => {
+            onPress={async () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setNotifyBeforeCharge(!notifyBeforeCharge);
+              const newValue = !notifyBeforeCharge;
+              if (newValue) {
+                const granted = await requestNotificationPermissions();
+                if (granted) {
+                  const trialStartedAt = useSubscriptionStore.getState().trialStartedAt;
+                  if (trialStartedAt) {
+                    await scheduleTrialEndReminder(trialStartedAt);
+                  }
+                  setNotifyBeforeCharge(true);
+                } else {
+                  setNotifyBeforeCharge(false);
+                }
+              } else {
+                await cancelTrialReminder();
+                setNotifyBeforeCharge(false);
+              }
             }}
             style={{
               flexDirection: "row",
@@ -859,9 +882,24 @@ export function PaywallScreen({ navigation }: Props) {
             </View>
             <Switch
               value={notifyBeforeCharge}
-              onValueChange={(value) => {
+              onValueChange={async (value) => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setNotifyBeforeCharge(value);
+                if (value) {
+                  const granted = await requestNotificationPermissions();
+                  if (granted) {
+                    const trialStartedAt = useSubscriptionStore.getState().trialStartedAt;
+                    if (trialStartedAt) {
+                      await scheduleTrialEndReminder(trialStartedAt);
+                    }
+                    setNotifyBeforeCharge(true);
+                  } else {
+                    // Permission denied — keep toggle off
+                    setNotifyBeforeCharge(false);
+                  }
+                } else {
+                  await cancelTrialReminder();
+                  setNotifyBeforeCharge(false);
+                }
               }}
               trackColor={{ false: isDark ? "#39393D" : "#E5E5EA", true: "#3B82F6" }}
               thumbColor="#FFFFFF"
