@@ -44,95 +44,62 @@ export function VibeSelectorCard({
     <Animated.View
       style={{
         alignSelf: "flex-start",
-        maxWidth: "100%",
-        marginBottom: 16,
+        maxWidth: "85%",
+        marginBottom: 8,
         paddingHorizontal: 4,
         opacity,
         transform: [{ translateY }],
       }}
     >
-      {/* Card container */}
-      <View
-        className="rounded-3xl px-6 py-6 mb-3"
+      {/* Acknowledgment text - floating style */}
+      <Text
+        className="text-sm leading-6 mb-3"
         style={{
-          backgroundColor: "rgba(20, 20, 24, 0.6)",
-          borderWidth: 1,
-          borderColor: "rgba(156, 163, 175, 0.1)",
-          shadowColor: "#9CA3AF",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          maxWidth: "95%",
+          fontFamily: "SF Pro Display",
+          color: "#9CA3AF",
         }}
       >
-        {/* Acknowledgment text */}
-        <Text
-          className="text-sm leading-6 mb-4"
-          style={{
-            fontFamily: "SF Pro Display",
-            color: "#9CA3AF",
-          }}
-        >
-          {acknowledgment}
-        </Text>
+        {acknowledgment}
+      </Text>
 
-        {/* Question */}
-        <Text
-          className="text-base leading-7 mb-5"
-          style={{
-            fontFamily: "SF Pro Display",
-            color: "#E5E7EB",
-            fontWeight: "500",
-          }}
-        >
-          How do you want to show up in this conversation?
-        </Text>
+      {/* Question - floating style */}
+      <Text
+        className="text-base leading-7 mb-4"
+        style={{
+          fontFamily: "SF Pro Display",
+          color: "#E5E7EB",
+          fontWeight: "500",
+        }}
+      >
+        How do you want to show up in this conversation?
+      </Text>
 
-        {/* Vibe chips */}
-        <View
-          className="flex-row flex-wrap gap-3"
-          style={{ marginHorizontal: -2 }}
-        >
-          {vibes.map((vibe) => {
-            const isSelected = selectedVibe?.label === vibe.label;
+      {/* Vibe buttons - floating text style, no card background */}
+      <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+        {vibes.map((vibe) => {
+          const isSelected = selectedVibe?.label === vibe.label;
 
-            return (
-              <Pressable
-                key={vibe.label}
-                onPress={() => handleSelect(vibe)}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                className="active:opacity-80"
+          return (
+            <Pressable
+              key={vibe.label}
+              onPress={() => handleSelect(vibe)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="active:opacity-60"
+            >
+              <Text
                 style={{
-                  backgroundColor: isSelected
-                    ? "rgba(255, 255, 255, 0.12)"
-                    : "rgba(255, 255, 255, 0.05)",
-                  borderWidth: 1,
-                  borderColor: isSelected
-                    ? "rgba(255, 255, 255, 0.3)"
-                    : "rgba(255, 255, 255, 0.1)",
-                  borderRadius: 20,
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
+                  fontFamily: "SF Pro Display",
+                  fontSize: 15,
+                  fontWeight: "700",
+                  color: isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.45)",
+                  letterSpacing: 0.1,
                 }}
               >
-                <Text style={{ fontSize: 16 }}>{vibe.emoji}</Text>
-                <Text
-                  style={{
-                    fontFamily: "SF Pro Display",
-                    fontSize: 14,
-                    fontWeight: isSelected ? "600" : "400",
-                    color: isSelected ? "#FFFFFF" : "#D1D5DB",
-                  }}
-                >
-                  {vibe.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                {vibe.emoji} {vibe.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </Animated.View>
   );
