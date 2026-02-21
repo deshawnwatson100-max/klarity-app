@@ -1236,48 +1236,45 @@ Generate a new reply that follows the user's instruction while still responding 
    * Handle vibe selection - update selected state and regenerate the linked reply card
    */
   const handleSelectVibe = async (messageId: string, vibe: VibeOption) => {
-    // Update selected vibe on the selector
+    const capturedMode = inputModeRef.current as MessageMode;
+
+    // Update selected vibe highlight on the selector
     const vibeMsg = messages.find(m => m.id === messageId) as VibeSelectorMessage | undefined;
-    if (!vibeMsg) return;
-
-    updateMessageInActiveLoop(messageId, { ...vibeMsg, selectedVibe: vibe });
-
-    // Find the linked reply card and set it to loading
-    const replyCardId = vibeMsg.vibeReplyCardId;
-    if (!replyCardId) return;
-
-    const replyCard = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
-    if (replyCard) {
-      updateMessageInActiveLoop(replyCardId, {
-        ...replyCard,
-        vibeLabel: vibe.label,
-        isLoadingVibeReply: true,
-        replies: [],
-      });
+    if (vibeMsg) {
+      updateMessageInActiveLoop(messageId, { ...vibeMsg, selectedVibe: vibe });
     }
 
+    // Append a new reply card with loading state
+    const newCardId = Date.now().toString() + "_vibe_reply";
+    const loadingCard: SuggestedReplyCardMessage = {
+      id: newCardId,
+      role: "suggested-reply-card",
+      content: "",
+      timestamp: Date.now(),
+      replies: [],
+      intention: "maintain",
+      vibeLabel: vibe.label,
+      isLoadingVibeReply: true,
+    };
+    addMessageWithMode(loadingCard, capturedMode);
+
     try {
-      const lastMessage = vibeMsg.lastMessageFromOther || conversationContext?.lastMessageFromOther || "";
+      const lastMessage = vibeMsg?.lastMessageFromOther || conversationContext?.lastMessageFromOther || "";
       const vibeUserMsg = lastMessage
         ? `The other person said: "${lastMessage}"\n\nGenerate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`
         : `Generate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`;
 
       const result = await generateQuickSuggestedReply(vibeUserMsg);
 
-      const current = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
+      const current = getActiveLoop()?.messages.find(m => m.id === newCardId) as SuggestedReplyCardMessage | undefined;
       if (current) {
-        updateMessageInActiveLoop(replyCardId, {
-          ...current,
-          replies: [result],
-          vibeLabel: vibe.label,
-          isLoadingVibeReply: false,
-        });
+        updateMessageInActiveLoop(newCardId, { ...current, replies: [result], isLoadingVibeReply: false });
       }
     } catch (error) {
       console.error("Error generating vibe reply:", error);
-      const current = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
+      const current = getActiveLoop()?.messages.find(m => m.id === newCardId) as SuggestedReplyCardMessage | undefined;
       if (current) {
-        updateMessageInActiveLoop(replyCardId, { ...current, isLoadingVibeReply: false });
+        updateMessageInActiveLoop(newCardId, { ...current, isLoadingVibeReply: false });
       }
     }
   };
