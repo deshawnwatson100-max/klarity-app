@@ -868,6 +868,7 @@ export function ChatScreen({ navigation, route }: Props) {
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Reading the situation",
       };
       addMessageWithMode(typingMsg, capturedMode);
 
@@ -983,6 +984,7 @@ export function ChatScreen({ navigation, route }: Props) {
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Crafting a reply",
       };
       addMessageWithMode(typingMsg2, capturedMode);
 
@@ -1148,6 +1150,7 @@ export function ChatScreen({ navigation, route }: Props) {
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Thinking it through",
       };
       addMessageWithMode(typingMsg, capturedMode);
 
@@ -1348,6 +1351,7 @@ Generate a new reply that follows the user's instruction while still responding 
       role: "typing",
       content: "",
       timestamp: Date.now(),
+      label: "Writing another take",
     };
     addMessageToActiveLoop(typingMsg);
 
@@ -1447,6 +1451,7 @@ Generate a new reply that follows the user's instruction while still responding 
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Transcribing voice",
       };
       addMessageToActiveLoop(typingMsg);
 
@@ -1491,6 +1496,7 @@ Generate a new reply that follows the user's instruction while still responding 
       role: "typing",
       content: "",
       timestamp: Date.now(),
+      label: "Re-reading with context",
     };
     addMessageToActiveLoop(typingMsg);
 
@@ -1519,6 +1525,7 @@ Generate a new reply that follows the user's instruction while still responding 
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Tailoring the reply",
       };
       addMessageToActiveLoop(typingMsg2);
 
@@ -1743,6 +1750,7 @@ Generate a new reply that follows the user's instruction while still responding 
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Polishing your words",
       };
       addMessageToActiveLoop(typingMsg);
 
@@ -2360,6 +2368,7 @@ Generate a new reply that follows the user's instruction while still responding 
         role: "typing",
         content: "",
         timestamp: Date.now(),
+        label: "Reading the conversation",
       };
       addMessageWithMode(typingMsg, capturedMode);
 
@@ -2524,7 +2533,7 @@ Generate a new reply that follows the user's instruction while still responding 
   // Render function for Decode mode - only typing indicators and message bubbles (ChatGPT-style)
   const renderDecodeMessage = useCallback((message: ChatMessage) => {
     if (message.role === "typing") {
-      return <TypingIndicator key={message.id} />;
+      return <TypingIndicator key={message.id} label={(message as TypingMessage).label} />;
     }
 
     // Chat loading - use simple TypingIndicator to match reply loop
@@ -3203,10 +3212,8 @@ Generate a new reply that follows the user's instruction while still responding 
 
   const renderMessage = useCallback((message: ChatMessage) => {
     if (message.role === "typing") {
-      return <TypingIndicator key={message.id} />;
-    }
-
-    if (message.role === "dysfunctional-communication") {
+      return <TypingIndicator key={message.id} label={(message as TypingMessage).label} />;
+    }    if (message.role === "dysfunctional-communication") {
       const msg = message as DysfunctionalCommunicationMessage;
       return (
         <DysfunctionalCommunicationCard
@@ -3235,38 +3242,7 @@ Generate a new reply that follows the user's instruction while still responding 
 
       // Loading state while vibe reply is being generated
       if (msg.isLoadingVibeReply) {
-        return (
-          <View key={message.id} style={{ alignSelf: "flex-start", maxWidth: "85%", paddingHorizontal: 4, marginBottom: 8 }}>
-            {msg.vibeLabel && (
-              <Text
-                style={{
-                  fontFamily: "SF Pro Display",
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: "rgba(255,255,255,0.3)",
-                  letterSpacing: 0.8,
-                  textTransform: "uppercase",
-                  marginBottom: 10,
-                }}
-              >
-                {msg.vibeLabel} reply
-              </Text>
-            )}
-            <View style={{ gap: 8 }}>
-              {[0.7, 0.9, 0.5].map((w, i) => (
-                <View
-                  key={i}
-                  style={{
-                    height: 11,
-                    width: `${w * 100}%`,
-                    borderRadius: 6,
-                    backgroundColor: `rgba(255,255,255,${0.07 - i * 0.015})`,
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        );
+        return <TypingIndicator key={message.id} label={msg.vibeLabel ? `${msg.vibeLabel} reply` : undefined} />;
       }
 
       return (

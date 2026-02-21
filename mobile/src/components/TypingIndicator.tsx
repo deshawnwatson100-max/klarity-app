@@ -1,63 +1,83 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 
-const thinkingWords = [
-  "Thinking...",
-  "Processing...",
-  "Analyzing...",
-  "Reflecting...",
-  "Understanding...",
-];
+interface TypingIndicatorProps {
+  label?: string;
+}
 
-export function TypingIndicator() {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const opacity = useRef(new Animated.Value(1)).current;
-  const wordIndexRef = useRef(0);
+export function TypingIndicator({ label }: TypingIndicatorProps) {
+  const opacities = [
+    useRef(new Animated.Value(0.3)).current,
+    useRef(new Animated.Value(0.3)).current,
+    useRef(new Animated.Value(0.3)).current,
+  ];
 
   useEffect(() => {
-    const animateWord = () => {
-      // Fade out
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        useNativeDriver: true,
-      }).start(() => {
-        // Update word index after fade out completes
-        wordIndexRef.current = (wordIndexRef.current + 1) % thinkingWords.length;
-        // Use setTimeout to defer state update outside animation callback
-        setTimeout(() => {
-          setCurrentWordIndex(wordIndexRef.current);
-        }, 0);
+    const delays = [0, 160, 320];
 
-        // Fade in
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-          useNativeDriver: true,
-        }).start();
-      });
-    };
+    const animations = opacities.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delays[i]),
+          Animated.timing(anim, {
+            toValue: 0.18,
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.5,
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.3,
+            duration: 400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    );
 
-    const interval = setInterval(animateWord, 2000);
+    animations.forEach((a) => a.start());
+    return () => animations.forEach((a) => a.stop());
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [opacity]);
+  const widths: `${number}%`[] = ["65%", "88%", "48%"];
 
   return (
-    <View className="self-start mb-4 px-4">
-      <Animated.View style={{ opacity }}>
+    <View style={{ alignSelf: "flex-start", paddingHorizontal: 4, marginBottom: 12, gap: 0 }}>
+      {label ? (
         <Text
           style={{
-            fontSize: 15,
-            color: "#9CA3AF",
-            fontWeight: "400",
+            fontFamily: "SF Pro Display",
+            fontSize: 11,
+            fontWeight: "600",
+            color: "rgba(255,255,255,0.28)",
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            marginBottom: 10,
           }}
         >
-          {thinkingWords[currentWordIndex]}
+          {label}
         </Text>
-      </Animated.View>
+      ) : null}
+      <View style={{ gap: 8 }}>
+        {opacities.map((anim, i) => (
+          <Animated.View
+            key={i}
+            style={{
+              height: 10,
+              width: widths[i],
+              borderRadius: 5,
+              backgroundColor: "#fff",
+              opacity: anim,
+            }}
+          />
+        ))}
+      </View>
     </View>
   );
 }

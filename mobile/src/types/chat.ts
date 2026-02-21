@@ -127,6 +127,7 @@ export interface ImageAnalysisMessage extends Message {
 // New inline analysis message types
 export interface TypingMessage extends Message {
   role: "typing";
+  label?: string; // Contextual label shown above the skeleton bars
 }
 
 export interface EmotionalValidationMessage extends Message {
