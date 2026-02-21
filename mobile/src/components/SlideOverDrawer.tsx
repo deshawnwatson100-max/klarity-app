@@ -256,25 +256,6 @@ function LongPressChatListItem({
               {formatDate(loop.updatedAt)}
             </Text>
           </View>
-          {showImageIcon ? (
-            <View className="flex-row items-center">
-              <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
-              <Text
-                className="text-xs ml-1"
-                style={{ color: colors.textSecondary }}
-              >
-                Image conversation
-              </Text>
-            </View>
-          ) : (
-            <Text
-              className="text-xs"
-              style={{ color: colors.textSecondary }}
-              numberOfLines={2}
-            >
-              {preview}
-            </Text>
-          )}
           {loop.emotionalClarity !== undefined && (
             <View className="flex-row items-center mt-2">
               <View
@@ -536,25 +517,6 @@ function SwipeableChatListItem({ loop, onPress, onDelete, onArchive, isLast = fa
                 {formatDate(loop.updatedAt)}
               </Text>
             </View>
-            {showImageIcon ? (
-              <View className="flex-row items-center">
-                <Ionicons name="image-outline" size={14} color="#9CA3AF" />
-                <Text
-                  className="text-xs ml-1"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  Image conversation
-                </Text>
-              </View>
-            ) : (
-              <Text
-                className="text-xs"
-                style={{ color: "#9CA3AF" }}
-                numberOfLines={2}
-              >
-                {preview}
-              </Text>
-            )}
             {loop.emotionalClarity !== undefined && (
               <View className="flex-row items-center mt-2">
                 <View
@@ -669,25 +631,6 @@ function ChatListItem({ loop, onPress, isLast = false }: ChatListItemProps) {
             {formatDate(loop.updatedAt)}
           </Text>
         </View>
-        {showImageIcon ? (
-          <View className="flex-row items-center">
-            <Ionicons name="image-outline" size={14} color="#9CA3AF" />
-            <Text
-              className="text-xs ml-1"
-              style={{ color: "#9CA3AF" }}
-            >
-              Image conversation
-            </Text>
-          </View>
-        ) : (
-          <Text
-            className="text-xs"
-            style={{ color: "#9CA3AF" }}
-            numberOfLines={2}
-          >
-            {preview}
-          </Text>
-        )}
         {loop.emotionalClarity !== undefined && (
           <View className="flex-row items-center mt-2">
             <View

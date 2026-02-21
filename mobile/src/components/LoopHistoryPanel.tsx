@@ -257,7 +257,7 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
                   }
                 >
                   {/* Title Row */}
-                  <View className="flex-row items-start justify-between mb-2">
+                  <View className="flex-row items-start justify-between" style={{ minHeight: 44 }}>
                     <Text
                       className={cn(
                         "text-base font-medium flex-1",
@@ -277,14 +277,6 @@ export function LoopHistoryPanel({ visible, onClose, onLoopSelected }: LoopHisto
                       <Ionicons name="trash-outline" size={16} color="#9CA3AF" />
                     </Pressable>
                   </View>
-
-                  {/* Preview */}
-                  <Text
-                    className="text-neutral-400 text-sm mb-3"
-                    numberOfLines={2}
-                  >
-                    {firstMessage}
-                  </Text>
 
                   {/* Metadata Row */}
                   <View className="flex-row items-center justify-between">
