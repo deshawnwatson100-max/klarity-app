@@ -4116,7 +4116,7 @@ export async function generateStructuredAnalysisFromImage(
 JSON only. No markdown. No preamble.
 
 {
-  "contactName": "Name of the other person in the conversation (as shown in the screenshot header/title). Include emojis if present. If unclear, use null.",
+  "contactName": "Name of the other person as shown EXACTLY in the screenshot header/title. CRITICAL: Copy the name character-for-character including all emojis as they literally appear — do NOT substitute, guess, or use similar-looking emoji variants. Example: if the header shows 'Dané❤️💖' output exactly 'Dané❤️💖', never 'Dané❤️‍🩹💖'. If unclear, use null.",
 
   "surfaceMeaning": "One sentence. What's literally being said. No fluff.",
 

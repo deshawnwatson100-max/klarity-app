@@ -1954,6 +1954,7 @@ Generate a new reply that follows the user's instruction while still responding 
         timestamp: Date.now(),
         loadingType: "chat",
         loadingState: "loading",
+        label: "Decoding the conversation",
         mode: "understand",
       };
       addMessageToActiveLoopRaw(loadingMsg);
@@ -2536,9 +2537,9 @@ Generate a new reply that follows the user's instruction while still responding 
       return <TypingIndicator key={message.id} label={(message as TypingMessage).label} />;
     }
 
-    // Chat loading - use simple TypingIndicator to match reply loop
+    // Chat loading - use TypingIndicator with contextual label
     if (message.role === "chat-loading") {
-      return <TypingIndicator key={message.id} />;
+      return <TypingIndicator key={message.id} label={(message as ChatLoadingMessage).label} />;
     }
 
     // Deep Search loading state

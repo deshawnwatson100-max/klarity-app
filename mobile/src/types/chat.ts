@@ -429,8 +429,9 @@ export interface ChatLoadingMessage extends Message {
   role: "chat-loading";
   loadingType: ChatLoadingType;
   loadingState: ChatLoadingState;
-  customAction?: string; // Override the action line
-  errorMessage?: string; // Error message if failed
+  label?: string;
+  customAction?: string;
+  errorMessage?: string;
 }
 
 export interface ResponsePromptMessage extends Message {
