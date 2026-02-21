@@ -3309,6 +3309,12 @@ CRITICAL RULES FOR NAMES:
 - NEVER use generic terms like "Partner", "Friend", "Coworker" if you can see an actual name
 - Only use relationship labels if no name is visible
 
+CRITICAL RULES FOR TOPIC:
+- The topic must reflect the DOMINANT subject or emotional theme of the conversation — what is actually being discussed between the two people
+- Ignore any app UI text, labels, headers, buttons, or metadata visible in the screenshot (e.g., "Postpartum support", "Deep Search", section headers)
+- Focus on what the MESSAGES themselves are about: the relationship dynamic, the conflict, the event, the feeling being expressed
+- Use natural, conversational language (e.g., "feeling distant", "making plans", "late night fight", "moving in together")
+
 Examples of GOOD titles (when name is visible):
 - "Sarah - Weekend plans"
 - "Mike 💪 - Gym schedule"
