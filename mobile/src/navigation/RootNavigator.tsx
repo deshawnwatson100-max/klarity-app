@@ -13,8 +13,11 @@ import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { PaywallScreen } from "../screens/PaywallScreen";
+import { HardPaywallScreen } from "../screens/HardPaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
+import { hasEntitlement, isRevenueCatEnabled } from "../lib/revenuecatClient";
 import { useTheme } from "../theme";
 
 export type RootStackParamList = {
@@ -44,35 +47,106 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const { colors } = useTheme();
-  const hasCompletedOnboarding = useOnboardingStore((s) => s.hasCompletedOnboarding);
+  const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
+  const startTrial = useSubscriptionStore((s) => s.startTrial);
+  const setHasPaidSubscription = useSubscriptionStore((s) => s.setHasPaidSubscription);
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [showHardPaywall, setShowHardPaywall] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const contentFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Wait for store to hydrate from AsyncStorage
+  // Wait for both stores to hydrate from AsyncStorage
   useEffect(() => {
-    // Check if the store has been hydrated
-    const unsubscribe = useOnboardingStore.persist.onFinishHydration(() => {
-      const completed = useOnboardingStore.getState().hasCompletedOnboarding;
-      setShowOnboarding(!completed);
-      setShowSplash(completed); // Show splash for returning users
-      setIsHydrated(true);
-    });
+    let onboardingHydrated = useOnboardingStore.persist.hasHydrated();
+    let subscriptionHydrated = useSubscriptionStore.persist.hasHydrated();
 
-    // If already hydrated (happens on fast loads)
-    if (useOnboardingStore.persist.hasHydrated()) {
+    const checkHydration = () => {
+      if (!onboardingHydrated || !subscriptionHydrated) return;
+
       const completed = useOnboardingStore.getState().hasCompletedOnboarding;
       setShowOnboarding(!completed);
       setShowSplash(completed);
       setIsHydrated(true);
-    }
+
+      // If onboarding is already completed but trial hasn't started,
+      // start the trial now (handles users who existed before trial was added)
+      if (completed) {
+        const subState = useSubscriptionStore.getState();
+        if (subState.trialStartedAt === null && !subState.hasPaidSubscription) {
+          subState.startTrial();
+        }
+      }
+    };
+
+    const unsubscribeOnboarding = useOnboardingStore.persist.onFinishHydration(() => {
+      onboardingHydrated = true;
+      checkHydration();
+    });
+
+    const unsubscribeSubscription = useSubscriptionStore.persist.onFinishHydration(() => {
+      subscriptionHydrated = true;
+      checkHydration();
+    });
+
+    // If both already hydrated
+    checkHydration();
 
     return () => {
-      unsubscribe();
+      unsubscribeOnboarding();
+      unsubscribeSubscription();
     };
   }, []);
+
+  // Check subscription status on launch and whenever hasPaidSubscription changes
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const checkSubscription = async () => {
+      // If RevenueCat is configured, check the real subscription status
+      if (isRevenueCatEnabled()) {
+        const result = await hasEntitlement("premium");
+        if (result.ok) {
+          setHasPaidSubscription(result.data);
+          if (result.data) {
+            setShowHardPaywall(false);
+            return;
+          }
+        }
+      }
+
+      // Check if user is in the trial window
+      const currentTrialStartedAt = useSubscriptionStore.getState().trialStartedAt;
+      const inTrial = isInTrialWindow(currentTrialStartedAt);
+      const paid = useSubscriptionStore.getState().hasPaidSubscription;
+
+      if (!inTrial && !paid) {
+        setShowHardPaywall(true);
+      } else {
+        setShowHardPaywall(false);
+      }
+    };
+
+    checkSubscription();
+  }, [isHydrated, hasPaidSubscription]);
+
+  // Also re-check periodically while app is open (e.g. trial expires mid-session)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const interval = setInterval(() => {
+      const currentTrialStartedAt = useSubscriptionStore.getState().trialStartedAt;
+      const inTrial = isInTrialWindow(currentTrialStartedAt);
+      const paid = useSubscriptionStore.getState().hasPaidSubscription;
+      if (!inTrial && !paid) {
+        setShowHardPaywall(true);
+      }
+    }, 60_000); // check every minute
+
+    return () => clearInterval(interval);
+  }, [isHydrated]);
 
   // Handle splash screen animations
   useEffect(() => {
@@ -108,7 +182,15 @@ export function RootNavigator() {
 
   // For new users, show onboarding (which has its own splash)
   if (showOnboarding) {
-    return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
+    return <OnboardingScreen onComplete={() => {
+      startTrial(); // Start 3-day trial when onboarding completes
+      setShowOnboarding(false);
+    }} />;
+  }
+
+  // Hard paywall: trial expired and no paid subscription
+  if (showHardPaywall) {
+    return <HardPaywallScreen />;
   }
 
   // Main app with splash overlay for returning users

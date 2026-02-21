@@ -15,6 +15,27 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Light and Dark themes** - Adaptive theming with system preference support
 - **Premium splash screen** with glowing Klarity AI logo
 - **Secure PIN authentication** - 4-digit PIN to protect your conversations
+- **3-Day Free Trial** with hard paywall gate on expiry
+
+## Subscription & Trial System
+
+### How it works
+1. New users complete onboarding → 3-day free trial starts automatically
+2. Existing users (before trial was added) → trial starts from first launch with updated app
+3. After 3 days, if no active RevenueCat subscription: **HardPaywallScreen** blocks the entire app
+4. Users must subscribe (Weekly / Monthly / Annual) to regain access
+5. After successful purchase or restore, `hasPaidSubscription` is set in the subscription store → app unlocks immediately
+
+### Key files
+- `src/state/subscriptionStore.ts` — Persisted store tracking `trialStartedAt` and `hasPaidSubscription`
+- `src/screens/HardPaywallScreen.tsx` — Non-dismissible full-screen paywall (no close button)
+- `src/navigation/RootNavigator.tsx` — Checks trial/subscription status on launch; shows HardPaywallScreen when expired
+
+### Trial logic
+- `isInTrialWindow(trialStartedAt)` — returns true if within 3 days of `trialStartedAt`
+- `trialDaysRemaining(trialStartedAt)` — returns integer days left in trial
+- RevenueCat is checked on every launch; if `premium` entitlement is active, hard paywall is bypassed
+- Periodic re-check every 60 seconds while app is open (catches mid-session expiry)
 
 ## Theme Support
 
