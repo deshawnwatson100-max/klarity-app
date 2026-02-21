@@ -154,9 +154,11 @@ export interface DirectionSelectorMessage extends Message {
 
 export interface VibeSelectorMessage extends Message {
   role: "vibe-selector";
-  acknowledgment: string; // The acknowledgment text shown above
-  vibes: VibeOption[]; // The vibe options to choose from
-  selectedVibe?: VibeOption; // The selected vibe (once chosen)
+  acknowledgment: string;
+  vibes: VibeOption[];
+  selectedVibe?: VibeOption;
+  vibeReplyCardId?: string; // ID of the linked SuggestedReplyCard to update on vibe change
+  lastMessageFromOther?: string; // Stored so handleSelectVibe can access it
 }
 
 export interface ToneSelectorMessage extends Message {
@@ -179,6 +181,8 @@ export interface SuggestedReplyCardMessage extends Message {
   }>;
   intention: "improve" | "distance" | "maintain" | "clarity";
   tone?: "calm" | "direct" | "empathetic" | "assertive";
+  vibeLabel?: string; // Set when this card was generated for a specific vibe
+  isLoadingVibeReply?: boolean; // True while regenerating for a new vibe
 }
 
 export interface FaceScanPromptMessage extends Message {

@@ -1010,19 +1010,63 @@ export function ChatScreen({ navigation, route }: Props) {
       removeMessageFromActiveLoop(typingMsg2.id);
 
       // STEP 3: Show Vibe Selector or Suggested Reply
-      // For image input with vibes, show the vibe selector
+      // For image input with vibes, show the vibe selector + pre-generate first vibe reply
       if (imageAnalysisResult && imageAnalysisResult.vibes && imageAnalysisResult.vibes.length > 0) {
         const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
+        const firstVibe = imageAnalysisResult.vibes[0];
+        const storedLastMessage = imageAnalysisResult.lastMessage || "";
+        const vibeSelectorId = Date.now().toString() + "_vibe_selector";
+        const vibeReplyCardId = Date.now().toString() + "_vibe_reply";
 
+        // Show the vibe selector
         const vibeSelectorMsg: VibeSelectorMessage = {
-          id: Date.now().toString() + "_vibe_selector",
+          id: vibeSelectorId,
           role: "vibe-selector",
           content: "",
           timestamp: Date.now(),
           acknowledgment,
           vibes: imageAnalysisResult.vibes,
+          selectedVibe: firstVibe,
+          vibeReplyCardId,
+          lastMessageFromOther: storedLastMessage,
         };
         addMessageWithMode(vibeSelectorMsg, capturedMode);
+
+        // Show reply card immediately as loading
+        const vibeReplyCard: SuggestedReplyCardMessage = {
+          id: vibeReplyCardId,
+          role: "suggested-reply-card",
+          content: "",
+          timestamp: Date.now(),
+          replies: [],
+          intention: "maintain",
+          vibeLabel: firstVibe.label,
+          isLoadingVibeReply: true,
+        };
+        addMessageWithMode(vibeReplyCard, capturedMode);
+
+        // Generate first vibe reply in background
+        const firstVibeUserMsg = storedLastMessage
+          ? `The other person said: "${storedLastMessage}"\n\nGenerate a reply with a "${firstVibe.label}" vibe. ${firstVibe.description || ""}`
+          : `Generate a reply with a "${firstVibe.label}" vibe. ${firstVibe.description || ""}`;
+
+        generateQuickSuggestedReply(firstVibeUserMsg)
+          .then((result) => {
+            const current = getActiveLoop()?.messages.find(m => m.id === vibeReplyCardId) as SuggestedReplyCardMessage | undefined;
+            if (current) {
+              updateMessageInActiveLoop(vibeReplyCardId, {
+                ...current,
+                replies: [result],
+                isLoadingVibeReply: false,
+              });
+            }
+          })
+          .catch(() => {
+            const current = getActiveLoop()?.messages.find(m => m.id === vibeReplyCardId) as SuggestedReplyCardMessage | undefined;
+            if (current) {
+              updateMessageInActiveLoop(vibeReplyCardId, { ...current, isLoadingVibeReply: false });
+            }
+          });
       } else if (imageAnalysisResult) {
         // Fallback: show acknowledgment as text and suggested reply directly
         const acknowledgment = imageAnalysisResult.acknowledgment || "I see this conversation.";
@@ -1189,72 +1233,52 @@ Generate a new reply that follows the user's instruction while still responding 
   };
 
   /**
-   * Handle vibe selection - generate a reply in the selected vibe's tone
+   * Handle vibe selection - update selected state and regenerate the linked reply card
    */
   const handleSelectVibe = async (messageId: string, vibe: VibeOption) => {
-    const capturedMode = inputModeRef.current as MessageMode;
-
-    // Update the vibe selector message to show selected state
+    // Update selected vibe on the selector
     const vibeMsg = messages.find(m => m.id === messageId) as VibeSelectorMessage | undefined;
-    if (vibeMsg) {
-      updateMessageInActiveLoop(messageId, { ...vibeMsg, selectedVibe: vibe });
+    if (!vibeMsg) return;
+
+    updateMessageInActiveLoop(messageId, { ...vibeMsg, selectedVibe: vibe });
+
+    // Find the linked reply card and set it to loading
+    const replyCardId = vibeMsg.vibeReplyCardId;
+    if (!replyCardId) return;
+
+    const replyCard = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
+    if (replyCard) {
+      updateMessageInActiveLoop(replyCardId, {
+        ...replyCard,
+        vibeLabel: vibe.label,
+        isLoadingVibeReply: true,
+        replies: [],
+      });
     }
 
-    setIsProcessing(true);
-    setIsLoading(true);
-
     try {
-      // Show typing indicator
-      const typingMsg: TypingMessage = {
-        id: Date.now().toString() + "_typing",
-        role: "typing",
-        content: "",
-        timestamp: Date.now(),
-      };
-      addMessageWithMode(typingMsg, capturedMode);
+      const lastMessage = vibeMsg.lastMessageFromOther || conversationContext?.lastMessageFromOther || "";
+      const vibeUserMsg = lastMessage
+        ? `The other person said: "${lastMessage}"\n\nGenerate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`
+        : `Generate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`;
 
-      // Generate reply with the selected vibe
-      const lastMessage = conversationContext?.lastMessageFromOther || "";
-      const vibeInstruction = `Generate a reply with a "${vibe.label}" vibe. ${vibe.description || ""}`;
+      const result = await generateQuickSuggestedReply(vibeUserMsg);
 
-      const suggestedReply = await generateQuickSuggestedReply(
-        lastMessage,
-        undefined,
-        vibeInstruction
-      );
-
-      removeMessageFromActiveLoop(typingMsg.id);
-
-      // Show the suggested reply card
-      const replyMsg: SuggestedReplyCardMessage = {
-        id: Date.now().toString() + "_reply",
-        role: "suggested-reply-card",
-        content: "",
-        timestamp: Date.now(),
-        replies: [{
-          ...suggestedReply,
-          guidanceNote: `This ${vibe.label.toLowerCase()} reply feels natural for this moment.`,
-        }],
-        intention: "maintain",
-      };
-      addMessageWithMode(replyMsg, capturedMode);
-
+      const current = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
+      if (current) {
+        updateMessageInActiveLoop(replyCardId, {
+          ...current,
+          replies: [result],
+          vibeLabel: vibe.label,
+          isLoadingVibeReply: false,
+        });
+      }
     } catch (error) {
       console.error("Error generating vibe reply:", error);
-      // Remove typing indicator if still present
-      const allMsgs = getActiveLoop()?.messages || [];
-      const typing = allMsgs.find(m => m.role === "typing");
-      if (typing) removeMessageFromActiveLoop(typing.id);
-
-      addMessageWithMode({
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "I had trouble generating a reply. Please try again.",
-        timestamp: Date.now(),
-      }, capturedMode);
-    } finally {
-      setIsLoading(false);
-      setIsProcessing(false);
+      const current = getActiveLoop()?.messages.find(m => m.id === replyCardId) as SuggestedReplyCardMessage | undefined;
+      if (current) {
+        updateMessageInActiveLoop(replyCardId, { ...current, isLoadingVibeReply: false });
+      }
     }
   };
 
@@ -3211,16 +3235,71 @@ Generate a new reply that follows the user's instruction while still responding 
 
     if (message.role === "suggested-reply-card") {
       const msg = message as SuggestedReplyCardMessage;
+
+      // Loading state while vibe reply is being generated
+      if (msg.isLoadingVibeReply) {
+        return (
+          <View key={message.id} style={{ alignSelf: "flex-start", maxWidth: "85%", paddingHorizontal: 4, marginBottom: 8 }}>
+            {msg.vibeLabel && (
+              <Text
+                style={{
+                  fontFamily: "SF Pro Display",
+                  fontSize: 11,
+                  fontWeight: "600",
+                  color: "rgba(255,255,255,0.3)",
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  marginBottom: 10,
+                }}
+              >
+                {msg.vibeLabel} reply
+              </Text>
+            )}
+            <View style={{ gap: 8 }}>
+              {[0.7, 0.9, 0.5].map((w, i) => (
+                <View
+                  key={i}
+                  style={{
+                    height: 11,
+                    width: `${w * 100}%`,
+                    borderRadius: 6,
+                    backgroundColor: `rgba(255,255,255,${0.07 - i * 0.015})`,
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        );
+      }
+
       return (
-        <SuggestedReplyCard
-          key={message.id}
-          replies={msg.replies}
-          intention={msg.intention}
-          onSelectReply={handleSelectReply}
-          onModifyLength={handleModifyReplyLength}
-          onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
-          onAddEmoji={handleAddEmojiToReply}
-        />
+        <View key={message.id}>
+          {msg.vibeLabel && (
+            <Text
+              style={{
+                fontFamily: "SF Pro Display",
+                fontSize: 11,
+                fontWeight: "600",
+                color: "rgba(255,255,255,0.3)",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                paddingHorizontal: 4,
+                marginBottom: 6,
+                alignSelf: "flex-start",
+              }}
+            >
+              {msg.vibeLabel} reply
+            </Text>
+          )}
+          <SuggestedReplyCard
+            replies={msg.replies}
+            intention={msg.intention}
+            onSelectReply={handleSelectReply}
+            onModifyLength={handleModifyReplyLength}
+            onGenerateDifferent={() => handleGenerateDifferentReply(message.id)}
+            onAddEmoji={handleAddEmojiToReply}
+          />
+        </View>
       );
     }
 
