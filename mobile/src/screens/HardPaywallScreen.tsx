@@ -12,6 +12,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import {
   getOfferings,
   purchasePackage,
@@ -20,6 +22,7 @@ import {
   type PurchasesPackage,
 } from "../lib/revenuecatClient";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { RootStackParamList } from "../navigation/RootNavigator";
 
 type PlanType = "weekly" | "monthly" | "annual";
 
@@ -88,6 +91,7 @@ const FEATURES: Array<{
 // Rendered directly by RootNavigator — no navigation prop or close button.
 export function HardPaywallScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const setHasPaidSubscription = useSubscriptionStore(
     (s) => s.setHasPaidSubscription
   );
@@ -742,24 +746,34 @@ export function HardPaywallScreen() {
               marginTop: 2,
             }}
           >
-            <Text
-              style={{
-                fontSize: 12,
-                color: textTertiary,
-                textDecorationLine: "underline",
-              }}
+            <Pressable
+              onPress={() => navigation.navigate("LegalScreen", { tab: "terms" })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              Terms of Service
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: textTertiary,
-                textDecorationLine: "underline",
-              }}
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: textTertiary,
+                  textDecorationLine: "underline",
+                }}
+              >
+                Terms of Service
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate("LegalScreen", { tab: "privacy" })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              Privacy Policy
-            </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: textTertiary,
+                  textDecorationLine: "underline",
+                }}
+              >
+                Privacy Policy
+              </Text>
+            </Pressable>
           </View>
 
           {/* Subscription fine print */}
