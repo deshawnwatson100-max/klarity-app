@@ -24,8 +24,9 @@ interface SubscriptionState {
   // Set to true when app goes to background — forces hard paywall on next foreground/request.
   requiresPaywallOnResume: boolean;
 
-  // Set to true to immediately show the hard paywall (e.g. before an AI response).
-  paywallGate: boolean;
+  // Controls hard paywall visibility. Stored in the store so any screen can set it
+  // directly and synchronously (no useEffect hop = no visible lag).
+  showHardPaywall: boolean;
 
   // Actions
   startTrial: () => void;
@@ -33,7 +34,7 @@ interface SubscriptionState {
   resetSubscription: () => void;
   expireTrialForPreview: () => void;
   setRequiresPaywallOnResume: (value: boolean) => void;
-  setPaywallGate: (value: boolean) => void;
+  setShowHardPaywall: (value: boolean) => void;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -42,31 +43,37 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       trialStartedAt: null,
       hasPaidSubscription: false,
       requiresPaywallOnResume: false,
-      paywallGate: false,
+      showHardPaywall: false,
 
       startTrial: () =>
         set((state) => ({
           trialStartedAt: state.trialStartedAt ?? Date.now(),
         })),
 
-      setHasPaidSubscription: (value) =>
+      setHasPaidSubscription: (value: boolean) =>
         set({ hasPaidSubscription: value }),
 
       resetSubscription: () =>
-        set({ trialStartedAt: null, hasPaidSubscription: false, requiresPaywallOnResume: false, paywallGate: false }),
+        set({ trialStartedAt: null, hasPaidSubscription: false, requiresPaywallOnResume: false, showHardPaywall: false }),
 
       expireTrialForPreview: () =>
         set({ trialStartedAt: 0, hasPaidSubscription: false }),
 
-      setRequiresPaywallOnResume: (value) =>
+      setRequiresPaywallOnResume: (value: boolean) =>
         set({ requiresPaywallOnResume: value }),
 
-      setPaywallGate: (value) =>
-        set({ paywallGate: value }),
+      setShowHardPaywall: (value: boolean) =>
+        set({ showHardPaywall: value }),
     }),
     {
       name: "klarity-subscription-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      // Don't persist showHardPaywall — always starts as false on fresh launch
+      partialize: (state) => ({
+        trialStartedAt: state.trialStartedAt,
+        hasPaidSubscription: state.hasPaidSubscription,
+        requiresPaywallOnResume: state.requiresPaywallOnResume,
+      }),
     }
   )
 );

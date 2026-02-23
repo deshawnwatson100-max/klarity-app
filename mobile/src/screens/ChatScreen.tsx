@@ -209,7 +209,7 @@ export function ChatScreen({ navigation, route }: Props) {
   const getPreferenceSummary = useFeedbackStore((s) => s.getPreferenceSummary);
 
   // Subscription / paywall gate
-  const setPaywallGate = useSubscriptionStore((s) => s.setPaywallGate);
+  const setShowHardPaywall = useSubscriptionStore((s) => s.setShowHardPaywall);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
 
@@ -1574,7 +1574,7 @@ Generate a new reply that follows the user's instruction while still responding 
 
     // Paywall gate: if trial expired and no paid subscription, show hard paywall
     if (!hasPaidSubscription && !isInTrialWindow(trialStartedAt)) {
-      setPaywallGate(true);
+      setShowHardPaywall(true);
       return;
     }
 

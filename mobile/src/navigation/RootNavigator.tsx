@@ -48,16 +48,15 @@ const Stack = createStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const { colors } = useTheme();
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
-  const paywallGate = useSubscriptionStore((s) => s.paywallGate);
+  const showHardPaywall = useSubscriptionStore((s) => s.showHardPaywall);
   const startTrial = useSubscriptionStore((s) => s.startTrial);
   const setHasPaidSubscription = useSubscriptionStore((s) => s.setHasPaidSubscription);
   const setRequiresPaywallOnResume = useSubscriptionStore((s) => s.setRequiresPaywallOnResume);
-  const setPaywallGate = useSubscriptionStore((s) => s.setPaywallGate);
+  const setShowHardPaywall = useSubscriptionStore((s) => s.setShowHardPaywall);
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
-  const [showHardPaywall, setShowHardPaywall] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const contentFadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -143,13 +142,6 @@ export function RootNavigator() {
     checkSubscription();
   }, [isHydrated, hasPaidSubscription]);
 
-  // Watch paywallGate — when ChatScreen sets it before a response, show the hard paywall
-  useEffect(() => {
-    if (paywallGate) {
-      setPaywallGate(false);
-      setShowHardPaywall(true);
-    }
-  }, [paywallGate]);
 
   // When app goes to background/inactive, mark that the paywall-on-resume flag should
   // be reset on next launch (full close resets it). When app returns to foreground
