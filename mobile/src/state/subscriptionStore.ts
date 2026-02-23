@@ -25,6 +25,7 @@ interface SubscriptionState {
   startTrial: () => void;
   setHasPaidSubscription: (value: boolean) => void;
   resetSubscription: () => void;
+  expireTrialForPreview: () => void;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -44,6 +45,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       resetSubscription: () =>
         set({ trialStartedAt: null, hasPaidSubscription: false }),
+
+      expireTrialForPreview: () =>
+        set({ trialStartedAt: 0, hasPaidSubscription: false }),
     }),
     {
       name: "klarity-subscription-storage",

@@ -27,6 +27,7 @@ import {
 import { useLoopsStore } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useSubscriptionStore } from "../state/subscriptionStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 
@@ -469,6 +470,10 @@ export function SettingsScreen() {
   // Onboarding store
   const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
+  // Subscription store (for dev preview)
+  const expireTrialForPreview = useSubscriptionStore((s) => s.expireTrialForPreview);
+  const resetSubscription = useSubscriptionStore((s) => s.resetSubscription);
+
   // Modal states
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
@@ -856,6 +861,27 @@ export function SettingsScreen() {
         <SettingsRow
           label="Version"
           value={`${appVersion} (${buildNumber})`}
+          isLast
+        />
+
+        {/* Dev Tools Section */}
+        <SectionHeader title="Developer" icon="code-slash-outline" />
+        <SettingsRow
+          label="Preview Hard Paywall"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            expireTrialForPreview();
+          }}
+          rightElement={<Ionicons name="eye-outline" size={20} color={colors.textTertiary} />}
+          isFirst
+        />
+        <SettingsRow
+          label="Reset Trial"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            resetSubscription();
+          }}
+          rightElement={<Ionicons name="refresh-outline" size={20} color={colors.textTertiary} />}
           isLast
         />
 
