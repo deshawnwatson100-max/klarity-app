@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, Animated } from "react-native";
+import { View, Text, Animated, AppState, AppStateStatus } from "react-native";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { InputScreen } from "../screens/InputScreen";
@@ -16,8 +16,7 @@ import { PaywallScreen } from "../screens/PaywallScreen";
 import { HardPaywallScreen } from "../screens/HardPaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
-import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
-import { hasEntitlement, isRevenueCatEnabled } from "../lib/revenuecatClient";
+import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";import { hasEntitlement, isRevenueCatEnabled } from "../lib/revenuecatClient";
 import { scheduleTrialEndReminder } from "../lib/notifications";
 import { useTheme } from "../theme";
 
@@ -49,8 +48,11 @@ const Stack = createStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const { colors } = useTheme();
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
+  const paywallGate = useSubscriptionStore((s) => s.paywallGate);
   const startTrial = useSubscriptionStore((s) => s.startTrial);
   const setHasPaidSubscription = useSubscriptionStore((s) => s.setHasPaidSubscription);
+  const setRequiresPaywallOnResume = useSubscriptionStore((s) => s.setRequiresPaywallOnResume);
+  const setPaywallGate = useSubscriptionStore((s) => s.setPaywallGate);
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -151,6 +153,41 @@ export function RootNavigator() {
     }, 60_000); // check every minute
 
     return () => clearInterval(interval);
+  }, [isHydrated]);
+
+  // Watch paywallGate — when ChatScreen sets it before a response, show the hard paywall
+  useEffect(() => {
+    if (paywallGate) {
+      setPaywallGate(false);
+      setShowHardPaywall(true);
+    }
+  }, [paywallGate]);
+
+  // When app goes to background (user closes/switches away), mark that paywall
+  // should be shown again on resume. When app comes back to foreground, show it.
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      const paid = useSubscriptionStore.getState().hasPaidSubscription;
+      const inTrial = isInTrialWindow(useSubscriptionStore.getState().trialStartedAt);
+
+      // If user doesn't have access, flag for paywall on resume
+      if (!paid && !inTrial) {
+        if (nextState === "background" || nextState === "inactive") {
+          setRequiresPaywallOnResume(true);
+        } else if (nextState === "active") {
+          const shouldShow = useSubscriptionStore.getState().requiresPaywallOnResume;
+          if (shouldShow) {
+            setRequiresPaywallOnResume(false);
+            setShowHardPaywall(true);
+          }
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
   }, [isHydrated]);
 
   // Handle splash screen animations

@@ -21,11 +21,19 @@ interface SubscriptionState {
   // We always re-check RevenueCat at launch, but this prevents flash-of-paywall.
   hasPaidSubscription: boolean;
 
+  // Set to true when app goes to background — forces hard paywall on next foreground/request.
+  requiresPaywallOnResume: boolean;
+
+  // Set to true to immediately show the hard paywall (e.g. before an AI response).
+  paywallGate: boolean;
+
   // Actions
   startTrial: () => void;
   setHasPaidSubscription: (value: boolean) => void;
   resetSubscription: () => void;
   expireTrialForPreview: () => void;
+  setRequiresPaywallOnResume: (value: boolean) => void;
+  setPaywallGate: (value: boolean) => void;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -33,10 +41,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     (set) => ({
       trialStartedAt: null,
       hasPaidSubscription: false,
+      requiresPaywallOnResume: false,
+      paywallGate: false,
 
       startTrial: () =>
         set((state) => ({
-          // Only start trial once
           trialStartedAt: state.trialStartedAt ?? Date.now(),
         })),
 
@@ -44,10 +53,16 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ hasPaidSubscription: value }),
 
       resetSubscription: () =>
-        set({ trialStartedAt: null, hasPaidSubscription: false }),
+        set({ trialStartedAt: null, hasPaidSubscription: false, requiresPaywallOnResume: false, paywallGate: false }),
 
       expireTrialForPreview: () =>
         set({ trialStartedAt: 0, hasPaidSubscription: false }),
+
+      setRequiresPaywallOnResume: (value) =>
+        set({ requiresPaywallOnResume: value }),
+
+      setPaywallGate: (value) =>
+        set({ paywallGate: value }),
     }),
     {
       name: "klarity-subscription-storage",

@@ -58,6 +58,7 @@ import { usePatternMirrorStore } from "../state/patternMirrorStore";
 import { detectBehavioralSignals } from "../utils/patternDetection";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useFeedbackStore } from "../state/feedbackStore";
+import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 import {
@@ -206,6 +207,11 @@ export function ChatScreen({ navigation, route }: Props) {
 
   // User feedback preferences for reply generation
   const getPreferenceSummary = useFeedbackStore((s) => s.getPreferenceSummary);
+
+  // Subscription / paywall gate
+  const setPaywallGate = useSubscriptionStore((s) => s.setPaywallGate);
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
 
   // Track if Deep Search has been triggered this session
   const deepSearchTriggered = useRef(false);
@@ -1565,6 +1571,12 @@ Generate a new reply that follows the user's instruction while still responding 
       inputMode
     });
     if ((!currentInput.trim() && !selectedImageUri) || isLoading) return;
+
+    // Paywall gate: if trial expired and no paid subscription, show hard paywall
+    if (!hasPaidSubscription && !isInTrialWindow(trialStartedAt)) {
+      setPaywallGate(true);
+      return;
+    }
 
     // User did an input: type bar can collapse on scroll again
     setInputBarPermanentUntilSend(false);
