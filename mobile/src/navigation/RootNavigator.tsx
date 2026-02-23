@@ -107,7 +107,9 @@ export function RootNavigator() {
     };
   }, []);
 
-  // Check subscription status on launch and whenever hasPaidSubscription changes
+  // Check subscription status on launch — only dismiss paywall if user is now paid/in trial.
+  // Post-trial users without a subscription can browse freely; paywall only appears
+  // when they attempt to generate a response (via paywallGate).
   useEffect(() => {
     if (!isHydrated) return;
 
@@ -118,42 +120,28 @@ export function RootNavigator() {
         if (result.ok) {
           setHasPaidSubscription(result.data);
           if (result.data) {
+            // Paid — make sure paywall is dismissed
             setShowHardPaywall(false);
             return;
           }
         }
       }
 
-      // Check if user is in the trial window
+      // Only hide the paywall if the user is in their trial window.
+      // If trial is expired, we do NOT proactively show the hard paywall here —
+      // it will appear when they try to generate a response (paywallGate).
       const currentTrialStartedAt = useSubscriptionStore.getState().trialStartedAt;
       const inTrial = isInTrialWindow(currentTrialStartedAt);
       const paid = useSubscriptionStore.getState().hasPaidSubscription;
 
-      if (!inTrial && !paid) {
-        setShowHardPaywall(true);
-      } else {
+      if (inTrial || paid) {
         setShowHardPaywall(false);
       }
+      // If !inTrial && !paid: leave showHardPaywall as-is (false on fresh open)
     };
 
     checkSubscription();
   }, [isHydrated, hasPaidSubscription]);
-
-  // Also re-check periodically while app is open (e.g. trial expires mid-session)
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    const interval = setInterval(() => {
-      const currentTrialStartedAt = useSubscriptionStore.getState().trialStartedAt;
-      const inTrial = isInTrialWindow(currentTrialStartedAt);
-      const paid = useSubscriptionStore.getState().hasPaidSubscription;
-      if (!inTrial && !paid) {
-        setShowHardPaywall(true);
-      }
-    }, 60_000); // check every minute
-
-    return () => clearInterval(interval);
-  }, [isHydrated]);
 
   // Watch paywallGate — when ChatScreen sets it before a response, show the hard paywall
   useEffect(() => {
@@ -163,16 +151,23 @@ export function RootNavigator() {
     }
   }, [paywallGate]);
 
-  // When app goes to background (user closes/switches away), mark that paywall
-  // should be shown again on resume. When app comes back to foreground, show it.
+  // When app goes to background/inactive, mark that the paywall-on-resume flag should
+  // be reset on next launch (full close resets it). When app returns to foreground
+  // mid-session, show the paywall if they had been blocked before.
+  // On a full app close + reopen, requiresPaywallOnResume is cleared so users
+  // can browse freely and only hit the paywall when generating a response.
   useEffect(() => {
     if (!isHydrated) return;
+
+    // Clear the resume flag on mount — this handles the "full app close + reopen" case.
+    // The flag persists to AsyncStorage, so we reset it here on every fresh launch.
+    setRequiresPaywallOnResume(false);
 
     const handleAppStateChange = (nextState: AppStateStatus) => {
       const paid = useSubscriptionStore.getState().hasPaidSubscription;
       const inTrial = isInTrialWindow(useSubscriptionStore.getState().trialStartedAt);
 
-      // If user doesn't have access, flag for paywall on resume
+      // If user doesn't have access, flag for paywall on resume (background switch, not full close)
       if (!paid && !inTrial) {
         if (nextState === "background" || nextState === "inactive") {
           setRequiresPaywallOnResume(true);
