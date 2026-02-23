@@ -24,7 +24,7 @@ import {
 import { useSubscriptionStore } from "../state/subscriptionStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 
-type PlanType = "weekly" | "monthly" | "annual";
+type PlanType = "monthly" | "annual";
 
 interface PlanOption {
   id: PlanType;
@@ -36,13 +36,6 @@ interface PlanOption {
 }
 
 const DEFAULT_PLANS: PlanOption[] = [
-  {
-    id: "weekly",
-    identifier: "$rc_weekly",
-    title: "Weekly",
-    price: "$2.99/wk",
-    subtitle: "$2.99/week",
-  },
   {
     id: "monthly",
     identifier: "$rc_monthly",
