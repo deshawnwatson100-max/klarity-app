@@ -474,6 +474,14 @@ export function ChatScreen({ navigation, route }: Props) {
         const firstMessage = activeLoop.messages[0];
         if (!processedMessageIds.current.has(firstMessage.id)) {
           processedMessageIds.current.add(firstMessage.id);
+
+          // Paywall gate: if trial expired and no paid subscription, show hard paywall
+          const { hasPaidSubscription: paid, trialStartedAt: trial, setShowHardPaywall: showPaywall } = useSubscriptionStore.getState();
+          if (!paid && !isInTrialWindow(trial)) {
+            showPaywall(true);
+            return;
+          }
+
           // Check message mode to determine which processing flow to use
           const messageMode = firstMessage.mode || inputModeRef.current;
           console.log("[ChatScreen] Processing first message with mode:", messageMode);

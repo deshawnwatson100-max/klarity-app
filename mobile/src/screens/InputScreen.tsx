@@ -17,6 +17,7 @@ import { DeepDecodeModal, SelectedImage } from "../components/DeepDecodeModal";
 import { DeepDecodeResultView } from "../components/DeepDecodeResultView";
 import { analyzeDeepDecode, DeepDecodeResult } from "../api/klarity-api";
 import { useLoopsStore } from "../state/loopsStore";
+import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
 import { MessageMode, DeepDecodeResultMessage } from "../types/chat";
@@ -95,6 +96,13 @@ export function InputScreen({ navigation }: Props) {
 
   const handleSend = () => {
     if (!currentInput.trim() && !selectedImageUri) return;
+
+    // Paywall gate: if trial expired and no paid subscription, show hard paywall
+    const { hasPaidSubscription, trialStartedAt, setShowHardPaywall } = useSubscriptionStore.getState();
+    if (!hasPaidSubscription && !isInTrialWindow(trialStartedAt)) {
+      setShowHardPaywall(true);
+      return;
+    }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
