@@ -111,6 +111,14 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "klarity-settings-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // Force theme to system for all existing users
+          return { ...persistedState, theme: "system" };
+        }
+        return persistedState;
+      },
     }
   )
 );
