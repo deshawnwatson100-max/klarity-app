@@ -66,7 +66,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ showHardPaywall: value }),
     }),
     {
-      name: "klarity-subscription-storage",
+      name: "klarity-subscription-storage-v2",
       storage: createJSONStorage(() => AsyncStorage),
       // Don't persist showHardPaywall — always starts as false on fresh launch
       partialize: (state) => ({
