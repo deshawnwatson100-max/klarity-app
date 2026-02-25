@@ -22,6 +22,30 @@ function cleanReplyText(text: string): string {
 }
 
 /**
+ * Strip all markdown formatting from AI-generated text.
+ * Removes bold (**text** / __text__), italic (*text* / _text_),
+ * underscores used as emphasis, headers (#), and stray backticks.
+ */
+function stripMarkdown(text: string): string {
+  let t = text;
+  // Bold: **text** or __text__
+  t = t.replace(/\*\*(.+?)\*\*/g, "$1");
+  t = t.replace(/__(.+?)__/g, "$1");
+  // Italic: *text* or _text_
+  t = t.replace(/\*(.+?)\*/g, "$1");
+  t = t.replace(/_(.+?)_/g, "$1");
+  // Lone underscores not part of a word (e.g. used as separator)
+  t = t.replace(/(?<!\w)_(?!\w)/g, "");
+  // Markdown headers
+  t = t.replace(/^#{1,6}\s+/gm, "");
+  // Inline code backticks
+  t = t.replace(/`(.+?)`/g, "$1");
+  // Clean up extra whitespace
+  t = t.replace(/\s{2,}/g, " ").trim();
+  return t;
+}
+
+/**
  * Klarity Notation types for internal tracking
  * Used across all chat loops (decode, reply, clarification)
  */
@@ -46,13 +70,15 @@ function parseKlarityNotation(fullResponse: string): {
   const notationMatch = fullResponse.match(/\[\[KLARITY_NOTES\]\]([\s\S]*?)\[\[\/KLARITY_NOTES\]\]/);
 
   if (!notationMatch) {
-    return { userResponse: fullResponse.trim(), notation: null };
+    return { userResponse: stripMarkdown(fullResponse.trim()), notation: null };
   }
 
   // Extract user-facing response (everything before the notation block)
-  const userResponse = fullResponse
-    .replace(/\[\[KLARITY_NOTES\]\][\s\S]*?\[\[\/KLARITY_NOTES\]\]/, "")
-    .trim();
+  const userResponse = stripMarkdown(
+    fullResponse
+      .replace(/\[\[KLARITY_NOTES\]\][\s\S]*?\[\[\/KLARITY_NOTES\]\]/, "")
+      .trim()
+  );
 
   // Parse notation fields
   const notationText = notationMatch[1];
@@ -2374,7 +2400,7 @@ Generate a brief, gentle clarification response. Keep it short.`;
       false
     );
 
-    return response.trim() || "I want to make sure I understand. What actually happened in the moment you want help with?";
+    return stripMarkdown(response.trim()) || "I want to make sure I understand. What actually happened in the moment you want help with?";
   } catch (error) {
     console.error("[generateClarificationResponse] Error:", error);
     return "I want to make sure I understand. What actually happened in the moment you want help with?";
@@ -3017,6 +3043,8 @@ Short. Direct. Strategic. You care but you're not soft about it. You see pattern
 
 Casual: "okay wait", "hmm", "honestly", "tbh", "lowkey think...", "something's off here"
 
+NEVER use markdown: no **bold**, no _underscores_, no *italics*, no # headers — plain text only.
+
 ## How to Respond
 
 Quick reaction first:
@@ -3180,6 +3208,7 @@ export async function generateContextAwareDecodeResponse(
 Reduce confusion by explaining the SOCIAL DYNAMIC behind what's happening.
 The "aha" moment should be UNDERSTANDING, not instruction.
 No texting advice. No action steps. Just clarity.
+NEVER use markdown: no **bold**, no _underscores_, no *italics*, no # headers — plain text only.
 
 ## YOUR JOB
 
@@ -3226,6 +3255,7 @@ ${contactName ? `The person's name is "${contactName}". Use their name naturally
 - Be observational, not prescriptive
 - NO texting advice, NO "you should", NO action steps
 - Total response: 4-5 short paragraphs max
+- NEVER use markdown formatting: no **bold**, no _underscores_, no *italics*, no # headers, no backticks — plain text only
 
 ## PREVIOUS ANALYSIS
 ${analysisContext}
