@@ -193,26 +193,111 @@ const renderFormattedText = (text: string, baseStyle: TextStyle, isDark: boolean
   ];
 
   // Emphasis phrases that should be slightly bolder (interpretive patterns)
+  // These highlight key insights in the decode chat loop
   const emphasisPhrases = [
+    // Reads / interpretations
     "this reads less like",
     "this reads more like",
+    "this reads like",
     "this leans more toward",
     "this leans less toward",
+    "this leans toward",
     "more like",
     "less like",
+    "reads as",
+    "reads like",
+
+    // Patterns & dynamics
+    "the pattern here",
+    "the pattern tells",
+    "the real pattern",
+    "the dynamic here",
+    "the dynamic is",
+    "there's a pattern",
+    "effort imbalance",
+    "emotional weight",
+    "the ratio",
+    "default mode",
+    "baseline behavior",
+    "wired to handle",
+
+    // What it signals
+    "what this signals",
+    "what that signals",
+    "signals that",
+    "this signals",
+    "that signals",
+    "usually signals",
+    "often signals",
+
+    // Key insight phrases
+    "isn't about you",
+    "isn't necessarily",
+    "isn't the same as",
+    "doesn't mean",
+    "the real question is",
+    "the actual issue",
+    "what's actually happening",
+    "what's really going on",
+    "the underlying",
+    "beneath the surface",
+    "the real tell",
+    "the tell here",
+    "worth noticing",
+    "worth paying attention",
+    "the key thing",
+    "the key here",
+
+    // Behavior / communication style
     "inconsistent texting",
     "inconsistent communication",
     "pacing style",
     "communication habits",
     "comfort-level fluctuation",
     "emotional availability",
-    "default mode",
-    "the pattern here",
-    "the pattern tells",
-    "isn't about you",
-    "isn't necessarily",
-    "about how",
-    "wired to handle",
+    "their texting style",
+    "texting habits",
+    "response time",
+    "one-sided",
+    "matched energy",
+    "mirroring",
+    "closing the gap",
+    "keeping you at arm's length",
+    "pulling back",
+    "pulling away",
+    "testing the waters",
+
+    // Stakes / positioning
+    "you're positioned",
+    "how you're positioned",
+    "perceived value",
+    "your pace",
+    "their pace",
+    "carrying more",
+    "carrying the weight",
+    "let them close",
+    "let them respond",
+    "observe their",
+
+    // Reframes
+    "could also be",
+    "another read",
+    "different possibility",
+    "not necessarily",
+    "more likely",
+    "less likely",
+    "the safer read",
+    "the honest read",
+    "the neutral read",
+    "two possibilities",
+
+    // Common misread patterns
+    "people often mistake",
+    "easy to misread",
+    "common misread",
+    "trap people fall into",
+    "mistaken for",
+    "confused with",
   ];
 
   lines.forEach((line, lineIndex) => {
