@@ -53,9 +53,9 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   // Theme-aware colors
   const surface = isDark ? "#0D0D0D" : "#F3F4F6";
   const border = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
-  const textPrimary = isDark ? "rgba(147,197,253,0.9)" : "rgba(37,99,235,0.85)";
-  const textSecondary = isDark ? "rgba(147,197,253,0.6)" : "rgba(59,130,246,0.7)";
-  const textMuted = isDark ? "rgba(147,197,253,0.4)" : "rgba(96,165,250,0.6)";
+  const textPrimary = isDark ? "#ECECEC" : "rgba(37,99,235,0.85)";
+  const textSecondary = isDark ? "#B4B4B4" : "rgba(59,130,246,0.7)";
+  const textMuted = isDark ? "#8E8E8E" : "rgba(96,165,250,0.6)";
   const cancelBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(59,130,246,0.07)";
 
   // Pulsing dot animation

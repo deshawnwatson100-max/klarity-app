@@ -14,8 +14,8 @@ export function TypingIndicator({ label }: TypingIndicatorProps) {
   ];
   const { isDark } = useTheme();
 
-  // Transparent blue — visible on both light and dark
-  const barColor = isDark ? "rgba(96,165,250,0.55)" : "rgba(59,130,246,0.45)";
+  // Bars: original white for dark, transparent blue for light
+  const barColor = isDark ? "#fff" : "rgba(59,130,246,0.45)";
   const labelColor = isDark ? "rgba(255,255,255,0.28)" : "rgba(59,130,246,0.6)";
 
   useEffect(() => {
