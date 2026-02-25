@@ -3,6 +3,7 @@ import { View, Text, Pressable, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { VibeOption } from "../types/chat";
 import * as Haptics from "expo-haptics";
+import { useTheme } from "../theme/ThemeContext";
 
 interface VibeSelectorCardProps {
   acknowledgment: string;
@@ -38,6 +39,7 @@ export function VibeSelectorCard({
 }: VibeSelectorCardProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
+  const { isDark } = useTheme();
 
   useEffect(() => {
     Animated.parallel([
@@ -47,6 +49,16 @@ export function VibeSelectorCard({
   }, []);
 
   const activeVibe = selectedVibe ?? vibes[0];
+
+  // Theme-aware colors
+  const acknowledgmentColor = isDark ? "#9CA3AF" : "#6B7280";
+  const questionColor = isDark ? "#E5E7EB" : "#111827";
+  const iconBgSelected = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
+  const iconBgUnselected = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+  const iconColorSelected = isDark ? "#fff" : "#111827";
+  const iconColorUnselected = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.35)";
+  const labelSelected = isDark ? "#FFFFFF" : "#111827";
+  const labelUnselected = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)";
 
   return (
     <Animated.View
@@ -62,7 +74,7 @@ export function VibeSelectorCard({
       {/* Acknowledgment */}
       <Text
         className="text-sm leading-6 mb-3"
-        style={{ fontFamily: "SF Pro Display", color: "#9CA3AF" }}
+        style={{ fontFamily: "SF Pro Display", color: acknowledgmentColor }}
       >
         {acknowledgment}
       </Text>
@@ -70,7 +82,7 @@ export function VibeSelectorCard({
       {/* Question */}
       <Text
         className="text-base leading-7 mb-4"
-        style={{ fontFamily: "SF Pro Display", color: "#E5E7EB", fontWeight: "500" }}
+        style={{ fontFamily: "SF Pro Display", color: questionColor, fontWeight: "500" }}
       >
         How do you want to show up?
       </Text>
@@ -95,7 +107,7 @@ export function VibeSelectorCard({
                   width: 22,
                   height: 22,
                   borderRadius: 11,
-                  backgroundColor: isSelected ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
+                  backgroundColor: isSelected ? iconBgSelected : iconBgUnselected,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -103,7 +115,7 @@ export function VibeSelectorCard({
                 <Ionicons
                   name={getVibeIconName(vibe.label)}
                   size={12}
-                  color={isSelected ? "#fff" : "rgba(255,255,255,0.45)"}
+                  color={isSelected ? iconColorSelected : iconColorUnselected}
                 />
               </View>
               <Text
@@ -111,7 +123,7 @@ export function VibeSelectorCard({
                   fontFamily: "SF Pro Display",
                   fontSize: 15,
                   fontWeight: "700",
-                  color: isSelected ? "#FFFFFF" : "rgba(255,255,255,0.4)",
+                  color: isSelected ? labelSelected : labelUnselected,
                   letterSpacing: 0.1,
                 }}
               >

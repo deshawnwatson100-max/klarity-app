@@ -1,20 +1,11 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 import { View, Text, Pressable, Animated, Easing } from "react-native";
 import * as Haptics from "expo-haptics";
+import { useTheme } from "../theme/ThemeContext";
 
-// ChatGPT-style colors
-const COLORS = {
-  background: "#1A1A1A",
-  surface: "#0D0D0D",
-  border: "rgba(255,255,255,0.06)",
-  text: "#ECECEC",
-  textSecondary: "#B4B4B4",
-  textMuted: "#8E8E8E",
-  accent: "#10A37F",
-  accentDim: "rgba(16, 163, 127, 0.3)",
-  error: "#EF4444",
-  errorBg: "rgba(239, 68, 68, 0.15)",
-};
+const ACCENT = "#10A37F";
+const ERROR = "#EF4444";
+const ERROR_BG = "rgba(239, 68, 68, 0.15)";
 
 // Status text sets
 const CHAT_STATUSES = [
@@ -39,7 +30,7 @@ interface ChatLoadingBubbleProps {
   state: LoadingState;
   onCancel?: () => void;
   onRetry?: () => void;
-  customAction?: string; // Override the action line
+  customAction?: string;
   errorMessage?: string;
 }
 
@@ -57,12 +48,21 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
   const startTimeRef = useRef(Date.now());
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { isDark } = useTheme();
 
-  // Pulsing dot animation using RN Animated
+  // Theme-aware colors
+  const surface = isDark ? "#0D0D0D" : "#F3F4F6";
+  const border = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
+  const textPrimary = isDark ? "#ECECEC" : "#111827";
+  const textSecondary = isDark ? "#B4B4B4" : "#4B5563";
+  const textMuted = isDark ? "#8E8E8E" : "#9CA3AF";
+  const cancelBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+
+  // Pulsing dot animation
   const pulseOpacity = useRef(new Animated.Value(0.4)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Fade in effect
+  // Fade in
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -95,7 +95,6 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     }
   }, [state, pulseOpacity]);
 
-  // Get status texts based on type
   const statusTexts = type === "deep-search" ? DEEP_SEARCH_STATUSES : CHAT_STATUSES;
 
   // Timer effect
@@ -107,12 +106,9 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     setStatusIndex(0);
     setReassuranceText(null);
 
-    // Update timer every second
     timerIntervalRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
       setElapsedSeconds(elapsed);
-
-      // Time-based reassurance
       if (elapsed >= 20 && elapsed < 25) {
         setReassuranceText("Still working—almost done.");
       } else if (elapsed >= 8 && elapsed < 12) {
@@ -122,7 +118,6 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
       }
     }, 1000);
 
-    // Rotate status every 2-3 seconds
     statusIntervalRef.current = setInterval(() => {
       setStatusIndex((prev) => (prev + 1) % statusTexts.length);
     }, 2500);
@@ -133,51 +128,39 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     };
   }, [state, statusTexts.length]);
 
-  // Format elapsed time as mm:ss
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Get action line
   const getActionLine = (): string => {
     if (customAction) return customAction;
     return type === "deep-search" ? "Running deep search" : "Thinking of a reply";
   };
 
-  // Handle cancel
   const handleCancel = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onCancel?.();
   };
 
-  // Handle retry
   const handleRetry = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onRetry?.();
   };
 
-  // Loading state
   if (state === "loading") {
     return (
-      <Animated.View
-        style={{
-          marginVertical: 8,
-          paddingHorizontal: 4,
-          opacity: fadeAnim,
-        }}
-      >
+      <Animated.View style={{ marginVertical: 8, paddingHorizontal: 4, opacity: fadeAnim }}>
         <View
           style={{
-            backgroundColor: COLORS.surface,
+            backgroundColor: surface,
             borderRadius: 16,
             padding: 16,
             borderWidth: 1,
-            borderColor: COLORS.border,
+            borderColor: border,
           }}
         >
-          {/* Header row: Title + Timer */}
           <View
             style={{
               flexDirection: "row",
@@ -187,75 +170,39 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {/* Pulsing dot */}
               <Animated.View
                 style={{
                   width: 8,
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: COLORS.accent,
+                  backgroundColor: ACCENT,
                   marginRight: 10,
                   opacity: pulseOpacity,
                 }}
               />
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: "600",
-                  color: COLORS.text,
-                }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: "600", color: textPrimary }}>
                 Working on it...
               </Text>
             </View>
-            {/* Timer */}
-            <Text
-              style={{
-                fontSize: 13,
-                fontFamily: "monospace",
-                color: COLORS.textMuted,
-              }}
-            >
+            <Text style={{ fontSize: 13, fontFamily: "monospace", color: textMuted }}>
               {formatTime(elapsedSeconds)}
             </Text>
           </View>
 
-          {/* Action line */}
-          <Text
-            style={{
-              fontSize: 14,
-              color: COLORS.textSecondary,
-              marginBottom: 6,
-            }}
-          >
+          <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 6 }}>
             {getActionLine()}
           </Text>
 
-          {/* Status line (rotating) */}
-          <Text
-            style={{
-              fontSize: 13,
-              color: COLORS.textMuted,
-              fontStyle: "italic",
-            }}
-          >
+          <Text style={{ fontSize: 13, color: textMuted, fontStyle: "italic" }}>
             {statusTexts[statusIndex]}
           </Text>
 
-          {/* Reassurance text (time-based) */}
           {reassuranceText && (
-            <Text
-              style={{
-                fontSize: 12,
-                color: COLORS.accent,
-                marginTop: 10,
-              }}
-            >
+            <Text style={{ fontSize: 12, color: ACCENT, marginTop: 10 }}>
               {reassuranceText}
             </Text>
           )}
 
-          {/* Cancel button (if supported) */}
           {onCancel && (
             <Pressable
               onPress={handleCancel}
@@ -264,19 +211,12 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
                 paddingVertical: 8,
                 paddingHorizontal: 16,
                 borderRadius: 8,
-                backgroundColor: "rgba(255,255,255,0.05)",
+                backgroundColor: cancelBg,
                 alignSelf: "flex-start",
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: COLORS.textMuted,
-                }}
-              >
-                Cancel
-              </Text>
+              <Text style={{ fontSize: 13, color: textMuted }}>Cancel</Text>
             </Pressable>
           )}
         </View>
@@ -284,42 +224,22 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     );
   }
 
-  // Error state
   if (state === "error") {
     return (
-      <Animated.View
-        style={{
-          marginVertical: 8,
-          paddingHorizontal: 4,
-          opacity: fadeAnim,
-        }}
-      >
+      <Animated.View style={{ marginVertical: 8, paddingHorizontal: 4, opacity: fadeAnim }}>
         <View
           style={{
-            backgroundColor: COLORS.errorBg,
+            backgroundColor: ERROR_BG,
             borderRadius: 16,
             padding: 16,
             borderWidth: 1,
             borderColor: "rgba(239, 68, 68, 0.2)",
           }}
         >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "600",
-              color: COLORS.text,
-              marginBottom: 6,
-            }}
-          >
+          <Text style={{ fontSize: 15, fontWeight: "600", color: textPrimary, marginBottom: 6 }}>
             Something went wrong
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: COLORS.textSecondary,
-              marginBottom: 12,
-            }}
-          >
+          <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 12 }}>
             {errorMessage || "Could not complete the request. Please try again."}
           </Text>
           {onRetry && (
@@ -329,20 +249,12 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
                 paddingVertical: 10,
                 paddingHorizontal: 16,
                 borderRadius: 8,
-                backgroundColor: COLORS.accent,
+                backgroundColor: ACCENT,
                 alignSelf: "flex-start",
                 opacity: pressed ? 0.8 : 1,
               })}
             >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: "#fff",
-                }}
-              >
-                Try again
-              </Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: "#fff" }}>Try again</Text>
             </Pressable>
           )}
         </View>
@@ -350,42 +262,22 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     );
   }
 
-  // Cancelled state
   if (state === "cancelled") {
     return (
-      <Animated.View
-        style={{
-          marginVertical: 8,
-          paddingHorizontal: 4,
-          opacity: fadeAnim,
-        }}
-      >
+      <Animated.View style={{ marginVertical: 8, paddingHorizontal: 4, opacity: fadeAnim }}>
         <View
           style={{
-            backgroundColor: COLORS.surface,
+            backgroundColor: surface,
             borderRadius: 16,
             padding: 16,
             borderWidth: 1,
-            borderColor: COLORS.border,
+            borderColor: border,
           }}
         >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "600",
-              color: COLORS.text,
-              marginBottom: 6,
-            }}
-          >
+          <Text style={{ fontSize: 15, fontWeight: "600", color: textPrimary, marginBottom: 6 }}>
             Stopped
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: COLORS.textSecondary,
-              marginBottom: 12,
-            }}
-          >
+          <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 12 }}>
             The request was cancelled.
           </Text>
           {onRetry && (
@@ -395,20 +287,12 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
                 paddingVertical: 10,
                 paddingHorizontal: 16,
                 borderRadius: 8,
-                backgroundColor: COLORS.accent,
+                backgroundColor: ACCENT,
                 alignSelf: "flex-start",
                 opacity: pressed ? 0.8 : 1,
               })}
             >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: "#fff",
-                }}
-              >
-                Run again
-              </Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: "#fff" }}>Run again</Text>
             </Pressable>
           )}
         </View>
@@ -416,6 +300,5 @@ export const ChatLoadingBubble = memo(function ChatLoadingBubble({
     );
   }
 
-  // Success state - this component should be replaced, but fallback to null
   return null;
 });
