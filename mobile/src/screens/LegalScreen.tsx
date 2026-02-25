@@ -213,7 +213,7 @@ function PrivacyContent() {
 
       <SectionTitle>3. Data Storage and Security</SectionTitle>
       <Paragraph>
-        Your data is stored securely on your device and our servers. We implement industry-standard security measures to protect your information from unauthorized access, alteration, or destruction.
+        Your data may be processed on secure servers and is retained only as necessary to provide the service or comply with legal obligations. We implement industry-standard security measures to protect your information from unauthorized access, alteration, or destruction.
       </Paragraph>
 
       <SectionTitle>4. AI Processing</SectionTitle>
