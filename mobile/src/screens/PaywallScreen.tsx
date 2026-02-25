@@ -97,8 +97,8 @@ const DEFAULT_PLANS: PlanOption[] = [
     id: "monthly",
     identifier: "$rc_monthly",
     title: "Monthly",
-    price: "$11.99",
-    subtitle: "$2.99/week",
+    price: "$9.99",
+    subtitle: "$2.49/week",
   },
   {
     id: "annual",
