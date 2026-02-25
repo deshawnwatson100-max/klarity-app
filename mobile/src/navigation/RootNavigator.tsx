@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, Animated, AppState, AppStateStatus } from "react-native";
+import { View, Text, Animated } from "react-native";
 import { createStackNavigator, TransitionSpecs, CardStyleInterpolators } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { InputScreen } from "../screens/InputScreen";
@@ -143,38 +143,10 @@ export function RootNavigator() {
   }, [isHydrated, hasPaidSubscription]);
 
 
-  // When app goes to background/inactive, mark that the paywall-on-resume flag should
-  // be reset on next launch (full close resets it). When app returns to foreground
-  // mid-session, show the paywall if they had been blocked before.
-  // On a full app close + reopen, requiresPaywallOnResume is cleared so users
-  // can browse freely and only hit the paywall when generating a response.
+  // Clear the resume flag on mount in case it was left over from a previous session.
   useEffect(() => {
     if (!isHydrated) return;
-
-    // Clear the resume flag on mount — this handles the "full app close + reopen" case.
-    // The flag persists to AsyncStorage, so we reset it here on every fresh launch.
     setRequiresPaywallOnResume(false);
-
-    const handleAppStateChange = (nextState: AppStateStatus) => {
-      const paid = useSubscriptionStore.getState().hasPaidSubscription;
-      const inTrial = isInTrialWindow(useSubscriptionStore.getState().trialStartedAt);
-
-      // If user doesn't have access, flag for paywall on resume (background switch, not full close)
-      if (!paid && !inTrial) {
-        if (nextState === "background" || nextState === "inactive") {
-          setRequiresPaywallOnResume(true);
-        } else if (nextState === "active") {
-          const shouldShow = useSubscriptionStore.getState().requiresPaywallOnResume;
-          if (shouldShow) {
-            setRequiresPaywallOnResume(false);
-            setShowHardPaywall(true);
-          }
-        }
-      }
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-    return () => subscription.remove();
   }, [isHydrated]);
 
   // Handle splash screen animations
