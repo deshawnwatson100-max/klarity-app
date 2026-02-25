@@ -37,7 +37,10 @@
         "NSCameraUsageDescription": "Klarity uses the camera to capture photos inside the app before you publish them.",
         "NSMicrophoneUsageDescription": "Klarity uses the microphone to record audio tracks that the app attaches to your creations.",
         "NSPhotoLibraryUsageDescription": "Klarity accesses your photo library to let you choose media that appears in the app.",
-        "NSSpeechRecognitionUsageDescription": "Klarity uses speech recognition to turn your spoken words into text inside the app."
+        "NSSpeechRecognitionUsageDescription": "Klarity uses speech recognition to turn your spoken words into text inside the app.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
