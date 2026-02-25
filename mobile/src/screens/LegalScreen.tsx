@@ -184,7 +184,7 @@ function TermsContent() {
 
       <SectionTitle>10. Contact Us</SectionTitle>
       <Paragraph>
-        If you have any questions about these Terms of Service, please contact us through the app or via our support channels.
+        If you have any questions about these Terms of Service, please contact us at klarityaiapp@gmail.com.
       </Paragraph>
     </View>
   );
@@ -218,7 +218,7 @@ function PrivacyContent() {
 
       <SectionTitle>4. AI Processing</SectionTitle>
       <Paragraph>
-        Content you submit is processed by AI systems to provide analysis and suggestions. This processing may involve third-party AI services. We do not use your personal conversations to train AI models without your explicit consent.
+        Content you submit may be processed by third-party AI providers solely to provide analysis and suggestions. We do not use your personal conversations to train AI models without your explicit consent.
       </Paragraph>
 
       <SectionTitle>5. Data Retention</SectionTitle>
@@ -248,7 +248,7 @@ function PrivacyContent() {
 
       <SectionTitle>10. Contact Us</SectionTitle>
       <Paragraph>
-        If you have questions about this Privacy Policy or our data practices, please contact us through the app or via our support channels.
+        If you have questions about this Privacy Policy or our data practices, please contact us at klarityaiapp@gmail.com.
       </Paragraph>
     </View>
   );
