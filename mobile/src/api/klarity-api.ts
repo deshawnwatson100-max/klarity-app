@@ -3304,8 +3304,11 @@ The title should follow this format:
 "[Actual Name] - [Brief topic]"
 
 CRITICAL RULES FOR NAMES:
-- If you see a screenshot of a text/messaging app, EXTRACT THE ACTUAL CONTACT NAME shown at the top of the conversation (e.g., "Sarah", "Mike", "Dad", "Jessica 💕")
-- Include any emojis that appear next to the contact name in the screenshot
+- If you see a screenshot of a text/messaging app, EXTRACT THE EXACT CONTACT NAME shown at the top of the conversation
+- Copy the name CHARACTER-FOR-CHARACTER exactly as it appears — do NOT add, change, or invent any characters
+- EMOJIS: ONLY include an emoji if it is LITERALLY part of the displayed contact name text (e.g., "Jessica 💕" where the 💕 is visible as part of the name). If the name shows only letters (e.g., "Charlynne"), output ONLY "Charlynne" — NO emojis added
+- iOS shows a ">" chevron/arrow next to contact names — this is NOT an emoji and NOT part of the name, ignore it completely
+- NEVER invent, guess, or add emojis that are not literally visible as part of the contact name text
 - NEVER use generic terms like "Partner", "Friend", "Coworker" if you can see an actual name
 - Only use relationship labels if no name is visible
 
@@ -3316,10 +3319,10 @@ CRITICAL RULES FOR TOPIC:
 - Use natural, conversational language (e.g., "feeling distant", "making plans", "late night fight", "moving in together")
 
 Examples of GOOD titles (when name is visible):
-- "Sarah - Weekend plans"
-- "Mike 💪 - Gym schedule"
-- "Dad - Car repair"
-- "Jessica 💕 - Date night"
+- "Sarah - Weekend plans" (name has no emoji, so output none)
+- "Mike 💪 - Gym schedule" (💪 is literally part of the name text)
+- "Dad - Car repair" (name has no emoji, so output none)
+- "Jessica 💕 - Date night" (💕 is literally part of the name text)
 
 Examples of titles when NO name visible:
 - "They - Rent discussion"
@@ -4122,7 +4125,7 @@ export async function generateStructuredAnalysisFromImage(
 JSON only. No markdown. No preamble.
 
 {
-  "contactName": "Name of the other person as shown EXACTLY in the screenshot header/title. CRITICAL: Copy the name character-for-character including all emojis as they literally appear — do NOT substitute, guess, or use similar-looking emoji variants. Example: if the header shows 'Dané❤️💖' output exactly 'Dané❤️💖', never 'Dané❤️‍🩹💖'. If unclear, use null.",
+  "contactName": "Name of the other person as shown EXACTLY in the screenshot header/title. CRITICAL: Copy the name character-for-character including all emojis as they literally appear — do NOT substitute, guess, add, or use similar-looking emoji variants. ONLY include an emoji if it is literally part of the displayed name text. If the name shows only letters (e.g., 'Charlynne'), output ONLY those letters — never add emojis. iOS shows a '>' chevron arrow next to contact names — this is a UI navigation element, NOT part of the name, ignore it completely. Example: if the header shows 'Dané❤️💖' output exactly 'Dané❤️💖', never 'Dané❤️‍🩹💖'. If unclear, use null.",
 
   "surfaceMeaning": "One sentence. What's literally being said. No fluff.",
 
