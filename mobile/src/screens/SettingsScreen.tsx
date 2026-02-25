@@ -28,6 +28,8 @@ import { useLoopsStore } from "../state/loopsStore";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useOnboardingStore } from "../state/onboardingStore";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useAuthStore } from "../state/authStore";
+import { getBackendUrl } from "../lib/config";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 
@@ -470,6 +472,27 @@ export function SettingsScreen() {
   // Onboarding store
   const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
+  // Auth store
+  const authUser = useAuthStore((s) => s.user);
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const sessionToken = useAuthStore((s) => s.sessionToken);
+
+  const handleSignOut = async () => {
+    try {
+      const base = getBackendUrl();
+      await fetch(`${base}/api/auth/sign-out`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+        },
+      });
+    } catch {
+      // Ignore network errors — clear session regardless
+    }
+    clearSession();
+  };
+
   // Modal states
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
@@ -815,6 +838,24 @@ export function SettingsScreen() {
             resetOnboarding();
           }}
           isLast
+        />
+
+        {/* Account Section */}
+        <SectionHeader title="Account" icon="person-circle-outline" />
+        {authUser?.email && (
+          <SettingsRow
+            label="Signed in as"
+            value={authUser.email}
+            isFirst
+          />
+        )}
+        <SettingsRow
+          label="Sign Out"
+          onPress={handleSignOut}
+          isFirst={!authUser?.email}
+          isLast
+          destructive
+          rightElement={<Ionicons name="log-out-outline" size={20} color={colors.error || "#EF4444"} />}
         />
 
         {/* Legal Section */}

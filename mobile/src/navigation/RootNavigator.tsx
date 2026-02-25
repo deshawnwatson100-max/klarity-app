@@ -15,7 +15,9 @@ import { SettingsScreen } from "../screens/SettingsScreen";
 import { PaywallScreen } from "../screens/PaywallScreen";
 import { HardPaywallScreen } from "../screens/HardPaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { AuthScreen } from "../screens/AuthScreen";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { useAuthStore } from "../state/authStore";
 import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";import { hasEntitlement, isRevenueCatEnabled } from "../lib/revenuecatClient";
 import { scheduleTrialEndReminder } from "../lib/notifications";
 import { useTheme } from "../theme";
@@ -54,8 +56,11 @@ export function RootNavigator() {
   const setRequiresPaywallOnResume = useSubscriptionStore((s) => s.setRequiresPaywallOnResume);
   const setShowHardPaywall = useSubscriptionStore((s) => s.setShowHardPaywall);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const contentFadeAnim = useRef(new Animated.Value(0)).current;
@@ -64,13 +69,30 @@ export function RootNavigator() {
   useEffect(() => {
     let onboardingHydrated = useOnboardingStore.persist.hasHydrated();
     let subscriptionHydrated = useSubscriptionStore.persist.hasHydrated();
+    let authHydrated = useAuthStore.persist.hasHydrated();
 
     const checkHydration = () => {
-      if (!onboardingHydrated || !subscriptionHydrated) return;
+      if (!onboardingHydrated || !subscriptionHydrated || !authHydrated) return;
 
       const completed = useOnboardingStore.getState().hasCompletedOnboarding;
-      setShowOnboarding(!completed);
-      setShowSplash(completed);
+      const authenticated = useAuthStore.getState().isAuthenticated;
+
+      if (!completed) {
+        // New user: show onboarding first, then auth
+        setShowOnboarding(true);
+        setShowAuth(false);
+        setShowSplash(false);
+      } else if (!authenticated) {
+        // Returning user who has signed out or never signed in
+        setShowOnboarding(false);
+        setShowAuth(true);
+        setShowSplash(false);
+      } else {
+        // Fully returning logged-in user
+        setShowOnboarding(false);
+        setShowAuth(false);
+        setShowSplash(true);
+      }
       setIsHydrated(true);
 
       // If onboarding is already completed but trial hasn't started,
@@ -97,12 +119,18 @@ export function RootNavigator() {
       checkHydration();
     });
 
-    // If both already hydrated
+    const unsubscribeAuth = useAuthStore.persist.onFinishHydration(() => {
+      authHydrated = true;
+      checkHydration();
+    });
+
+    // If all already hydrated
     checkHydration();
 
     return () => {
       unsubscribeOnboarding();
       unsubscribeSubscription();
+      unsubscribeAuth();
     };
   }, []);
 
@@ -189,7 +217,13 @@ export function RootNavigator() {
       const trialStartedAt = useSubscriptionStore.getState().trialStartedAt ?? Date.now();
       scheduleTrialEndReminder(trialStartedAt);
       setShowOnboarding(false);
+      setShowAuth(true); // After onboarding, ask user to create account
     }} />;
+  }
+
+  // Auth gate: show login/signup if not authenticated
+  if (showAuth || !isAuthenticated) {
+    return <AuthScreen onComplete={() => setShowAuth(false)} />;
   }
 
   // Hard paywall: trial expired and no paid subscription

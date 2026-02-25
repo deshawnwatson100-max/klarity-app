@@ -22,6 +22,8 @@ export const auth = betterAuth({
     "http://localhost:8081",
     "http://127.0.0.1:8081",
     "http://localhost:3000",
+    "https://preview-ufqgorsmzkin.dev.vibecode.run",
+    "https://myicezgkxjoy.dev.vibecode.run",
   ],
 });
 
