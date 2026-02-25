@@ -60,7 +60,7 @@ interface SettingsState {
 
 const defaultSettings = {
   // Appearance
-  theme: "dark" as ThemeMode,
+  theme: "system" as ThemeMode,
   fontSize: "medium" as FontSize,
   hapticsEnabled: true,
 
