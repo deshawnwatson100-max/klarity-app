@@ -850,7 +850,7 @@ Respond with valid JSON only containing:
 - emotionalImpact: 1-2 sentences on how this conversation might feel (for invalid: can be empty or general)
 - suggestedResponse: A natural reply FROM THE USER TO THE OTHER PERSON (for invalid: empty string - do NOT generate a reply for invalid input)
 - guidanceNote: How the OTHER PERSON will FEEL when they receive this reply from the user (for invalid: empty string). Examples: "This will make them feel heard", "This might ease the tension", "This shows you care about their perspective"
-- acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic]."). CRITICAL: Copy any names and emojis EXACTLY as they appear in the image — do not substitute, modify, or guess at emojis. If the name shows ❤️💖 use exactly ❤️💖, not ❤️‍🩹 or any other variant.
+- acknowledgment: A kind, brief acknowledgment of what you see in the image (e.g., "I can see this conversation with [person/context]." or "I see someone reached out about [topic]."). CRITICAL: Copy any names EXACTLY as they appear in the image — character-for-character. ONLY include an emoji after the name if that emoji is LITERALLY part of the displayed contact name text in the screenshot. If the name shows only letters (e.g., "Charlynne"), write ONLY "Charlynne" — NEVER add, invent, or guess emojis that are not visibly part of the name. The iOS ">" chevron next to a name is a navigation arrow, NOT an emoji — ignore it completely.
 - vibes: An array of 3-4 vibe options that naturally fit the detected conversation tone. Each vibe is an object with:
   - emoji: A single emoji that represents the vibe (e.g., "😊", "😏", "😌", "🧊")
   - label: 2-3 words describing the vibe (e.g., "Warm & playful", "Light tease", "Calm & composed", "Cool & distant")
@@ -3217,7 +3217,7 @@ Examples of good grounded perspectives:
 • "This is less about the specific message and more about ${possessive} default mode under pressure."
 
 ## CONTACT NAME
-${contactName ? `The person's name is "${contactName}". Use their name naturally throughout (e.g., "${contactName}'s response", "how ${contactName} operates"). Copy the name EXACTLY as given, including any emojis — do not substitute or modify them.` : "Use natural pronouns (they/them/their)."}
+${contactName ? `The person's name is "${contactName}". Use their name naturally throughout (e.g., "${contactName}'s response", "how ${contactName} operates"). Use the name EXACTLY as given — do NOT add, change, or invent any emojis or characters not already in the name.` : "Use natural pronouns (they/them/their)."}
 
 ## STYLE RULES
 - Keep it conversational and short

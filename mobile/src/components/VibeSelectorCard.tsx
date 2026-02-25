@@ -53,12 +53,13 @@ export function VibeSelectorCard({
   // Theme-aware colors
   const acknowledgmentColor = isDark ? "#9CA3AF" : "#6B7280";
   const questionColor = isDark ? "#E5E7EB" : "#111827";
-  const iconBgSelected = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
-  const iconBgUnselected = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
-  const iconColorSelected = isDark ? "#fff" : "#111827";
-  const iconColorUnselected = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.35)";
-  const labelSelected = isDark ? "#FFFFFF" : "#111827";
-  const labelUnselected = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)";
+  // Unselected: black (dark) / dark gray (light). Selected: blue always.
+  const iconBgSelected = "rgba(59,130,246,0.2)";
+  const iconBgUnselected = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const iconColorSelected = "#3B82F6";
+  const iconColorUnselected = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)";
+  const labelSelected = "#3B82F6";
+  const labelUnselected = isDark ? "rgba(255,255,255,0.35)" : "#111827";
 
   return (
     <Animated.View
