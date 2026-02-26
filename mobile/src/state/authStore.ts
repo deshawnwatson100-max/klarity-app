@@ -6,6 +6,8 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  profileImage?: string | null;
+  profileColor?: string | null;
 }
 
 interface AuthState {
@@ -15,6 +17,7 @@ interface AuthState {
 
   setSession: (user: AuthUser, token: string) => void;
   clearSession: () => void;
+  updateProfile: (updates: Partial<Pick<AuthUser, "name" | "profileImage" | "profileColor">>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,6 +32,11 @@ export const useAuthStore = create<AuthState>()(
 
       clearSession: () =>
         set({ user: null, sessionToken: null, isAuthenticated: false }),
+
+      updateProfile: (updates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        })),
     }),
     {
       name: "klarity-auth-storage",

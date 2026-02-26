@@ -8,7 +8,12 @@ import {
   Linking,
   Share,
   Modal,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -476,6 +481,87 @@ export function SettingsScreen() {
   const authUser = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
   const sessionToken = useAuthStore((s) => s.sessionToken);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
+
+  // Profile state
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const PROFILE_COLORS = [
+    "#E57373", "#F06292", "#BA68C8", "#9575CD",
+    "#7986CB", "#64B5F6", "#4DD0E1", "#4DB6AC",
+    "#81C784", "#AED581", "#FFD54F", "#FFB74D",
+    "#FF8A65", "#A1887F", "#90A4AE", "#78909C",
+  ];
+
+  const currentColor = authUser?.profileColor || "#7986CB";
+  const currentImage = authUser?.profileImage;
+  const displayName = authUser?.name || authUser?.email || "User";
+  const initials = displayName
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const saveProfile = useCallback(async (patch: { profileImage?: string | null; profileColor?: string }) => {
+    if (!sessionToken) return;
+    const base = getBackendUrl();
+    try {
+      const body: Record<string, string> = {};
+      if (patch.profileImage !== undefined) body.image = patch.profileImage ?? "";
+      if (patch.profileColor) body.profileColor = patch.profileColor;
+      await fetch(`${base}/api/user/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      // silent — local state already updated optimistically
+    }
+  }, [sessionToken]);
+
+  const handlePickImage = useCallback(async () => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Please allow access to your photo library in Settings.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const imageData = asset.base64
+      ? `data:image/jpeg;base64,${asset.base64}`
+      : asset.uri;
+    setProfileSaving(true);
+    updateProfile({ profileImage: imageData });
+    await saveProfile({ profileImage: imageData });
+    setProfileSaving(false);
+    if (hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [hapticsEnabled, updateProfile, saveProfile]);
+
+  const handleRemoveImage = useCallback(async () => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    updateProfile({ profileImage: null });
+    await saveProfile({ profileImage: null });
+  }, [hapticsEnabled, updateProfile, saveProfile]);
+
+  const handleSelectColor = useCallback(async (color: string) => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    updateProfile({ profileColor: color });
+    await saveProfile({ profileColor: color });
+    setShowColorPicker(false);
+  }, [hapticsEnabled, updateProfile, saveProfile]);
 
   const handleSignOut = async () => {
     try {
@@ -685,6 +771,155 @@ export function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       >
+        {/* Profile Card */}
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginTop: 20,
+            marginBottom: 4,
+            borderRadius: 20,
+            backgroundColor: isDark ? "#111115" : "#F2F2F7",
+            padding: 20,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+            {/* Avatar */}
+            <Pressable onPress={handlePickImage} style={{ position: "relative" }}>
+              {currentImage ? (
+                <Image
+                  source={{ uri: currentImage }}
+                  style={{ width: 72, height: 72, borderRadius: 36 }}
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: currentColor,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 26, fontWeight: "700", color: "#FFFFFF" }}>
+                    {initials}
+                  </Text>
+                </View>
+              )}
+              {/* Camera badge */}
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1.5,
+                  borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                }}
+              >
+                {profileSaving ? (
+                  <ActivityIndicator size="small" color={colors.textSecondary} />
+                ) : (
+                  <Ionicons name="camera" size={12} color={colors.textSecondary} />
+                )}
+              </View>
+            </Pressable>
+
+            {/* Name + email */}
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 17, fontWeight: "600", color: colors.textPrimary, marginBottom: 2 }}>
+                {displayName}
+              </Text>
+              {authUser?.email && (
+                <Text style={{ fontSize: 13, color: colors.textTertiary }} numberOfLines={1}>
+                  {authUser.email}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* Action buttons */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+            <TouchableOpacity
+              onPress={handlePickImage}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderWidth: 1,
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              }}
+            >
+              <Ionicons name="image-outline" size={16} color={colors.textSecondary} />
+              <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textSecondary }}>
+                {currentImage ? "Change Photo" : "Add Photo"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowColorPicker(true);
+              }}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderWidth: 1,
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              }}
+            >
+              <View
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  backgroundColor: currentColor,
+                }}
+              />
+              <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textSecondary }}>
+                Color
+              </Text>
+            </TouchableOpacity>
+
+            {currentImage && (
+              <TouchableOpacity
+                onPress={handleRemoveImage}
+                activeOpacity={0.8}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                  borderWidth: 1,
+                  borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="trash-outline" size={16} color={colors.error || "#EF4444"} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* Subscription Banner */}
         <Pressable
           onPress={() => {
@@ -908,6 +1143,83 @@ export function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Color Picker Modal */}
+      <Modal
+        visible={showColorPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowColorPicker(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+          onPress={() => setShowColorPicker(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View
+              style={{
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                padding: 24,
+                paddingBottom: 40,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <Text style={{ fontSize: 18, fontWeight: "600", color: colors.textPrimary }}>
+                  Profile Color
+                </Text>
+                <TouchableOpacity onPress={() => setShowColorPicker(false)}>
+                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Preview */}
+              <View style={{ alignItems: "center", marginBottom: 24 }}>
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: currentColor,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 26, fontWeight: "700", color: "#FFFFFF" }}>
+                    {initials}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Color grid */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+                {PROFILE_COLORS.map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    onPress={() => handleSelectColor(color)}
+                    activeOpacity={0.85}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: color,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: currentColor === color ? 3 : 0,
+                      borderColor: isDark ? "#FFFFFF" : "#000000",
+                    }}
+                  >
+                    {currentColor === color && (
+                      <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Theme Selection Modal */}
       <SelectionModal

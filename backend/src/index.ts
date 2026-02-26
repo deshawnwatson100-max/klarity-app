@@ -6,6 +6,7 @@ import { sampleRouter } from "./routes/sample";
 import { chatRouter } from "./routes/chat";
 import { transcribeRouter } from "./routes/transcribe";
 import { conversationsRouter } from "./routes/v1/conversations";
+import { userRouter } from "./routes/user";
 import { auth } from "./lib/auth";
 import { logger } from "hono/logger";
 
@@ -43,6 +44,9 @@ app.route("/api/transcribe", transcribeRouter);
 
 // V1 API routes
 app.route("/v1/conversations", conversationsRouter);
+
+// User profile routes
+app.route("/api/user", userRouter);
 
 const port = Number(process.env.PORT) || 3000;
 
