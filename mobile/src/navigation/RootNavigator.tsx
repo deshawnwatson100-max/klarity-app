@@ -12,6 +12,7 @@ import { StyleDetailScreen } from "../screens/StyleDetailScreen";
 import { EmotionScanScreen } from "../screens/EmotionScanScreen";
 import { LegalScreen } from "../screens/LegalScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { ArchivedChatsScreen } from "../screens/ArchivedChatsScreen";
 import { PaywallScreen } from "../screens/PaywallScreen";
 import { HardPaywallScreen } from "../screens/HardPaywallScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
@@ -42,6 +43,7 @@ export type RootStackParamList = {
     tab?: "terms" | "privacy";
   };
   SettingsScreen: undefined;
+  ArchivedChatsScreen: undefined;
   PaywallScreen: undefined;
 };
 
@@ -515,6 +517,18 @@ export function RootNavigator() {
       <Stack.Screen
         name="SettingsScreen"
         component={SettingsScreen}
+        options={{
+          gestureEnabled: true,
+          gestureDirection: "horizontal",
+          cardStyle: { backgroundColor: "#0A0A0B" },
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+
+      {/* Archived Chats Screen */}
+      <Stack.Screen
+        name="ArchivedChatsScreen"
+        component={ArchivedChatsScreen}
         options={{
           gestureEnabled: true,
           gestureDirection: "horizontal",

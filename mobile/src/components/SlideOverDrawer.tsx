@@ -664,7 +664,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
 
   // State
   const [isRendered, setIsRendered] = useState(false);
-  const [showAccountPage, setShowAccountPage] = useState(false);
 
   // Pending delete state - set by onSelect, Alert shown via useEffect (outside onSelect)
   const [pendingDeleteLoopId, setPendingDeleteLoopId] = useState<string | null>(null);
@@ -763,15 +762,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // Animation config
   const ANIMATION_DURATION = 300;
   const EASING_BEZIER = Easing.bezier(0.32, 0.72, 0, 1);
-
-  // Reset account page when drawer closes
-  useEffect(() => {
-    if (!visible) {
-      setTimeout(() => {
-        setShowAccountPage(false);
-      }, 300);
-    }
-  }, [visible]);
 
   // Handle visibility changes
   useEffect(() => {
@@ -1061,364 +1051,109 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           transform: [{ translateX: drawerTranslateX }],
         }}
       >
-        {showAccountPage ? (
-          // Account Page with Archives
-          <View style={{ flex: 1 }}>
-            <View
+        <>
+          {renderHeader()}
+          <View style={{ flex: 1 }}>{renderContent()}</View>
+          {/* Bottom Buttons */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: insets.bottom + 16,
+              backgroundColor: colors.drawerBackground,
+              gap: 8,
+            }}
+          >
+            {/* Archived Chats Button */}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                closeDrawer();
+                setTimeout(() => {
+                  navigation.navigate("ArchivedChatsScreen");
+                }, 100);
+              }}
+              className="active:opacity-70"
               style={{
-                paddingTop: insets.top + 16,
-                paddingBottom: 16,
-                paddingHorizontal: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 11,
+                paddingHorizontal: 14,
+                backgroundColor: colors.surfaceElevated,
+                borderRadius: 12,
               }}
             >
-              <View className="flex-row items-center">
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowAccountPage(false);
+              <Ionicons name="archive-outline" size={16} color={colors.textSecondary} />
+              <Text
+                className="text-sm font-medium ml-2.5 flex-1"
+                style={{ color: colors.drawerItemText }}
+              >
+                Archived Chats
+              </Text>
+              {archivedLoops.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.buttonBackground,
+                    borderRadius: 10,
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    marginRight: 6,
                   }}
-                  className="active:opacity-60"
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
-                </Pressable>
-                <Text className="text-xl font-semibold ml-3" style={{ color: colors.textPrimary }}>
-                  Account
-                </Text>
-              </View>
-            </View>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: colors.textSecondary }}>
+                    {archivedLoops.length}
+                  </Text>
+                </View>
+              )}
+              <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+            </Pressable>
 
-            <View className="px-5 py-4">
+            {/* Account & Settings Button */}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                closeDrawer();
+                setTimeout(() => {
+                  navigation.navigate("SettingsScreen");
+                }, 100);
+              }}
+              className="active:opacity-70"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 11,
+                paddingHorizontal: 14,
+                backgroundColor: colors.surfaceElevated,
+                borderRadius: 12,
+              }}
+            >
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 16,
-                  paddingHorizontal: 16,
-                  backgroundColor: colors.surfaceElevated,
-                  borderRadius: 16,
-                }}
-              >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: colors.buttonBackground,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="person" size={24} color={colors.textSecondary} />
-                </View>
-                <View style={{ marginLeft: 14, flex: 1 }}>
-                  <Text
-                    className="text-base font-semibold"
-                    style={{ color: colors.drawerItemText }}
-                  >
-                    Personal
-                  </Text>
-                  <Text className="text-sm" style={{ color: colors.textTertiary }}>
-                    Free Plan
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Settings & Legal Links */}
-            <View className="px-5 py-2">
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  closeDrawer();
-                  setTimeout(() => {
-                    navigation.navigate("SettingsScreen");
-                  }, 100);
-                }}
-                className="active:opacity-60"
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  backgroundColor: colors.surface,
-                  borderRadius: 12,
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name="settings-outline" size={20} color={colors.textTertiary} />
-                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
-                  Settings
-                </Text>
-                <View style={{ flex: 1 }} />
-                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  closeDrawer();
-                  setTimeout(() => {
-                    navigation.navigate("LegalScreen", { tab: "terms" });
-                  }, 100);
-                }}
-                className="active:opacity-60"
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  backgroundColor: colors.surface,
-                  borderRadius: 12,
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name="document-text-outline" size={20} color={colors.textTertiary} />
-                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
-                  Terms of Service
-                </Text>
-                <View style={{ flex: 1 }} />
-                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  closeDrawer();
-                  setTimeout(() => {
-                    navigation.navigate("LegalScreen", { tab: "privacy" });
-                  }, 100);
-                }}
-                className="active:opacity-60"
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  backgroundColor: "rgba(255, 255, 255, 0.03)",
-                  borderRadius: 12,
-                }}
-              >
-                <Ionicons name="shield-checkmark-outline" size={20} color="#6B7280" />
-                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
-                  Privacy Policy
-                </Text>
-                <View style={{ flex: 1 }} />
-                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
-              </Pressable>
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <View className="px-5 pb-2 pt-4">
-                <View className="flex-row items-center">
-                  <Ionicons name="archive-outline" size={16} color="#6B7280" />
-                  <Text className="text-xs font-medium uppercase tracking-wider ml-2" style={{ color: "#6B7280" }}>
-                    Archived Chats ({archivedLoops.length})
-                  </Text>
-                </View>
-              </View>
-
-              {archivedLoops.length === 0 ? (
-                <View className="flex-1 items-center justify-center px-8 py-12">
-                  <View
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 32,
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Ionicons name="archive-outline" size={28} color="#4B5563" />
-                  </View>
-                  <Text
-                    className="text-sm font-medium text-center"
-                    style={{ color: "#9CA3AF" }}
-                  >
-                    No archived chats
-                  </Text>
-                  <Text
-                    className="text-xs mt-2 text-center"
-                    style={{ color: "#6B7280" }}
-                  >
-                    Swipe left on a chat to archive it
-                  </Text>
-                </View>
-              ) : (
-                <ScrollView
-                  className="flex-1"
-                  showsVerticalScrollIndicator={false}
-                >
-                  {archivedLoops.map((loop) => (
-                    <View key={loop.id} style={{ position: "relative", overflow: "hidden" }}>
-                      <View
-                        style={{
-                          position: "absolute",
-                          right: 0,
-                          top: 0,
-                          bottom: 0,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingRight: 4,
-                        }}
-                      >
-                        <Pressable
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            unarchiveLoop(loop.id);
-                          }}
-                          style={{
-                            width: ACTION_BUTTON_WIDTH,
-                            height: "100%",
-                            backgroundColor: "#10B981",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: 8,
-                            marginRight: 4,
-                          }}
-                        >
-                          <Ionicons name="arrow-undo-outline" size={20} color="#FFF" />
-                          <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Restore</Text>
-                        </Pressable>
-                        <Pressable
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            deleteArchivedLoop(loop.id);
-                          }}
-                          style={{
-                            width: ACTION_BUTTON_WIDTH,
-                            height: "100%",
-                            backgroundColor: "#EF4444",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Ionicons name="trash-outline" size={20} color="#FFF" />
-                          <Text style={{ color: "#FFF", fontSize: 10, marginTop: 2 }}>Delete</Text>
-                        </Pressable>
-                      </View>
-
-                      <Pressable
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          unarchiveLoop(loop.id);
-                          setShowAccountPage(false);
-                        }}
-                        className="active:opacity-60"
-                        style={({ pressed }) => ({
-                          backgroundColor: pressed ? "rgba(255, 255, 255, 0.05)" : "#171717",
-                        })}
-                      >
-                        <View className="px-5 py-3">
-                          <View className="flex-row items-center justify-between mb-1">
-                            <Text
-                              className="text-sm font-medium flex-1 mr-2"
-                              style={{ color: "#9CA3AF" }}
-                              numberOfLines={1}
-                            >
-                              {loop.title}
-                            </Text>
-                            <View className="flex-row items-center">
-                              <Pressable
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  unarchiveLoop(loop.id);
-                                }}
-                                className="active:opacity-60 mr-3"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                              >
-                                <Ionicons name="arrow-undo-outline" size={18} color="#10B981" />
-                              </Pressable>
-                              <Pressable
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                  deleteArchivedLoop(loop.id);
-                                }}
-                                className="active:opacity-60"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                              >
-                                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                              </Pressable>
-                            </View>
-                          </View>
-                          <Text
-                            className="text-xs"
-                            style={{ color: "#6B7280" }}
-                            numberOfLines={2}
-                          >
-                            {loop.messages.filter((m) => m.role === "user")[0]?.content?.substring(0, 60) || "No messages"}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    </View>
-                  ))}
-                  <View style={{ height: insets.bottom + 40 }} />
-                </ScrollView>
-              )}
-            </View>
-          </View>
-        ) : (
-          <>
-            {renderHeader()}
-            <View style={{ flex: 1 }}>{renderContent()}</View>
-            {/* Combined Account & Settings Button */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                paddingHorizontal: 20,
-                paddingTop: 16,
-                paddingBottom: insets.bottom + 20,
-                backgroundColor: colors.drawerBackground,
-              }}
-            >
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowAccountPage(true);
-                }}
-                className="active:opacity-70"
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  backgroundColor: colors.surfaceElevated,
+                  width: 28,
+                  height: 28,
                   borderRadius: 14,
+                  backgroundColor: colors.buttonBackground,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {/* Avatar */}
-                <View
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 17,
-                    backgroundColor: colors.buttonBackground,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="person" size={16} color={colors.textSecondary} />
-                </View>
-                {/* Label */}
-                <Text
-                  className="text-sm font-medium ml-3 flex-1"
-                  style={{ color: colors.drawerItemText }}
-                  numberOfLines={1}
-                >
-                  Account & Settings
-                </Text>
-                {/* Settings icon on right */}
-                <Ionicons name="settings-outline" size={16} color={colors.textTertiary} />
-              </Pressable>
-            </View>
-          </>
-        )}
+                <Ionicons name="person" size={14} color={colors.textSecondary} />
+              </View>
+              <Text
+                className="text-sm font-medium ml-2.5 flex-1"
+                style={{ color: colors.drawerItemText }}
+                numberOfLines={1}
+              >
+                Account & Settings
+              </Text>
+              <Ionicons name="settings-outline" size={15} color={colors.textTertiary} />
+            </Pressable>
+          </View>
+        </>
       </Animated.View>
     </View>
   );
