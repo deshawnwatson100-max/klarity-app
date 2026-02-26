@@ -1125,8 +1125,35 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
               </View>
             </View>
 
-            {/* Legal Links */}
+            {/* Settings & Legal Links */}
             <View className="px-5 py-2">
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  closeDrawer();
+                  setTimeout(() => {
+                    navigation.navigate("SettingsScreen");
+                  }, 100);
+                }}
+                className="active:opacity-60"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="settings-outline" size={20} color={colors.textTertiary} />
+                <Text className="text-sm ml-3" style={{ color: "#9CA3AF" }}>
+                  Settings
+                </Text>
+                <View style={{ flex: 1 }} />
+                <Ionicons name="chevron-forward" size={16} color="#4B5563" />
+              </Pressable>
+
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1337,7 +1364,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           <>
             {renderHeader()}
             <View style={{ flex: 1 }}>{renderContent()}</View>
-            {/* Settings and Account Row */}
+            {/* Combined Account & Settings Button */}
             <View
               style={{
                 position: "absolute",
@@ -1350,85 +1377,45 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 backgroundColor: colors.drawerBackground,
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                }}
-              >
-              {/* Settings Button */}
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  closeDrawer();
-                  setTimeout(() => {
-                    navigation.navigate("SettingsScreen");
-                  }, 100);
-                }}
-                className="active:opacity-70"
-                style={{
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 12,
-                  backgroundColor: colors.surfaceElevated,
-                  borderRadius: 12,
-                }}
-              >
-                <Ionicons name="settings-outline" size={18} color={colors.textSecondary} />
-                <Text
-                  className="text-sm font-medium ml-2"
-                  style={{ color: colors.textSecondary }}
-                >
-                  Settings
-                </Text>
-              </Pressable>
-
-              {/* Account Button */}
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowAccountPage(true);
                 }}
                 className="active:opacity-70"
-                style={{ flex: 1 }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  backgroundColor: colors.surfaceElevated,
+                  borderRadius: 14,
+                }}
               >
+                {/* Avatar */}
                 <View
                   style={{
-                    flexDirection: "row",
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    backgroundColor: colors.buttonBackground,
                     alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 12,
-                    backgroundColor: colors.surfaceElevated,
-                    borderRadius: 12,
+                    justifyContent: "center",
                   }}
                 >
-                  <View
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: colors.buttonBackground,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="person" size={14} color={colors.textSecondary} />
-                  </View>
-                  <View style={{ marginLeft: 8, flex: 1 }}>
-                    <Text
-                      className="text-xs font-medium"
-                      style={{ color: colors.drawerItemText }}
-                      numberOfLines={1}
-                    >
-                      Account
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                  <Ionicons name="person" size={16} color={colors.textSecondary} />
                 </View>
+                {/* Label */}
+                <Text
+                  className="text-sm font-medium ml-3 flex-1"
+                  style={{ color: colors.drawerItemText }}
+                  numberOfLines={1}
+                >
+                  Account & Settings
+                </Text>
+                {/* Settings icon on right */}
+                <Ionicons name="settings-outline" size={16} color={colors.textTertiary} />
               </Pressable>
-              </View>
             </View>
           </>
         )}
