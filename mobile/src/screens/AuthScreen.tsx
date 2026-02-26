@@ -208,76 +208,6 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
             </Text>
           </View>
 
-          {/* Social Sign-In Buttons */}
-          <View style={{ gap: 12, marginBottom: 28 }}>
-            {/* Apple Sign-In */}
-            {Platform.OS === "ios" && (
-              <TouchableOpacity
-                onPress={() => handleSocialSignIn("apple")}
-                disabled={!!socialLoading || loading}
-                activeOpacity={0.85}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 14,
-                  paddingVertical: 15,
-                  gap: 10,
-                  opacity: socialLoading === "apple" ? 0.7 : 1,
-                }}
-              >
-                {socialLoading === "apple" ? (
-                  <ActivityIndicator color="#050608" size="small" />
-                ) : (
-                  <>
-                    <Ionicons name="logo-apple" size={20} color="#050608" />
-                    <Text style={{ fontSize: 16, fontWeight: "600", color: "#050608", letterSpacing: 0.1 }}>
-                      Continue with Apple
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-
-            {/* Google Sign-In */}
-            <TouchableOpacity
-              onPress={() => handleSocialSignIn("google")}
-              disabled={!!socialLoading || loading}
-              activeOpacity={0.85}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#111115",
-                borderRadius: 14,
-                paddingVertical: 15,
-                gap: 10,
-                borderWidth: 1,
-                borderColor: "#1F1F27",
-                opacity: socialLoading === "google" ? 0.7 : 1,
-              }}
-            >
-              {socialLoading === "google" ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <GoogleIcon />
-                  <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF", letterSpacing: 0.1 }}>
-                    Continue with Google
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Divider */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 28, gap: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
-            <Text style={{ fontSize: 13, color: "#4B5563", letterSpacing: 0.3 }}>OR</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
-          </View>
-
           {/* Email / Password Form */}
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
 
@@ -422,6 +352,76 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
             </View>
 
           </Animated.View>
+
+          {/* Divider */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 28, marginBottom: 24, gap: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
+            <Text style={{ fontSize: 13, color: "#4B5563", letterSpacing: 0.3 }}>OR</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
+          </View>
+
+          {/* Social Sign-In Buttons */}
+          <View style={{ gap: 12, marginBottom: 8 }}>
+            {/* Apple Sign-In */}
+            {Platform.OS === "ios" && (
+              <TouchableOpacity
+                onPress={() => handleSocialSignIn("apple")}
+                disabled={!!socialLoading || loading}
+                activeOpacity={0.85}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                  gap: 10,
+                  opacity: socialLoading === "apple" ? 0.7 : 1,
+                }}
+              >
+                {socialLoading === "apple" ? (
+                  <ActivityIndicator color="#050608" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-apple" size={20} color="#050608" />
+                    <Text style={{ fontSize: 16, fontWeight: "600", color: "#050608", letterSpacing: 0.1 }}>
+                      Continue with Apple
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Google Sign-In */}
+            <TouchableOpacity
+              onPress={() => handleSocialSignIn("google")}
+              disabled={!!socialLoading || loading}
+              activeOpacity={0.85}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#111115",
+                borderRadius: 14,
+                paddingVertical: 15,
+                gap: 10,
+                borderWidth: 1,
+                borderColor: "#1F1F27",
+                opacity: socialLoading === "google" ? 0.7 : 1,
+              }}
+            >
+              {socialLoading === "google" ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF", letterSpacing: 0.1 }}>
+                    Continue with Google
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
