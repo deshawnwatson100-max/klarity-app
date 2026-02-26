@@ -2,20 +2,26 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const appleClientId = process.env.APPLE_CLIENT_ID;
+const appleClientSecret = process.env.APPLE_CLIENT_SECRET;
+const appleAppBundleIdentifier = process.env.APPLE_APP_BUNDLE_IDENTIFIER;
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // MVP: skip email verification
+    requireEmailVerification: false,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // Update session every 24 hours
+    updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 5, // 5 minutes cache
+      maxAge: 60 * 5,
     },
   },
   trustedOrigins: [
@@ -24,7 +30,39 @@ export const auth = betterAuth({
     "http://localhost:3000",
     "https://preview-ufqgorsmzkin.dev.vibecode.run",
     "https://myicezgkxjoy.dev.vibecode.run",
+    "vibecode://*",
+    "exp://*",
+    "https://*.dev.vibecode.run",
+    "https://*.vibecode.run",
+    "https://*.vibecodeapp.com",
   ],
+  ...(googleClientId && googleClientSecret
+    ? {
+        socialProviders: {
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+          ...(appleClientId && appleClientSecret && appleAppBundleIdentifier
+            ? {
+                apple: {
+                  clientId: appleClientId,
+                  clientSecret: appleClientSecret,
+                  appBundleIdentifier: appleAppBundleIdentifier,
+                },
+              }
+            : {}),
+        },
+      }
+    : {}),
+  advanced: {
+    disableCSRFCheck: true,
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      partitioned: true,
+    },
+  },
 });
 
 // Export type for session

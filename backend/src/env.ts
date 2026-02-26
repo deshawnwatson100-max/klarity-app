@@ -20,6 +20,15 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
   BETTER_AUTH_URL: z.string().optional().default("http://localhost:3000"),
 
+  // Google OAuth (optional — social sign-in)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // Apple OAuth (optional — social sign-in)
+  APPLE_CLIENT_ID: z.string().optional(),
+  APPLE_CLIENT_SECRET: z.string().optional(),
+  APPLE_APP_BUNDLE_IDENTIFIER: z.string().optional(),
+
   // Database
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 });

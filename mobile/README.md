@@ -14,7 +14,7 @@ Klarity AI is a ChatGPT-style conversation app built with React Native and Expo,
 - **Past loops system** - Save and switch between conversation sessions
 - **Light and Dark themes** - Adaptive theming with system preference support
 - **Premium splash screen** with glowing Klarity AI logo
-- **Secure PIN authentication** - 4-digit PIN to protect your conversations
+- **Secure authentication** - Email/password, Google, and Apple sign-in
 - **3-Day Free Trial** with hard paywall gate on expiry
 
 ## Subscription & Trial System

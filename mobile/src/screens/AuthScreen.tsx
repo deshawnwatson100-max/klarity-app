@@ -13,8 +13,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { useAuthStore } from "../state/authStore";
 import { getBackendUrl } from "../lib/config";
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface AuthScreenProps {
   onComplete: () => void;
@@ -29,6 +32,7 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"google" | "apple" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -77,7 +81,6 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
         if (!res.ok) {
           throw new Error(data?.message || "Sign up failed. Try again.");
         }
-        // After signup, sign in to get a session token
         const loginRes = await fetch(`${base}/api/auth/sign-in/email`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -113,6 +116,58 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
       shake();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSocialSignIn = async (provider: "google" | "apple") => {
+    setError(null);
+    setSocialLoading(provider);
+    try {
+      const base = getBackendUrl();
+      // Build the OAuth URL — Better Auth redirects to the provider
+      const callbackUrl = `${base}/api/auth/callback/${provider}`;
+      const oauthUrl = `${base}/api/auth/sign-in/social?provider=${provider}&callbackURL=${encodeURIComponent(callbackUrl)}&disableRedirect=true`;
+
+      const result = await WebBrowser.openAuthSessionAsync(oauthUrl, "vibecode://");
+
+      if (result.type !== "success") {
+        // User cancelled or something went wrong
+        return;
+      }
+
+      // The redirect URL contains a token — extract it or fetch the session
+      // Better Auth returns the session via cookie; we fetch /api/auth/session to get user info
+      const sessionRes = await fetch(`${base}/api/auth/session`, {
+        credentials: "include",
+        headers: {
+          Cookie: "",
+        },
+      });
+
+      if (!sessionRes.ok) {
+        throw new Error("Failed to retrieve session after sign-in.");
+      }
+
+      const sessionData = await sessionRes.json();
+      if (!sessionData?.session || !sessionData?.user) {
+        throw new Error("Sign-in did not complete. Please try again.");
+      }
+
+      setSession(
+        {
+          id: sessionData.user.id ?? "",
+          email: sessionData.user.email ?? "",
+          name: sessionData.user.name ?? "",
+        },
+        sessionData.session.token ?? ""
+      );
+
+      onComplete();
+    } catch (err: any) {
+      setError(err.message || "Social sign-in failed. Please try again.");
+      shake();
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -153,7 +208,77 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
             </Text>
           </View>
 
-          {/* Form */}
+          {/* Social Sign-In Buttons */}
+          <View style={{ gap: 12, marginBottom: 28 }}>
+            {/* Apple Sign-In */}
+            {Platform.OS === "ios" && (
+              <TouchableOpacity
+                onPress={() => handleSocialSignIn("apple")}
+                disabled={!!socialLoading || loading}
+                activeOpacity={0.85}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                  gap: 10,
+                  opacity: socialLoading === "apple" ? 0.7 : 1,
+                }}
+              >
+                {socialLoading === "apple" ? (
+                  <ActivityIndicator color="#050608" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-apple" size={20} color="#050608" />
+                    <Text style={{ fontSize: 16, fontWeight: "600", color: "#050608", letterSpacing: 0.1 }}>
+                      Continue with Apple
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Google Sign-In */}
+            <TouchableOpacity
+              onPress={() => handleSocialSignIn("google")}
+              disabled={!!socialLoading || loading}
+              activeOpacity={0.85}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#111115",
+                borderRadius: 14,
+                paddingVertical: 15,
+                gap: 10,
+                borderWidth: 1,
+                borderColor: "#1F1F27",
+                opacity: socialLoading === "google" ? 0.7 : 1,
+              }}
+            >
+              {socialLoading === "google" ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF", letterSpacing: 0.1 }}>
+                    Continue with Google
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 28, gap: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
+            <Text style={{ fontSize: 13, color: "#4B5563", letterSpacing: 0.3 }}>OR</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#1F1F27" }} />
+          </View>
+
+          {/* Email / Password Form */}
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
 
             {mode === "signup" && (
@@ -264,7 +389,7 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
             {/* Submit */}
             <TouchableOpacity
               onPress={handleSubmit}
-              disabled={loading}
+              disabled={loading || !!socialLoading}
               activeOpacity={0.85}
               style={{
                 backgroundColor: "#FFFFFF",
@@ -300,5 +425,30 @@ export function AuthScreen({ onComplete }: AuthScreenProps) {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+// Inline Google "G" SVG icon
+function GoogleIcon() {
+  const { Svg, Path } = require("react-native-svg");
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24">
+      <Path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <Path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <Path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+        fill="#FBBC05"
+      />
+      <Path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </Svg>
   );
 }
