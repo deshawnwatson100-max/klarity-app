@@ -687,21 +687,13 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
 
   // Settings store - individual selectors to avoid infinite loop
   const theme = useSettingsStore((s) => s.theme);
-  const fontSize = useSettingsStore((s) => s.fontSize);
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const pushNotificationsEnabled = useSettingsStore((s) => s.pushNotificationsEnabled);
   const dailyRemindersEnabled = useSettingsStore((s) => s.dailyRemindersEnabled);
-  const responseStyle = useSettingsStore((s) => s.responseStyle);
-  const responseLength = useSettingsStore((s) => s.responseLength);
-  const autoSuggestReplies = useSettingsStore((s) => s.autoSuggestReplies);
   const setTheme = useSettingsStore((s) => s.setTheme);
-  const setFontSize = useSettingsStore((s) => s.setFontSize);
   const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
   const setPushNotificationsEnabled = useSettingsStore((s) => s.setPushNotificationsEnabled);
   const setDailyRemindersEnabled = useSettingsStore((s) => s.setDailyRemindersEnabled);
-  const setResponseStyle = useSettingsStore((s) => s.setResponseStyle);
-  const setResponseLength = useSettingsStore((s) => s.setResponseLength);
-  const setAutoSuggestReplies = useSettingsStore((s) => s.setAutoSuggestReplies);
 
   // Auth store
   const authUser = useAuthStore((s) => s.user);
@@ -1131,55 +1123,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
               >
-                {/* Profile card */}
-                <View
-                  style={{
-                    backgroundColor: colors.surfaceElevated,
-                    borderRadius: 16,
-                    marginHorizontal: 16,
-                    marginBottom: 4,
-                    marginTop: 4,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 14,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 22,
-                      backgroundColor: colors.buttonBackground,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="person" size={22} color={colors.textSecondary} />
-                  </View>
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text
-                      className="text-base font-semibold"
-                      style={{ color: colors.textPrimary }}
-                      numberOfLines={1}
-                    >
-                      {authUser?.name || authUser?.email || "Personal"}
-                    </Text>
-                    {authUser?.email ? (
-                      <Text
-                        className="text-xs mt-0.5"
-                        style={{ color: colors.textTertiary }}
-                        numberOfLines={1}
-                      >
-                        {authUser.email}
-                      </Text>
-                    ) : (
-                      <Text className="text-xs mt-0.5" style={{ color: colors.textTertiary }}>
-                        Free Plan
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
                 {/* APPEARANCE section */}
                 <Text
                   style={{
@@ -1227,35 +1170,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       </Text>
                       <Text style={{ fontSize: 14, color: colors.textTertiary, marginRight: 6 }}>
                         {theme.charAt(0).toUpperCase() + theme.slice(1)}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                    </View>
-                  </Pressable>
-
-                  {/* Font size row */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      const next = fontSize === "small" ? "medium" : fontSize === "medium" ? "large" : "small";
-                      setFontSize(next);
-                    }}
-                    className="active:opacity-60"
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 16,
-                        paddingVertical: 14,
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: colors.divider,
-                      }}
-                    >
-                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
-                        Font Size
-                      </Text>
-                      <Text style={{ fontSize: 14, color: colors.textTertiary, marginRight: 6 }}>
-                        {fontSize.charAt(0).toUpperCase() + fontSize.slice(1)}
                       </Text>
                       <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
                     </View>
@@ -1349,111 +1263,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       value={dailyRemindersEnabled}
                       onValueChange={(val) => {
                         setDailyRemindersEnabled(val);
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }}
-                      trackColor={{ false: colors.switchTrackOff, true: colors.switchTrackOn }}
-                      thumbColor={colors.switchThumb}
-                    />
-                  </View>
-                </View>
-
-                {/* AI PREFERENCES section */}
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "600",
-                    color: colors.textTertiary,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    marginHorizontal: 20,
-                    marginTop: 20,
-                    marginBottom: 6,
-                  }}
-                >
-                  AI Preferences
-                </Text>
-                <View
-                  style={{
-                    backgroundColor: colors.surface,
-                    marginHorizontal: 16,
-                    borderRadius: 12,
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Response style */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      const next = responseStyle === "balanced" ? "casual" : responseStyle === "casual" ? "formal" : "balanced";
-                      setResponseStyle(next);
-                    }}
-                    className="active:opacity-60"
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 16,
-                        paddingVertical: 14,
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: colors.divider,
-                      }}
-                    >
-                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
-                        Response Style
-                      </Text>
-                      <Text style={{ fontSize: 14, color: colors.textTertiary, marginRight: 6 }}>
-                        {responseStyle.charAt(0).toUpperCase() + responseStyle.slice(1)}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                    </View>
-                  </Pressable>
-
-                  {/* Response length */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      const next = responseLength === "balanced" ? "concise" : responseLength === "concise" ? "detailed" : "balanced";
-                      setResponseLength(next);
-                    }}
-                    className="active:opacity-60"
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 16,
-                        paddingVertical: 14,
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: colors.divider,
-                      }}
-                    >
-                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
-                        Response Length
-                      </Text>
-                      <Text style={{ fontSize: 14, color: colors.textTertiary, marginRight: 6 }}>
-                        {responseLength.charAt(0).toUpperCase() + responseLength.slice(1)}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                    </View>
-                  </Pressable>
-
-                  {/* Auto-suggest replies toggle */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 16,
-                      paddingVertical: 11,
-                    }}
-                  >
-                    <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
-                      Auto-Suggest Replies
-                    </Text>
-                    <Switch
-                      value={autoSuggestReplies}
-                      onValueChange={(val) => {
-                        setAutoSuggestReplies(val);
                         if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       }}
                       trackColor={{ false: colors.switchTrackOff, true: colors.switchTrackOn }}
@@ -1695,6 +1504,53 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 >
                   Account
                 </Text>
+                {/* Profile card */}
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceElevated,
+                    borderRadius: 14,
+                    marginHorizontal: 16,
+                    marginBottom: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    padding: 14,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: colors.buttonBackground,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name="person" size={22} color={colors.textSecondary} />
+                  </View>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text
+                      className="text-base font-semibold"
+                      style={{ color: colors.textPrimary }}
+                      numberOfLines={1}
+                    >
+                      {authUser?.name || authUser?.email || "Personal"}
+                    </Text>
+                    {authUser?.email ? (
+                      <Text
+                        className="text-xs mt-0.5"
+                        style={{ color: colors.textTertiary }}
+                        numberOfLines={1}
+                      >
+                        {authUser.email}
+                      </Text>
+                    ) : (
+                      <Text className="text-xs mt-0.5" style={{ color: colors.textTertiary }}>
+                        Free Plan
+                      </Text>
+                    )}
+                  </View>
+                </View>
                 <View
                   style={{
                     backgroundColor: colors.surface,
