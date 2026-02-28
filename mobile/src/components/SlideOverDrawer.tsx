@@ -775,11 +775,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
       base64: true,
+      allowsMultipleSelection: false,
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
