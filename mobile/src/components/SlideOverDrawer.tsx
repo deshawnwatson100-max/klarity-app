@@ -1752,33 +1752,44 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   style={{
                     backgroundColor: colors.surface,
                     marginHorizontal: 16,
-                    borderRadius: 12,
+                    borderRadius: 14,
                     overflow: "hidden",
                   }}
                 >
+                  {/* Email row */}
                   {authUser?.email && (
                     <View
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                         borderBottomWidth: 0.5,
                         borderBottomColor: colors.divider,
                       }}
                     >
-                      <Text style={{ flex: 1, fontSize: 15, color: colors.textSecondary }}>
-                        Signed in as
+                      <View
+                        style={{
+                          width: 30,
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        <Ionicons name="mail-outline" size={19} color={colors.textSecondary} />
+                      </View>
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
+                        Email
                       </Text>
                       <Text
-                        style={{ fontSize: 13, color: colors.textTertiary, maxWidth: "55%" }}
+                        style={{ fontSize: 13, color: colors.textTertiary, maxWidth: "45%" }}
                         numberOfLines={1}
                       >
                         {authUser.email}
                       </Text>
                     </View>
                   )}
-                  {/* Manage subscription row */}
+
+                  {/* Subscription row */}
                   <Pressable
                     onPress={() => {
                       if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1792,19 +1803,31 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                         flexDirection: "row",
                         alignItems: "center",
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                         borderBottomWidth: 0.5,
                         borderBottomColor: colors.divider,
                       }}
                     >
-                      <Ionicons name="card-outline" size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
+                      <View
+                        style={{
+                          width: 30,
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        <Ionicons name="card-outline" size={19} color={colors.textSecondary} />
+                      </View>
                       <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
-                        Manage subscription
+                        Subscription
                       </Text>
-                      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                      <Text style={{ fontSize: 13, color: colors.textTertiary, marginRight: 4 }}>
+                        {hasPaidSubscription ? "Pro" : inTrial ? "Trial" : "Free"}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
                     </View>
                   </Pressable>
 
+                  {/* Sign Out row */}
                   <Pressable
                     onPress={() => {
                       if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1817,13 +1840,21 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                         flexDirection: "row",
                         alignItems: "center",
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                       }}
                     >
+                      <View
+                        style={{
+                          width: 30,
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        <Ionicons name="log-out-outline" size={19} color={colors.error} />
+                      </View>
                       <Text style={{ flex: 1, fontSize: 15, fontWeight: "500", color: colors.error }}>
                         Sign Out
                       </Text>
-                      <Ionicons name="log-out-outline" size={18} color={colors.error} />
                     </View>
                   </Pressable>
                 </View>
