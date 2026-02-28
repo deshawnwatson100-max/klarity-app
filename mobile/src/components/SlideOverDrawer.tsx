@@ -1778,6 +1778,33 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       </Text>
                     </View>
                   )}
+                  {/* Manage subscription row */}
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowSettingsPanel(false);
+                      setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
+                    }}
+                    className="active:opacity-60"
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderBottomWidth: 0.5,
+                        borderBottomColor: colors.divider,
+                      }}
+                    >
+                      <Ionicons name="card-outline" size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
+                        Manage subscription
+                      </Text>
+                      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+
                   <Pressable
                     onPress={() => {
                       if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
