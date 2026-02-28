@@ -114,11 +114,10 @@ export function Header({
           {renderLeftMenu()}
           <Text
             style={{
-              fontSize: 18,
-              fontWeight: "600",
+              fontSize: 32,
+              fontWeight: "700",
               color: colors.headerText,
               marginLeft: 12,
-              letterSpacing: 0.5,
             }}
           >
             Klarity

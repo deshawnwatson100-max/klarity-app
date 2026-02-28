@@ -1037,7 +1037,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
         }}
       >
         <View className="flex-row items-center mb-4">
-          <Text className="text-xl font-semibold" style={{ color: colors.textPrimary }}>
+          <Text style={{ fontSize: 32, fontWeight: "700", color: colors.textPrimary }}>
             Klarity
           </Text>
         </View>
