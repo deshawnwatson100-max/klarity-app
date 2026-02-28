@@ -1734,26 +1734,19 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     <Pressable
                       onPress={() => {
                         if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        setHasPaidSubscription(!hasPaidSubscription);
                         setShowSettingsPanel(false);
-                        setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
+                        setTimeout(() => (navigation as any).navigate("PaywallScreen", { previewAsPro: true }), 300);
                       }}
                       style={{
                         paddingHorizontal: 10,
                         paddingVertical: 4,
                         borderRadius: 8,
-                        backgroundColor: hasPaidSubscription
-                          ? "rgba(52,199,89,0.15)"
-                          : "rgba(255,255,255,0.06)",
+                        backgroundColor: "rgba(255,255,255,0.06)",
                         marginRight: 6,
                       }}
                     >
-                      <Text style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: hasPaidSubscription ? "#34C759" : colors.textTertiary,
-                      }}>
-                        {hasPaidSubscription ? "Pro ✓" : "Preview Pro"}
+                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textTertiary }}>
+                        Preview Pro
                       </Text>
                     </Pressable>
                     <Pressable

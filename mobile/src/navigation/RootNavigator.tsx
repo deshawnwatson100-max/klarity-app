@@ -44,7 +44,7 @@ export type RootStackParamList = {
   };
   SettingsScreen: undefined;
   ArchivedChatsScreen: undefined;
-  PaywallScreen: undefined;
+  PaywallScreen: { previewAsPro?: boolean } | undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

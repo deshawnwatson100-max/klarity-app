@@ -111,12 +111,13 @@ const DEFAULT_PLANS: PlanOption[] = [
   },
 ];
 
-export function PaywallScreen({ navigation }: Props) {
+export function PaywallScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const inTrial = isInTrialWindow(trialStartedAt);
+  const previewAsPro = route.params?.previewAsPro ?? false;
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -362,7 +363,7 @@ export function PaywallScreen({ navigation }: Props) {
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
 
   // Paying user — show confirmation screen
-  if (hasPaidSubscription) {
+  if (hasPaidSubscription || previewAsPro) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <LinearGradient
