@@ -33,6 +33,7 @@ import { ThemeColors } from "../theme/colors";
 import { useAuthStore } from "../state/authStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { getBackendUrl } from "../lib/config";
+import { useSubscriptionStore, isInTrialWindow, trialDaysRemaining } from "../state/subscriptionStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -705,6 +706,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const clearSession = useAuthStore((s) => s.clearSession);
   const sessionToken = useAuthStore((s) => s.sessionToken);
   const updateProfile = useAuthStore((s) => s.updateProfile);
+
+  // Subscription state
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
+  const inTrial = isInTrialWindow(trialStartedAt);
+  const daysLeft = trialDaysRemaining(trialStartedAt);
 
   // Sign out handler
   const handleSignOut = async () => {
@@ -1890,58 +1897,77 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   backgroundColor: colors.drawerBackground,
                 }}
               >
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowSettingsPanel(true);
-                  }}
-                  className="active:opacity-70"
+              {/* Subscription status / Account button */}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowSettingsPanel(true);
+                }}
+                className="active:opacity-70"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  backgroundColor: colors.surfaceElevated,
+                  borderRadius: 14,
+                  overflow: "hidden",
+                }}
+              >
+                {/* Status indicator dot */}
+                <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 11,
-                    paddingHorizontal: 14,
-                    backgroundColor: colors.surfaceElevated,
-                    borderRadius: 12,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: hasPaidSubscription
+                      ? "#34D399"
+                      : inTrial
+                      ? "#FBBF24"
+                      : "#F87171",
+                    marginRight: 10,
+                    shadowColor: hasPaidSubscription
+                      ? "#34D399"
+                      : inTrial
+                      ? "#FBBF24"
+                      : "#F87171",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.8,
+                    shadowRadius: 4,
                   }}
-                >
-                  {/* Avatar circle */}
-                  <View
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: colors.buttonBackground,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="person" size={14} color={colors.textSecondary} />
-                  </View>
+                />
+                <View style={{ flex: 1 }}>
                   <Text
-                    className="text-sm font-medium ml-2.5 flex-1"
-                    style={{ color: colors.drawerItemText }}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: colors.drawerItemText,
+                      letterSpacing: -0.1,
+                    }}
                     numberOfLines={1}
                   >
-                    Account & Settings
+                    {hasPaidSubscription
+                      ? "Pro — Active"
+                      : inTrial
+                      ? `Free Trial — ${daysLeft} day${daysLeft !== 1 ? "s" : ""} left`
+                      : "No Active Plan"}
                   </Text>
-                  {archivedLoops.length > 0 && (
-                    <View
-                      style={{
-                        backgroundColor: colors.buttonBackground,
-                        borderRadius: 10,
-                        paddingHorizontal: 7,
-                        paddingVertical: 2,
-                        marginRight: 8,
-                      }}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: "600", color: colors.textSecondary }}>
-                        {archivedLoops.length}
-                      </Text>
-                    </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                </Pressable>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: colors.textTertiary,
+                      marginTop: 1,
+                    }}
+                  >
+                    {hasPaidSubscription
+                      ? "All features unlocked"
+                      : inTrial
+                      ? "Tap to upgrade anytime"
+                      : "Trial ended — tap to upgrade"}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+              </Pressable>
               </View>
             </>
           )}
