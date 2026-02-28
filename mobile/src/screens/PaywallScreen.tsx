@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
   Switch,
+  Linking,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -425,7 +426,7 @@ export function PaywallScreen({ navigation, route }: Props) {
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleRestore();
+              Linking.openURL("https://apps.apple.com/account/subscriptions");
             }}
             style={{
               marginTop: 32,
