@@ -710,6 +710,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
+  const setHasPaidSubscription = useSubscriptionStore((s) => s.setHasPaidSubscription);
   const inTrial = isInTrialWindow(trialStartedAt);
   const daysLeft = trialDaysRemaining(trialStartedAt);
 
@@ -1709,6 +1710,10 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setShowSettingsPanel(false);
                       setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
+                    }}
+                    onLongPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setHasPaidSubscription(!hasPaidSubscription);
                     }}
                     className="active:opacity-60"
                   >
