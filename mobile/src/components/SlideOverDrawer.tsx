@@ -1873,8 +1873,10 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  backgroundColor: colors.surfaceElevated,
+                  borderRadius: 14,
                 }}
               >
                 {/* Avatar */}
