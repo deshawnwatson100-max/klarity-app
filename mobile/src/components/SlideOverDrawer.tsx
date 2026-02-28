@@ -1913,6 +1913,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 >
                   {displayName}
                 </Text>
+                <Ionicons name="ellipsis-horizontal" size={18} color={colors.textTertiary} />
               </Pressable>
               </View>
             </>
