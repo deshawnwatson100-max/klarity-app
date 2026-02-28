@@ -1214,6 +1214,134 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
               >
+                {/* PROFILE HEADER */}
+                <View style={{ alignItems: "center", paddingTop: 8, paddingBottom: 24 }}>
+                  {/* Avatar */}
+                  <Pressable onPress={handlePickImage} style={{ position: "relative", marginBottom: 12 }}>
+                    {currentImage ? (
+                      <Image
+                        source={{ uri: currentImage }}
+                        style={{ width: 80, height: 80, borderRadius: 40 }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 40,
+                          backgroundColor: currentColor,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text style={{ fontSize: 28, fontWeight: "700", color: "#FFF" }}>
+                          {initials}
+                        </Text>
+                      </View>
+                    )}
+                    {/* Camera badge */}
+                    <View
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 1.5,
+                        borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                      }}
+                    >
+                      {profileSaving ? (
+                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                      ) : (
+                        <Ionicons name="camera" size={12} color={colors.textSecondary} />
+                      )}
+                    </View>
+                  </Pressable>
+
+                  {/* Name */}
+                  <Text style={{ fontSize: 20, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 }}>
+                    {displayName}
+                  </Text>
+                  {authUser?.email && (
+                    <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 14 }}>
+                      {authUser.email}
+                    </Text>
+                  )}
+
+                  {/* Edit profile button row */}
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={handlePickImage}
+                      activeOpacity={0.75}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 5,
+                        paddingVertical: 8,
+                        paddingHorizontal: 18,
+                        borderRadius: 20,
+                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      }}
+                    >
+                      <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
+                      <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textPrimary }}>
+                        {currentImage ? "Change Photo" : "Add Photo"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShowColorPicker(true);
+                      }}
+                      activeOpacity={0.75}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 5,
+                        paddingVertical: 8,
+                        paddingHorizontal: 18,
+                        borderRadius: 20,
+                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: currentColor,
+                        }}
+                      />
+                      <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textPrimary }}>
+                        Color
+                      </Text>
+                    </TouchableOpacity>
+
+                    {currentImage && (
+                      <TouchableOpacity
+                        onPress={handleRemoveImage}
+                        activeOpacity={0.75}
+                        style={{
+                          paddingVertical: 8,
+                          paddingHorizontal: 14,
+                          borderRadius: 20,
+                          backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={14} color={colors.error || "#EF4444"} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
                 {/* APPEARANCE section */}
                 <Text
                   style={{
@@ -1589,165 +1717,12 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
                     marginHorizontal: 20,
-                    marginTop: 20,
+                    marginTop: 4,
                     marginBottom: 6,
                   }}
                 >
                   Account
                 </Text>
-                {/* Profile card */}
-                <View
-                  style={{
-                    backgroundColor: colors.surfaceElevated,
-                    borderRadius: 14,
-                    marginHorizontal: 16,
-                    marginBottom: 8,
-                    padding: 14,
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    {/* Avatar — tap to pick photo */}
-                    <Pressable onPress={handlePickImage} style={{ position: "relative" }}>
-                      {currentImage ? (
-                        <Image
-                          source={{ uri: currentImage }}
-                          style={{ width: 52, height: 52, borderRadius: 26 }}
-                        />
-                      ) : (
-                        <View
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 26,
-                            backgroundColor: currentColor,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Text style={{ fontSize: 20, fontWeight: "700", color: "#FFF" }}>
-                            {initials}
-                          </Text>
-                        </View>
-                      )}
-                      {/* Camera badge */}
-                      <View
-                        style={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          width: 20,
-                          height: 20,
-                          borderRadius: 10,
-                          backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderWidth: 1.5,
-                          borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
-                        }}
-                      >
-                        {profileSaving ? (
-                          <ActivityIndicator size="small" color={colors.textSecondary} />
-                        ) : (
-                          <Ionicons name="camera" size={10} color={colors.textSecondary} />
-                        )}
-                      </View>
-                    </Pressable>
-
-                    {/* Name + email */}
-                    <View style={{ marginLeft: 12, flex: 1 }}>
-                      <Text
-                        style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}
-                        numberOfLines={1}
-                      >
-                        {displayName}
-                      </Text>
-                      {authUser?.email && (
-                        <Text
-                          style={{ fontSize: 12, color: colors.textTertiary, marginTop: 1 }}
-                          numberOfLines={1}
-                        >
-                          {authUser.email}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Action buttons */}
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-                    <TouchableOpacity
-                      onPress={handlePickImage}
-                      activeOpacity={0.8}
-                      style={{
-                        flex: 1,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 5,
-                        paddingVertical: 8,
-                        borderRadius: 10,
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                        borderWidth: 1,
-                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                      }}
-                    >
-                      <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
-                      <Text style={{ fontSize: 13, fontWeight: "500", color: colors.textSecondary }}>
-                        {currentImage ? "Change Photo" : "Add Photo"}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowColorPicker(true);
-                      }}
-                      activeOpacity={0.8}
-                      style={{
-                        flex: 1,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 5,
-                        paddingVertical: 8,
-                        borderRadius: 10,
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                        borderWidth: 1,
-                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: currentColor,
-                        }}
-                      />
-                      <Text style={{ fontSize: 13, fontWeight: "500", color: colors.textSecondary }}>
-                        Color
-                      </Text>
-                    </TouchableOpacity>
-
-                    {currentImage && (
-                      <TouchableOpacity
-                        onPress={handleRemoveImage}
-                        activeOpacity={0.8}
-                        style={{
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                          borderRadius: 10,
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderWidth: 1,
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Ionicons name="trash-outline" size={14} color={colors.error || "#EF4444"} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
                 <View
                   style={{
                     backgroundColor: colors.surface,
