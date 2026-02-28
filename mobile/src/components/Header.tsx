@@ -114,7 +114,7 @@ export function Header({
           {renderLeftMenu()}
           <Text
             style={{
-              fontSize: 32,
+              fontSize: 18,
               fontWeight: "700",
               color: colors.headerText,
               marginLeft: 12,
