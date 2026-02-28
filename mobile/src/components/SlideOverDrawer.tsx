@@ -1206,7 +1206,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   className="text-lg font-semibold ml-3"
                   style={{ color: colors.textPrimary }}
                 >
-                  Account & Settings
+                  Settings
                 </Text>
               </View>
 
@@ -1273,73 +1273,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     </Text>
                   )}
 
-                  {/* Edit profile button row */}
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TouchableOpacity
-                      onPress={handlePickImage}
-                      activeOpacity={0.75}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                        paddingVertical: 8,
-                        paddingHorizontal: 18,
-                        borderRadius: 20,
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      }}
-                    >
-                      <Ionicons name="image-outline" size={14} color={colors.textSecondary} />
-                      <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textPrimary }}>
-                        {currentImage ? "Change Photo" : "Add Photo"}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowColorPicker(true);
-                      }}
-                      activeOpacity={0.75}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                        paddingVertical: 8,
-                        paddingHorizontal: 18,
-                        borderRadius: 20,
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: currentColor,
-                        }}
-                      />
-                      <Text style={{ fontSize: 14, fontWeight: "500", color: colors.textPrimary }}>
-                        Color
-                      </Text>
-                    </TouchableOpacity>
-
-                    {currentImage && (
-                      <TouchableOpacity
-                        onPress={handleRemoveImage}
-                        activeOpacity={0.75}
-                        style={{
-                          paddingVertical: 8,
-                          paddingHorizontal: 14,
-                          borderRadius: 20,
-                          backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Ionicons name="trash-outline" size={14} color={colors.error || "#EF4444"} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
                 </View>
 
                 {/* APPEARANCE section */}
