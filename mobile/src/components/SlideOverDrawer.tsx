@@ -1863,7 +1863,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   backgroundColor: colors.drawerBackground,
                 }}
               >
-              {/* Subscription status / Account button */}
+              {/* Account button — avatar + name */}
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1873,66 +1873,44 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  backgroundColor: colors.surfaceElevated,
-                  borderRadius: 14,
-                  overflow: "hidden",
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
                 }}
               >
-                {/* Status indicator dot */}
-                <View
+                {/* Avatar */}
+                {currentImage ? (
+                  <Image
+                    source={{ uri: currentImage }}
+                    style={{ width: 36, height: 36, borderRadius: 18 }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: currentColor,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF" }}>
+                      {initials}
+                    </Text>
+                  </View>
+                )}
+                <Text
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: hasPaidSubscription
-                      ? "#34D399"
-                      : inTrial
-                      ? "#FBBF24"
-                      : "#F87171",
-                    marginRight: 10,
-                    shadowColor: hasPaidSubscription
-                      ? "#34D399"
-                      : inTrial
-                      ? "#FBBF24"
-                      : "#F87171",
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.8,
-                    shadowRadius: 4,
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: colors.textPrimary,
+                    marginLeft: 10,
+                    flex: 1,
                   }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: colors.drawerItemText,
-                      letterSpacing: -0.1,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {hasPaidSubscription
-                      ? "Pro — Active"
-                      : inTrial
-                      ? `Free Trial — ${daysLeft} day${daysLeft !== 1 ? "s" : ""} left`
-                      : "No Active Plan"}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: colors.textTertiary,
-                      marginTop: 1,
-                    }}
-                  >
-                    {hasPaidSubscription
-                      ? "All features unlocked"
-                      : inTrial
-                      ? "Tap to upgrade anytime"
-                      : "Trial ended — tap to upgrade"}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                  numberOfLines={1}
+                >
+                  {displayName}
+                </Text>
               </Pressable>
               </View>
             </>
