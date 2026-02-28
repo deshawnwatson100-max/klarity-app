@@ -27,6 +27,7 @@ import {
 } from "../lib/revenuecatClient";
 import {
   useSubscriptionStore,
+  isInTrialWindow,
 } from "../state/subscriptionStore";
 import {
   requestNotificationPermissions,
@@ -113,6 +114,9 @@ const DEFAULT_PLANS: PlanOption[] = [
 export function PaywallScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const inTrial = isInTrialWindow(trialStartedAt);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -356,6 +360,88 @@ export function PaywallScreen({ navigation }: Props) {
   };
 
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
+
+  // Paying user — show confirmation screen
+  if (hasPaidSubscription) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <LinearGradient
+          colors={isDark ? ["#050608", "#0A0A0C", "#050608"] : ["#FFFFFF", "#F8F9FA", "#FFFFFF"]}
+          locations={[0, 0.5, 1]}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+        {/* Close */}
+        <Pressable
+          onPress={handleClose}
+          style={{ position: "absolute", top: insets.top + 12, right: 16, zIndex: 10, padding: 8 }}
+        >
+          <View
+            style={{
+              width: 32, height: 32, borderRadius: 16,
+              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+              alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
+          </View>
+        </Pressable>
+
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
+          {/* Badge */}
+          <View
+            style={{
+              width: 80, height: 80, borderRadius: 40,
+              backgroundColor: isDark ? "rgba(52,211,153,0.15)" : "rgba(52,199,89,0.12)",
+              alignItems: "center", justifyContent: "center",
+              marginBottom: 24,
+            }}
+          >
+            <Ionicons name="checkmark-circle" size={44} color="#34C759" />
+          </View>
+
+          <Text style={{ fontSize: 28, fontWeight: "700", color: colors.textPrimary, marginBottom: 10, textAlign: "center" }}>
+            Klarity Pro
+          </Text>
+          <Text style={{ fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24, marginBottom: 32 }}>
+            You have full access to all Klarity Pro features. Thanks for subscribing.
+          </Text>
+
+          {/* Feature list */}
+          {FEATURES.map((feature) => (
+            <View
+              key={feature.title}
+              style={{
+                flexDirection: "row", alignItems: "center",
+                width: "100%", marginBottom: 12,
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={18} color="#34C759" style={{ marginRight: 10 }} />
+              <Text style={{ fontSize: 15, color: colors.textPrimary, flex: 1 }}>{feature.title}</Text>
+            </View>
+          ))}
+
+          {/* Manage subscription */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleRestore();
+            }}
+            style={{
+              marginTop: 32,
+              paddingVertical: 14,
+              paddingHorizontal: 32,
+              borderRadius: 14,
+              backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+            }}
+          >
+            <Text style={{ fontSize: 15, color: colors.textSecondary, fontWeight: "500" }}>
+              Manage Subscription
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
