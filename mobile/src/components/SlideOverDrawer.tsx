@@ -1712,9 +1712,13 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
                     }}
                     onLongPress={() => {
-                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      setHasPaidSubscription(!hasPaidSubscription);
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                      const next = !hasPaidSubscription;
+                      setHasPaidSubscription(next);
+                      setShowSettingsPanel(false);
+                      setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
                     }}
+                    delayLongPress={600}
                     className="active:opacity-60"
                   >
                     <View
@@ -1740,7 +1744,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                         Subscription
                       </Text>
                       <Text style={{ fontSize: 13, color: colors.textTertiary, marginRight: 4 }}>
-                        {hasPaidSubscription ? "Pro" : inTrial ? "Trial" : "Free"}
+                        {hasPaidSubscription ? "Pro ✓" : inTrial ? "Trial" : "Free"}
                       </Text>
                       <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
                     </View>
