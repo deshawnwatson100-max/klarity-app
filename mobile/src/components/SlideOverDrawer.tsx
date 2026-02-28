@@ -710,7 +710,6 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
-  const setHasPaidSubscription = useSubscriptionStore((s) => s.setHasPaidSubscription);
   const inTrial = isInTrialWindow(trialStartedAt);
   const daysLeft = trialDaysRemaining(trialStartedAt);
 
@@ -1705,60 +1704,36 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   )}
 
                   {/* Subscription row */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 16,
-                      paddingVertical: 13,
-                      borderBottomWidth: 0.5,
-                      borderBottomColor: colors.divider,
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowSettingsPanel(false);
+                      setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
                     }}
+                    className="active:opacity-60"
                   >
-                    <View style={{ width: 30, alignItems: "center", marginRight: 12 }}>
-                      <Ionicons name="card-outline" size={19} color={colors.textSecondary} />
-                    </View>
-                    <Pressable
-                      onPress={() => {
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowSettingsPanel(false);
-                        setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 13,
+                        borderBottomWidth: 0.5,
+                        borderBottomColor: colors.divider,
                       }}
-                      style={{ flex: 1 }}
                     >
-                      <Text style={{ fontSize: 15, color: colors.textPrimary }}>
+                      <View style={{ width: 30, alignItems: "center", marginRight: 12 }}>
+                        <Ionicons name="card-outline" size={19} color={colors.textSecondary} />
+                      </View>
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
                         Subscription
                       </Text>
-                    </Pressable>
-                    {/* Pro preview toggle */}
-                    <Pressable
-                      onPress={() => {
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        setShowSettingsPanel(false);
-                        setTimeout(() => (navigation as any).navigate("PaywallScreen", { previewAsPro: true }), 300);
-                      }}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                        marginRight: 6,
-                      }}
-                    >
-                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textTertiary }}>
-                        Preview Pro
+                      <Text style={{ fontSize: 13, color: colors.textTertiary, marginRight: 4 }}>
+                        {hasPaidSubscription ? "Pro" : inTrial ? "Trial" : "Free"}
                       </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowSettingsPanel(false);
-                        setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
-                      }}
-                    >
                       <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
-                    </Pressable>
-                  </View>
+                    </View>
+                  </Pressable>
 
                   {/* Sign Out row */}
                   <Pressable
