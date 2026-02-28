@@ -779,14 +779,18 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
-      base64: true,
       allowsMultipleSelection: false,
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const imageData = asset.base64
+    // Use the cropped uri — it reflects the crop the user made in the edit step.
+    // Fall back to base64 only if uri is unavailable.
+    const imageData = asset.uri
+      ? asset.uri
+      : asset.base64
       ? `data:image/jpeg;base64,${asset.base64}`
-      : asset.uri;
+      : null;
+    if (!imageData) return;
     setProfileSaving(true);
     updateProfile({ profileImage: imageData });
     await saveProfile({ profileImage: imageData });
@@ -1223,6 +1227,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       <Image
                         source={{ uri: currentImage }}
                         style={{ width: 80, height: 80, borderRadius: 40 }}
+                        resizeMode="cover"
                       />
                     ) : (
                       <View
@@ -1885,6 +1890,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                   <Image
                     source={{ uri: currentImage }}
                     style={{ width: 36, height: 36, borderRadius: 18 }}
+                    resizeMode="cover"
                   />
                 ) : (
                   <View
