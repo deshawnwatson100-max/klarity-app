@@ -785,8 +785,7 @@ export function HardPaywallScreen() {
               paddingHorizontal: 16,
             }}
           >
-            Klarity Pro — Monthly: $9.99/month. Annual: $59.99/year ($4.99/month).{"\n"}
-            Payment charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID account settings.
+            Klarity Pro Subscription{"\n\n"}Monthly: $9.99 per month{"\n"}Annual: $59.99 per year ($4.99/month equivalent){"\n\n"}3-day free trial. Subscription automatically renews unless canceled at least 24 hours before the end of the current period.{"\n\n"}Payment will be charged to your Apple ID account at confirmation of purchase.{"\n\n"}Manage or cancel in your Apple ID account settings.
           </Text>
         </Animated.View>
       </ScrollView>
