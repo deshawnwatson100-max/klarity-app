@@ -1101,7 +1101,7 @@ export function PaywallScreen({ navigation, route }: Props) {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate("LegalScreen", { tab: "terms" });
+                Linking.openURL("https://www.notion.so/Klarity-Terms-of-Service-312419876aa5807c98a4e92ae5e91179");
               }}
             >
               <Text
@@ -1117,7 +1117,7 @@ export function PaywallScreen({ navigation, route }: Props) {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate("LegalScreen", { tab: "privacy" });
+                Linking.openURL("https://www.notion.so/Klarity-Privacy-Policy-312419876aa580e8ab13c9df40960fb3");
               }}
             >
               <Text
