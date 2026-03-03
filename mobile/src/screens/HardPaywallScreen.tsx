@@ -87,14 +87,14 @@ const DEFAULT_PLANS: PlanOption[] = [
     identifier: "$rc_monthly",
     title: "Monthly",
     price: "$9.99",
-    subtitle: "$2.49/week",
+    subtitle: "Billed monthly · $9.99/month",
   },
   {
     id: "annual",
     identifier: "$rc_annual",
     title: "Annual",
     price: "$59.99",
-    subtitle: "$4.99/mo",
+    subtitle: "Billed annually · $4.99/month",
     badge: "Best Value",
   },
 ];
@@ -252,7 +252,12 @@ export function HardPaywallScreen() {
       const updatedPlans = DEFAULT_PLANS.map((plan) => {
         const pkg = pkgMap.get(plan.identifier);
         if (pkg) {
-          return { ...plan, price: pkg.product.priceString };
+          const priceStr = pkg.product.priceString;
+          const subtitle =
+            plan.id === "monthly"
+              ? `Billed monthly · ${priceStr}/month`
+              : `Billed annually · ${priceStr}/year`;
+          return { ...plan, price: priceStr, subtitle };
         }
         return plan;
       });
@@ -674,7 +679,7 @@ export function HardPaywallScreen() {
               lineHeight: 20,
             }}
           >
-            Cancel anytime · Easy to find cancel option
+            {selectedPlan === "annual" ? "$59.99/year" : "$9.99/month"} · Cancel anytime · Easy to find cancel option
           </Text>
         </Animated.View>
 
@@ -755,7 +760,7 @@ export function HardPaywallScreen() {
                 navigation.navigate("LegalScreen", { tab: "terms" });
               }}
             >
-              <Text style={{ fontSize: 13, color: "#6B7280", textDecorationLine: "underline" }}>
+              <Text style={{ fontSize: 13, color: "#9CA3AF", textDecorationLine: "underline" }}>
                 Terms of Service
               </Text>
             </Pressable>
@@ -765,7 +770,7 @@ export function HardPaywallScreen() {
                 navigation.navigate("LegalScreen", { tab: "privacy" });
               }}
             >
-              <Text style={{ fontSize: 13, color: "#6B7280", textDecorationLine: "underline" }}>
+              <Text style={{ fontSize: 13, color: "#9CA3AF", textDecorationLine: "underline" }}>
                 Privacy Policy
               </Text>
             </Pressable>
@@ -780,8 +785,8 @@ export function HardPaywallScreen() {
               paddingHorizontal: 16,
             }}
           >
-            Subscription automatically renews unless cancelled at least 24 hours
-            before the end of the current period.
+            Klarity Pro — Monthly: $9.99/month. Annual: $59.99/year ($4.99/month).{"\n"}
+            Payment charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID account settings.
           </Text>
         </Animated.View>
       </ScrollView>

@@ -100,14 +100,14 @@ const DEFAULT_PLANS: PlanOption[] = [
     identifier: "$rc_monthly",
     title: "Monthly",
     price: "$9.99",
-    subtitle: "$2.49/week",
+    subtitle: "Billed monthly · $9.99/month",
   },
   {
     id: "annual",
     identifier: "$rc_annual",
     title: "Annual",
     price: "$59.99",
-    subtitle: "$4.99/mo",
+    subtitle: "Billed annually · $4.99/month",
     badge: "Best Value",
   },
 ];
@@ -291,9 +291,15 @@ export function PaywallScreen({ navigation, route }: Props) {
       const updatedPlans = DEFAULT_PLANS.map((plan) => {
         const pkg = pkgMap.get(plan.identifier);
         if (pkg) {
+          const priceStr = pkg.product.priceString;
+          const subtitle =
+            plan.id === "monthly"
+              ? `Billed monthly · ${priceStr}/month`
+              : `Billed annually · ${priceStr}/year`;
           return {
             ...plan,
-            price: pkg.product.priceString,
+            price: priceStr,
+            subtitle,
           };
         }
         return plan;
@@ -913,7 +919,7 @@ export function PaywallScreen({ navigation, route }: Props) {
               lineHeight: 20,
             }}
           >
-            3 days of full Klarity Pro access · Cancel anytime · Easy to find cancel option
+            3-day free trial of Klarity Pro, then {selectedPlan === "annual" ? "$59.99/year" : "$9.99/month"} · Cancel anytime
           </Text>
         </Animated.View>
 
@@ -1101,7 +1107,7 @@ export function PaywallScreen({ navigation, route }: Props) {
               <Text
                 style={{
                   fontSize: 13,
-                  color: colors.textTertiary,
+                  color: colors.textSecondary,
                   textDecorationLine: "underline",
                 }}
               >
@@ -1117,7 +1123,7 @@ export function PaywallScreen({ navigation, route }: Props) {
               <Text
                 style={{
                   fontSize: 13,
-                  color: colors.textTertiary,
+                  color: colors.textSecondary,
                   textDecorationLine: "underline",
                 }}
               >
@@ -1135,8 +1141,8 @@ export function PaywallScreen({ navigation, route }: Props) {
               paddingHorizontal: 16,
             }}
           >
-            Subscription automatically renews unless cancelled at least 24 hours
-            before the end of the current period.
+            Klarity Pro — Monthly: $9.99/month. Annual: $59.99/year ($4.99/month).{"\n"}
+            Payment charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID account settings.
           </Text>
         </Animated.View>
       </ScrollView>
