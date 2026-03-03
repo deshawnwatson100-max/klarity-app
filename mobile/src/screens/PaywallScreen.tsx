@@ -107,7 +107,7 @@ const DEFAULT_PLANS: PlanOption[] = [
     identifier: "$rc_annual",
     title: "Annual",
     price: "$59.99",
-    subtitle: "Billed annually · $4.99/month",
+    subtitle: "Billed annually · $59.99/year ($4.99/month equivalent)",
     badge: "Best Value",
   },
 ];
@@ -295,7 +295,7 @@ export function PaywallScreen({ navigation, route }: Props) {
           const subtitle =
             plan.id === "monthly"
               ? `Billed monthly · ${priceStr}/month`
-              : `Billed annually · ${priceStr}/year`;
+              : `Billed annually · ${priceStr}/year ($4.99/month equivalent)`;
           return {
             ...plan,
             price: priceStr,
