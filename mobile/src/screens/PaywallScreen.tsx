@@ -1130,6 +1130,22 @@ export function PaywallScreen({ navigation, route }: Props) {
                 Privacy Policy
               </Text>
             </Pressable>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: colors.textSecondary,
+                  textDecorationLine: "underline",
+                }}
+              >
+                EULA
+              </Text>
+            </Pressable>
           </View>
           <Text
             style={{
