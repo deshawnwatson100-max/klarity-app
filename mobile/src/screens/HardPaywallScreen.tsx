@@ -236,36 +236,71 @@ export function HardPaywallScreen() {
   };
 
   const loadOfferings = async () => {
+    console.log("[HardPaywall] loadOfferings called — isRevenueCatEnabled:", isRevenueCatEnabled());
+
     if (!isRevenueCatEnabled()) {
+      console.log("[HardPaywall] RevenueCat not enabled — platform or key missing");
       setError("Payments are not available on this platform");
       setIsLoading(false);
       return;
     }
 
     const result = await getOfferings();
-    if (result.ok && result.data.current) {
-      const pkgMap = new Map<string, PurchasesPackage>();
-      result.data.current.availablePackages.forEach((pkg: PurchasesPackage) => {
-        pkgMap.set(pkg.identifier, pkg);
-      });
-      setPackages(pkgMap);
+    console.log("[HardPaywall] getOfferings result.ok:", result.ok);
 
-      const updatedPlans = DEFAULT_PLANS.map((plan) => {
-        const pkg = pkgMap.get(plan.identifier);
-        if (pkg) {
-          const priceStr = pkg.product.priceString;
-          const subtitle =
-            plan.id === "monthly"
-              ? `Billed monthly · ${priceStr}/month`
-              : `Billed annually · ${priceStr}/year ($4.99/month equivalent)`;
-          return { ...plan, price: priceStr, subtitle };
-        }
-        return plan;
-      });
-      setPlans(updatedPlans);
-    } else {
+    if (!result.ok) {
+      console.log("[HardPaywall] getOfferings FAILED — reason:", result.reason, "error:", result.error);
       setError("Unable to load subscription options");
+      setIsLoading(false);
+      return;
     }
+
+    const offerings = result.data;
+    console.log("[HardPaywall] offerings.current exists:", !!offerings.current);
+    console.log("[HardPaywall] all offering keys:", Object.keys(offerings.all ?? {}));
+
+    if (!offerings.current) {
+      console.log("[HardPaywall] offerings.current is nil — no current offering configured in RevenueCat dashboard");
+      setError("Unable to load subscription options");
+      setIsLoading(false);
+      return;
+    }
+
+    const pkgList = offerings.current.availablePackages;
+    console.log("[HardPaywall] availablePackages count:", pkgList.length);
+    pkgList.forEach((pkg: PurchasesPackage) => {
+      console.log(
+        `[HardPaywall]   package: identifier=${pkg.identifier}, storeProductId=${pkg.product.identifier}, priceString=${pkg.product.priceString}`
+      );
+    });
+
+    const pkgMap = new Map<string, PurchasesPackage>();
+    pkgList.forEach((pkg: PurchasesPackage) => {
+      pkgMap.set(pkg.identifier, pkg);
+    });
+    setPackages(pkgMap);
+
+    if (pkgList.length === 0) {
+      console.log("[HardPaywall] WARNING: availablePackages is empty — products may not be approved in App Store Connect");
+      setError("Unable to load subscription options");
+      setIsLoading(false);
+      return;
+    }
+
+    const updatedPlans = DEFAULT_PLANS.map((plan) => {
+      const pkg = pkgMap.get(plan.identifier);
+      if (pkg) {
+        const priceStr = pkg.product.priceString;
+        const subtitle =
+          plan.id === "monthly"
+            ? `Billed monthly · ${priceStr}/month`
+            : `Billed annually · ${priceStr}/year ($4.99/month equivalent)`;
+        return { ...plan, price: priceStr, subtitle };
+      }
+      console.log(`[HardPaywall] WARNING: no package found for identifier "${plan.identifier}"`);
+      return plan;
+    });
+    setPlans(updatedPlans);
     setIsLoading(false);
   };
 
@@ -692,11 +727,30 @@ export function HardPaywallScreen() {
               padding: 12,
               borderRadius: 12,
               marginTop: 16,
+              alignItems: "center",
             }}
           >
             <Text style={{ color: "#EF4444", fontSize: 14, textAlign: "center" }}>
               {error}
             </Text>
+            <Pressable
+              onPress={() => {
+                setError(null);
+                setIsLoading(true);
+                loadOfferings();
+              }}
+              style={{
+                marginTop: 10,
+                paddingVertical: 8,
+                paddingHorizontal: 20,
+                borderRadius: 10,
+                backgroundColor: "rgba(239,68,68,0.15)",
+              }}
+            >
+              <Text style={{ color: "#EF4444", fontSize: 14, fontWeight: "600" }}>
+                Retry
+              </Text>
+            </Pressable>
           </View>
         )}
 

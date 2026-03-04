@@ -117,17 +117,20 @@ const guardRevenueCatUsage = async <T>(
 if (isEnabled && PurchasesModule) {
   try {
     const P = PurchasesModule;
-    // Set up custom log handler to suppress Test Store and expected errors
+    // Enable verbose debug logging so Xcode/TestFlight logs show full RC activity
+    P.setLogLevel(P.LOG_LEVEL.DEBUG);
+    // Forward all RC log levels to console so they appear in expo.log
     P.setLogHandler((logLevel, message) => {
-      if (logLevel === P.LOG_LEVEL.ERROR) {
-        console.log(LOG_PREFIX, message);
-      }
+      console.log(`${LOG_PREFIX}[RC-SDK][${logLevel}]`, message);
     });
     P.configure({ apiKey: apiKey! });
     console.log(`${LOG_PREFIX} SDK initialized successfully`);
+    console.log(`${LOG_PREFIX} Platform: ${Platform.OS}, apiKey prefix: ${apiKey!.substring(0, 8)}...`);
   } catch (error) {
     console.error(`${LOG_PREFIX} Failed to initialize:`, error);
   }
+} else {
+  console.log(`${LOG_PREFIX} SDK NOT initialized — isEnabled=${isEnabled}, PurchasesModule=${!!PurchasesModule}, isWeb=${isWeb}, apiKey=${apiKey ? "present" : "MISSING"}, isExpoGo=${isExpoGo}`);
 }
 
 /**
