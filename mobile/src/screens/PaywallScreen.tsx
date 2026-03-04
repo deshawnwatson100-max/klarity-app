@@ -94,17 +94,23 @@ const FEATURES = [
   },
 ];
 
+// Stable App Store product identifiers — used to find packages regardless of RC identifier names
+const STORE_PRODUCT_IDS: Record<PlanType, string> = {
+  monthly: "com.klarity.monthly",
+  annual: "com.klarity.annual",
+};
+
 const DEFAULT_PLANS: PlanOption[] = [
   {
     id: "monthly",
-    identifier: "$rc_monthly",
+    identifier: "com.klarity.monthly",
     title: "Monthly",
     price: "$9.99",
     subtitle: "Billed monthly · $9.99/month",
   },
   {
     id: "annual",
-    identifier: "$rc_annual",
+    identifier: "com.klarity.annual",
     title: "Annual",
     price: "$59.99",
     subtitle: "Billed annually · $59.99/year ($4.99/month equivalent)",
@@ -122,7 +128,7 @@ export function PaywallScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [packages, setPackages] = useState<Map<string, PurchasesPackage>>(new Map());
+  const [packages, setPackages] = useState<Map<string, PurchasesPackage>>(new Map()); // keyed by store product ID
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
@@ -295,7 +301,7 @@ export function PaywallScreen({ navigation, route }: Props) {
     console.log("[Paywall] all offering keys:", Object.keys(offerings.all ?? {}));
 
     if (!offerings.current) {
-      console.log("[Paywall] offerings.current is nil — no current offering configured in RevenueCat dashboard");
+      console.log("[Paywall] offerings.current is nil — no current offering set in RevenueCat dashboard");
       setError("Unable to load subscription options");
       setIsLoading(false);
       return;
@@ -303,17 +309,6 @@ export function PaywallScreen({ navigation, route }: Props) {
 
     const pkgList = offerings.current.availablePackages;
     console.log("[Paywall] availablePackages count:", pkgList.length);
-    pkgList.forEach((pkg: PurchasesPackage) => {
-      console.log(
-        `[Paywall]   package: identifier=${pkg.identifier}, storeProductId=${pkg.product.identifier}, priceString=${pkg.product.priceString}`
-      );
-    });
-
-    const pkgMap = new Map<string, PurchasesPackage>();
-    pkgList.forEach((pkg: PurchasesPackage) => {
-      pkgMap.set(pkg.identifier, pkg);
-    });
-    setPackages(pkgMap);
 
     if (pkgList.length === 0) {
       console.log("[Paywall] WARNING: availablePackages is empty — products may not be approved in App Store Connect");
@@ -322,9 +317,21 @@ export function PaywallScreen({ navigation, route }: Props) {
       return;
     }
 
-    // Update plans with actual prices from RevenueCat
+    // Build map keyed by store product ID (stable, matches App Store Connect)
+    const pkgMap = new Map<string, PurchasesPackage>();
+    pkgList.forEach((pkg: PurchasesPackage) => {
+      const storeId = pkg.product.identifier;
+      pkgMap.set(storeId, pkg);
+      console.log(
+        `[Paywall]   package: rcIdentifier=${pkg.identifier}, storeProductId=${storeId}, priceString=${pkg.product.priceString}`
+      );
+    });
+    setPackages(pkgMap);
+
+    // Update plans with actual prices, matching by store product ID
     const updatedPlans = DEFAULT_PLANS.map((plan) => {
-      const pkg = pkgMap.get(plan.identifier);
+      const storeId = STORE_PRODUCT_IDS[plan.id];
+      const pkg = pkgMap.get(storeId);
       if (pkg) {
         const priceStr = pkg.product.priceString;
         const subtitle =
@@ -333,7 +340,7 @@ export function PaywallScreen({ navigation, route }: Props) {
             : `Billed annually · ${priceStr}/year ($4.99/month equivalent)`;
         return { ...plan, price: priceStr, subtitle };
       }
-      console.log(`[Paywall] WARNING: no package found for identifier "${plan.identifier}"`);
+      console.log(`[Paywall] WARNING: no package found for store product ID "${storeId}". Available IDs: ${Array.from(pkgMap.keys()).join(", ")}`);
       return plan;
     });
     setPlans(updatedPlans);
@@ -349,7 +356,9 @@ export function PaywallScreen({ navigation, route }: Props) {
     const plan = plans.find((p) => p.id === selectedPlan);
     if (!plan) return;
 
-    const pkg = packages.get(plan.identifier);
+    // Look up by stable store product ID, not RC package identifier
+    const storeId = STORE_PRODUCT_IDS[plan.id];
+    const pkg = packages.get(storeId);
     if (!pkg) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
