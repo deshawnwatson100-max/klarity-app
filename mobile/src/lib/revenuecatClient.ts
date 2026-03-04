@@ -14,7 +14,7 @@
  * - iOS/Android: Fully supported via app stores (development builds only; Expo Go not supported)
  * - Web: Disabled (RevenueCat only supports native app stores)
  *
- * The module automatically selects the correct key based on __DEV__ mode.
+ * The module automatically selects the correct key based on platform: iOS always uses APPLE_KEY (TestFlight + production), Android always uses GOOGLE_KEY. Falls back to TEST_KEY only if the platform key is missing.
  *
  * This module is used to get the current customer info, offerings, and purchase packages.
  * These exported functions are found at the bottom of the file.
@@ -55,13 +55,20 @@ const testKey = process.env.EXPO_PUBLIC_VIBECODE_REVENUECAT_TEST_KEY;
 const appleKey = process.env.EXPO_PUBLIC_VIBECODE_REVENUECAT_APPLE_KEY;
 const googleKey = process.env.EXPO_PUBLIC_VIBECODE_REVENUECAT_GOOGLE_KEY;
 
-// Use __DEV__ and Platform to determine which key to use
+// Use platform-specific key first, fall back to test key only if platform key is missing
 const getApiKey = (): string | undefined => {
   if (isWeb) return undefined;
-  if (__DEV__) return testKey;
 
-  // Production: use platform-specific key
-  return Platform.OS === "ios" ? appleKey : googleKey;
+  if (Platform.OS === "ios") {
+    // Always prefer the Apple key on iOS (covers both TestFlight and production)
+    return appleKey || testKey;
+  }
+
+  if (Platform.OS === "android") {
+    return googleKey || testKey;
+  }
+
+  return testKey;
 };
 
 const apiKey = getApiKey();
