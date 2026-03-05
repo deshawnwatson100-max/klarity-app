@@ -391,6 +391,7 @@ export function PaywallScreen({ navigation, route }: Props) {
       const hasActive = Object.keys(result.data.entitlements.active || {}).length > 0;
       if (hasActive) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        useSubscriptionStore.getState().setHasPaidSubscription(true);
         navigation.goBack();
       } else {
         setError("No active subscriptions found");
