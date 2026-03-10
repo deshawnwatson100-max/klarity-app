@@ -18,6 +18,7 @@ import { DeepDecodeResultView } from "../components/DeepDecodeResultView";
 import { analyzeDeepDecode, DeepDecodeResult } from "../api/klarity-api";
 import { useLoopsStore } from "../state/loopsStore";
 import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
+import { useAuthStore } from "../state/authStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { transcribeAudio } from "../api/transcribe-audio";
 import { MessageMode, DeepDecodeResultMessage } from "../types/chat";
@@ -60,6 +61,8 @@ export function InputScreen({ navigation }: Props) {
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
   const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const addMessageToActiveLoop = useLoopsStore((s) => s.addMessageToActiveLoop);
+
+  const userName = useAuthStore((s) => s.user?.name);
 
   // Get active loop - this will re-render when activeLoopId changes
   const activeLoop = getActiveLoop();
@@ -109,7 +112,29 @@ export function InputScreen({ navigation }: Props) {
     Animated.parallel([
       Animated.timing(welcomeOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
       Animated.timing(welcomeScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
-    ]).start(() => setShowWelcome(false));
+    ]).start(() => {
+      setShowWelcome(false);
+
+      // Create a new loop and inject an AI greeting to kick off the conversation
+      createNewLoop();
+      const greetingVariants = [
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Let's decode something together — paste in a message or conversation and I'll help you understand what's really going on.`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Ready to dive in. What conversation do you want to decode today?`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Drop in a message, screenshot, or anything on your mind — let's figure it out together.`,
+      ];
+      const greeting = greetingVariants[Math.floor(Math.random() * greetingVariants.length)];
+
+      addMessageToActiveLoop({
+        id: `greeting-${Date.now()}`,
+        role: "assistant",
+        content: greeting,
+        timestamp: Date.now(),
+        mode: "understand",
+      });
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
+    });
   };
 
   const handleSend = () => {
