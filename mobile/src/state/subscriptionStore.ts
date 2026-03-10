@@ -41,7 +41,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set) => ({
       trialStartedAt: null,
-      hasPaidSubscription: false,
+      hasPaidSubscription: true,
       requiresPaywallOnResume: false,
       showHardPaywall: false,
 

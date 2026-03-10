@@ -143,30 +143,9 @@ export function RootNavigator() {
     if (!isHydrated) return;
 
     const checkSubscription = async () => {
-      // If RevenueCat is configured, check the real subscription status
-      if (isRevenueCatEnabled()) {
-        const result = await hasEntitlement("premium");
-        if (result.ok) {
-          setHasPaidSubscription(result.data);
-          if (result.data) {
-            // Paid — make sure paywall is dismissed
-            setShowHardPaywall(false);
-            return;
-          }
-        }
-      }
-
-      // Only hide the paywall if the user is in their trial window.
-      // If trial is expired, we do NOT proactively show the hard paywall here —
-      // it will appear when they try to generate a response (paywallGate).
-      const currentTrialStartedAt = useSubscriptionStore.getState().trialStartedAt;
-      const inTrial = isInTrialWindow(currentTrialStartedAt);
-      const paid = useSubscriptionStore.getState().hasPaidSubscription;
-
-      if (inTrial || paid) {
-        setShowHardPaywall(false);
-      }
-      // If !inTrial && !paid: leave showHardPaywall as-is (false on fresh open)
+      // Paywall bypassed — treat all users as paid
+      setHasPaidSubscription(true);
+      setShowHardPaywall(false);
     };
 
     checkSubscription();
