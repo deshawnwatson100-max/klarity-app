@@ -23,6 +23,8 @@ interface HeaderProps {
   showPersonContext?: boolean;
   onDeepDecodePress?: () => void;
   showDeepDecode?: boolean;
+  /** When provided, overrides the default new-loop behavior for the top-right button */
+  onNewLoopPress?: () => void;
 }
 
 /**
@@ -49,6 +51,7 @@ export function Header({
   showPersonContext = true,
   onDeepDecodePress,
   showDeepDecode = true,
+  onNewLoopPress,
 }: HeaderProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -58,6 +61,10 @@ export function Header({
 
   const handleNewLoop = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (onNewLoopPress) {
+      onNewLoopPress();
+      return;
+    }
     createNewLoop();
     navigation.navigate("InputScreen" as never);
   };

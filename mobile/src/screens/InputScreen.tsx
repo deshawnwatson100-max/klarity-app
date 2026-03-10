@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView, Keyboard } from "react-native";
+import { View, Text, Pressable, Dimensions, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView, Keyboard, Modal } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { StackScreenProps } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +37,9 @@ export function InputScreen({ navigation }: Props) {
   const [processingMessage, setProcessingMessage] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+  const [showWelcome, setShowWelcome] = useState(false);
+  const welcomeOpacity = useRef(new Animated.Value(0)).current;
+  const welcomeScale = useRef(new Animated.Value(0.92)).current;
 
   // Deep Decode state
   const [showDeepDecodeModal, setShowDeepDecodeModal] = useState(false);
@@ -92,6 +95,21 @@ export function InputScreen({ navigation }: Props) {
     // Dismiss keyboard when navigating away after first input
     Keyboard.dismiss();
     navigation.navigate("ChatScreen", { inputMode: inputModeRef.current });
+  };
+
+  const handleMenuPress = () => {
+    setShowWelcome(true);
+    Animated.parallel([
+      Animated.spring(welcomeOpacity, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+      Animated.spring(welcomeScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+    ]).start();
+  };
+
+  const handleWelcomeDismiss = () => {
+    Animated.parallel([
+      Animated.timing(welcomeOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(welcomeScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
+    ]).start(() => setShowWelcome(false));
   };
 
   const handleSend = () => {
@@ -368,6 +386,7 @@ export function InputScreen({ navigation }: Props) {
               onDeepDecodePress={() => setShowDeepDecodeModal(true)}
               showDeepDecode={true}
               showPersonContext={false}
+              onNewLoopPress={handleMenuPress}
             />
 
             {/* Center Content */}
@@ -452,6 +471,100 @@ export function InputScreen({ navigation }: Props) {
             onNewAnalysis={handleDeepDecodeNewAnalysis}
           />
         </View>
+      )}
+
+      {/* Welcome Message Overlay */}
+      {showWelcome && (
+        <Modal transparent animationType="none" onRequestClose={handleWelcomeDismiss}>
+          <Pressable
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 28 }}
+            onPress={handleWelcomeDismiss}
+          >
+            <Animated.View
+              style={{
+                opacity: welcomeOpacity,
+                transform: [{ scale: welcomeScale }],
+                backgroundColor: isDark ? "#12131A" : "#FFFFFF",
+                borderRadius: 28,
+                paddingVertical: 40,
+                paddingHorizontal: 32,
+                width: "100%",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 20 },
+                shadowOpacity: isDark ? 0.6 : 0.15,
+                shadowRadius: 40,
+                elevation: 20,
+                borderWidth: isDark ? 1 : 0,
+                borderColor: isDark ? "rgba(255,255,255,0.06)" : "transparent",
+              }}
+            >
+              <View style={{ alignItems: "center", marginBottom: 24 }}>
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: isDark ? "rgba(120, 160, 255, 0.12)" : "rgba(80, 120, 255, 0.08)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: isDark ? "rgba(120, 160, 255, 0.2)" : "rgba(80, 120, 255, 0.15)",
+                  }}
+                >
+                  <Text style={{ fontSize: 26 }}>🤍</Text>
+                </View>
+              </View>
+
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: colors.textPrimary,
+                  textAlign: "center",
+                  marginBottom: 14,
+                  letterSpacing: -0.5,
+                }}
+              >
+                Welcome back
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 32,
+                }}
+              >
+                {"I'm here for you. Whatever you're navigating right now — a tricky conversation, an unsent message, or just something on your mind — I've got you.\n\nHow can I help you today?"}
+              </Text>
+
+              <Pressable
+                onPress={handleWelcomeDismiss}
+                style={({ pressed }) => ({
+                  backgroundColor: isDark ? "rgba(120, 160, 255, 0.15)" : "rgba(80, 120, 255, 0.08)",
+                  borderRadius: 16,
+                  paddingVertical: 14,
+                  alignItems: "center",
+                  opacity: pressed ? 0.7 : 1,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(120, 160, 255, 0.25)" : "rgba(80, 120, 255, 0.2)",
+                })}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: isDark ? "rgba(160, 190, 255, 1)" : "rgba(60, 100, 220, 1)",
+                  }}
+                >
+                  {"Let's get started"}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
