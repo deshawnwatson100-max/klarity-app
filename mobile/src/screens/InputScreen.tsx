@@ -594,26 +594,6 @@ export function InputScreen({ navigation }: Props) {
                 </Text>
               </Pressable>
 
-              {/* Secondary CTA - dismiss */}
-              <Pressable
-                onPress={handleWelcomeDismiss}
-                style={({ pressed }) => ({
-                  borderRadius: 16,
-                  paddingVertical: 12,
-                  alignItems: "center",
-                  opacity: pressed ? 0.5 : 1,
-                })}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "500",
-                    color: colors.textSecondary,
-                  }}
-                >
-                  Not now
-                </Text>
-              </Pressable>
             </Animated.View>
           </Pressable>
         </Modal>
