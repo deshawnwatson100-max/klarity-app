@@ -559,32 +559,59 @@ export function InputScreen({ navigation }: Props) {
                   color: colors.textSecondary,
                   textAlign: "center",
                   lineHeight: 24,
-                  marginBottom: 32,
+                  marginBottom: 28,
                 }}
               >
-                {"I'm here for you. Whatever you're navigating right now — a tricky conversation, an unsent message, or just something on your mind — I've got you.\n\nHow can I help you today?"}
+                {"Paste a message or conversation and I'll tell you what's really going on."}
               </Text>
 
+              {/* Primary CTA - Decode */}
               <Pressable
-                onPress={handleWelcomeDismiss}
+                onPress={() => {
+                  setInputMode("understand");
+                  handleWelcomeDismiss();
+                }}
                 style={({ pressed }) => ({
-                  backgroundColor: isDark ? "rgba(120, 160, 255, 0.15)" : "rgba(80, 120, 255, 0.08)",
+                  backgroundColor: isDark ? "rgba(94, 234, 212, 0.15)" : "rgba(13, 148, 136, 0.1)",
                   borderRadius: 16,
-                  paddingVertical: 14,
+                  paddingVertical: 15,
                   alignItems: "center",
                   opacity: pressed ? 0.7 : 1,
                   borderWidth: 1,
-                  borderColor: isDark ? "rgba(120, 160, 255, 0.25)" : "rgba(80, 120, 255, 0.2)",
+                  borderColor: isDark ? "rgba(94, 234, 212, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                  marginBottom: 10,
                 })}
               >
                 <Text
                   style={{
                     fontSize: 15,
-                    fontWeight: "600",
-                    color: isDark ? "rgba(160, 190, 255, 1)" : "rgba(60, 100, 220, 1)",
+                    fontWeight: "700",
+                    color: isDark ? "#5EEAD4" : "#0D9488",
+                    letterSpacing: 0.1,
                   }}
                 >
-                  {"Let's get started"}
+                  Decode a conversation
+                </Text>
+              </Pressable>
+
+              {/* Secondary CTA - dismiss */}
+              <Pressable
+                onPress={handleWelcomeDismiss}
+                style={({ pressed }) => ({
+                  borderRadius: 16,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  opacity: pressed ? 0.5 : 1,
+                })}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "500",
+                    color: colors.textSecondary,
+                  }}
+                >
+                  Not now
                 </Text>
               </Pressable>
             </Animated.View>
