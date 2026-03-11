@@ -11,6 +11,7 @@ import {
   Pressable,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import { StackScreenProps } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,6 +60,7 @@ import { detectBehavioralSignals } from "../utils/patternDetection";
 import { usePersonContextStore } from "../state/personContextStore";
 import { useFeedbackStore } from "../state/feedbackStore";
 import { useSubscriptionStore, isInTrialWindow } from "../state/subscriptionStore";
+import { useAuthStore } from "../state/authStore";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme";
 import {
@@ -149,6 +151,11 @@ export function ChatScreen({ navigation, route }: Props) {
   const [deepDecodeResult, setDeepDecodeResult] = useState<DeepDecodeResult | null>(null);
   const [showDeepDecodeResults, setShowDeepDecodeResults] = useState(false);
 
+  // Welcome overlay for new reply loop
+  const [showWelcome, setShowWelcome] = useState(false);
+  const welcomeOpacity = useRef(new Animated.Value(0)).current;
+  const welcomeScale = useRef(new Animated.Value(0.92)).current;
+
   // Decode clarification conversation state
   const [activeClarificationId, setActiveClarificationId] = useState<string | null>(null);
   const [clarificationContext, setClarificationContext] = useState<DecodeClarificationContext | null>(null);
@@ -188,6 +195,7 @@ export function ChatScreen({ navigation, route }: Props) {
   // Use loops store
   const activeLoopId = useLoopsStore((s) => s.activeLoopId);
   const getActiveLoop = useLoopsStore((s) => s.getActiveLoop);
+  const createNewLoop = useLoopsStore((s) => s.createNewLoop);
   const addMessageToActiveLoopRaw = useLoopsStore((s) => s.addMessageToActiveLoop);
   const insertMessageAfter = useLoopsStore((s) => s.insertMessageAfter);
   const removeMessageFromActiveLoop = useLoopsStore((s) => s.removeMessageFromActiveLoop);
@@ -204,6 +212,8 @@ export function ChatScreen({ navigation, route }: Props) {
   const activePersonContext = activeLoopPersonContextId
     ? getPersonContextById(activeLoopPersonContextId)
     : null;
+
+  const userName = useAuthStore((s) => s.user?.name);
 
   // User feedback preferences for reply generation
   const getPreferenceSummary = useFeedbackStore((s) => s.getPreferenceSummary);
@@ -3369,6 +3379,47 @@ Generate a new reply that follows the user's instruction while still responding 
     animateContentOutAndNavigate("InputScreen");
   };
 
+  const handleNewLoopPress = () => {
+    setShowWelcome(true);
+    Animated.parallel([
+      Animated.spring(welcomeOpacity, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+      Animated.spring(welcomeScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+    ]).start();
+  };
+
+  const handleWelcomeDismiss = () => {
+    Animated.parallel([
+      Animated.timing(welcomeOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(welcomeScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setShowWelcome(false);
+    });
+  };
+
+  const handleWelcomeStartReply = () => {
+    Animated.parallel([
+      Animated.timing(welcomeOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(welcomeScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setShowWelcome(false);
+      createNewLoop();
+      const greetingVariants = [
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Paste in the message you want to reply to and I'll help you craft the perfect response.`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Drop in the conversation — let's figure out the best reply together.`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Share the message and I'll help you respond in a way that lands right.`,
+      ];
+      const greeting = greetingVariants[Math.floor(Math.random() * greetingVariants.length)];
+      addMessageToActiveLoopRaw({
+        id: `greeting-${Date.now()}`,
+        role: "assistant",
+        content: greeting,
+        timestamp: Date.now(),
+        mode: "rewrite",
+      });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    });
+  };
+
   // Open drawer handler for swipe gesture
   const handleOpenDrawer = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -3538,6 +3589,7 @@ Generate a new reply that follows the user's instruction while still responding 
             showPersonContext={true}
             onDeepDecodePress={() => setShowDeepDecodeModal(true)}
             showDeepDecode={true}
+            onNewLoopPress={handleNewLoopPress}
           />
 
           <Animated.View
@@ -3694,6 +3746,102 @@ Generate a new reply that follows the user's instruction while still responding 
             onNewAnalysis={handleDeepDecodeNewAnalysis}
           />
         </View>
+      )}
+
+      {/* Welcome overlay for new reply loop */}
+      {showWelcome && (
+        <Modal transparent animationType="none" onRequestClose={handleWelcomeDismiss}>
+          <Pressable
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 28 }}
+            onPress={handleWelcomeDismiss}
+          >
+            <Animated.View
+              style={{
+                opacity: welcomeOpacity,
+                transform: [{ scale: welcomeScale }],
+                backgroundColor: isDark ? "#12131A" : "#FFFFFF",
+                borderRadius: 28,
+                paddingVertical: 40,
+                paddingHorizontal: 32,
+                width: "100%",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 20 },
+                shadowOpacity: isDark ? 0.6 : 0.15,
+                shadowRadius: 40,
+                elevation: 20,
+                borderWidth: isDark ? 1 : 0,
+                borderColor: isDark ? "rgba(255,255,255,0.06)" : "transparent",
+              }}
+            >
+              <View style={{ alignItems: "center", marginBottom: 24 }}>
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: isDark ? "rgba(120, 160, 255, 0.12)" : "rgba(80, 120, 255, 0.08)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: isDark ? "rgba(120, 160, 255, 0.2)" : "rgba(80, 120, 255, 0.15)",
+                  }}
+                >
+                  <Text style={{ fontSize: 26 }}>💬</Text>
+                </View>
+              </View>
+
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: colors.textPrimary,
+                  textAlign: "center",
+                  marginBottom: 14,
+                  letterSpacing: -0.5,
+                }}
+              >
+                Start a new reply
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 28,
+                }}
+              >
+                {"Paste the message you received and I'll help you craft the perfect response."}
+              </Text>
+
+              {/* Primary CTA */}
+              <Pressable
+                onPress={handleWelcomeStartReply}
+                style={({ pressed }) => ({
+                  backgroundColor: isDark ? "rgba(120, 160, 255, 0.15)" : "rgba(80, 120, 255, 0.1)",
+                  borderRadius: 16,
+                  paddingVertical: 15,
+                  alignItems: "center",
+                  opacity: pressed ? 0.7 : 1,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(120, 160, 255, 0.3)" : "rgba(80, 120, 255, 0.25)",
+                })}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "700",
+                    color: isDark ? "#7AA0FF" : "#5078FF",
+                    letterSpacing: 0.1,
+                  }}
+                >
+                  {"Let's get started"}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
