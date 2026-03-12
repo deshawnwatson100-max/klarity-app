@@ -3400,21 +3400,8 @@ Generate a new reply that follows the user's instruction while still responding 
         Animated.spring(welcomeScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
       ]).start();
     } else {
-      // Has input or has messages - start a new loop thread directly
+      // Has input or has messages - start a new loop thread directly (no welcome card, no greeting)
       createNewLoop();
-      const greetingVariants = [
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Paste in the message you want to reply to and I'll help you craft the perfect response.`,
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Drop in the conversation — let's figure out the best reply together.`,
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Share the message and I'll help you respond in a way that lands right.`,
-      ];
-      const greeting = greetingVariants[Math.floor(Math.random() * greetingVariants.length)];
-      addMessageToActiveLoopRaw({
-        id: `greeting-${Date.now()}`,
-        role: "assistant",
-        content: greeting,
-        timestamp: Date.now(),
-        mode: "rewrite",
-      });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
@@ -3429,25 +3416,12 @@ Generate a new reply that follows the user's instruction while still responding 
   };
 
   const handleWelcomeStartReply = () => {
+    // Just dismiss the card — the user is already on an empty reply loop, ready to type
     Animated.parallel([
       Animated.timing(welcomeOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
       Animated.timing(welcomeScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
     ]).start(() => {
       setShowWelcome(false);
-      createNewLoop();
-      const greetingVariants = [
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Paste in the message you want to reply to and I'll help you craft the perfect response.`,
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Drop in the conversation — let's figure out the best reply together.`,
-        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Share the message and I'll help you respond in a way that lands right.`,
-      ];
-      const greeting = greetingVariants[Math.floor(Math.random() * greetingVariants.length)];
-      addMessageToActiveLoopRaw({
-        id: `greeting-${Date.now()}`,
-        role: "assistant",
-        content: greeting,
-        timestamp: Date.now(),
-        mode: "rewrite",
-      });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     });
   };
