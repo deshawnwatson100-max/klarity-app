@@ -35,6 +35,7 @@ import { useSettingsStore } from "../state/settingsStore";
 import { getBackendUrl } from "../lib/config";
 import { useSubscriptionStore, isInTrialWindow, trialDaysRemaining } from "../state/subscriptionStore";
 import { useOnboardingStore } from "../state/onboardingStore";
+import { HardPaywallScreen } from "../screens/HardPaywallScreen";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -676,6 +677,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   // State
   const [isRendered, setIsRendered] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showHardPaywallPreview, setShowHardPaywallPreview] = useState(false);
 
   // Pending delete state - set by onSelect, Alert shown via useEffect (outside onSelect)
   const [pendingDeleteLoopId, setPendingDeleteLoopId] = useState<string | null>(null);
@@ -1754,6 +1756,64 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     </View>
                   </Pressable>
 
+                  {/* Preview Soft Paywall */}
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowSettingsPanel(false);
+                      setTimeout(() => (navigation as any).navigate("PaywallScreen"), 300);
+                    }}
+                    className="active:opacity-60"
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 13,
+                        borderBottomWidth: 0.5,
+                        borderBottomColor: colors.divider,
+                      }}
+                    >
+                      <View style={{ width: 30, alignItems: "center", marginRight: 12 }}>
+                        <Ionicons name="eye-outline" size={19} color="#6366F1" />
+                      </View>
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
+                        Preview Paywall
+                      </Text>
+                      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+
+                  {/* Preview Hard Paywall */}
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowSettingsPanel(false);
+                      setTimeout(() => setShowHardPaywallPreview(true), 300);
+                    }}
+                    className="active:opacity-60"
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 13,
+                        borderBottomWidth: 0.5,
+                        borderBottomColor: colors.divider,
+                      }}
+                    >
+                      <View style={{ width: 30, alignItems: "center", marginRight: 12 }}>
+                        <Ionicons name="lock-closed-outline" size={19} color="#EF4444" />
+                      </View>
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
+                        Preview Hard Paywall
+                      </Text>
+                      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+
                   {/* Sign Out row */}
                   <Pressable
                     onPress={() => {
@@ -1940,6 +2000,36 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
           )}
         </>
       </Animated.View>
+
+      {/* Hard Paywall Preview Modal */}
+      <Modal
+        visible={showHardPaywallPreview}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setShowHardPaywallPreview(false)}
+        presentationStyle="fullScreen"
+      >
+        <View style={{ flex: 1 }}>
+          <HardPaywallScreen />
+          {/* Preview dismiss button */}
+          <Pressable
+            onPress={() => setShowHardPaywallPreview(false)}
+            style={{
+              position: "absolute",
+              top: 56,
+              right: 20,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="close" size={18} color="#FFF" />
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 }
