@@ -19,7 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { Header } from "../components/Header";
-import { InputBar, InputMode } from "../components/InputBar";
+import { InputBar, InputBarRef, InputMode } from "../components/InputBar";
 import { MessageBubble } from "../components/MessageBubble";
 import { DysfunctionalCommunicationCard } from "../components/DysfunctionalCommunicationCard";
 import { RedFlagsCard } from "../components/RedFlagsCard";
@@ -158,10 +158,8 @@ export function ChatScreen({ navigation, route }: Props) {
 
   // Thread transition animation
   const threadTransitionOpacity = useRef(new Animated.Value(1)).current;
-  const threadTransitionTranslateY = useRef(new Animated.Value(0)).current;
-  const threadFlashOpacity = useRef(new Animated.Value(0)).current;
-  const [showThreadFlash, setShowThreadFlash] = useState(false);
   const prevActiveLoopId = useRef<string | null>(null);
+  const inputBarRef = useRef<InputBarRef>(null);
 
   // Decode clarification conversation state
   const [activeClarificationId, setActiveClarificationId] = useState<string | null>(null);
@@ -241,21 +239,11 @@ export function ChatScreen({ navigation, route }: Props) {
   // Smooth transition when switching to a new loop thread
   useEffect(() => {
     if (prevActiveLoopId.current !== null && prevActiveLoopId.current !== activeLoopId) {
-      // 1. Instantly snap content down + invisible
       threadTransitionOpacity.setValue(0);
-      threadTransitionTranslateY.setValue(28);
-      // 2. Show flash overlay
-      setShowThreadFlash(true);
-      threadFlashOpacity.setValue(0);
-      // 3. Flash in briefly, then slide content up while fading flash out
-      Animated.sequence([
-        Animated.timing(threadFlashOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
-        Animated.parallel([
-          Animated.timing(threadFlashOpacity, { toValue: 0, duration: 280, useNativeDriver: true }),
-          Animated.timing(threadTransitionOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.spring(threadTransitionTranslateY, { toValue: 0, useNativeDriver: true, tension: 120, friction: 14 }),
-        ]),
-      ]).start(() => setShowThreadFlash(false));
+      Animated.timing(threadTransitionOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+      // Expand input bar and focus keyboard for the new thread
+      expandInputBar();
+      setTimeout(() => inputBarRef.current?.focus(), 50);
     }
     prevActiveLoopId.current = activeLoopId;
   }, [activeLoopId]);
@@ -3659,7 +3647,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   right: 0,
                   bottom: 0,
                   width: screenWidth,
-                  transform: [{ translateX: replySlideX }, { translateY: threadTransitionTranslateY }],
+                  transform: [{ translateX: replySlideX }],
                   opacity: threadTransitionOpacity,
                 }}
               >
@@ -3700,7 +3688,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   right: 0,
                   bottom: 0,
                   width: screenWidth,
-                  transform: [{ translateX: decodeSlideX }, { translateY: threadTransitionTranslateY }],
+                  transform: [{ translateX: decodeSlideX }],
                   opacity: threadTransitionOpacity,
                 }}
               >
@@ -3740,6 +3728,7 @@ Generate a new reply that follows the user's instruction while still responding 
             }}
           >
             <InputBar
+              ref={inputBarRef}
               value={currentInput}
               onChangeText={setCurrentInput}
               onSend={handleSend}
@@ -3892,18 +3881,6 @@ Generate a new reply that follows the user's instruction while still responding 
             </Animated.View>
           </Pressable>
         </Modal>
-      )}
-      {/* Thread transition flash overlay */}
-      {showThreadFlash && (
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: isDark ? "#ffffff" : "#000000",
-            opacity: threadFlashOpacity,
-          }}
-        />
       )}
     </View>
   );
