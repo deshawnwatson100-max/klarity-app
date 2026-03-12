@@ -282,8 +282,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
     console.log("[Paywall] loadOfferings called — isRevenueCatEnabled:", isRevenueCatEnabled());
 
     if (!isRevenueCatEnabled()) {
-      console.log("[Paywall] RevenueCat not enabled — platform or key missing");
-      setError("Payments are not available on this platform");
+      console.log("[Paywall] RevenueCat not enabled — platform or key missing, showing default prices");
       setIsLoading(false);
       return;
     }
