@@ -156,8 +156,11 @@ export function ChatScreen({ navigation, route }: Props) {
   const welcomeOpacity = useRef(new Animated.Value(0)).current;
   const welcomeScale = useRef(new Animated.Value(0.92)).current;
 
-  // Thread transition flash animation
+  // Thread transition animation
   const threadTransitionOpacity = useRef(new Animated.Value(1)).current;
+  const threadTransitionTranslateY = useRef(new Animated.Value(0)).current;
+  const threadFlashOpacity = useRef(new Animated.Value(0)).current;
+  const [showThreadFlash, setShowThreadFlash] = useState(false);
   const prevActiveLoopId = useRef<string | null>(null);
 
   // Decode clarification conversation state
@@ -235,16 +238,24 @@ export function ChatScreen({ navigation, route }: Props) {
     deepSearchTriggered.current = false;
   }, [activeLoopId]);
 
-  // Smooth fade transition when switching to a new loop thread
+  // Smooth transition when switching to a new loop thread
   useEffect(() => {
     if (prevActiveLoopId.current !== null && prevActiveLoopId.current !== activeLoopId) {
-      // Fade out quickly, then fade back in
+      // 1. Instantly snap content down + invisible
       threadTransitionOpacity.setValue(0);
-      Animated.timing(threadTransitionOpacity, {
-        toValue: 1,
-        duration: 320,
-        useNativeDriver: true,
-      }).start();
+      threadTransitionTranslateY.setValue(28);
+      // 2. Show flash overlay
+      setShowThreadFlash(true);
+      threadFlashOpacity.setValue(0);
+      // 3. Flash in briefly, then slide content up while fading flash out
+      Animated.sequence([
+        Animated.timing(threadFlashOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+        Animated.parallel([
+          Animated.timing(threadFlashOpacity, { toValue: 0, duration: 280, useNativeDriver: true }),
+          Animated.timing(threadTransitionOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(threadTransitionTranslateY, { toValue: 0, useNativeDriver: true, tension: 120, friction: 14 }),
+        ]),
+      ]).start(() => setShowThreadFlash(false));
     }
     prevActiveLoopId.current = activeLoopId;
   }, [activeLoopId]);
@@ -3648,7 +3659,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   right: 0,
                   bottom: 0,
                   width: screenWidth,
-                  transform: [{ translateX: replySlideX }],
+                  transform: [{ translateX: replySlideX }, { translateY: threadTransitionTranslateY }],
                   opacity: threadTransitionOpacity,
                 }}
               >
@@ -3689,7 +3700,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   right: 0,
                   bottom: 0,
                   width: screenWidth,
-                  transform: [{ translateX: decodeSlideX }],
+                  transform: [{ translateX: decodeSlideX }, { translateY: threadTransitionTranslateY }],
                   opacity: threadTransitionOpacity,
                 }}
               >
@@ -3881,6 +3892,18 @@ Generate a new reply that follows the user's instruction while still responding 
             </Animated.View>
           </Pressable>
         </Modal>
+      )}
+      {/* Thread transition flash overlay */}
+      {showThreadFlash && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: isDark ? "#ffffff" : "#000000",
+            opacity: threadFlashOpacity,
+          }}
+        />
       )}
     </View>
   );
