@@ -422,8 +422,14 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
 
-  // Paying user — show confirmation screen
-  if (hasPaidSubscription || previewAsPro) {
+  // In post-onboarding gate mode, if already subscribed just advance
+  if (onComplete && (hasPaidSubscription || previewAsPro)) {
+    onComplete();
+    return null;
+  }
+
+  // Paying user — show confirmation screen (skip in post-onboarding gate mode)
+  if ((hasPaidSubscription || previewAsPro) && !onComplete) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <LinearGradient
