@@ -119,6 +119,8 @@ export function HardPaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [plans, setPlans] = useState<PlanOption[]>(DEFAULT_PLANS);
   const [error, setError] = useState<string | null>(null);
+  // True once offerings loaded (even with fallback prices) — used to suppress StoreKit errors
+  const [offeringsAttempted, setOfferingsAttempted] = useState(false);
 
   // Suggested reply animation state
   const [currentReplyIndex, setCurrentReplyIndex] = useState(0);
@@ -248,6 +250,7 @@ export function HardPaywallScreen() {
       console.log("[HardPaywall] RevenueCat not enabled — platform or key missing");
       setError("Payments are not available on this platform");
       setIsLoading(false);
+      setOfferingsAttempted(true);
       return;
     }
 
@@ -256,8 +259,9 @@ export function HardPaywallScreen() {
 
     if (!result.ok) {
       console.log("[HardPaywall] getOfferings FAILED — reason:", result.reason, "error:", result.error);
-      setError("Unable to load subscription options");
+      // StoreKit fetch failed but default prices are already shown — don't show error banner
       setIsLoading(false);
+      setOfferingsAttempted(true);
       return;
     }
 
@@ -267,8 +271,8 @@ export function HardPaywallScreen() {
 
     if (!offerings.current) {
       console.log("[HardPaywall] offerings.current is nil — no current offering set in RevenueCat dashboard");
-      setError("Unable to load subscription options");
       setIsLoading(false);
+      setOfferingsAttempted(true);
       return;
     }
 
@@ -277,8 +281,8 @@ export function HardPaywallScreen() {
 
     if (pkgList.length === 0) {
       console.log("[HardPaywall] WARNING: availablePackages is empty — products may not be approved in App Store Connect");
-      setError("Unable to load subscription options");
       setIsLoading(false);
+      setOfferingsAttempted(true);
       return;
     }
 
@@ -309,6 +313,7 @@ export function HardPaywallScreen() {
     });
     setPlans(updatedPlans);
     setIsLoading(false);
+    setOfferingsAttempted(true);
   };
 
   const handleSelectPlan = (planId: PlanType) => {
@@ -767,7 +772,7 @@ export function HardPaywallScreen() {
         <Animated.View style={{ opacity: fadeAnim, marginTop: 24 }}>
           <Pressable
             onPress={handlePurchase}
-            disabled={isLoading || isPurchasing || packages.size === 0}
+            disabled={isLoading || isPurchasing}
             style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
           >
             <LinearGradient
@@ -779,7 +784,7 @@ export function HardPaywallScreen() {
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: isLoading || packages.size === 0 ? 0.5 : 1,
+                opacity: isLoading ? 0.5 : 1,
               }}
             >
               {isPurchasing ? (

@@ -293,7 +293,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
     if (!result.ok) {
       console.log("[Paywall] getOfferings FAILED — reason:", result.reason, "error:", result.error);
-      setError("Unable to load subscription options");
+      // StoreKit fetch failed but default prices are already shown — don't show error banner
       setIsLoading(false);
       return;
     }
@@ -304,7 +304,6 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
     if (!offerings.current) {
       console.log("[Paywall] offerings.current is nil — no current offering set in RevenueCat dashboard");
-      setError("Unable to load subscription options");
       setIsLoading(false);
       return;
     }
@@ -314,7 +313,6 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
     if (pkgList.length === 0) {
       console.log("[Paywall] WARNING: availablePackages is empty — products may not be approved in App Store Connect");
-      setError("Unable to load subscription options");
       setIsLoading(false);
       return;
     }
@@ -1113,7 +1111,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
         <Animated.View style={{ opacity: fadeAnim, marginTop: 24 }}>
           <Pressable
             onPress={handlePurchase}
-            disabled={isLoading || isPurchasing || (packages.size === 0 && !onComplete)}
+            disabled={isLoading || isPurchasing}
             style={({ pressed }) => ({
               opacity: pressed ? 0.9 : 1,
             })}
@@ -1127,7 +1125,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: isLoading || (packages.size === 0 && !onComplete) ? 0.5 : 1,
+                opacity: isLoading ? 0.5 : 1,
               }}
             >
               {isPurchasing ? (
