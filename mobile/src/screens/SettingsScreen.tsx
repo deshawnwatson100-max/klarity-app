@@ -1062,16 +1062,6 @@ export function SettingsScreen() {
           subtitle="Chats, profiles, and settings"
           onPress={() => setShowClearAllModal(true)}
           destructive
-        />
-        <SettingsRow
-          label="Reset Onboarding"
-          subtitle="Show onboarding flow again"
-          onPress={() => {
-            if (hapticsEnabled) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-            resetOnboarding();
-          }}
           isLast
         />
 
@@ -1085,9 +1075,18 @@ export function SettingsScreen() {
           />
         )}
         <SettingsRow
+          label="Reset Onboarding"
+          subtitle="Show onboarding flow again"
+          onPress={() => {
+            if (hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            resetOnboarding();
+          }}
+          isFirst={!authUser?.email}
+          rightElement={<Ionicons name="refresh-outline" size={20} color={colors.textSecondary} />}
+        />
+        <SettingsRow
           label="Sign Out"
           onPress={handleSignOut}
-          isFirst={!authUser?.email}
           isLast
           destructive
           rightElement={<Ionicons name="log-out-outline" size={20} color={colors.error || "#EF4444"} />}
