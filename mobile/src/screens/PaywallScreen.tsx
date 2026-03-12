@@ -361,7 +361,15 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
     // Look up by stable store product ID, not RC package identifier
     const storeId = STORE_PRODUCT_IDS[plan.id];
     const pkg = packages.get(storeId);
-    if (!pkg) return;
+
+    // In post-onboarding gate mode with no packages loaded, just advance (trial starts via onComplete)
+    if (!pkg) {
+      if (onComplete) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onComplete();
+      }
+      return;
+    }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsPurchasing(true);
@@ -1109,7 +1117,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
         <Animated.View style={{ opacity: fadeAnim, marginTop: 24 }}>
           <Pressable
             onPress={handlePurchase}
-            disabled={isLoading || isPurchasing || packages.size === 0}
+            disabled={isLoading || isPurchasing || (packages.size === 0 && !onComplete)}
             style={({ pressed }) => ({
               opacity: pressed ? 0.9 : 1,
             })}
@@ -1123,7 +1131,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: isLoading || packages.size === 0 ? 0.5 : 1,
+                opacity: isLoading || (packages.size === 0 && !onComplete) ? 0.5 : 1,
               }}
             >
               {isPurchasing ? (
