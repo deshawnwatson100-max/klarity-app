@@ -136,16 +136,33 @@ export function RootNavigator() {
     };
   }, []);
 
-  // Check subscription status on launch — only dismiss paywall if user is now paid/in trial.
-  // Post-trial users without a subscription can browse freely; paywall only appears
-  // when they attempt to generate a response (via paywallGate).
+  // Check subscription status on launch
   useEffect(() => {
     if (!isHydrated) return;
 
     const checkSubscription = async () => {
-      // Paywall bypassed — treat all users as paid
-      setHasPaidSubscription(true);
-      setShowHardPaywall(false);
+      const subState = useSubscriptionStore.getState();
+
+      // RevenueCat takes priority if connected
+      if (isRevenueCatEnabled()) {
+        const entitled = await hasEntitlement("premium");
+        if (entitled) {
+          setHasPaidSubscription(true);
+          setShowHardPaywall(false);
+          return;
+        }
+      }
+
+      // Check trial window
+      if (isInTrialWindow(subState.trialStartedAt)) {
+        setShowHardPaywall(false);
+        return;
+      }
+
+      // Trial expired and no paid subscription — show hard paywall
+      if (!subState.hasPaidSubscription && subState.trialStartedAt !== null) {
+        setShowHardPaywall(true);
+      }
     };
 
     checkSubscription();
