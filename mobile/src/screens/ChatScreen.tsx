@@ -156,6 +156,10 @@ export function ChatScreen({ navigation, route }: Props) {
   const welcomeOpacity = useRef(new Animated.Value(0)).current;
   const welcomeScale = useRef(new Animated.Value(0.92)).current;
 
+  // Thread transition flash animation
+  const threadTransitionOpacity = useRef(new Animated.Value(1)).current;
+  const prevActiveLoopId = useRef<string | null>(null);
+
   // Decode clarification conversation state
   const [activeClarificationId, setActiveClarificationId] = useState<string | null>(null);
   const [clarificationContext, setClarificationContext] = useState<DecodeClarificationContext | null>(null);
@@ -229,6 +233,20 @@ export function ChatScreen({ navigation, route }: Props) {
   // Reset deep search trigger when active loop changes
   useEffect(() => {
     deepSearchTriggered.current = false;
+  }, [activeLoopId]);
+
+  // Smooth fade transition when switching to a new loop thread
+  useEffect(() => {
+    if (prevActiveLoopId.current !== null && prevActiveLoopId.current !== activeLoopId) {
+      // Fade out quickly, then fade back in
+      threadTransitionOpacity.setValue(0);
+      Animated.timing(threadTransitionOpacity, {
+        toValue: 1,
+        duration: 320,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevActiveLoopId.current = activeLoopId;
   }, [activeLoopId]);
 
   // Track current mode in a ref for use in callbacks
@@ -3631,6 +3649,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   bottom: 0,
                   width: screenWidth,
                   transform: [{ translateX: replySlideX }],
+                  opacity: threadTransitionOpacity,
                 }}
               >
                 <FlatList
@@ -3671,6 +3690,7 @@ Generate a new reply that follows the user's instruction while still responding 
                   bottom: 0,
                   width: screenWidth,
                   transform: [{ translateX: decodeSlideX }],
+                  opacity: threadTransitionOpacity,
                 }}
               >
                 <FlatList
