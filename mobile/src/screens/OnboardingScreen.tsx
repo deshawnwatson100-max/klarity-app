@@ -1945,6 +1945,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  handleOnboardingIconPress();
                 }}
                 className="active:opacity-60"
               >
@@ -1969,6 +1970,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  handleOnboardingIconPress();
                 }}
                 className="active:opacity-60"
                 style={{ marginRight: 12 }}
@@ -1993,7 +1995,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
-                    setInputMode("understand");
+                    handleOnboardingIconPress();
                   }}
                   style={{
                     paddingHorizontal: 10,
@@ -2023,7 +2025,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
-                    setInputMode("rewrite");
+                    handleOnboardingIconPress();
                   }}
                   style={{
                     paddingHorizontal: 10,
