@@ -62,6 +62,7 @@ export function RootNavigator() {
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -210,13 +211,24 @@ export function RootNavigator() {
   // For new users, show onboarding (which has its own splash)
   if (showOnboarding) {
     return <OnboardingScreen onComplete={() => {
-      startTrial(); // Start 3-day trial when onboarding completes
-      // Schedule trial-end reminder for 2 days from now (1 day before expiry)
-      const trialStartedAt = useSubscriptionStore.getState().trialStartedAt ?? Date.now();
-      scheduleTrialEndReminder(trialStartedAt);
       setShowOnboarding(false);
-      setShowAuth(true); // After onboarding, ask user to create account
+      setShowPaywall(true); // After onboarding, show paywall to start trial or pay
     }} />;
+  }
+
+  // Post-onboarding paywall gate: user must start trial or subscribe
+  if (showPaywall) {
+    return <PaywallScreen
+      navigation={null as any}
+      route={{ key: "PaywallScreen", name: "PaywallScreen", params: undefined }}
+      onComplete={() => {
+        startTrial(); // Start 3-day trial when they choose trial or pay
+        const trialStartedAt = useSubscriptionStore.getState().trialStartedAt ?? Date.now();
+        scheduleTrialEndReminder(trialStartedAt);
+        setShowPaywall(false);
+        setShowAuth(true); // After paywall, create account
+      }}
+    />;
   }
 
   // Auth gate: show login/signup if not authenticated

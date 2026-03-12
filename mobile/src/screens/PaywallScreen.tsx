@@ -36,7 +36,9 @@ import {
   cancelTrialReminder,
 } from "../lib/notifications";
 
-type Props = StackScreenProps<RootStackParamList, "PaywallScreen">;
+type Props = StackScreenProps<RootStackParamList, "PaywallScreen"> & {
+  onComplete?: () => void;
+};
 
 type PlanType = "monthly" | "annual";
 
@@ -118,7 +120,7 @@ const DEFAULT_PLANS: PlanOption[] = [
   },
 ];
 
-export function PaywallScreen({ navigation, route }: Props) {
+export function PaywallScreen({ navigation, route, onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const hasPaidSubscription = useSubscriptionStore((s) => s.hasPaidSubscription);
@@ -370,7 +372,11 @@ export function PaywallScreen({ navigation, route }: Props) {
 
     if (result.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+      if (onComplete) {
+        onComplete();
+      } else {
+        navigation.goBack();
+      }
     } else if (result.reason === "sdk_error") {
       const errorMessage = result.error instanceof Error ? result.error.message : "Purchase failed";
       if (!errorMessage.includes("cancelled") && !errorMessage.includes("canceled")) {
@@ -392,7 +398,11 @@ export function PaywallScreen({ navigation, route }: Props) {
       if (hasActive) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         useSubscriptionStore.getState().setHasPaidSubscription(true);
-        navigation.goBack();
+        if (onComplete) {
+          onComplete();
+        } else {
+          navigation.goBack();
+        }
       } else {
         setError("No active subscriptions found");
       }
@@ -403,7 +413,11 @@ export function PaywallScreen({ navigation, route }: Props) {
 
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.goBack();
+    if (onComplete) {
+      onComplete();
+    } else {
+      navigation.goBack();
+    }
   };
 
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
@@ -505,7 +519,8 @@ export function PaywallScreen({ navigation, route }: Props) {
         }}
       />
 
-      {/* Close button */}
+      {/* Close button — hidden in post-onboarding gate mode */}
+      {!onComplete && (
       <Pressable
         onPress={handleClose}
         style={{
@@ -529,6 +544,7 @@ export function PaywallScreen({ navigation, route }: Props) {
           <Ionicons name="close" size={20} color={colors.textSecondary} />
         </View>
       </Pressable>
+      )}
 
       <ScrollView
         contentContainerStyle={{
