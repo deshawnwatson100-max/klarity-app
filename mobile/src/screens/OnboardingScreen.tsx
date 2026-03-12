@@ -7,6 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Modal,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -831,6 +833,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [userInput, setUserInput] = useState("");
   const [showGetStarted, setShowGetStarted] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("understand");
+  // Onboarding header icon card state
+  const [showOnboardingCard, setShowOnboardingCard] = useState(false);
+  const [onboardingCardTapCount, setOnboardingCardTapCount] = useState(0);
+  const onboardingCardOpacity = useRef(new Animated.Value(0)).current;
+  const onboardingCardScale = useRef(new Animated.Value(0.92)).current;
   const [inputPlaceholder, setInputPlaceholder] = useState("Type your message...");
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -1623,6 +1630,29 @@ Don't apologize excessively. Just reflect back what you now understand with warm
     onComplete();
   };
 
+  const dismissOnboardingCard = (callback?: () => void) => {
+    Animated.parallel([
+      Animated.timing(onboardingCardOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(onboardingCardScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setShowOnboardingCard(false);
+      callback?.();
+    });
+  };
+
+  const handleOnboardingIconPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const newCount = onboardingCardTapCount + 1;
+    setOnboardingCardTapCount(newCount);
+    setShowOnboardingCard(true);
+    onboardingCardOpacity.setValue(0);
+    onboardingCardScale.setValue(0.92);
+    Animated.parallel([
+      Animated.spring(onboardingCardOpacity, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+      Animated.spring(onboardingCardScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+    ]).start();
+  };
+
   const cancelRecording = async () => {
     if (!recording) return;
 
@@ -2024,9 +2054,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
 
               {/* New Loop Button */}
               <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
+                onPress={handleOnboardingIconPress}
                 className="active:opacity-60"
               >
                 <View style={{ position: "relative" }}>
@@ -2246,6 +2274,138 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             </Text>
           </Pressable>
         </View>
+      )}
+
+      {/* Onboarding header icon card */}
+      {showOnboardingCard && (
+        <Modal transparent animationType="none" onRequestClose={() => dismissOnboardingCard()}>
+          <Pressable
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 28 }}
+            onPress={() => dismissOnboardingCard()}
+          >
+            <Animated.View
+              style={{
+                opacity: onboardingCardOpacity,
+                transform: [{ scale: onboardingCardScale }],
+                backgroundColor: isDark ? "#12131A" : "#FFFFFF",
+                borderRadius: 28,
+                paddingVertical: 40,
+                paddingHorizontal: 32,
+                width: "100%",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 20 },
+                shadowOpacity: isDark ? 0.6 : 0.15,
+                shadowRadius: 40,
+                elevation: 20,
+                borderWidth: isDark ? 1 : 0,
+                borderColor: isDark ? "rgba(255,255,255,0.06)" : "transparent",
+              }}
+            >
+              {onboardingCardTapCount <= 1 ? (
+                /* First tap — continue onboarding */
+                <>
+                  <View style={{ alignItems: "center", marginBottom: 24 }}>
+                    <View style={{
+                      width: 56, height: 56, borderRadius: 28,
+                      backgroundColor: isDark ? "rgba(120, 160, 255, 0.12)" : "rgba(80, 120, 255, 0.08)",
+                      alignItems: "center", justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(120, 160, 255, 0.2)" : "rgba(80, 120, 255, 0.15)",
+                    }}>
+                      <Text style={{ fontSize: 26 }}>✨</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 24, fontWeight: "700", color: colors.textPrimary, textAlign: "center", marginBottom: 14, letterSpacing: -0.5 }}>
+                    Almost there
+                  </Text>
+                  <Text style={{ fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24, marginBottom: 28 }}>
+                    Finish setting up so Klarity can personalize everything to how you communicate.
+                  </Text>
+                  <Pressable
+                    onPress={() => dismissOnboardingCard()}
+                    style={({ pressed }) => ({
+                      backgroundColor: isDark ? "rgba(120, 160, 255, 0.15)" : "rgba(80, 120, 255, 0.1)",
+                      borderRadius: 16, paddingVertical: 15, alignItems: "center",
+                      opacity: pressed ? 0.7 : 1,
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(120, 160, 255, 0.3)" : "rgba(80, 120, 255, 0.25)",
+                    })}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "700", color: isDark ? "#7AA0FF" : "#5078FF", letterSpacing: 0.1 }}>
+                      Continue onboarding
+                    </Text>
+                  </Pressable>
+                </>
+              ) : (
+                /* Second tap — choose to continue or dive into the app */
+                <>
+                  <View style={{ alignItems: "center", marginBottom: 24 }}>
+                    <View style={{
+                      width: 56, height: 56, borderRadius: 28,
+                      backgroundColor: isDark ? "rgba(120, 160, 255, 0.12)" : "rgba(80, 120, 255, 0.08)",
+                      alignItems: "center", justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(120, 160, 255, 0.2)" : "rgba(80, 120, 255, 0.15)",
+                    }}>
+                      <Text style={{ fontSize: 26 }}>🚀</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 24, fontWeight: "700", color: colors.textPrimary, textAlign: "center", marginBottom: 14, letterSpacing: -0.5 }}>
+                    Ready to dive in?
+                  </Text>
+                  <Text style={{ fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 24, marginBottom: 28 }}>
+                    Pick up where you left off, or jump straight into the app.
+                  </Text>
+                  {/* Continue onboarding */}
+                  <Pressable
+                    onPress={() => dismissOnboardingCard()}
+                    style={({ pressed }) => ({
+                      backgroundColor: isDark ? "rgba(120, 160, 255, 0.15)" : "rgba(80, 120, 255, 0.1)",
+                      borderRadius: 16, paddingVertical: 15, alignItems: "center",
+                      opacity: pressed ? 0.7 : 1, marginBottom: 12,
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(120, 160, 255, 0.3)" : "rgba(80, 120, 255, 0.25)",
+                    })}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "700", color: isDark ? "#7AA0FF" : "#5078FF", letterSpacing: 0.1 }}>
+                      Continue onboarding
+                    </Text>
+                  </Pressable>
+                  {/* Craft a reply */}
+                  <Pressable
+                    onPress={() => dismissOnboardingCard(handleGetStarted)}
+                    style={({ pressed }) => ({
+                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                      borderRadius: 16, paddingVertical: 15, alignItems: "center",
+                      opacity: pressed ? 0.7 : 1, marginBottom: 12,
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                    })}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary, letterSpacing: 0.1 }}>
+                      Craft a reply
+                    </Text>
+                  </Pressable>
+                  {/* Decode a message */}
+                  <Pressable
+                    onPress={() => dismissOnboardingCard(handleGetStarted)}
+                    style={({ pressed }) => ({
+                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                      borderRadius: 16, paddingVertical: 15, alignItems: "center",
+                      opacity: pressed ? 0.7 : 1,
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                    })}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary, letterSpacing: 0.1 }}>
+                      Decode a message
+                    </Text>
+                  </Pressable>
+                </>
+              )}
+            </Animated.View>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
