@@ -20,6 +20,7 @@ interface InputBarProps {
   onVoicePress?: () => void;
   onPlusPress?: () => void;
   onImageSelected?: (uri: string, base64: string) => void;
+  onImageButtonPress?: () => void;
   placeholder?: string;
   disabled?: boolean;
   selectedImageUri?: string;
@@ -39,6 +40,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
   onVoicePress,
   onPlusPress,
   onImageSelected,
+  onImageButtonPress,
   placeholder = "Type a message...",
   disabled = false,
   selectedImageUri,
@@ -323,7 +325,7 @@ export const InputBar = forwardRef<InputBarRef, InputBarProps>(function InputBar
       <View className="flex-row items-center gap-3">
         {/* Image Picker Button */}
         <Pressable
-          onPress={handlePickImage}
+          onPress={onImageButtonPress ?? handlePickImage}
           disabled={disabled}
           className="active:opacity-60"
         >

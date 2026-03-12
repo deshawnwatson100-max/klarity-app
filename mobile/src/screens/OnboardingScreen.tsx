@@ -2133,6 +2133,7 @@ Don't apologize excessively. Just reflect back what you now understand with warm
             onChangeText={setUserInput}
             onSend={handleSubmit}
             onVoicePress={handleVoicePress}
+            onImageButtonPress={handleOnboardingIconPress}
             placeholder={isInQuestionMode || isInSkipPromptMode || isInUseCaseMode ? "Or type your own answer..." : (isInSummaryConfirmMode ? "Or share what feels more accurate..." : inputPlaceholder)}
             autoFocus={!isInQuestionMode && !isInSkipPromptMode && !isInUseCaseMode && !isInSummaryConfirmMode}
             isRecording={isRecording}
