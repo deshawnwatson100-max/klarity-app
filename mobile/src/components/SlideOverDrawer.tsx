@@ -34,6 +34,7 @@ import { useAuthStore } from "../state/authStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { getBackendUrl } from "../lib/config";
 import { useSubscriptionStore, isInTrialWindow, trialDaysRemaining } from "../state/subscriptionStore";
+import { useOnboardingStore } from "../state/onboardingStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -700,6 +701,7 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
   const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
   const setPushNotificationsEnabled = useSettingsStore((s) => s.setPushNotificationsEnabled);
   const setDailyRemindersEnabled = useSettingsStore((s) => s.setDailyRemindersEnabled);
+  const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
   // Auth store
   const authUser = useAuthStore((s) => s.user);
@@ -1427,6 +1429,52 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                       thumbColor={colors.switchThumb}
                     />
                   </View>
+                </View>
+
+                {/* ACCOUNT section */}
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "600",
+                    color: colors.textTertiary,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    marginHorizontal: 20,
+                    marginTop: 20,
+                    marginBottom: 6,
+                  }}
+                >
+                  Account
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    marginHorizontal: 16,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      resetOnboarding();
+                      closeDrawer();
+                    }}
+                    className="active:opacity-70"
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                      }}
+                    >
+                      <Ionicons name="refresh-outline" size={18} color={colors.textSecondary} style={{ marginRight: 12 }} />
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>Reset Onboarding</Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
                 </View>
 
                 {/* ARCHIVED CHATS section */}
