@@ -3380,11 +3380,43 @@ Generate a new reply that follows the user's instruction while still responding 
   };
 
   const handleNewLoopPress = () => {
-    setShowWelcome(true);
-    Animated.parallel([
-      Animated.spring(welcomeOpacity, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
-      Animated.spring(welcomeScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
-    ]).start();
+    // Decode mode: always just create a new loop (no welcome card)
+    if (inputMode === "understand") {
+      createNewLoop();
+      return;
+    }
+
+    // Reply mode logic:
+    // - No input AND no messages (empty loop) → show welcome card
+    // - Has input OR has messages (ongoing/completed loop) → start new loop thread directly
+    const hasInput = currentInput.trim().length > 0;
+    const hasMessages = replyMessages.length > 0;
+
+    if (!hasInput && !hasMessages) {
+      // Empty reply loop - show the welcome card
+      setShowWelcome(true);
+      Animated.parallel([
+        Animated.spring(welcomeOpacity, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+        Animated.spring(welcomeScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 10 }),
+      ]).start();
+    } else {
+      // Has input or has messages - start a new loop thread directly
+      createNewLoop();
+      const greetingVariants = [
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Paste in the message you want to reply to and I'll help you craft the perfect response.`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Drop in the conversation — let's figure out the best reply together.`,
+        `Hey${userName ? ` ${userName.split(" ")[0]}` : ""}! Share the message and I'll help you respond in a way that lands right.`,
+      ];
+      const greeting = greetingVariants[Math.floor(Math.random() * greetingVariants.length)];
+      addMessageToActiveLoopRaw({
+        id: `greeting-${Date.now()}`,
+        role: "assistant",
+        content: greeting,
+        timestamp: Date.now(),
+        mode: "rewrite",
+      });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
   };
 
   const handleWelcomeDismiss = () => {
