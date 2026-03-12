@@ -430,12 +430,8 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
 
-  // In post-onboarding gate mode, if already subscribed advance via effect (not during render)
-  useEffect(() => {
-    if (onComplete && (hasPaidSubscription || previewAsPro)) {
-      onComplete();
-    }
-  }, [onComplete, hasPaidSubscription, previewAsPro]);
+  // In post-onboarding gate mode, never auto-advance — user must tap the button
+  // (hasPaidSubscription persisted locally can't be trusted without a live RC check)
 
   // Paying user — show confirmation screen (skip in post-onboarding gate mode)
   if ((hasPaidSubscription || previewAsPro) && !onComplete) {
