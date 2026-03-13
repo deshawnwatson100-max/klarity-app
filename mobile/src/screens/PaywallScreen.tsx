@@ -359,12 +359,8 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
     const storeId = STORE_PRODUCT_IDS[plan.id];
     const pkg = packages.get(storeId);
 
-    // In post-onboarding gate mode with no packages loaded, just advance (trial starts via onComplete)
     if (!pkg) {
-      if (onComplete) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onComplete();
-      }
+      setError("Products could not be loaded. Please try again.");
       return;
     }
 
