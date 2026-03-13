@@ -258,7 +258,7 @@ export function HardPaywallScreen() {
 
     if (!result.ok) {
       console.log("[HardPaywall] getOfferings FAILED — reason:", result.reason, "error:", result.error);
-      // StoreKit fetch failed but default prices are already shown — don't show error banner
+      setError("Could not load products. Please check your connection and try again.");
       setIsLoading(false);
       setOfferingsAttempted(true);
       return;

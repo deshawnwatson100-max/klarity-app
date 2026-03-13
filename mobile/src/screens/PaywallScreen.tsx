@@ -292,7 +292,7 @@ export function PaywallScreen({ navigation, route, onComplete }: Props) {
 
     if (!result.ok) {
       console.log("[Paywall] getOfferings FAILED — reason:", result.reason, "error:", result.error);
-      // StoreKit fetch failed but default prices are already shown — don't show error banner
+      setError("Could not load products. Please check your connection and try again.");
       setIsLoading(false);
       return;
     }
