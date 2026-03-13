@@ -1814,6 +1814,34 @@ export function SlideOverDrawer({ visible, onClose, drawerProgress }: SlideOverD
                     </View>
                   </Pressable>
 
+                  {/* Reset Onboarding */}
+                  <Pressable
+                    onPress={() => {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      resetOnboarding();
+                      setShowSettingsPanel(false);
+                      closeDrawer();
+                    }}
+                    className="active:opacity-60"
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: 13,
+                      }}
+                    >
+                      <View style={{ width: 30, alignItems: "center", marginRight: 12 }}>
+                        <Ionicons name="refresh-outline" size={19} color="#F59E0B" />
+                      </View>
+                      <Text style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}>
+                        Reset Onboarding
+                      </Text>
+                      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+
                   {/* Sign Out row */}
                   <Pressable
                     onPress={() => {
